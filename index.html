@@ -1,0 +1,30 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html ng-app="app.frontend" ng-controller="BaseCtrl">
+  <head>
+    <meta charset="utf-8"/>
+    <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <meta name="theme-color" content="#ffffff">
+
+    <meta ng-bind="title" content="Standard Notes" name="application-name"/>
+    <base href="/"></base>
+
+    <title ng-bind="title">Standard Notes</title>
+
+    <script>
+      window.nodeRequire = require;
+      delete window.require;
+      delete window.exports;
+      delete window.module;
+    </script>
+
+    <script src="https://app.standardnotes.org/assets/compiled.js" debug="false"></script>
+    <link rel="stylesheet" media="all" href="https://app.standardnotes.org/assets/app.css" debug="false" />
+
+  </head>
+
+  <body ng-class="bodyClass">
+    <div ui-view="content"></div>
+  </body>
+
+</html>
