@@ -5,7 +5,7 @@ var app = express();
 app.use(express.static(__dirname));
 
 app.get('/', function (req, res) {
-    res.sendfile(__dirname + 'index.html');
+    res.sendFile(__dirname + '/src/index.html');
 });
 
 app.listen(3333);

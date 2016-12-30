@@ -1,0 +1,21 @@
+{
+  "name": "standard-notes",
+  "version": "0.0.2",
+  "main": "main.js",
+  "dependencies": {
+    "express": "^4.14.0"
+  },
+  "devDependencies": {
+    "electron": "^1.4.13"
+  },
+
+  "build": {
+  "appId": "standard-notes",
+  "mac": {
+    "category": "your.app.category.type"
+  },
+  "win": {
+    "iconUrl": "(windows-only) https link to icon"
+  }
+}
+}
