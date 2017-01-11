@@ -19,7 +19,8 @@
     "pack": "build --dir",
     "dist": "build -mwl",
     "start": "electron ./app --enable-logging",
-    "postinstall": "install-app-deps"
+    "postinstall": "install-app-deps",
+    "build" : "electron-packager . 'Standard Notes' --platform=all --icon=icon/icon --overwrite --osx-sign='Mac Developer ID Application: xxx' --out=dist"
   },
   "dependencies": {
     "electron-config": "^0.2.1"
