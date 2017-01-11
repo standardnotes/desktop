@@ -1,0 +1,27 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/local/Cellar/node5/5.11.1/bin/node',
+1 verbose cli   '/usr/local/bin/npm',
+1 verbose cli   'run',
+1 verbose cli   'dist' ]
+2 info using npm@3.8.9
+3 info using node@v6.2.0
+4 verbose stack Error: Invalid version: "0.1"
+4 verbose stack     at Object.module.exports.fixVersionField (/usr/local/lib/node_modules/npm/node_modules/normalize-package-data/lib/fixer.js:191:13)
+4 verbose stack     at /usr/local/lib/node_modules/npm/node_modules/normalize-package-data/lib/normalize.js:32:38
+4 verbose stack     at Array.forEach (native)
+4 verbose stack     at normalize (/usr/local/lib/node_modules/npm/node_modules/normalize-package-data/lib/normalize.js:31:15)
+4 verbose stack     at final (/usr/local/lib/node_modules/npm/node_modules/read-package-json/read-json.js:349:5)
+4 verbose stack     at then (/usr/local/lib/node_modules/npm/node_modules/read-package-json/read-json.js:124:5)
+4 verbose stack     at /usr/local/lib/node_modules/npm/node_modules/read-package-json/read-json.js:311:12
+4 verbose stack     at /usr/local/lib/node_modules/npm/node_modules/graceful-fs/graceful-fs.js:78:16
+4 verbose stack     at tryToString (fs.js:449:3)
+4 verbose stack     at FSReqWrap.readFileAfterClose [as oncomplete] (fs.js:436:12)
+5 verbose cwd /Users/mobitar/Desktop/standard-notes/dev/electron
+6 error Darwin 15.6.0
+7 error argv "/usr/local/Cellar/node5/5.11.1/bin/node" "/usr/local/bin/npm" "run" "dist"
+8 error node v6.2.0
+9 error npm  v3.8.9
+10 error Invalid version: "0.1"
+11 error If you need help, you may report this error at:
+11 error     <https://github.com/npm/npm/issues>
+12 verbose exit [ 1, true ]
