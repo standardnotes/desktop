@@ -1,10 +1,8 @@
 const {app, Menu, BrowserWindow} = require('electron')
 const path = require('path')
-// const server = require("./server");
 
 const url = require('url')
-const Config = require('electron-config')
-const config = new Config()
+const windowStateKeeper = require('electron-window-state')
 
 app.setName('Standard Notes');
 
@@ -13,14 +11,25 @@ let willQuitApp = false;
 
 function createWindow () {
 
-  let opts = {
-    width: 900, height: 600,
-    minWidth: 900, minHeight: 600,
-    icon: __dirname + 'icon.png'
-  }
-  Object.assign(opts, config.get('winBounds'))
-  win = new BrowserWindow(opts)
+  // Load the previous state with fallback to defaults
+  let winState = windowStateKeeper({
+    defaultWidth: 900,
+    defaultHeight: 600
+  })
 
+  // Create the window using the state information
+  win = new BrowserWindow({
+    'x': winState.x,
+    'y': winState.y,
+    'width': winState.width,
+    'height': winState.height,
+    'icon': __dirname + 'icon.png'
+  })
+
+  // Register listeners on the window, so we can update the state
+  // automatically (the listeners will be removed when the window
+  // is closed) and restore the maximized or full screen state
+  winState.manage(win)
   // win.webContents.openDevTools()
 
   win.on('closed', (event) => {
@@ -28,8 +37,6 @@ function createWindow () {
   })
 
   win.on('close', (e) => {
-    config.set('winBounds', win.getBounds())
-
     if (willQuitApp) {
       /* the user tried to quit the app */
       win = null;
