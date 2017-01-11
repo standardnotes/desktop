@@ -1,21 +1,27 @@
 {
   "name": "standard-notes",
   "version": "0.0.2",
-  "main": "main.js",
-  "dependencies": {
-    "express": "^4.14.0"
-  },
+  "main": "./app/index.js",
   "devDependencies": {
-    "electron": "^1.4.13"
+    "electron": "^1.4.13",
+    "electron-builder": "^11.2.3"
   },
-
   "build": {
-  "appId": "standard-notes",
-  "mac": {
-    "category": "your.app.category.type"
+    "appId": "org.standardnotes.standardnotes",
+    "mac": {
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "iconUrl": "(windows-only) https link to icon"
+    }
   },
-  "win": {
-    "iconUrl": "(windows-only) https link to icon"
+  "scripts": {
+    "pack": "build --dir",
+    "dist": "build -mwl",
+    "start": "electron ./app --enable-logging",
+    "postinstall": "install-app-deps"
+  },
+  "dependencies": {
+    "electron-config": "^0.2.1"
   }
-}
 }

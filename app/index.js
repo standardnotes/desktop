@@ -2,29 +2,41 @@ const {app, Menu, BrowserWindow} = require('electron')
 const path = require('path')
 const server = require("./server");
 const url = require('url')
+const Config = require('electron-config')
+const config = new Config()
 
 app.setName('Standard Notes');
 
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
 let win
+let willQuitApp = false;
 
 function createWindow () {
-  // Create the browser window.
-  win = new BrowserWindow({
+
+  let opts = {
     width: 900, height: 600,
     minWidth: 900, minHeight: 600,
     icon: __dirname + 'icon.png'
-  })
+  }
+  Object.assign(opts, config.get('winBounds'))
+  win = new BrowserWindow(opts)
 
   // win.webContents.openDevTools()
 
-  // Emitted when the window is closed.
-  win.on('closed', () => {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
+  win.on('closed', (event) => {
     win = null
+  })
+
+  win.on('close', (e) => {
+    config.set('winBounds', win.getBounds())
+
+    if (willQuitApp) {
+      /* the user tried to quit the app */
+      win = null;
+    } else {
+      /* the user only tried to close the window */
+      e.preventDefault();
+      win.hide();
+    }
   })
 
   win.webContents.session.clearCache(function(){
@@ -32,12 +44,23 @@ function createWindow () {
   });
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
+app.on('before-quit', () => willQuitApp = true);
+
+app.on('activate', function() {
+	if (!win) {
+    createWindow();
+	} else {
+    win.show();
+  }
+});
+
 app.on('ready', function(){
 
-  createWindow();
+  if(!win) {
+    createWindow();
+  } else {
+    win.focus();
+  }
 
   const template = [
     {
@@ -215,23 +238,3 @@ app.on('ready', function(){
   const menu = Menu.buildFromTemplate(template)
   Menu.setApplicationMenu(menu)
 })
-
-// Quit when all windows are closed.
-app.on('window-all-closed', () => {
-  // On macOS it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
-
-app.on('activate', () => {
-  // On macOS it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (win === null) {
-    createWindow()
-  }
-})
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
