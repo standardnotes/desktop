@@ -1,10 +1,7 @@
 {
   "name": "standard-notes",
   "version": "0.1.0",
-  "main": "./main.js",
-  "dependencies" : {
-    "electron-config": "^0.2.1"
-  },
+  "main": "./app/index.js",
   "devDependencies": {
     "electron": "^1.4.13",
     "electron-builder": "^11.2.3"

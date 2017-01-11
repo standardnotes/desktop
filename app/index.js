@@ -20,7 +20,7 @@ function createWindow () {
   }
   Object.assign(opts, config.get('winBounds'))
   win = new BrowserWindow(opts)
-  
+
   // win.webContents.openDevTools()
 
   win.on('closed', (event) => {
@@ -41,7 +41,7 @@ function createWindow () {
   })
 
   win.webContents.session.clearCache(function(){
-    win.loadURL('file://' + __dirname + '/app/index.html');
+    win.loadURL('file://' + __dirname + '/index.html');
   });
 }
 
