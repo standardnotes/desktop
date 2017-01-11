@@ -1,6 +1,7 @@
 const {app, Menu, BrowserWindow} = require('electron')
 const path = require('path')
-const server = require("./server");
+// const server = require("./server");
+
 const url = require('url')
 const Config = require('electron-config')
 const config = new Config()
@@ -19,7 +20,7 @@ function createWindow () {
   }
   Object.assign(opts, config.get('winBounds'))
   win = new BrowserWindow(opts)
-
+  
   // win.webContents.openDevTools()
 
   win.on('closed', (event) => {
@@ -40,7 +41,7 @@ function createWindow () {
   })
 
   win.webContents.session.clearCache(function(){
-    win.loadURL('http://localhost:3333');
+    win.loadURL('file://' + __dirname + '/app/index.html');
   });
 }
 
