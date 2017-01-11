@@ -2,9 +2,6 @@
   "name": "standard-notes",
   "version": "0.1.0",
   "main": "./app/index.js",
-  "dependencies": {
-    "electron-window-state": "^4.0.1"
-  },
   "devDependencies": {
     "electron": "^1.4.13",
     "electron-builder": "^11.2.3"

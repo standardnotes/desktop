@@ -5,6 +5,6 @@
   "author": "Standard Notes <standardnotes@bitar.io>",
   "version" : "0.1.0",
   "dependencies" : {
-    "electron-config": "^0.2.1"
+    "electron-window-state": "^4.0.1"
   }
 }
