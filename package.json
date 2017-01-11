@@ -13,11 +13,14 @@
     },
     "win": {
       "iconUrl": "(windows-only) https link to icon"
+    },
+    "linux" : {
+      "icon" : "./icon/icon.png"
     }
   },
   "scripts": {
     "pack": "build --dir",
-    "dist": "build",
+    "dist": "build -mwl",
     "start": "electron ./app --enable-logging",
     "postinstall": "install-app-deps",
     "build" : "electron-packager . 'Standard Notes' --platform=all --icon=icon/icon --overwrite --osx-sign='Mac Developer ID Application: xxx' --out=dist"
