@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "main": "./app/index.js",
   "devDependencies": {
-    "electron": "^1.4.13",
+    "electron": "^1.4.14",
     "electron-builder": "^11.2.3"
   },
   "build": {

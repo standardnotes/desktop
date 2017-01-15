@@ -9,6 +9,10 @@ app.setName('Standard Notes');
 let win
 let willQuitApp = false;
 
+process.on('uncaughtException', function (err) {
+  console.log(err);
+})
+
 function createWindow () {
 
   // Load the previous state with fallback to defaults
@@ -23,7 +27,8 @@ function createWindow () {
     'y': winState.y,
     'width': winState.width,
     'height': winState.height,
-    'icon': __dirname + 'icon.png'
+    'icon': __dirname + 'icon.png',
+    show: false
   })
 
   // Register listeners on the window, so we can update the state
@@ -34,6 +39,10 @@ function createWindow () {
 
   win.on('closed', (event) => {
     win = null
+  })
+
+  win.once('ready-to-show', () => {
+    win.show()
   })
 
   win.on('close', (e) => {
@@ -48,7 +57,11 @@ function createWindow () {
   })
 
   win.webContents.session.clearCache(function(){
-    win.loadURL('file://' + __dirname + '/index.html');
+    let url = 'file://' + __dirname + '/index.html';
+     if ('APP_RELATIVE_PATH' in process.env) {
+       url = 'file://' + __dirname + '/' + process.env.APP_RELATIVE_PATH;
+     }
+    win.loadURL(url);
   });
 }
 

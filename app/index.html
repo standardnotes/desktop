@@ -5,39 +5,40 @@
     <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
     <meta content="width=device-width, initial-scale=1" name="viewport"/>
     <meta name="theme-color" content="#ffffff">
-
-    <meta content="Standard Notes" name="application-name"/>
-    <base href="./"></base>
-
-    <title> </title>
+    <title>Notes</title>
 
     <script>
+      try {
+        window.nodeRequire = require;
+        delete window.require;
+        delete window.exports;
+        delete window.module;
 
-      window.nodeRequire = require;
-      delete window.require;
-      delete window.exports;
-      delete window.module;
+        const {remote} = window.nodeRequire('electron')
+        const {Menu, MenuItem} = remote
 
-      const {remote} = window.nodeRequire('electron')
-      const {Menu, MenuItem} = remote
-
-      window.addEventListener('contextmenu', (e) => {
+        window.addEventListener('contextmenu', (e) => {
           e.preventDefault();
           var mainMenu = Menu.getApplicationMenu().items.filter(function(item){
             return item.label == "Edit";
           })[0].submenu;
           mainMenu.popup(remote.getCurrentWindow());
-      }, false);
+        }, false);
+      }
+      catch (e) {
+        console.log(e);
+      }
 
     </script>
 
-    <script src="https://app.standardnotes.org/assets/compiled.min.js" debug="false"></script>
+    <script src="https://app.standardnotes.org/assets/compiled.min.js" debug="true"></script>
     <link rel="stylesheet" media="all" href="https://app.standardnotes.org/assets/app.css" debug="false" />
 
   </head>
 
   <body ng-class="bodyClass">
-    <div ui-view="content"></div>
+    <div ui-view="content">
+    </div>
   </body>
 
 </html>
