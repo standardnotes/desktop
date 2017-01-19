@@ -13,6 +13,17 @@ process.on('uncaughtException', function (err) {
   console.log(err);
 })
 
+let darwin = process.platform === 'darwin'
+
+// Quit when all windows are closed.
+app.on('window-all-closed', () => {
+  // On macOS it is common for applications and their menu bar
+  // to stay active until the user quits explicitly with Cmd + Q
+  if (!darwin) {
+    app.quit()
+  }
+})
+
 function createWindow () {
 
   // Load the previous state with fallback to defaults
@@ -49,7 +60,7 @@ function createWindow () {
     if (willQuitApp) {
       /* the user tried to quit the app */
       win = null;
-    } else {
+    } else if(darwin) {
       /* the user only tried to close the window */
       e.preventDefault();
       win.hide();

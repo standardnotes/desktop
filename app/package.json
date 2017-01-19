@@ -3,7 +3,7 @@
   "productName" : "Standard Notes",
   "description": "A standard notes app with an un-standard focus on longevity, portability, and privacy.",
   "author": "Standard Notes <standardnotes@bitar.io>",
-  "version" : "0.1.1",
+  "version" : "0.1.2",
   "dependencies" : {
     "electron-window-state": "^4.0.1"
   }
