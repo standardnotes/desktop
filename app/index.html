@@ -9,10 +9,16 @@
 
     <script>
       try {
+        const {ipcRenderer} = require('electron');
+
         window.nodeRequire = require;
         delete window.require;
         delete window.exports;
         delete window.module;
+
+        ipcRenderer.on('notify', function (event, message) {
+            alert(message);
+        });
 
         const {remote} = window.nodeRequire('electron')
         const {Menu, MenuItem} = remote
@@ -31,7 +37,7 @@
 
     </script>
 
-    <script src="./js/compiled.min.js" debug="true"></script>
+    <script src="./js/compiled.js" debug="false"></script>
     <link rel="stylesheet" media="all" href="./stylesheets/app.css" debug="false" />
 
   </head>

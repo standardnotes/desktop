@@ -12,6 +12,10 @@ app.setName('Standard Notes');
 let win
 let willQuitApp = false;
 
+autoUpdater.on("update-downloaded", function() {
+  win.webContents.send("notify", "A new update is ready to install. Updates address performance and security issues, as well as bug fixes and feature enhancements. Simply quit Standard Notes and re-open it for the update to be applied.")
+})
+
 process.on('uncaughtException', function (err) {
   console.log(err);
 })

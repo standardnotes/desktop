@@ -21,7 +21,7 @@
   "scripts": {
     "pack": "build --dir",
     "dist": "build -mwl --x64 --ia32",
-    "release": "build",
+    "release": "build -mwl --x64 --ia32",
     "distwin": "build -w --x64 --ia32",
     "distmac": "build -m",
     "start": "electron . --enable-logging",
