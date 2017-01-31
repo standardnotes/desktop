@@ -1,7 +1,10 @@
+if (require('electron-squirrel-startup')) return;
+
 const {app, Menu, BrowserWindow} = require('electron')
 const path = require('path')
-
+import {autoUpdater} from "electron-updater"
 const url = require('url')
+var os = require('os');
 const windowStateKeeper = require('electron-window-state')
 
 app.setName('Standard Notes');
@@ -74,6 +77,8 @@ function createWindow () {
      }
     win.loadURL(url);
   });
+
+  autoUpdater.checkForUpdates()
 }
 
 app.on('before-quit', () => willQuitApp = true);
