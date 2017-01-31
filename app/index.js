@@ -7,9 +7,6 @@ const isDev = require('electron-is-dev');
 const log = require('electron-log')
 log.transports.file.level = 'info';
 
-log.info('whatup');
-log.info("is dev", isDev);
-
 app.setName('Standard Notes');
 
 let win
