@@ -1,6 +1,6 @@
 {
   "name": "standard-notes",
-  "version": "0.1.22",
+  "version": "0.2.0",
   "main": "./app/index.js",
   "devDependencies": {
     "electron": "^1.4.14",
@@ -21,7 +21,7 @@
   "scripts": {
     "pack": "build --dir",
     "dist": "build -mwl --x64 --ia32",
-    "release": "build -m",
+    "release": "build",
     "distwin": "build -w --x64 --ia32",
     "distmac": "build -m",
     "start": "electron . --enable-logging",
