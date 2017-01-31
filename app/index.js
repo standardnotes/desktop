@@ -1,15 +1,19 @@
 const {app, Menu, BrowserWindow} = require('electron')
 const path = require('path')
-const autoUpdater = require("electron-updater")
+const {autoUpdater} = require("electron-updater")
 const url = require('url')
-var os = require('os');
 const windowStateKeeper = require('electron-window-state')
+const isDev = require('electron-is-dev');
+const log = require('electron-log')
+log.transports.file.level = 'info';
+
+log.info('whatup');
+log.info("is dev", isDev);
 
 app.setName('Standard Notes');
 
 let win
 let willQuitApp = false;
-let isDevelopment = process.env.NODE_ENV === 'development';
 
 process.on('uncaughtException', function (err) {
   console.log(err);
@@ -77,9 +81,10 @@ function createWindow () {
     win.loadURL(url);
   });
 
-  // if(!isDevelopment) {
-    autoUpdater.checkForUpdates()
-  // }
+  autoUpdater.logger = log
+  if(!isDev) {
+    autoUpdater.checkForUpdates();
+  }
 }
 
 app.on('before-quit', () => willQuitApp = true);
