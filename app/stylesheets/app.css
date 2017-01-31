@@ -429,6 +429,10 @@ p {
   min-width: 0;
   font-size: 17px;
 }
+.app .section .scrollable {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
 .app .section > .content {
   height: 100%;
   max-height: 100%;
@@ -896,6 +900,9 @@ a.disabled {
 .tags .tag-add-button:hover {
   background-color: rgba(215, 215, 215, 0.8) !important;
 }
+.tags .scrollable {
+  height: calc(100vh - (55px + 25px));
+}
 .tags .tag {
   height: 30px;
   padding: 5px 12px;
@@ -987,6 +994,13 @@ a.disabled {
   border: none;
   width: 100%;
 }
+.notes .scrollable {
+  height: calc(100vh - (130px + 25px));
+}
+.notes .infinite-scroll {
+  overflow-x: hidden;
+  height: inherit;
+}
 .notes .note {
   width: 100%;
   padding: 15px;
@@ -997,7 +1011,6 @@ a.disabled {
 .notes .note > .name {
   font-weight: 600;
   overflow: hidden;
-  white-space: nowrap;
   text-overflow: ellipsis;
 }
 .notes .note > .date {
