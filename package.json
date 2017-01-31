@@ -15,7 +15,7 @@
       "iconUrl": "(windows-only) https link to icon"
     },
     "linux": {
-      "icon": "./icon/icon.png"
+      "icon": "icon/icon.png"
     }
   },
   "scripts": {
@@ -24,7 +24,6 @@
     "release" : "build -m",
     "distwin": "build -w --x64 --ia32",
     "start": "electron . --enable-logging",
-    "postinstall": "install-app-deps",
-    "build": "electron-packager . 'Standard Notes' --platform=all --icon=icon/icon --overwrite --osx-sign='Mac Developer ID Application: xxx' --out=dist"
+    "postinstall": "install-app-deps"
   }
 }

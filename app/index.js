@@ -1,8 +1,6 @@
-if (require('electron-squirrel-startup')) return;
-
 const {app, Menu, BrowserWindow} = require('electron')
 const path = require('path')
-import {autoUpdater} from "electron-updater"
+const autoUpdater = require("electron-updater")
 const url = require('url')
 var os = require('os');
 const windowStateKeeper = require('electron-window-state')
@@ -11,6 +9,7 @@ app.setName('Standard Notes');
 
 let win
 let willQuitApp = false;
+let isDevelopment = process.env.NODE_ENV === 'development';
 
 process.on('uncaughtException', function (err) {
   console.log(err);
@@ -78,7 +77,9 @@ function createWindow () {
     win.loadURL(url);
   });
 
-  autoUpdater.checkForUpdates()
+  // if(!isDevelopment) {
+    autoUpdater.checkForUpdates()
+  // }
 }
 
 app.on('before-quit', () => willQuitApp = true);
