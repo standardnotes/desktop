@@ -6,6 +6,7 @@ const windowStateKeeper = require('electron-window-state')
 const isDev = require('electron-is-dev');
 const log = require('electron-log')
 log.transports.file.level = 'info';
+const shell = require('electron').shell;
 
 app.setName('Standard Notes');
 
@@ -82,6 +83,13 @@ function createWindow () {
     win.loadURL(url);
   });
 
+  // handle link clicks
+  win.webContents.on('new-window', function(e, url) {
+    e.preventDefault();
+    shell.openExternal(url);
+  });
+
+  // auto updater
   autoUpdater.logger = log
   if(!isDev) {
     autoUpdater.checkForUpdates();
@@ -130,9 +138,6 @@ app.on('ready', function(){
         },
         {
           role: 'pasteandmatchstyle'
-        },
-        {
-          role: 'delete'
         },
         {
           role: 'selectall'
