@@ -35,6 +35,16 @@
         console.log(e);
       }
 
+      // load zip library (for exporting items as zip)
+      var scriptTag = document.createElement('script');
+      scriptTag.src = "./js/zip/zip.js";
+      scriptTag.async = true;
+      var headTag = document.getElementsByTagName('head')[0];
+      headTag.appendChild(scriptTag);
+      scriptTag.onload = function() {
+        zip.workerScriptsPath = "js/zip/";
+      }
+
     </script>
 
     <script src="./js/compiled.js" debug="false"></script>
