@@ -91,6 +91,13 @@ function createWindow () {
     shell.openExternal(url);
   });
 
+  // handle link clicks (this event is fired instead of
+  // 'new-window' when target is not set to _blank)  
+  win.webContents.on('will-navigate', function(e, url) {
+    e.preventDefault();
+    shell.openExternal(url);
+  });
+
   // auto updater
   autoUpdater.logger = log
   if(!isDev) {
