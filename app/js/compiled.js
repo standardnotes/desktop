@@ -40804,14 +40804,8 @@ var EncryptionHelper = function () {
   _createClass(EncryptionHelper, null, [{
     key: 'encryptItem',
     value: function encryptItem(item, key) {
-      var item_key = null;
-      if (item.enc_item_key) {
-        // we reuse the key, but this is optional
-        item_key = Neeto.crypto.decryptText(item.enc_item_key, key);
-      } else {
-        item_key = Neeto.crypto.generateRandomEncryptionKey();
-        item.enc_item_key = Neeto.crypto.encryptText(item_key, key);
-      }
+      var item_key = Neeto.crypto.generateRandomEncryptionKey();
+      item.enc_item_key = Neeto.crypto.encryptText(item_key, key);
 
       var ek = Neeto.crypto.firstHalfOfKey(item_key);
       var ak = Neeto.crypto.secondHalfOfKey(item_key);
@@ -41352,10 +41346,6 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     } else {
       this.editorMode = 'preview';
     }
-  };
-
-  this.clickedMenu = function () {
-    this.showMenu = !this.showMenu;
   };
 
   this.deleteNote = function () {
@@ -41912,6 +41902,7 @@ var Item = function () {
     key: 'updateFromJSON',
     value: function updateFromJSON(json) {
       _.merge(this, json);
+
       if (this.created_at) {
         this.created_at = new Date(this.created_at);
         this.updated_at = new Date(this.updated_at);
@@ -42189,6 +42180,7 @@ var Extension = function (_Item) {
       _get(Extension.prototype.__proto__ || Object.getPrototypeOf(Extension.prototype), 'mapContentToLocalProperties', this).call(this, contentObject);
       this.name = contentObject.name;
       this.url = contentObject.url;
+      this.supported_types = contentObject.supported_types;
       this.actions = contentObject.actions.map(function (action) {
         return new Action(action);
       });
@@ -42212,7 +42204,8 @@ var Extension = function (_Item) {
       var params = {
         name: this.name,
         url: this.url,
-        actions: this.actions
+        actions: this.actions,
+        supported_types: this.supported_types
       };
 
       _.merge(params, _get(Extension.prototype.__proto__ || Object.getPrototypeOf(Extension.prototype), 'structureParams', this).call(this));
@@ -42566,13 +42559,12 @@ var ItemParams = function () {
         }
 
         Neeto.crypto.computeEncryptionKeysForUser(_.merge({ password: password }, authParams), function (keys) {
-          var mk = keys.mk;
           var requestUrl = url + "/auth/sign_in";
           var request = Restangular.oneUrl(requestUrl, requestUrl);
           var params = { password: keys.pw, email: email };
           _.merge(request, params);
           request.post().then(function (response) {
-            this.handleAuthResponse(response, email, url, authParams, mk, keys.pw);
+            this.handleAuthResponse(response, email, url, authParams, keys.mk, keys.pw);
             callback(response);
           }.bind(this)).catch(function (response) {
             console.log("Error logging in", response);
@@ -42583,7 +42575,9 @@ var ItemParams = function () {
     };
 
     this.handleAuthResponse = function (response, email, url, authParams, mk, pw) {
-      localStorage.setItem("server", url);
+      if (url) {
+        localStorage.setItem("server", url);
+      }
       localStorage.setItem("user", JSON.stringify(response.plain().user));
       localStorage.setItem("auth_params", JSON.stringify(_.omit(authParams, ["pw_nonce"])));
       localStorage.setItem("mk", mk);
@@ -42593,13 +42587,12 @@ var ItemParams = function () {
 
     this.register = function (url, email, password, callback) {
       Neeto.crypto.generateInitialEncryptionKeysForUser({ password: password, email: email }, function (keys, authParams) {
-        var mk = keys.mk;
         var requestUrl = url + "/auth";
         var request = Restangular.oneUrl(requestUrl, requestUrl);
         var params = _.merge({ password: keys.pw, email: email }, authParams);
         _.merge(request, params);
         request.post().then(function (response) {
-          this.handleAuthResponse(response, email, url, authParams, mk, keys.pw);
+          this.handleAuthResponse(response, email, url, authParams, keys.mk, keys.pw);
           callback(response);
         }.bind(this)).catch(function (response) {
           console.log("Registration error", response);
@@ -42608,55 +42601,25 @@ var ItemParams = function () {
       }.bind(this));
     };
 
-    // this.changePassword = function(current_password, new_password) {
-    //     this.getAuthParamsForEmail(email, function(authParams){
-    //       if(!authParams) {
-    //         callback(null);
-    //         return;
-    //       }
-    //       Neeto.crypto.computeEncryptionKeysForUser(_.merge({password: current_password, email: user.email}, authParams), function(currentKeys) {
-    //         Neeto.crypto.computeEncryptionKeysForUser(_.merge({password: new_password, email: user.email}, authParams), function(newKeys){
-    //           var data = {};
-    //           data.current_password = currentKeys.pw;
-    //           data.password = newKeys.pw;
-    //           data.password_confirmation = newKeys.pw;
-    //
-    //           var user = this.user;
-    //
-    //           this._performPasswordChange(currentKeys, newKeys, function(response){
-    //             if(response && !response.error) {
-    //               // this.showNewPasswordForm = false;
-    //               // reencrypt data with new mk
-    //               this.reencryptAllItemsAndSave(user, newKeys.mk, currentKeys.mk, function(success){
-    //                 if(success) {
-    //                   this.setMk(newKeys.mk);
-    //                   alert("Your password has been changed and your data re-encrypted.");
-    //                 } else {
-    //                   // rollback password
-    //                   this._performPasswordChange(newKeys, currentKeys, function(response){
-    //                     alert("There was an error changing your password. Your password has been rolled back.");
-    //                     window.location.reload();
-    //                   })
-    //                 }
-    //               }.bind(this));
-    //             } else {
-    //               // this.showNewPasswordForm = false;
-    //               alert("There was an error changing your password. Please try again.");
-    //             }
-    //           }.bind(this))
-    //         }.bind(this));
-    //       }.bind(this));
-    //     }.bind(this));
-    // }
+    this.changePassword = function (email, new_password, callback) {
+      Neeto.crypto.generateInitialEncryptionKeysForUser({ password: new_password, email: email }, function (keys, authParams) {
+        var requestUrl = localStorage.getItem("server") + "/auth/change_pw";
+        var request = Restangular.oneUrl(requestUrl, requestUrl);
+        var params = _.merge({ new_password: keys.pw }, authParams);
+        _.merge(request, params);
 
-    this._performPasswordChange = function (url, email, current_keys, new_keys, callback) {
-      var requestUrl = url + "/auth";
-      var request = Restangular.oneUrl(requestUrl, requestUrl);
-      var params = { password: new_keys.pw, password_confirmation: new_keys.pw, current_password: current_keys.pw, email: email };
-      _.merge(request, params);
-      request.patch().then(function (response) {
-        callback(response);
-      });
+        request.post().then(function (response) {
+          this.handleAuthResponse(response, email, null, authParams, keys.mk, keys.pw);
+          callback(response.plain());
+        }.bind(this)).catch(function (response) {
+          var error = response.data;
+          if (!error) {
+            error = { message: "Something went wrong while changing your password. Your password was not changed. Please try again." };
+          }
+          console.log("Change pw error", response);
+          callback({ error: error });
+        });
+      }.bind(this));
     };
 
     this.staticifyObject = function (object) {
@@ -42775,7 +42738,6 @@ var DBManager = function () {
       this.openDatabase(function (db) {
         var request = db.transaction("items", "readwrite").objectStore("items").delete(item.uuid);
         request.onsuccess = function (event) {
-          console.log("Successfully deleted item", item.uuid);
           if (callback) {
             callback(true);
           }
@@ -42824,6 +42786,30 @@ angular.module('app.frontend').service('dbManager', DBManager);
     }
   };
 }]);
+;angular.module('app.frontend').directive('clickOutside', ['$document', function ($document) {
+  return {
+    restrict: 'A',
+    replace: false,
+    link: function link($scope, $element, attrs) {
+
+      var didApplyClickOutside = false;
+
+      $element.bind('click', function (e) {
+        didApplyClickOutside = false;
+        if (attrs.isOpen) {
+          e.stopPropagation();
+        }
+      });
+
+      $document.bind('click', function () {
+        if (!didApplyClickOutside) {
+          $scope.$apply(attrs.clickOutside);
+          didApplyClickOutside = true;
+        }
+      });
+    }
+  };
+}]);
 ;angular.module('app.frontend').directive('delayHide', ['$timeout', function ($timeout) {
   return {
     restrict: 'A',
@@ -42844,11 +42830,15 @@ angular.module('app.frontend').service('dbManager', DBManager);
       });
 
       function showSpinner() {
+        if (scope.hidePromise) {
+          $timeout.cancel(scope.hidePromise);
+          scope.hidePromise = null;
+        }
         showElement(true);
       }
 
       function hideSpinner() {
-        $timeout(showElement.bind(this, false), getDelay());
+        scope.hidePromise = $timeout(showElement.bind(this, false), getDelay());
       }
 
       function showElement(show) {
@@ -42948,10 +42938,6 @@ var AccountMenu = function () {
 
       $scope.syncStatus = syncManager.syncStatus;
 
-      $scope.changePasswordPressed = function () {
-        $scope.showNewPasswordForm = !$scope.showNewPasswordForm;
-      };
-
       $scope.encryptionKey = function () {
         return syncManager.masterKey;
       };
@@ -42964,16 +42950,55 @@ var AccountMenu = function () {
         return $scope.server + '/dashboard/?server=' + $scope.server + '&id=' + $scope.user.email + '&pw=' + $scope.serverPassword();
       };
 
+      $scope.newPasswordData = {};
+
+      $scope.showPasswordChangeForm = function () {
+        $scope.newPasswordData.showForm = true;
+      };
+
       $scope.submitPasswordChange = function () {
-        $scope.passwordChangeData.status = "Generating New Keys...";
 
-        $timeout(function () {
-          if (data.password != data.password_confirmation) {
-            alert("Your new password does not match its confirmation.");
-            return;
-          }
+        if ($scope.newPasswordData.newPassword != $scope.newPasswordData.newPasswordConfirmation) {
+          alert("Your new password does not match its confirmation.");
+          $scope.newPasswordData.status = null;
+          return;
+        }
 
-          authManager.changePassword($scope.passwordChangeData.current_password, $scope.passwordChangeData.new_password, function (response) {});
+        var email = $scope.user.email;
+        if (!email) {
+          alert("We don't have your email stored. Please log out then log back in to fix this issue.");
+          $scope.newPasswordData.status = null;
+          return;
+        }
+
+        $scope.newPasswordData.status = "Generating New Keys...";
+        $scope.newPasswordData.showForm = false;
+
+        // perform a sync beforehand to pull in any last minutes changes before we change the encryption key (and thus cant decrypt new changes)
+        syncManager.sync(function (response) {
+          authManager.changePassword(email, $scope.newPasswordData.newPassword, function (response) {
+            if (response.error) {
+              alert("There was an error changing your password. Please try again.");
+              $scope.newPasswordData.status = null;
+              return;
+            }
+
+            // re-encrypt all items
+            $scope.newPasswordData.status = "Re-encrypting all items with your new key...";
+
+            modelManager.setAllItemsDirty();
+            syncManager.sync(function (response) {
+              if (response.error) {
+                alert("There was an error re-encrypting your items. Your password was changed, but not all your items were properly re-encrypted and synced. You should try syncing again. If all else fails, you should restore your notes from backup.");
+                return;
+              }
+              $scope.newPasswordData.status = "Successfully changed password and re-encrypted all items.";
+              $timeout(function () {
+                alert("Your password has been changed, and your items successfully re-encrypted and synced. You must sign out of all other signed in applications and sign in again, or else you may corrupt your data.");
+                $scope.newPasswordData = {};
+              }, 1000);
+            });
+          });
         });
       };
 
@@ -43046,6 +43071,8 @@ var AccountMenu = function () {
               $scope.importData = null;
               if (!response) {
                 alert("There was an error importing your data. Please try again.");
+              } else {
+                alert("Your data was successfully imported.");
               }
             });
           });
@@ -43079,8 +43106,6 @@ var AccountMenu = function () {
       };
 
       $scope.importJSONData = function (data, password, callback) {
-        console.log("Importing data", data);
-
         var onDataReady = function () {
           var items = modelManager.mapResponseItemsToLocalModels(data.items);
           items.forEach(function (item) {
@@ -43181,14 +43206,16 @@ var AccountMenu = function () {
         var link = document.createElement('a');
         link.setAttribute('download', fileName);
         link.href = hrefForData(data);
+        document.body.appendChild(link);
         link.click();
+        link.remove();
       }
 
       $scope.downloadDataArchive = function () {
         // download in Standard File format
         var ek = $scope.archiveFormData.encrypted ? syncManager.masterKey : null;
         var data = $scope.itemsData(ek);
-        downloadData(data, 'SN Archive - ' + new Date() + '.json');
+        downloadData(data, 'SN Archive - ' + new Date() + '.txt');
 
         // download as zipped plain text files
         if (!ek) {
@@ -43239,6 +43266,8 @@ var ContextualExtensionsMenu = function () {
     value: ['$scope', 'modelManager', 'extensionManager', function controller($scope, modelManager, extensionManager) {
       'ngInject';
 
+      $scope.renderData = {};
+
       $scope.extensions = _.map(extensionManager.extensionsInContextOfItem($scope.item), function (ext) {
         return _.cloneDeep(ext);
       });
@@ -43280,10 +43309,29 @@ var ContextualExtensionsMenu = function () {
       }
 
       $scope.executeAction = function (action, extension) {
+        if (action.verb == "nested") {
+          action.showNestedActions = !action.showNestedActions;
+          return;
+        }
         action.running = true;
         extensionManager.executeAction(action, extension, $scope.item, function (response) {
           action.running = false;
+          $scope.handleActionResponse(action, response);
         });
+      };
+
+      $scope.handleActionResponse = function (action, response) {
+        switch (action.verb) {
+          case "render":
+            {
+              var item = response.item;
+              if (item.content_type == "Note") {
+                $scope.renderData.title = item.title;
+                $scope.renderData.text = item.text;
+                $scope.renderData.showRenderModal = true;
+              }
+            }
+        }
       };
 
       $scope.accessTypeForExtension = function (extension) {
@@ -43442,7 +43490,7 @@ var ExtensionManager = function () {
     key: 'extensionsInContextOfItem',
     value: function extensionsInContextOfItem(item) {
       return this.extensions.filter(function (ext) {
-        return ext.actionsWithContextForItem(item).length > 0;
+        return _.includes(ext.supported_types, item.content_type) || ext.actionsWithContextForItem(item).length > 0;
       });
     }
   }, {
@@ -43663,9 +43711,51 @@ var ExtensionManager = function () {
           {
             this.Restangular.oneUrl(action.url, action.url).get().then(function (response) {
               action.error = false;
-              var items = response.items;
-              this.modelManager.mapResponseItemsToLocalModels(items);
-              customCallback(items);
+              var items = response.items || [response.item];
+              EncryptionHelper.decryptMultipleItems(items, localStorage.getItem("mk"));
+              items = this.modelManager.mapResponseItemsToLocalModels(items);
+              var _iteratorNormalCompletion14 = true;
+              var _didIteratorError14 = false;
+              var _iteratorError14 = undefined;
+
+              try {
+                for (var _iterator14 = items[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+                  var item = _step14.value;
+
+                  item.setDirty(true);
+                }
+              } catch (err) {
+                _didIteratorError14 = true;
+                _iteratorError14 = err;
+              } finally {
+                try {
+                  if (!_iteratorNormalCompletion14 && _iterator14.return) {
+                    _iterator14.return();
+                  }
+                } finally {
+                  if (_didIteratorError14) {
+                    throw _iteratorError14;
+                  }
+                }
+              }
+
+              this.syncManager.sync(null);
+              customCallback({ items: items });
+            }.bind(this)).catch(function (response) {
+              action.error = true;
+              customCallback(null);
+            });
+
+            break;
+          }
+
+        case "render":
+          {
+            this.Restangular.oneUrl(action.url, action.url).get().then(function (response) {
+              action.error = false;
+              EncryptionHelper.decryptItem(response.item, localStorage.getItem("mk"));
+              var item = this.modelManager.createItem(response.item);
+              customCallback({ item: item });
             }.bind(this)).catch(function (response) {
               action.error = true;
               customCallback(null);
@@ -43796,7 +43886,11 @@ var ExtensionManager = function () {
   }, {
     key: 'outgoingParamsForItem',
     value: function outgoingParamsForItem(item, extension) {
-      var itemParams = new ItemParams(item, this.syncManager.masterKey);
+      var ek = this.syncManager.masterKey;
+      if (!this.extensionUsesEncryptedData(extension)) {
+        ek = null;
+      }
+      var itemParams = new ItemParams(item, ek);
       return itemParams.paramsForExtension();
     }
   }, {
@@ -43878,6 +43972,7 @@ var ModelManager = function () {
     this.itemChangeObservers = [];
     this.items = [];
     this._extensions = [];
+    this.acceptableContentTypes = ["Note", "Tag", "Extension"];
   }
 
   _createClass(ModelManager, [{
@@ -43924,17 +44019,17 @@ var ModelManager = function () {
     key: 'mapResponseItemsToLocalModelsOmittingFields',
     value: function mapResponseItemsToLocalModelsOmittingFields(items, omitFields) {
       var models = [];
-      var _iteratorNormalCompletion14 = true;
-      var _didIteratorError14 = false;
-      var _iteratorError14 = undefined;
+      var _iteratorNormalCompletion15 = true;
+      var _didIteratorError15 = false;
+      var _iteratorError15 = undefined;
 
       try {
-        for (var _iterator14 = items[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-          var json_obj = _step14.value;
+        for (var _iterator15 = items[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+          var json_obj = _step15.value;
 
           json_obj = _.omit(json_obj, omitFields || []);
           var item = this.findItem(json_obj["uuid"]);
-          if (json_obj["deleted"] == true) {
+          if (json_obj["deleted"] == true || !_.includes(this.acceptableContentTypes, json_obj["content_type"])) {
             if (item) {
               this.removeItemLocally(item);
             }
@@ -43958,43 +44053,6 @@ var ModelManager = function () {
           models.push(item);
         }
       } catch (err) {
-        _didIteratorError14 = true;
-        _iteratorError14 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion14 && _iterator14.return) {
-            _iterator14.return();
-          }
-        } finally {
-          if (_didIteratorError14) {
-            throw _iteratorError14;
-          }
-        }
-      }
-
-      this.notifySyncObserversOfModels(models);
-
-      return models;
-    }
-  }, {
-    key: 'notifySyncObserversOfModels',
-    value: function notifySyncObserversOfModels(models) {
-      var _iteratorNormalCompletion15 = true;
-      var _didIteratorError15 = false;
-      var _iteratorError15 = undefined;
-
-      try {
-        for (var _iterator15 = this.itemSyncObservers[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-          var observer = _step15.value;
-
-          var relevantItems = models.filter(function (item) {
-            return item.content_type == observer.type;
-          });
-          if (relevantItems.length > 0) {
-            observer.callback(relevantItems);
-          }
-        }
-      } catch (err) {
         _didIteratorError15 = true;
         _iteratorError15 = err;
       } finally {
@@ -44008,22 +44066,25 @@ var ModelManager = function () {
           }
         }
       }
+
+      this.notifySyncObserversOfModels(models);
+
+      return models;
     }
   }, {
-    key: 'notifyItemChangeObserversOfModels',
-    value: function notifyItemChangeObserversOfModels(models) {
+    key: 'notifySyncObserversOfModels',
+    value: function notifySyncObserversOfModels(models) {
       var _iteratorNormalCompletion16 = true;
       var _didIteratorError16 = false;
       var _iteratorError16 = undefined;
 
       try {
-        for (var _iterator16 = this.itemChangeObservers[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+        for (var _iterator16 = this.itemSyncObservers[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
           var observer = _step16.value;
 
           var relevantItems = models.filter(function (item) {
-            return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
+            return item.content_type == observer.type;
           });
-
           if (relevantItems.length > 0) {
             observer.callback(relevantItems);
           }
@@ -44039,6 +44100,40 @@ var ModelManager = function () {
         } finally {
           if (_didIteratorError16) {
             throw _iteratorError16;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'notifyItemChangeObserversOfModels',
+    value: function notifyItemChangeObserversOfModels(models) {
+      var _iteratorNormalCompletion17 = true;
+      var _didIteratorError17 = false;
+      var _iteratorError17 = undefined;
+
+      try {
+        for (var _iterator17 = this.itemChangeObservers[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+          var observer = _step17.value;
+
+          var relevantItems = models.filter(function (item) {
+            return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
+          });
+
+          if (relevantItems.length > 0) {
+            observer.callback(relevantItems);
+          }
+        }
+      } catch (err) {
+        _didIteratorError17 = true;
+        _iteratorError17 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion17 && _iterator17.return) {
+            _iterator17.return();
+          }
+        } finally {
+          if (_didIteratorError17) {
+            throw _iteratorError17;
           }
         }
       }
@@ -44108,13 +44203,13 @@ var ModelManager = function () {
         return;
       }
 
-      var _iteratorNormalCompletion17 = true;
-      var _didIteratorError17 = false;
-      var _iteratorError17 = undefined;
+      var _iteratorNormalCompletion18 = true;
+      var _didIteratorError18 = false;
+      var _iteratorError18 = undefined;
 
       try {
-        for (var _iterator17 = contentObject.references[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
-          var reference = _step17.value;
+        for (var _iterator18 = contentObject.references[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
+          var reference = _step18.value;
 
           var referencedItem = this.findItem(reference.uuid);
           if (referencedItem) {
@@ -44125,16 +44220,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError17 = true;
-        _iteratorError17 = err;
+        _didIteratorError18 = true;
+        _iteratorError18 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion17 && _iterator17.return) {
-            _iterator17.return();
+          if (!_iteratorNormalCompletion18 && _iterator18.return) {
+            _iterator18.return();
           }
         } finally {
-          if (_didIteratorError17) {
-            throw _iteratorError17;
+          if (_didIteratorError18) {
+            throw _iteratorError18;
           }
         }
       }
@@ -44169,27 +44264,27 @@ var ModelManager = function () {
   }, {
     key: 'clearDirtyItems',
     value: function clearDirtyItems(items) {
-      var _iteratorNormalCompletion18 = true;
-      var _didIteratorError18 = false;
-      var _iteratorError18 = undefined;
+      var _iteratorNormalCompletion19 = true;
+      var _didIteratorError19 = false;
+      var _iteratorError19 = undefined;
 
       try {
-        for (var _iterator18 = items[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
-          var item = _step18.value;
+        for (var _iterator19 = items[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
+          var item = _step19.value;
 
           item.setDirty(false);
         }
       } catch (err) {
-        _didIteratorError18 = true;
-        _iteratorError18 = err;
+        _didIteratorError19 = true;
+        _iteratorError19 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion18 && _iterator18.return) {
-            _iterator18.return();
+          if (!_iteratorNormalCompletion19 && _iterator19.return) {
+            _iterator19.return();
           }
         } finally {
-          if (_didIteratorError18) {
-            throw _iteratorError18;
+          if (_didIteratorError19) {
+            throw _iteratorError19;
           }
         }
       }
@@ -44207,6 +44302,41 @@ var ModelManager = function () {
         item.setDirty(true);
       }
       item.removeAllRelationships();
+    }
+
+    /* Used when changing encryption key */
+
+  }, {
+    key: 'setAllItemsDirty',
+    value: function setAllItemsDirty() {
+      var relevantItems = this.allItems.filter(function (item) {
+        return _.includes(this.acceptableContentTypes, item.content_type);
+      }.bind(this));
+
+      var _iteratorNormalCompletion20 = true;
+      var _didIteratorError20 = false;
+      var _iteratorError20 = undefined;
+
+      try {
+        for (var _iterator20 = relevantItems[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
+          var item = _step20.value;
+
+          item.setDirty(true);
+        }
+      } catch (err) {
+        _didIteratorError20 = true;
+        _iteratorError20 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion20 && _iterator20.return) {
+            _iterator20.return();
+          }
+        } finally {
+          if (_didIteratorError20) {
+            throw _iteratorError20;
+          }
+        }
+      }
     }
   }, {
     key: 'removeItemLocally',
@@ -44315,29 +44445,29 @@ var SyncManager = function () {
     value: function syncOffline(items, callback) {
       this.writeItemsToLocalStorage(items, true, function (responseItems) {
         // delete anything needing to be deleted
-        var _iteratorNormalCompletion19 = true;
-        var _didIteratorError19 = false;
-        var _iteratorError19 = undefined;
+        var _iteratorNormalCompletion21 = true;
+        var _didIteratorError21 = false;
+        var _iteratorError21 = undefined;
 
         try {
-          for (var _iterator19 = items[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
-            var item = _step19.value;
+          for (var _iterator21 = items[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
+            var item = _step21.value;
 
             if (item.deleted) {
               this.modelManager.removeItemLocally(item);
             }
           }
         } catch (err) {
-          _didIteratorError19 = true;
-          _iteratorError19 = err;
+          _didIteratorError21 = true;
+          _iteratorError21 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion19 && _iterator19.return) {
-              _iterator19.return();
+            if (!_iteratorNormalCompletion21 && _iterator21.return) {
+              _iterator21.return();
             }
           } finally {
-            if (_didIteratorError19) {
-              throw _iteratorError19;
+            if (_didIteratorError21) {
+              throw _iteratorError21;
             }
           }
         }
@@ -44351,32 +44481,73 @@ var SyncManager = function () {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback) {
       var items = this.modelManager.allItems;
-      var _iteratorNormalCompletion20 = true;
-      var _didIteratorError20 = false;
-      var _iteratorError20 = undefined;
+      var _iteratorNormalCompletion22 = true;
+      var _didIteratorError22 = false;
+      var _iteratorError22 = undefined;
 
       try {
-        for (var _iterator20 = items[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
-          var item = _step20.value;
+        for (var _iterator22 = items[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
+          var item = _step22.value;
 
           item.setDirty(true);
         }
       } catch (err) {
-        _didIteratorError20 = true;
-        _iteratorError20 = err;
+        _didIteratorError22 = true;
+        _iteratorError22 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion20 && _iterator20.return) {
-            _iterator20.return();
+          if (!_iteratorNormalCompletion22 && _iterator22.return) {
+            _iterator22.return();
           }
         } finally {
-          if (_didIteratorError20) {
-            throw _iteratorError20;
+          if (_didIteratorError22) {
+            throw _iteratorError22;
           }
         }
       }
 
       this.writeItemsToLocalStorage(items, false, callback);
+    }
+  }, {
+    key: 'clearQueuedCallbacks',
+    value: function clearQueuedCallbacks() {
+      this._queuedCallbacks = [];
+    }
+  }, {
+    key: 'callQueuedCallbacksAndCurrent',
+    value: function callQueuedCallbacksAndCurrent(currentCallback, response) {
+      var allCallbacks = this.queuedCallbacks;
+      if (currentCallback) {
+        allCallbacks.push(currentCallback);
+      }
+      if (allCallbacks.length) {
+        var _iteratorNormalCompletion23 = true;
+        var _didIteratorError23 = false;
+        var _iteratorError23 = undefined;
+
+        try {
+          for (var _iterator23 = allCallbacks[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
+            var eachCallback = _step23.value;
+
+            eachCallback(response);
+          }
+        } catch (err) {
+          _didIteratorError23 = true;
+          _iteratorError23 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion23 && _iterator23.return) {
+              _iterator23.return();
+            }
+          } finally {
+            if (_didIteratorError23) {
+              throw _iteratorError23;
+            }
+          }
+        }
+
+        this.clearQueuedCallbacks();
+      }
     }
   }, {
     key: 'sync',
@@ -44386,6 +44557,9 @@ var SyncManager = function () {
 
       if (this.syncStatus.syncOpInProgress) {
         this.repeatOnCompletion = true;
+        if (callback) {
+          this.queuedCallbacks.push(callback);
+        }
         console.log("Sync op in progress; returning.");
         return;
       }
@@ -44400,18 +44574,17 @@ var SyncManager = function () {
         return;
       }
 
-      var isContinuationSync = this.needsMoreSync;
+      var isContinuationSync = this.syncStatus.needsMoreSync;
 
-      this.repeatOnCompletion = false;
       this.syncStatus.syncOpInProgress = true;
 
       var submitLimit = 100;
       var subItems = allDirtyItems.slice(0, submitLimit);
       if (subItems.length < allDirtyItems.length) {
         // more items left to be synced, repeat
-        this.needsMoreSync = true;
+        this.syncStatus.needsMoreSync = true;
       } else {
-        this.needsMoreSync = false;
+        this.syncStatus.needsMoreSync = false;
       }
 
       if (!isContinuationSync) {
@@ -44437,7 +44610,10 @@ var SyncManager = function () {
         this.$rootScope.$broadcast("sync:updated_token", this.syncToken);
 
         var retrieved = this.handleItemsResponse(response.retrieved_items, null);
+
         // merge only metadata for saved items
+        // we write saved items to disk now because it clears their dirty status then saves
+        // if we saved items before completion, we had have to save them as dirty and save them again on success as clean
         var omitFields = ["content", "auth_hash"];
         var saved = this.handleItemsResponse(response.saved_items, omitFields);
 
@@ -44453,14 +44629,17 @@ var SyncManager = function () {
         this.syncToken = response.sync_token;
         this.cursorToken = response.cursor_token;
 
-        if (this.cursorToken || this.repeatOnCompletion || this.needsMoreSync) {
+        if (this.cursorToken || this.syncStatus.needsMoreSync) {
+          setTimeout(function () {
+            this.sync(callback, options);
+          }.bind(this), 10); // wait 10ms to allow UI to update
+        } else if (this.repeatOnCompletion) {
+          this.repeatOnCompletion = false;
           setTimeout(function () {
             this.sync(callback, options);
           }.bind(this), 10); // wait 10ms to allow UI to update
         } else {
-          if (callback) {
-            callback(response);
-          }
+          this.callQueuedCallbacksAndCurrent(callback, response);
         }
       }.bind(this)).catch(function (response) {
         console.log("Sync error: ", response);
@@ -44472,9 +44651,7 @@ var SyncManager = function () {
 
         this.$rootScope.$broadcast("sync:error", error);
 
-        if (callback) {
-          callback({ error: "Sync error" });
-        }
+        this.callQueuedCallbacksAndCurrent(callback, { error: "Sync error" });
       }.bind(this));
     }
   }, {
@@ -44494,7 +44671,7 @@ var SyncManager = function () {
           var item = this.modelManager.findItem(itemResponse.uuid);
           var error = mapping.error;
           if (error.tag == "uuid_conflict") {
-            // uuid conflicts can occur if a user attempts to import an old data archive with uuids form the old account into a new account
+            // uuid conflicts can occur if a user attempts to import an old data archive with uuids from the old account into a new account
             this.modelManager.alternateUUIDForItem(item, handleNext);
           }
           ++i;
@@ -44573,6 +44750,14 @@ var SyncManager = function () {
         this._cursorToken = localStorage.getItem("cursorToken");
       }
       return this._cursorToken;
+    }
+  }, {
+    key: 'queuedCallbacks',
+    get: function get() {
+      if (!this._queuedCallbacks) {
+        this._queuedCallbacks = [];
+      }
+      return this._queuedCallbacks;
     }
   }]);
 
@@ -44657,6 +44842,13 @@ angular.module('app.frontend').service('syncManager', SyncManager);
     "    <div ng-if='user'>\n" +
     "      <h2>{{user.email}}</h2>\n" +
     "      <p>{{server}}</p>\n" +
+    "      <div class='bold mt-10 blue' delay-hide='true' delay='1000' show='syncStatus.syncOpInProgress || syncStatus.needsMoreSync'>\n" +
+    "        <div class='spinner inline mr-5 blue'></div>\n" +
+    "        {{\"Syncing\" + (syncStatus.total > 0 ? \":\" : \"\")}}\n" +
+    "        <span ng-if='syncStatus.total &gt; 0'>{{syncStatus.current}}/{{syncStatus.total}}</span>\n" +
+    "      </div>\n" +
+    "      <p class='bold mt-10 red block' ng-if='syncStatus.error'>Error syncing: {{syncStatus.error.message}}</p>\n" +
+    "      <a class='block mt-15' href='{{dashboardURL()}}' target='_blank'>→ Standard File Dashboard</a>\n" +
     "      <a class='block mt-5' ng-click='showCredentials = !showCredentials'>Show Credentials</a>\n" +
     "      <section class='gray-bg mt-10 medium-padding' ng-if='showCredentials'>\n" +
     "        <label class='block'>\n" +
@@ -44668,13 +44860,26 @@ angular.module('app.frontend').service('syncManager', SyncManager);
     "          <div class='wrap normal mt-1'>{{serverPassword() ? serverPassword() : 'Not available. Sign out then sign back in to compute.'}}</div>\n" +
     "        </label>\n" +
     "      </section>\n" +
-    "      <a class='block mt-5' href='{{dashboardURL()}}' target='_blank'>Standard File Dashboard</a>\n" +
-    "      <div class='bold mt-10 blue' delay-hide='true' delay='1000' show='syncStatus.syncOpInProgress'>\n" +
-    "        <div class='spinner inline mr-5 blue'></div>\n" +
-    "        Syncing\n" +
-    "        <span ng-if='syncStatus.total &gt; 0'>: {{syncStatus.current}}/{{syncStatus.total}}</span>\n" +
-    "      </div>\n" +
-    "      <p class='bold mt-10 red block' ng-if='syncStatus.error'>Error syncing: {{syncStatus.error.message}}</p>\n" +
+    "      <a class='block mt-5' ng-click='newPasswordData.changePassword = !newPasswordData.changePassword'>Change Password</a>\n" +
+    "      <section class='gray-bg mt-10 medium-padding' ng-if='newPasswordData.changePassword'>\n" +
+    "        <p class='bold'>Change Password (Beta)</p>\n" +
+    "        <p class='mt-10'>Since your encryption key is based on your password, changing your password requires all your notes and tags to be re-encrypted using your new key.</p>\n" +
+    "        <p class='mt-5'>If you have thousands of items, this can take several minutes — you must keep the application window open during this process.</p>\n" +
+    "        <p class='mt-5'>After changing your password, you must log out of all other applications currently signed in to your account.</p>\n" +
+    "        <p class='bold mt-5'>It is highly recommended you download a backup of your data before proceeding.</p>\n" +
+    "        <div class='mt-10' ng-if='!newPasswordData.status'>\n" +
+    "          <a class='red mr-5' ng-click='showPasswordChangeForm()' ng-if='!newPasswordData.showForm'>Continue</a>\n" +
+    "          <a ng-click='newPasswordData.changePassword = false; newPasswordData.showForm = false'>Cancel</a>\n" +
+    "          <div class='mt-10' ng-if='newPasswordData.showForm'>\n" +
+    "            <form>\n" +
+    "              <input class='form-control' ng-model='newPasswordData.newPassword' placeholder='Enter new password' type='text'>\n" +
+    "              <input class='form-control' ng-model='newPasswordData.newPasswordConfirmation' placeholder='Confirm new password' type='text'>\n" +
+    "              <button class='btn dark-button btn-block' ng-click='submitPasswordChange()'>Submit</button>\n" +
+    "            </form>\n" +
+    "          </div>\n" +
+    "        </div>\n" +
+    "        <p class='italic mt-10' ng-if='newPasswordData.status'>{{newPasswordData.status}}</p>\n" +
+    "      </section>\n" +
     "      <div class='medium-v-space'></div>\n" +
     "      <h4>Local Encryption</h4>\n" +
     "      <p>Notes are encrypted locally before being sent to the server. Neither the server owner nor an intrusive entity can decrypt your locally encrypted notes.</p>\n" +
@@ -44967,13 +45172,30 @@ angular.module('app.frontend').service('syncManager', SyncManager);
     "      <li class='action' ng-click='executeAction(action, extension)' ng-repeat='action in extension.actionsWithContextForItem(item)'>\n" +
     "        <div class='name'>{{action.label}}</div>\n" +
     "        <div class='desc'>{{action.desc}}</div>\n" +
+    "        <div ng-if='action.showNestedActions'>\n" +
+    "          <ul class='mt-10'>\n" +
+    "            <li class='action white-bg' ng-click='executeAction(subaction, extension); $event.stopPropagation()' ng-repeat='subaction in action.subactions' style='margin-top: -1px;'>\n" +
+    "              <div class='name'>{{subaction.label}}</div>\n" +
+    "              <div class='desc'>{{subaction.desc}}</div>\n" +
+    "              <span ng-if='subaction.running'>\n" +
+    "                <div class='spinner' style='margin-top: 3px;'></div>\n" +
+    "              </span>\n" +
+    "            </li>\n" +
+    "          </ul>\n" +
+    "        </div>\n" +
     "        <span ng-if='action.running'>\n" +
     "          <div class='spinner' style='margin-top: 3px;'></div>\n" +
     "        </span>\n" +
     "      </li>\n" +
     "    </ul>\n" +
     "  </div>\n" +
-    "</ul>\n"
+    "</ul>\n" +
+    "<div class='extension-render-modal' ng-click='renderData.showRenderModal = false' ng-if='renderData.showRenderModal'>\n" +
+    "  <div class='content'>\n" +
+    "    <h2>{{renderData.title}}</h2>\n" +
+    "    <p class='normal' style='white-space: pre-wrap; font-family: monospace; font-size: 16px;'>{{renderData.text}}</p>\n" +
+    "  </div>\n" +
+    "</div>\n"
   );
 
 
@@ -45183,8 +45405,8 @@ angular.module('app.frontend').service('syncManager', SyncManager);
     "      </div>\n" +
     "      <div class='section-menu'>\n" +
     "        <ul class='nav nav-pills'>\n" +
-    "          <li class='dropdown'>\n" +
-    "            <a class='dropdown-toggle' ng-click='ctrl.clickedMenu(); ctrl.showExtensions = false'>\n" +
+    "          <li class='dropdown' click-outside='ctrl.showMenu = false;' is-open='ctrl.showMenu'>\n" +
+    "            <a class='dropdown-toggle' ng-click='ctrl.showMenu = !ctrl.showMenu; ctrl.showExtensions = false;'>\n" +
     "              File\n" +
     "              <span class='caret'></span>\n" +
     "              <span class='sr-only'></span>\n" +
@@ -45204,8 +45426,8 @@ angular.module('app.frontend').service('syncManager', SyncManager);
     "            </ul>\n" +
     "          </li>\n" +
     "          <li class='sep'></li>\n" +
-    "          <li class='dropdown' ng-if='ctrl.hasAvailableExtensions()'>\n" +
-    "            <a class='dropdown-toggle' ng-click='ctrl.showExtensions = !ctrl.showExtensions; ctrl.showMenu = false'>\n" +
+    "          <li class='dropdown' click-outside='ctrl.showExtensions = false;' is-open='ctrl.showExtensions' ng-if='ctrl.hasAvailableExtensions()'>\n" +
+    "            <a class='dropdown-toggle' ng-click='ctrl.showExtensions = !ctrl.showExtensions; ctrl.showMenu = false;'>\n" +
     "              Extensions\n" +
     "              <span class='caret'></span>\n" +
     "              <span class='sr-only'></span>\n" +
@@ -45235,11 +45457,11 @@ angular.module('app.frontend').service('syncManager', SyncManager);
   $templateCache.put('frontend/header.html',
     "<div class='footer-bar'>\n" +
     "  <div class='pull-left'>\n" +
-    "    <div class='footer-bar-link'>\n" +
+    "    <div class='footer-bar-link' click-outside='ctrl.showAccountMenu = false;' is-open='ctrl.showAccountMenu'>\n" +
     "      <a ng-class='{red: ctrl.error}' ng-click='ctrl.accountMenuPressed()'>Account</a>\n" +
     "      <account-menu ng-if='ctrl.showAccountMenu'></account-menu>\n" +
     "    </div>\n" +
-    "    <div class='footer-bar-link'>\n" +
+    "    <div class='footer-bar-link' click-outside='ctrl.showExtensionsMenu = false;' is-open='ctrl.showExtensionsMenu'>\n" +
     "      <a ng-click='ctrl.toggleExtensions()'>Extensions</a>\n" +
     "      <global-extensions-menu ng-if='ctrl.showExtensionsMenu'></global-extensions-menu>\n" +
     "    </div>\n" +
