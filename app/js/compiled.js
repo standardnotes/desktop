@@ -39174,1292 +39174,6 @@ var n=this.__index__>=this.__values__.length;return{done:n,value:n?F:this.__valu
   });
   return restangular.name;
 }));
-;/**
- * marked - a markdown parser
- * Copyright (c) 2011-2014, Christopher Jeffrey. (MIT Licensed)
- * https://github.com/chjj/marked
- */
-
-;(function() {
-
-/**
- * Block-Level Grammar
- */
-
-var block = {
-  newline: /^\n+/,
-  code: /^( {4}[^\n]+\n*)+/,
-  fences: noop,
-  hr: /^( *[-*_]){3,} *(?:\n+|$)/,
-  heading: /^ *(#{1,6}) *([^\n]+?) *#* *(?:\n+|$)/,
-  nptable: noop,
-  lheading: /^([^\n]+)\n *(=|-){2,} *(?:\n+|$)/,
-  blockquote: /^( *>[^\n]+(\n(?!def)[^\n]+)*\n*)+/,
-  list: /^( *)(bull) [\s\S]+?(?:hr|def|\n{2,}(?! )(?!\1bull )\n*|\s*$)/,
-  html: /^ *(?:comment *(?:\n|\s*$)|closed *(?:\n{2,}|\s*$)|closing *(?:\n{2,}|\s*$))/,
-  def: /^ *\[([^\]]+)\]: *<?([^\s>]+)>?(?: +["(]([^\n]+)[")])? *(?:\n+|$)/,
-  table: noop,
-  paragraph: /^((?:[^\n]+\n?(?!hr|heading|lheading|blockquote|tag|def))+)\n*/,
-  text: /^[^\n]+/
-};
-
-block.bullet = /(?:[*+-]|\d+\.)/;
-block.item = /^( *)(bull) [^\n]*(?:\n(?!\1bull )[^\n]*)*/;
-block.item = replace(block.item, 'gm')
-  (/bull/g, block.bullet)
-  ();
-
-block.list = replace(block.list)
-  (/bull/g, block.bullet)
-  ('hr', '\\n+(?=\\1?(?:[-*_] *){3,}(?:\\n+|$))')
-  ('def', '\\n+(?=' + block.def.source + ')')
-  ();
-
-block.blockquote = replace(block.blockquote)
-  ('def', block.def)
-  ();
-
-block._tag = '(?!(?:'
-  + 'a|em|strong|small|s|cite|q|dfn|abbr|data|time|code'
-  + '|var|samp|kbd|sub|sup|i|b|u|mark|ruby|rt|rp|bdi|bdo'
-  + '|span|br|wbr|ins|del|img)\\b)\\w+(?!:/|[^\\w\\s@]*@)\\b';
-
-block.html = replace(block.html)
-  ('comment', /<!--[\s\S]*?-->/)
-  ('closed', /<(tag)[\s\S]+?<\/\1>/)
-  ('closing', /<tag(?:"[^"]*"|'[^']*'|[^'">])*?>/)
-  (/tag/g, block._tag)
-  ();
-
-block.paragraph = replace(block.paragraph)
-  ('hr', block.hr)
-  ('heading', block.heading)
-  ('lheading', block.lheading)
-  ('blockquote', block.blockquote)
-  ('tag', '<' + block._tag)
-  ('def', block.def)
-  ();
-
-/**
- * Normal Block Grammar
- */
-
-block.normal = merge({}, block);
-
-/**
- * GFM Block Grammar
- */
-
-block.gfm = merge({}, block.normal, {
-  fences: /^ *(`{3,}|~{3,})[ \.]*(\S+)? *\n([\s\S]*?)\s*\1 *(?:\n+|$)/,
-  paragraph: /^/,
-  heading: /^ *(#{1,6}) +([^\n]+?) *#* *(?:\n+|$)/
-});
-
-block.gfm.paragraph = replace(block.paragraph)
-  ('(?!', '(?!'
-    + block.gfm.fences.source.replace('\\1', '\\2') + '|'
-    + block.list.source.replace('\\1', '\\3') + '|')
-  ();
-
-/**
- * GFM + Tables Block Grammar
- */
-
-block.tables = merge({}, block.gfm, {
-  nptable: /^ *(\S.*\|.*)\n *([-:]+ *\|[-| :]*)\n((?:.*\|.*(?:\n|$))*)\n*/,
-  table: /^ *\|(.+)\n *\|( *[-:]+[-| :]*)\n((?: *\|.*(?:\n|$))*)\n*/
-});
-
-/**
- * Block Lexer
- */
-
-function Lexer(options) {
-  this.tokens = [];
-  this.tokens.links = {};
-  this.options = options || marked.defaults;
-  this.rules = block.normal;
-
-  if (this.options.gfm) {
-    if (this.options.tables) {
-      this.rules = block.tables;
-    } else {
-      this.rules = block.gfm;
-    }
-  }
-}
-
-/**
- * Expose Block Rules
- */
-
-Lexer.rules = block;
-
-/**
- * Static Lex Method
- */
-
-Lexer.lex = function(src, options) {
-  var lexer = new Lexer(options);
-  return lexer.lex(src);
-};
-
-/**
- * Preprocessing
- */
-
-Lexer.prototype.lex = function(src) {
-  src = src
-    .replace(/\r\n|\r/g, '\n')
-    .replace(/\t/g, '    ')
-    .replace(/\u00a0/g, ' ')
-    .replace(/\u2424/g, '\n');
-
-  return this.token(src, true);
-};
-
-/**
- * Lexing
- */
-
-Lexer.prototype.token = function(src, top, bq) {
-  var src = src.replace(/^ +$/gm, '')
-    , next
-    , loose
-    , cap
-    , bull
-    , b
-    , item
-    , space
-    , i
-    , l;
-
-  while (src) {
-    // newline
-    if (cap = this.rules.newline.exec(src)) {
-      src = src.substring(cap[0].length);
-      if (cap[0].length > 1) {
-        this.tokens.push({
-          type: 'space'
-        });
-      }
-    }
-
-    // code
-    if (cap = this.rules.code.exec(src)) {
-      src = src.substring(cap[0].length);
-      cap = cap[0].replace(/^ {4}/gm, '');
-      this.tokens.push({
-        type: 'code',
-        text: !this.options.pedantic
-          ? cap.replace(/\n+$/, '')
-          : cap
-      });
-      continue;
-    }
-
-    // fences (gfm)
-    if (cap = this.rules.fences.exec(src)) {
-      src = src.substring(cap[0].length);
-      this.tokens.push({
-        type: 'code',
-        lang: cap[2],
-        text: cap[3] || ''
-      });
-      continue;
-    }
-
-    // heading
-    if (cap = this.rules.heading.exec(src)) {
-      src = src.substring(cap[0].length);
-      this.tokens.push({
-        type: 'heading',
-        depth: cap[1].length,
-        text: cap[2]
-      });
-      continue;
-    }
-
-    // table no leading pipe (gfm)
-    if (top && (cap = this.rules.nptable.exec(src))) {
-      src = src.substring(cap[0].length);
-
-      item = {
-        type: 'table',
-        header: cap[1].replace(/^ *| *\| *$/g, '').split(/ *\| */),
-        align: cap[2].replace(/^ *|\| *$/g, '').split(/ *\| */),
-        cells: cap[3].replace(/\n$/, '').split('\n')
-      };
-
-      for (i = 0; i < item.align.length; i++) {
-        if (/^ *-+: *$/.test(item.align[i])) {
-          item.align[i] = 'right';
-        } else if (/^ *:-+: *$/.test(item.align[i])) {
-          item.align[i] = 'center';
-        } else if (/^ *:-+ *$/.test(item.align[i])) {
-          item.align[i] = 'left';
-        } else {
-          item.align[i] = null;
-        }
-      }
-
-      for (i = 0; i < item.cells.length; i++) {
-        item.cells[i] = item.cells[i].split(/ *\| */);
-      }
-
-      this.tokens.push(item);
-
-      continue;
-    }
-
-    // lheading
-    if (cap = this.rules.lheading.exec(src)) {
-      src = src.substring(cap[0].length);
-      this.tokens.push({
-        type: 'heading',
-        depth: cap[2] === '=' ? 1 : 2,
-        text: cap[1]
-      });
-      continue;
-    }
-
-    // hr
-    if (cap = this.rules.hr.exec(src)) {
-      src = src.substring(cap[0].length);
-      this.tokens.push({
-        type: 'hr'
-      });
-      continue;
-    }
-
-    // blockquote
-    if (cap = this.rules.blockquote.exec(src)) {
-      src = src.substring(cap[0].length);
-
-      this.tokens.push({
-        type: 'blockquote_start'
-      });
-
-      cap = cap[0].replace(/^ *> ?/gm, '');
-
-      // Pass `top` to keep the current
-      // "toplevel" state. This is exactly
-      // how markdown.pl works.
-      this.token(cap, top, true);
-
-      this.tokens.push({
-        type: 'blockquote_end'
-      });
-
-      continue;
-    }
-
-    // list
-    if (cap = this.rules.list.exec(src)) {
-      src = src.substring(cap[0].length);
-      bull = cap[2];
-
-      this.tokens.push({
-        type: 'list_start',
-        ordered: bull.length > 1
-      });
-
-      // Get each top-level item.
-      cap = cap[0].match(this.rules.item);
-
-      next = false;
-      l = cap.length;
-      i = 0;
-
-      for (; i < l; i++) {
-        item = cap[i];
-
-        // Remove the list item's bullet
-        // so it is seen as the next token.
-        space = item.length;
-        item = item.replace(/^ *([*+-]|\d+\.) +/, '');
-
-        // Outdent whatever the
-        // list item contains. Hacky.
-        if (~item.indexOf('\n ')) {
-          space -= item.length;
-          item = !this.options.pedantic
-            ? item.replace(new RegExp('^ {1,' + space + '}', 'gm'), '')
-            : item.replace(/^ {1,4}/gm, '');
-        }
-
-        // Determine whether the next list item belongs here.
-        // Backpedal if it does not belong in this list.
-        if (this.options.smartLists && i !== l - 1) {
-          b = block.bullet.exec(cap[i + 1])[0];
-          if (bull !== b && !(bull.length > 1 && b.length > 1)) {
-            src = cap.slice(i + 1).join('\n') + src;
-            i = l - 1;
-          }
-        }
-
-        // Determine whether item is loose or not.
-        // Use: /(^|\n)(?! )[^\n]+\n\n(?!\s*$)/
-        // for discount behavior.
-        loose = next || /\n\n(?!\s*$)/.test(item);
-        if (i !== l - 1) {
-          next = item.charAt(item.length - 1) === '\n';
-          if (!loose) loose = next;
-        }
-
-        this.tokens.push({
-          type: loose
-            ? 'loose_item_start'
-            : 'list_item_start'
-        });
-
-        // Recurse.
-        this.token(item, false, bq);
-
-        this.tokens.push({
-          type: 'list_item_end'
-        });
-      }
-
-      this.tokens.push({
-        type: 'list_end'
-      });
-
-      continue;
-    }
-
-    // html
-    if (cap = this.rules.html.exec(src)) {
-      src = src.substring(cap[0].length);
-      this.tokens.push({
-        type: this.options.sanitize
-          ? 'paragraph'
-          : 'html',
-        pre: !this.options.sanitizer
-          && (cap[1] === 'pre' || cap[1] === 'script' || cap[1] === 'style'),
-        text: cap[0]
-      });
-      continue;
-    }
-
-    // def
-    if ((!bq && top) && (cap = this.rules.def.exec(src))) {
-      src = src.substring(cap[0].length);
-      this.tokens.links[cap[1].toLowerCase()] = {
-        href: cap[2],
-        title: cap[3]
-      };
-      continue;
-    }
-
-    // table (gfm)
-    if (top && (cap = this.rules.table.exec(src))) {
-      src = src.substring(cap[0].length);
-
-      item = {
-        type: 'table',
-        header: cap[1].replace(/^ *| *\| *$/g, '').split(/ *\| */),
-        align: cap[2].replace(/^ *|\| *$/g, '').split(/ *\| */),
-        cells: cap[3].replace(/(?: *\| *)?\n$/, '').split('\n')
-      };
-
-      for (i = 0; i < item.align.length; i++) {
-        if (/^ *-+: *$/.test(item.align[i])) {
-          item.align[i] = 'right';
-        } else if (/^ *:-+: *$/.test(item.align[i])) {
-          item.align[i] = 'center';
-        } else if (/^ *:-+ *$/.test(item.align[i])) {
-          item.align[i] = 'left';
-        } else {
-          item.align[i] = null;
-        }
-      }
-
-      for (i = 0; i < item.cells.length; i++) {
-        item.cells[i] = item.cells[i]
-          .replace(/^ *\| *| *\| *$/g, '')
-          .split(/ *\| */);
-      }
-
-      this.tokens.push(item);
-
-      continue;
-    }
-
-    // top-level paragraph
-    if (top && (cap = this.rules.paragraph.exec(src))) {
-      src = src.substring(cap[0].length);
-      this.tokens.push({
-        type: 'paragraph',
-        text: cap[1].charAt(cap[1].length - 1) === '\n'
-          ? cap[1].slice(0, -1)
-          : cap[1]
-      });
-      continue;
-    }
-
-    // text
-    if (cap = this.rules.text.exec(src)) {
-      // Top-level should never reach here.
-      src = src.substring(cap[0].length);
-      this.tokens.push({
-        type: 'text',
-        text: cap[0]
-      });
-      continue;
-    }
-
-    if (src) {
-      throw new
-        Error('Infinite loop on byte: ' + src.charCodeAt(0));
-    }
-  }
-
-  return this.tokens;
-};
-
-/**
- * Inline-Level Grammar
- */
-
-var inline = {
-  escape: /^\\([\\`*{}\[\]()#+\-.!_>])/,
-  autolink: /^<([^ >]+(@|:\/)[^ >]+)>/,
-  url: noop,
-  tag: /^<!--[\s\S]*?-->|^<\/?\w+(?:"[^"]*"|'[^']*'|[^'">])*?>/,
-  link: /^!?\[(inside)\]\(href\)/,
-  reflink: /^!?\[(inside)\]\s*\[([^\]]*)\]/,
-  nolink: /^!?\[((?:\[[^\]]*\]|[^\[\]])*)\]/,
-  strong: /^__([\s\S]+?)__(?!_)|^\*\*([\s\S]+?)\*\*(?!\*)/,
-  em: /^\b_((?:[^_]|__)+?)_\b|^\*((?:\*\*|[\s\S])+?)\*(?!\*)/,
-  code: /^(`+)\s*([\s\S]*?[^`])\s*\1(?!`)/,
-  br: /^ {2,}\n(?!\s*$)/,
-  del: noop,
-  text: /^[\s\S]+?(?=[\\<!\[_*`]| {2,}\n|$)/
-};
-
-inline._inside = /(?:\[[^\]]*\]|[^\[\]]|\](?=[^\[]*\]))*/;
-inline._href = /\s*<?([\s\S]*?)>?(?:\s+['"]([\s\S]*?)['"])?\s*/;
-
-inline.link = replace(inline.link)
-  ('inside', inline._inside)
-  ('href', inline._href)
-  ();
-
-inline.reflink = replace(inline.reflink)
-  ('inside', inline._inside)
-  ();
-
-/**
- * Normal Inline Grammar
- */
-
-inline.normal = merge({}, inline);
-
-/**
- * Pedantic Inline Grammar
- */
-
-inline.pedantic = merge({}, inline.normal, {
-  strong: /^__(?=\S)([\s\S]*?\S)__(?!_)|^\*\*(?=\S)([\s\S]*?\S)\*\*(?!\*)/,
-  em: /^_(?=\S)([\s\S]*?\S)_(?!_)|^\*(?=\S)([\s\S]*?\S)\*(?!\*)/
-});
-
-/**
- * GFM Inline Grammar
- */
-
-inline.gfm = merge({}, inline.normal, {
-  escape: replace(inline.escape)('])', '~|])')(),
-  url: /^(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/,
-  del: /^~~(?=\S)([\s\S]*?\S)~~/,
-  text: replace(inline.text)
-    (']|', '~]|')
-    ('|', '|https?://|')
-    ()
-});
-
-/**
- * GFM + Line Breaks Inline Grammar
- */
-
-inline.breaks = merge({}, inline.gfm, {
-  br: replace(inline.br)('{2,}', '*')(),
-  text: replace(inline.gfm.text)('{2,}', '*')()
-});
-
-/**
- * Inline Lexer & Compiler
- */
-
-function InlineLexer(links, options) {
-  this.options = options || marked.defaults;
-  this.links = links;
-  this.rules = inline.normal;
-  this.renderer = this.options.renderer || new Renderer;
-  this.renderer.options = this.options;
-
-  if (!this.links) {
-    throw new
-      Error('Tokens array requires a `links` property.');
-  }
-
-  if (this.options.gfm) {
-    if (this.options.breaks) {
-      this.rules = inline.breaks;
-    } else {
-      this.rules = inline.gfm;
-    }
-  } else if (this.options.pedantic) {
-    this.rules = inline.pedantic;
-  }
-}
-
-/**
- * Expose Inline Rules
- */
-
-InlineLexer.rules = inline;
-
-/**
- * Static Lexing/Compiling Method
- */
-
-InlineLexer.output = function(src, links, options) {
-  var inline = new InlineLexer(links, options);
-  return inline.output(src);
-};
-
-/**
- * Lexing/Compiling
- */
-
-InlineLexer.prototype.output = function(src) {
-  var out = ''
-    , link
-    , text
-    , href
-    , cap;
-
-  while (src) {
-    // escape
-    if (cap = this.rules.escape.exec(src)) {
-      src = src.substring(cap[0].length);
-      out += cap[1];
-      continue;
-    }
-
-    // autolink
-    if (cap = this.rules.autolink.exec(src)) {
-      src = src.substring(cap[0].length);
-      if (cap[2] === '@') {
-        text = cap[1].charAt(6) === ':'
-          ? this.mangle(cap[1].substring(7))
-          : this.mangle(cap[1]);
-        href = this.mangle('mailto:') + text;
-      } else {
-        text = escape(cap[1]);
-        href = text;
-      }
-      out += this.renderer.link(href, null, text);
-      continue;
-    }
-
-    // url (gfm)
-    if (!this.inLink && (cap = this.rules.url.exec(src))) {
-      src = src.substring(cap[0].length);
-      text = escape(cap[1]);
-      href = text;
-      out += this.renderer.link(href, null, text);
-      continue;
-    }
-
-    // tag
-    if (cap = this.rules.tag.exec(src)) {
-      if (!this.inLink && /^<a /i.test(cap[0])) {
-        this.inLink = true;
-      } else if (this.inLink && /^<\/a>/i.test(cap[0])) {
-        this.inLink = false;
-      }
-      src = src.substring(cap[0].length);
-      out += this.options.sanitize
-        ? this.options.sanitizer
-          ? this.options.sanitizer(cap[0])
-          : escape(cap[0])
-        : cap[0]
-      continue;
-    }
-
-    // link
-    if (cap = this.rules.link.exec(src)) {
-      src = src.substring(cap[0].length);
-      this.inLink = true;
-      out += this.outputLink(cap, {
-        href: cap[2],
-        title: cap[3]
-      });
-      this.inLink = false;
-      continue;
-    }
-
-    // reflink, nolink
-    if ((cap = this.rules.reflink.exec(src))
-        || (cap = this.rules.nolink.exec(src))) {
-      src = src.substring(cap[0].length);
-      link = (cap[2] || cap[1]).replace(/\s+/g, ' ');
-      link = this.links[link.toLowerCase()];
-      if (!link || !link.href) {
-        out += cap[0].charAt(0);
-        src = cap[0].substring(1) + src;
-        continue;
-      }
-      this.inLink = true;
-      out += this.outputLink(cap, link);
-      this.inLink = false;
-      continue;
-    }
-
-    // strong
-    if (cap = this.rules.strong.exec(src)) {
-      src = src.substring(cap[0].length);
-      out += this.renderer.strong(this.output(cap[2] || cap[1]));
-      continue;
-    }
-
-    // em
-    if (cap = this.rules.em.exec(src)) {
-      src = src.substring(cap[0].length);
-      out += this.renderer.em(this.output(cap[2] || cap[1]));
-      continue;
-    }
-
-    // code
-    if (cap = this.rules.code.exec(src)) {
-      src = src.substring(cap[0].length);
-      out += this.renderer.codespan(escape(cap[2], true));
-      continue;
-    }
-
-    // br
-    if (cap = this.rules.br.exec(src)) {
-      src = src.substring(cap[0].length);
-      out += this.renderer.br();
-      continue;
-    }
-
-    // del (gfm)
-    if (cap = this.rules.del.exec(src)) {
-      src = src.substring(cap[0].length);
-      out += this.renderer.del(this.output(cap[1]));
-      continue;
-    }
-
-    // text
-    if (cap = this.rules.text.exec(src)) {
-      src = src.substring(cap[0].length);
-      out += this.renderer.text(escape(this.smartypants(cap[0])));
-      continue;
-    }
-
-    if (src) {
-      throw new
-        Error('Infinite loop on byte: ' + src.charCodeAt(0));
-    }
-  }
-
-  return out;
-};
-
-/**
- * Compile Link
- */
-
-InlineLexer.prototype.outputLink = function(cap, link) {
-  var href = escape(link.href)
-    , title = link.title ? escape(link.title) : null;
-
-  return cap[0].charAt(0) !== '!'
-    ? this.renderer.link(href, title, this.output(cap[1]))
-    : this.renderer.image(href, title, escape(cap[1]));
-};
-
-/**
- * Smartypants Transformations
- */
-
-InlineLexer.prototype.smartypants = function(text) {
-  if (!this.options.smartypants) return text;
-  return text
-    // em-dashes
-    .replace(/---/g, '\u2014')
-    // en-dashes
-    .replace(/--/g, '\u2013')
-    // opening singles
-    .replace(/(^|[-\u2014/(\[{"\s])'/g, '$1\u2018')
-    // closing singles & apostrophes
-    .replace(/'/g, '\u2019')
-    // opening doubles
-    .replace(/(^|[-\u2014/(\[{\u2018\s])"/g, '$1\u201c')
-    // closing doubles
-    .replace(/"/g, '\u201d')
-    // ellipses
-    .replace(/\.{3}/g, '\u2026');
-};
-
-/**
- * Mangle Links
- */
-
-InlineLexer.prototype.mangle = function(text) {
-  if (!this.options.mangle) return text;
-  var out = ''
-    , l = text.length
-    , i = 0
-    , ch;
-
-  for (; i < l; i++) {
-    ch = text.charCodeAt(i);
-    if (Math.random() > 0.5) {
-      ch = 'x' + ch.toString(16);
-    }
-    out += '&#' + ch + ';';
-  }
-
-  return out;
-};
-
-/**
- * Renderer
- */
-
-function Renderer(options) {
-  this.options = options || {};
-}
-
-Renderer.prototype.code = function(code, lang, escaped) {
-  if (this.options.highlight) {
-    var out = this.options.highlight(code, lang);
-    if (out != null && out !== code) {
-      escaped = true;
-      code = out;
-    }
-  }
-
-  if (!lang) {
-    return '<pre><code>'
-      + (escaped ? code : escape(code, true))
-      + '\n</code></pre>';
-  }
-
-  return '<pre><code class="'
-    + this.options.langPrefix
-    + escape(lang, true)
-    + '">'
-    + (escaped ? code : escape(code, true))
-    + '\n</code></pre>\n';
-};
-
-Renderer.prototype.blockquote = function(quote) {
-  return '<blockquote>\n' + quote + '</blockquote>\n';
-};
-
-Renderer.prototype.html = function(html) {
-  return html;
-};
-
-Renderer.prototype.heading = function(text, level, raw) {
-  return '<h'
-    + level
-    + ' id="'
-    + this.options.headerPrefix
-    + raw.toLowerCase().replace(/[^\w]+/g, '-')
-    + '">'
-    + text
-    + '</h'
-    + level
-    + '>\n';
-};
-
-Renderer.prototype.hr = function() {
-  return this.options.xhtml ? '<hr/>\n' : '<hr>\n';
-};
-
-Renderer.prototype.list = function(body, ordered) {
-  var type = ordered ? 'ol' : 'ul';
-  return '<' + type + '>\n' + body + '</' + type + '>\n';
-};
-
-Renderer.prototype.listitem = function(text) {
-  return '<li>' + text + '</li>\n';
-};
-
-Renderer.prototype.paragraph = function(text) {
-  return '<p>' + text + '</p>\n';
-};
-
-Renderer.prototype.table = function(header, body) {
-  return '<table>\n'
-    + '<thead>\n'
-    + header
-    + '</thead>\n'
-    + '<tbody>\n'
-    + body
-    + '</tbody>\n'
-    + '</table>\n';
-};
-
-Renderer.prototype.tablerow = function(content) {
-  return '<tr>\n' + content + '</tr>\n';
-};
-
-Renderer.prototype.tablecell = function(content, flags) {
-  var type = flags.header ? 'th' : 'td';
-  var tag = flags.align
-    ? '<' + type + ' style="text-align:' + flags.align + '">'
-    : '<' + type + '>';
-  return tag + content + '</' + type + '>\n';
-};
-
-// span level renderer
-Renderer.prototype.strong = function(text) {
-  return '<strong>' + text + '</strong>';
-};
-
-Renderer.prototype.em = function(text) {
-  return '<em>' + text + '</em>';
-};
-
-Renderer.prototype.codespan = function(text) {
-  return '<code>' + text + '</code>';
-};
-
-Renderer.prototype.br = function() {
-  return this.options.xhtml ? '<br/>' : '<br>';
-};
-
-Renderer.prototype.del = function(text) {
-  return '<del>' + text + '</del>';
-};
-
-Renderer.prototype.link = function(href, title, text) {
-  if (this.options.sanitize) {
-    try {
-      var prot = decodeURIComponent(unescape(href))
-        .replace(/[^\w:]/g, '')
-        .toLowerCase();
-    } catch (e) {
-      return '';
-    }
-    if (prot.indexOf('javascript:') === 0 || prot.indexOf('vbscript:') === 0) {
-      return '';
-    }
-  }
-  var out = '<a href="' + href + '"';
-  if (title) {
-    out += ' title="' + title + '"';
-  }
-  out += '>' + text + '</a>';
-  return out;
-};
-
-Renderer.prototype.image = function(href, title, text) {
-  var out = '<img src="' + href + '" alt="' + text + '"';
-  if (title) {
-    out += ' title="' + title + '"';
-  }
-  out += this.options.xhtml ? '/>' : '>';
-  return out;
-};
-
-Renderer.prototype.text = function(text) {
-  return text;
-};
-
-/**
- * Parsing & Compiling
- */
-
-function Parser(options) {
-  this.tokens = [];
-  this.token = null;
-  this.options = options || marked.defaults;
-  this.options.renderer = this.options.renderer || new Renderer;
-  this.renderer = this.options.renderer;
-  this.renderer.options = this.options;
-}
-
-/**
- * Static Parse Method
- */
-
-Parser.parse = function(src, options, renderer) {
-  var parser = new Parser(options, renderer);
-  return parser.parse(src);
-};
-
-/**
- * Parse Loop
- */
-
-Parser.prototype.parse = function(src) {
-  this.inline = new InlineLexer(src.links, this.options, this.renderer);
-  this.tokens = src.reverse();
-
-  var out = '';
-  while (this.next()) {
-    out += this.tok();
-  }
-
-  return out;
-};
-
-/**
- * Next Token
- */
-
-Parser.prototype.next = function() {
-  return this.token = this.tokens.pop();
-};
-
-/**
- * Preview Next Token
- */
-
-Parser.prototype.peek = function() {
-  return this.tokens[this.tokens.length - 1] || 0;
-};
-
-/**
- * Parse Text Tokens
- */
-
-Parser.prototype.parseText = function() {
-  var body = this.token.text;
-
-  while (this.peek().type === 'text') {
-    body += '\n' + this.next().text;
-  }
-
-  return this.inline.output(body);
-};
-
-/**
- * Parse Current Token
- */
-
-Parser.prototype.tok = function() {
-  switch (this.token.type) {
-    case 'space': {
-      return '';
-    }
-    case 'hr': {
-      return this.renderer.hr();
-    }
-    case 'heading': {
-      return this.renderer.heading(
-        this.inline.output(this.token.text),
-        this.token.depth,
-        this.token.text);
-    }
-    case 'code': {
-      return this.renderer.code(this.token.text,
-        this.token.lang,
-        this.token.escaped);
-    }
-    case 'table': {
-      var header = ''
-        , body = ''
-        , i
-        , row
-        , cell
-        , flags
-        , j;
-
-      // header
-      cell = '';
-      for (i = 0; i < this.token.header.length; i++) {
-        flags = { header: true, align: this.token.align[i] };
-        cell += this.renderer.tablecell(
-          this.inline.output(this.token.header[i]),
-          { header: true, align: this.token.align[i] }
-        );
-      }
-      header += this.renderer.tablerow(cell);
-
-      for (i = 0; i < this.token.cells.length; i++) {
-        row = this.token.cells[i];
-
-        cell = '';
-        for (j = 0; j < row.length; j++) {
-          cell += this.renderer.tablecell(
-            this.inline.output(row[j]),
-            { header: false, align: this.token.align[j] }
-          );
-        }
-
-        body += this.renderer.tablerow(cell);
-      }
-      return this.renderer.table(header, body);
-    }
-    case 'blockquote_start': {
-      var body = '';
-
-      while (this.next().type !== 'blockquote_end') {
-        body += this.tok();
-      }
-
-      return this.renderer.blockquote(body);
-    }
-    case 'list_start': {
-      var body = ''
-        , ordered = this.token.ordered;
-
-      while (this.next().type !== 'list_end') {
-        body += this.tok();
-      }
-
-      return this.renderer.list(body, ordered);
-    }
-    case 'list_item_start': {
-      var body = '';
-
-      while (this.next().type !== 'list_item_end') {
-        body += this.token.type === 'text'
-          ? this.parseText()
-          : this.tok();
-      }
-
-      return this.renderer.listitem(body);
-    }
-    case 'loose_item_start': {
-      var body = '';
-
-      while (this.next().type !== 'list_item_end') {
-        body += this.tok();
-      }
-
-      return this.renderer.listitem(body);
-    }
-    case 'html': {
-      var html = !this.token.pre && !this.options.pedantic
-        ? this.inline.output(this.token.text)
-        : this.token.text;
-      return this.renderer.html(html);
-    }
-    case 'paragraph': {
-      return this.renderer.paragraph(this.inline.output(this.token.text));
-    }
-    case 'text': {
-      return this.renderer.paragraph(this.parseText());
-    }
-  }
-};
-
-/**
- * Helpers
- */
-
-function escape(html, encode) {
-  return html
-    .replace(!encode ? /&(?!#?\w+;)/g : /&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-function unescape(html) {
-	// explicitly match decimal, hex, and named HTML entities 
-  return html.replace(/&(#(?:\d+)|(?:#x[0-9A-Fa-f]+)|(?:\w+));?/g, function(_, n) {
-    n = n.toLowerCase();
-    if (n === 'colon') return ':';
-    if (n.charAt(0) === '#') {
-      return n.charAt(1) === 'x'
-        ? String.fromCharCode(parseInt(n.substring(2), 16))
-        : String.fromCharCode(+n.substring(1));
-    }
-    return '';
-  });
-}
-
-function replace(regex, opt) {
-  regex = regex.source;
-  opt = opt || '';
-  return function self(name, val) {
-    if (!name) return new RegExp(regex, opt);
-    val = val.source || val;
-    val = val.replace(/(^|[^\[])\^/g, '$1');
-    regex = regex.replace(name, val);
-    return self;
-  };
-}
-
-function noop() {}
-noop.exec = noop;
-
-function merge(obj) {
-  var i = 1
-    , target
-    , key;
-
-  for (; i < arguments.length; i++) {
-    target = arguments[i];
-    for (key in target) {
-      if (Object.prototype.hasOwnProperty.call(target, key)) {
-        obj[key] = target[key];
-      }
-    }
-  }
-
-  return obj;
-}
-
-
-/**
- * Marked
- */
-
-function marked(src, opt, callback) {
-  if (callback || typeof opt === 'function') {
-    if (!callback) {
-      callback = opt;
-      opt = null;
-    }
-
-    opt = merge({}, marked.defaults, opt || {});
-
-    var highlight = opt.highlight
-      , tokens
-      , pending
-      , i = 0;
-
-    try {
-      tokens = Lexer.lex(src, opt)
-    } catch (e) {
-      return callback(e);
-    }
-
-    pending = tokens.length;
-
-    var done = function(err) {
-      if (err) {
-        opt.highlight = highlight;
-        return callback(err);
-      }
-
-      var out;
-
-      try {
-        out = Parser.parse(tokens, opt);
-      } catch (e) {
-        err = e;
-      }
-
-      opt.highlight = highlight;
-
-      return err
-        ? callback(err)
-        : callback(null, out);
-    };
-
-    if (!highlight || highlight.length < 3) {
-      return done();
-    }
-
-    delete opt.highlight;
-
-    if (!pending) return done();
-
-    for (; i < tokens.length; i++) {
-      (function(token) {
-        if (token.type !== 'code') {
-          return --pending || done();
-        }
-        return highlight(token.text, token.lang, function(err, code) {
-          if (err) return done(err);
-          if (code == null || code === token.text) {
-            return --pending || done();
-          }
-          token.text = code;
-          token.escaped = true;
-          --pending || done();
-        });
-      })(tokens[i]);
-    }
-
-    return;
-  }
-  try {
-    if (opt) opt = merge({}, marked.defaults, opt);
-    return Parser.parse(Lexer.lex(src, opt), opt);
-  } catch (e) {
-    e.message += '\nPlease report this to https://github.com/chjj/marked.';
-    if ((opt || marked.defaults).silent) {
-      return '<p>An error occured:</p><pre>'
-        + escape(e.message + '', true)
-        + '</pre>';
-    }
-    throw e;
-  }
-}
-
-/**
- * Options
- */
-
-marked.options =
-marked.setOptions = function(opt) {
-  merge(marked.defaults, opt);
-  return marked;
-};
-
-marked.defaults = {
-  gfm: true,
-  tables: true,
-  breaks: false,
-  pedantic: false,
-  sanitize: false,
-  sanitizer: null,
-  mangle: true,
-  smartLists: false,
-  silent: false,
-  highlight: null,
-  langPrefix: 'lang-',
-  smartypants: false,
-  headerPrefix: '',
-  renderer: new Renderer,
-  xhtml: false
-};
-
-/**
- * Expose
- */
-
-marked.Parser = Parser;
-marked.parser = Parser.parse;
-
-marked.Renderer = Renderer;
-
-marked.Lexer = Lexer;
-marked.lexer = Lexer.lex;
-
-marked.InlineLexer = InlineLexer;
-marked.inlineLexer = InlineLexer.output;
-
-marked.parse = marked;
-
-if (typeof module !== 'undefined' && typeof exports === 'object') {
-  module.exports = marked;
-} else if (typeof define === 'function' && define.amd) {
-  define(function() { return marked; });
-} else {
-  this.marked = marked;
-}
-
-}).call(function() {
-  return this || (typeof window !== 'undefined' ? window : global);
-}());
 ;/*
 CryptoJS v3.1.2
 code.google.com/p/crypto-js
@@ -41138,49 +39852,9 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
 
     link: function link(scope, elem, attrs, ctrl) {
 
-      /**
-       * Insert 4 spaces when a tab key is pressed,
-       * only used when inside of the text editor.
-      * If the shift key is pressed first, this event is
-      * not fired.
-             */
-      var handleTab = function handleTab(event) {
-        if (!event.shiftKey && event.which == 9) {
-          event.preventDefault();
-          var start = this.selectionStart;
-          var end = this.selectionEnd;
-          var spaces = "    ";
-
-          // Insert 4 spaces
-          this.value = this.value.substring(0, start) + spaces + this.value.substring(end);
-
-          // Place cursor 4 spaces away from where
-          // the tab key was pressed
-          this.selectionStart = this.selectionEnd = start + 4;
-        }
-      };
-
       var handler = function handler(event) {
         if (event.ctrlKey || event.metaKey) {
           switch (String.fromCharCode(event.which).toLowerCase()) {
-            case 's':
-              event.preventDefault();
-              $timeout(function () {
-                ctrl.saveNote(event);
-              });
-              break;
-            case 'e':
-              event.preventDefault();
-              $timeout(function () {
-                ctrl.clickedEditNote();
-              });
-              break;
-            case 'm':
-              event.preventDefault();
-              $timeout(function () {
-                ctrl.toggleMarkdown();
-              });
-              break;
             case 'o':
               event.preventDefault();
               $timeout(function () {
@@ -41192,9 +39866,6 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       };
 
       window.addEventListener('keydown', handler);
-      var element = document.getElementById("note-text-editor");
-      element.addEventListener('keydown', handleTab);
-
       scope.$on('$destroy', function () {
         window.removeEventListener('keydown', handler);
       });
@@ -41208,13 +39879,33 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', 'markdownRenderer', '$rootScope', 'extensionManager', 'syncManager', function ($sce, $timeout, authManager, markdownRenderer, $rootScope, extensionManager, syncManager) {
+}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager) {
+
+  window.addEventListener("message", function () {
+    console.log("App received message:", event);
+    if (event.data.status) {
+      this.postNoteToExternalEditor();
+    } else {
+      var id = event.data.id;
+      var text = event.data.text;
+      if (this.note.uuid == id) {
+        this.note.text = text;
+        this.changesMade();
+      }
+    }
+  }.bind(this), false);
 
   this.setNote = function (note, oldNote) {
-    this.editorMode = 'edit';
     this.showExtensions = false;
     this.showMenu = false;
     this.loadTagsString();
+
+    if (note.editorUrl) {
+      this.customEditor = this.editorForUrl(note.editorUrl);
+      this.postNoteToExternalEditor();
+    } else {
+      this.customEditor = null;
+    }
 
     if (note.safeText().length == 0 && note.dummy) {
       this.focusTitle(100);
@@ -41229,19 +39920,40 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     }
   };
 
-  this.hasAvailableExtensions = function () {
-    return extensionManager.extensionsInContextOfItem(this.note).length > 0;
+  this.selectedEditor = function (editor) {
+    this.showEditorMenu = false;
+    if (editor.default) {
+      this.customEditor = null;
+    } else {
+      this.customEditor = editor;
+    }
+    this.note.editorUrl = editor.url;
+  }.bind(this);
+
+  this.editorForUrl = function (url) {
+    var editors = modelManager.itemsForContentType("SN|Editor");
+    return editors.filter(function (editor) {
+      return editor.url == url;
+    })[0];
   };
 
-  this.onPreviewDoubleClick = function () {
-    this.editorMode = 'edit';
-    this.focusEditor(100);
+  this.postNoteToExternalEditor = function () {
+    var externalEditorElement = document.getElementById("editor-iframe");
+    if (externalEditorElement) {
+      externalEditorElement.contentWindow.postMessage({ text: this.note.text, id: this.note.uuid }, '*');
+    }
+  };
+
+  this.hasAvailableExtensions = function () {
+    return extensionManager.extensionsInContextOfItem(this.note).length > 0;
   };
 
   this.focusEditor = function (delay) {
     setTimeout(function () {
       var element = document.getElementById("note-text-editor");
-      element.focus();
+      if (element) {
+        element.focus();
+      }
     }, delay);
   };
 
@@ -41253,10 +39965,6 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
 
   this.clickedTextArea = function () {
     this.showMenu = false;
-  };
-
-  this.renderedContent = function () {
-    return markdownRenderer.renderHtml(markdownRenderer.renderedContentForText(this.note.safeText()));
   };
 
   var statusTimeout;
@@ -41317,7 +40025,6 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
   };
 
   this.onContentFocus = function () {
-    this.showSampler = false;
     $rootScope.$broadcast("editorFocused");
   };
 
@@ -41328,24 +40035,12 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
   this.toggleFullScreen = function () {
     this.fullscreen = !this.fullscreen;
     if (this.fullscreen) {
-      if (this.editorMode == 'edit') {
-        // refocus
-        this.focusEditor(0);
-      }
-    } else {}
+      this.focusEditor(0);
+    }
   };
 
   this.selectedMenuItem = function () {
     this.showMenu = false;
-  };
-
-  this.toggleMarkdown = function () {
-    if (this.editorMode == 'preview') {
-      this.editorMode = 'edit';
-      this.focusEditor(0);
-    } else {
-      this.editorMode = 'preview';
-    }
   };
 
   this.deleteNote = function () {
@@ -41353,11 +40048,6 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       this.remove()(this.note);
       this.showMenu = false;
     }
-  };
-
-  this.clickedEditNote = function () {
-    this.editorMode = 'edit';
-    this.focusEditor(100);
   };
 
   /* Tags */
@@ -42061,6 +40751,49 @@ var Item = function () {
 }();
 
 ;
+var Editor = function (_Item) {
+  _inherits(Editor, _Item);
+
+  function Editor(json_obj) {
+    _classCallCheck(this, Editor);
+
+    return _possibleConstructorReturn(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, json_obj));
+  }
+
+  _createClass(Editor, [{
+    key: 'mapContentToLocalProperties',
+    value: function mapContentToLocalProperties(contentObject) {
+      _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'mapContentToLocalProperties', this).call(this, contentObject);
+      this.url = contentObject.url;
+      this.name = contentObject.name;
+    }
+  }, {
+    key: 'structureParams',
+    value: function structureParams() {
+      var params = {
+        url: this.url,
+        name: this.name
+      };
+
+      _.merge(params, _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'structureParams', this).call(this));
+      return params;
+    }
+  }, {
+    key: 'toJSON',
+    value: function toJSON() {
+      return { uuid: this.uuid };
+    }
+  }, {
+    key: 'content_type',
+    get: function get() {
+      return "SN|Editor";
+    }
+  }]);
+
+  return Editor;
+}(Item);
+
+;
 var Action = function () {
   function Action(json) {
     _classCallCheck(this, Action);
@@ -42139,25 +40872,25 @@ var Action = function () {
   return Action;
 }();
 
-var Extension = function (_Item) {
-  _inherits(Extension, _Item);
+var Extension = function (_Item2) {
+  _inherits(Extension, _Item2);
 
   function Extension(json) {
     _classCallCheck(this, Extension);
 
-    var _this3 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
+    var _this4 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
 
-    _.merge(_this3, json);
+    _.merge(_this4, json);
 
-    _this3.encrypted = true;
-    _this3.content_type = "Extension";
+    _this4.encrypted = true;
+    _this4.content_type = "Extension";
 
     if (json.actions) {
-      _this3.actions = json.actions.map(function (action) {
+      _this4.actions = json.actions.map(function (action) {
         return new Action(action);
       });
     }
-    return _this3;
+    return _this4;
   }
 
   _createClass(Extension, [{
@@ -42217,18 +40950,18 @@ var Extension = function (_Item) {
 }(Item);
 
 ;
-var Note = function (_Item2) {
-  _inherits(Note, _Item2);
+var Note = function (_Item3) {
+  _inherits(Note, _Item3);
 
   function Note(json_obj) {
     _classCallCheck(this, Note);
 
-    var _this4 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
+    var _this5 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
 
-    if (!_this4.tags) {
-      _this4.tags = [];
+    if (!_this5.tags) {
+      _this5.tags = [];
     }
-    return _this4;
+    return _this5;
   }
 
   _createClass(Note, [{
@@ -42332,18 +41065,18 @@ var Note = function (_Item2) {
 }(Item);
 
 ;
-var Tag = function (_Item3) {
-  _inherits(Tag, _Item3);
+var Tag = function (_Item4) {
+  _inherits(Tag, _Item4);
 
   function Tag(json_obj) {
     _classCallCheck(this, Tag);
 
-    var _this5 = _possibleConstructorReturn(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
+    var _this6 = _possibleConstructorReturn(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
 
-    if (!_this5.notes) {
-      _this5.notes = [];
+    if (!_this6.notes) {
+      _this6.notes = [];
     }
-    return _this5;
+    return _this6;
   }
 
   _createClass(Tag, [{
@@ -42446,7 +41179,7 @@ var ItemParams = function () {
   }, {
     key: 'paramsForLocalStorage',
     value: function paramsForLocalStorage() {
-      this.additionalFields = ["updated_at", "dirty"];
+      this.additionalFields = ["updated_at", "dirty", "editorUrl"];
       this.forExportFile = true;
       return this.__params();
     }
@@ -43347,6 +42080,89 @@ angular.module('app.frontend').directive('contextualExtensionsMenu', function ()
   return new ContextualExtensionsMenu();
 });
 ;
+var EditorMenu = function () {
+  function EditorMenu() {
+    _classCallCheck(this, EditorMenu);
+
+    this.restrict = "E";
+    this.templateUrl = "frontend/directives/editor-menu.html";
+    this.scope = {
+      callback: "&",
+      selectedEditor: "="
+    };
+  }
+
+  _createClass(EditorMenu, [{
+    key: 'controller',
+    value: ['$scope', 'modelManager', 'extensionManager', 'syncManager', function controller($scope, modelManager, extensionManager, syncManager) {
+      'ngInject';
+
+      $scope.formData = {};
+
+      var editorContentType = "SN|Editor";
+
+      var defaultEditor = {
+        default: true,
+        name: "Plain"
+      };
+
+      $scope.sysEditors = [defaultEditor];
+      $scope.editors = modelManager.itemsForContentType(editorContentType);
+
+      $scope.editorForUrl = function (url) {
+        return $scope.editors.filter(function (editor) {
+          return editor.url == url;
+        })[0];
+      };
+
+      $scope.selectEditor = function (editor) {
+        $scope.callback()(editor);
+      };
+
+      $scope.deleteEditor = function (editor) {
+        if (confirm("Are you sure you want to delete this editor?")) {
+          modelManager.setItemToBeDeleted(editor);
+          syncManager.sync();
+          _.pull($scope.editors, editor);
+        }
+      };
+
+      $scope.submitNewEditorRequest = function () {
+        var editor = createEditor($scope.formData.url);
+        modelManager.addItem(editor);
+        editor.setDirty(true);
+        syncManager.sync();
+        $scope.editors.push(editor);
+        $scope.formData = {};
+      };
+
+      function createEditor(url) {
+        var name = getParameterByName("name", url);
+        return modelManager.createItem({
+          content_type: editorContentType,
+          url: url,
+          name: name
+        });
+      }
+
+      function getParameterByName(name, url) {
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+            results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+      }
+    }]
+  }]);
+
+  return EditorMenu;
+}();
+
+angular.module('app.frontend').directive('editorMenu', function () {
+  return new EditorMenu();
+});
+;
 var GlobalExtensionsMenu = function () {
   function GlobalExtensionsMenu() {
     _classCallCheck(this, GlobalExtensionsMenu);
@@ -43935,28 +42751,14 @@ angular.module('app.frontend').service('extensionManager', ExtensionManager);
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy h:mm a') : '';
   };
 }]);
-; // Start from filter
-angular.module('app.frontend').filter('startFrom', function () {
+;angular.module('app.frontend').filter('startFrom', function () {
   return function (input, start) {
     return input.slice(start);
   };
 });
-;angular.module('app.frontend').service('markdownRenderer', ['$sce', function ($sce) {
-
-  marked.setOptions({
-    breaks: true,
-    sanitize: true
-  });
-
-  this.renderedContentForText = function (text) {
-    if (!text || text.length == 0) {
-      return "";
-    }
-    return marked(text);
-  };
-
-  this.renderHtml = function (html_code) {
-    return $sce.trustAsHtml(html_code);
+;angular.module('app.frontend').filter('trusted', ['$sce', function ($sce) {
+  return function (url) {
+    return $sce.trustAsResourceUrl(url);
   };
 }]);
 ;
@@ -43972,7 +42774,7 @@ var ModelManager = function () {
     this.itemChangeObservers = [];
     this.items = [];
     this._extensions = [];
-    this.acceptableContentTypes = ["Note", "Tag", "Extension"];
+    this.acceptableContentTypes = ["Note", "Tag", "Extension", "SN|Editor"];
   }
 
   _createClass(ModelManager, [{
@@ -44148,6 +42950,8 @@ var ModelManager = function () {
         item = new Tag(json_obj);
       } else if (json_obj.content_type == "Extension") {
         item = new Extension(json_obj);
+      } else if (json_obj.content_type == "SN|Editor") {
+        item = new Editor(json_obj);
       } else {
         item = new Item(json_obj);
       }
@@ -45158,25 +43962,25 @@ angular.module('app.frontend').service('syncManager', SyncManager);
 
 
   $templateCache.put('frontend/directives/contextual-menu.html',
-    "<ul class='dropdown-menu dropdown-menu-left nt-dropdown-menu dark contextual-menu'>\n" +
+    "<ul class='dropdown-menu dropdown-menu-left nt-dropdown-menu dark editor-menu'>\n" +
     "  <div class='extension' ng-repeat='extension in extensions'>\n" +
-    "    <div class='ext-header'>\n" +
-    "      <div class='name'>{{extension.name}}</div>\n" +
-    "      <div class='access'>\n" +
+    "    <div class='menu-section-header'>\n" +
+    "      <div class='title'>{{extension.name}}</div>\n" +
+    "      <div class='subtitle'>\n" +
     "        Can access your data\n" +
     "        <strong>{{accessTypeForExtension(extension)}}</strong>\n" +
     "      </div>\n" +
     "      <div class='spinner loading' ng-if='extension.loading'></div>\n" +
     "    </div>\n" +
     "    <ul>\n" +
-    "      <li class='action' ng-click='executeAction(action, extension)' ng-repeat='action in extension.actionsWithContextForItem(item)'>\n" +
-    "        <div class='name'>{{action.label}}</div>\n" +
-    "        <div class='desc'>{{action.desc}}</div>\n" +
+    "      <li class='menu-item' ng-click='executeAction(action, extension)' ng-repeat='action in extension.actionsWithContextForItem(item)'>\n" +
+    "        <div class='menu-item-title'>{{action.label}}</div>\n" +
+    "        <div class='menu-item-subtitle'>{{action.desc}}</div>\n" +
     "        <div ng-if='action.showNestedActions'>\n" +
     "          <ul class='mt-10'>\n" +
-    "            <li class='action white-bg' ng-click='executeAction(subaction, extension); $event.stopPropagation()' ng-repeat='subaction in action.subactions' style='margin-top: -1px;'>\n" +
-    "              <div class='name'>{{subaction.label}}</div>\n" +
-    "              <div class='desc'>{{subaction.desc}}</div>\n" +
+    "            <li class='menu-item white-bg' ng-click='executeAction(subaction, extension); $event.stopPropagation()' ng-repeat='subaction in action.subactions' style='margin-top: -1px;'>\n" +
+    "              <div class='menu-item-title'>{{subaction.label}}</div>\n" +
+    "              <div class='menu-item-subtitle'>{{subaction.desc}}</div>\n" +
     "              <span ng-if='subaction.running'>\n" +
     "                <div class='spinner' style='margin-top: 3px;'></div>\n" +
     "              </span>\n" +
@@ -45279,6 +44083,43 @@ angular.module('app.frontend').service('syncManager', SyncManager);
     "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
+  );
+
+
+  $templateCache.put('frontend/directives/editor-menu.html',
+    "<ul class='dropdown-menu dropdown-menu-left nt-dropdown-menu dark editor-menu'>\n" +
+    "  <div class='menu-section-header'>\n" +
+    "    <div class='title'>System Editors</div>\n" +
+    "  </div>\n" +
+    "  <ul>\n" +
+    "    <li class='menu-item' ng-click='selectEditor(editor)' ng-repeat='editor in sysEditors'>\n" +
+    "      <span class='pull-left mr-10' ng-if='!selectedEditor'>✓</span>\n" +
+    "      <div class='menu-item-title pull-left'>{{editor.name}}</div>\n" +
+    "    </li>\n" +
+    "  </ul>\n" +
+    "  <div ng-if='editors.length &gt; 0'>\n" +
+    "    <div class='menu-section-header'>\n" +
+    "      <div class='title'>External Editors</div>\n" +
+    "      <div class='subtitle'>Can access your current note decrypted.</div>\n" +
+    "    </div>\n" +
+    "    <ul>\n" +
+    "      <li class='menu-item' ng-click='selectEditor(editor)' ng-repeat='editor in editors'>\n" +
+    "        <span class='pull-left mr-10' ng-if='selectedEditor == editor'>✓</span>\n" +
+    "        <div class='pull-left' style='width: 60%'>\n" +
+    "          <div class='menu-item-title'>{{editor.name}}</div>\n" +
+    "          <div class='menu-item-subtitle wrap'>{{editor.url}}</div>\n" +
+    "        </div>\n" +
+    "        <div class='pull-right'>\n" +
+    "          <button class='white medium inline top' ng-click='deleteEditor(editor); $event.stopPropagation();' style='width: 50px; height: 40px;'>☓</button>\n" +
+    "        </div>\n" +
+    "      </li>\n" +
+    "    </ul>\n" +
+    "  </div>\n" +
+    "  <div class='menu-section-footer mt-10'>\n" +
+    "    <input class='form-control' ng-keyup='$event.keyCode == 13 &amp;&amp; submitNewEditorRequest()' ng-model='formData.url' placeholder='Add new editor via URL'>\n" +
+    "    <a class='block blue' href='https://standardnotes.org/extensions' target='_blank'>Available Editors</a>\n" +
+    "  </div>\n" +
+    "</ul>\n"
   );
 
 
@@ -45416,14 +44257,19 @@ angular.module('app.frontend').service('syncManager', SyncManager);
     "                <div class='text'>Toggle Fullscreen</div>\n" +
     "                <div class='shortcut'>Cmd + O</div>\n" +
     "              </li>\n" +
-    "              <li ng-click='ctrl.selectedMenuItem(); ctrl.toggleMarkdown()'>\n" +
-    "                <div class='text'>Toggle Markdown Preview</div>\n" +
-    "                <div class='shortcut'>Cmd + M</div>\n" +
-    "              </li>\n" +
     "              <li ng-click='ctrl.deleteNote()'>\n" +
     "                <div class='text'>Delete</div>\n" +
     "              </li>\n" +
     "            </ul>\n" +
+    "          </li>\n" +
+    "          <li class='sep'></li>\n" +
+    "          <li class='dropdown' click-outside='ctrl.showEditorMenu = false;' is-open='ctrl.showEditorMenu'>\n" +
+    "            <a class='dropdown-toggle' ng-click='ctrl.showEditorMenu = !ctrl.showEditorMenu; ctrl.showMenu = false;'>\n" +
+    "              Editor\n" +
+    "              <span class='caret'></span>\n" +
+    "              <span class='sr-only'></span>\n" +
+    "            </a>\n" +
+    "            <editor-menu callback='ctrl.selectedEditor' ng-if='ctrl.showEditorMenu' selected-editor='ctrl.customEditor'></editor-menu>\n" +
     "          </li>\n" +
     "          <li class='sep'></li>\n" +
     "          <li class='dropdown' click-outside='ctrl.showExtensions = false;' is-open='ctrl.showExtensions' ng-if='ctrl.hasAvailableExtensions()'>\n" +
@@ -45435,19 +44281,11 @@ angular.module('app.frontend').service('syncManager', SyncManager);
     "            <contextual-extensions-menu item='ctrl.note' ng-if='ctrl.showExtensions'></contextual-extensions-menu>\n" +
     "          </li>\n" +
     "        </ul>\n" +
-    "        <div class='markdown icon' ng-click='ctrl.showMarkdown = !ctrl.showMarkdown' ng-if=\"ctrl.editorMode == 'preview'\">\n" +
-    "          <div class='icon-markdown'></div>\n" +
-    "          <div class='panel panel-default info-panel' ng-if='ctrl.showMarkdown'>\n" +
-    "            <div class='panel-body' style='text-align: center; color: black;'>\n" +
-    "              This editor is Markdown enabled.\n" +
-    "            </div>\n" +
-    "          </div>\n" +
-    "        </div>\n" +
     "      </div>\n" +
     "    </div>\n" +
     "    <div class='editor-content' ng-class=\"{'fullscreen' : ctrl.fullscreen }\">\n" +
-    "      <textarea class='editable' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-model='ctrl.note.text' ng-show=\"ctrl.editorMode == 'edit'\"></textarea>\n" +
-    "      <div class='preview' ng-bind-html='ctrl.renderedContent()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-dblclick='ctrl.onPreviewDoubleClick()' ng-if=\"ctrl.editorMode == 'preview'\"></div>\n" +
+    "      <iframe frameBorder='0' id='editor-iframe' ng-if='ctrl.customEditor' ng-src='{{ctrl.customEditor.url | trusted}}' style='width: 100%; height: 100%; z-index: 1000; float: left;'></iframe>\n" +
+    "      <textarea class='editable' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.customEditor' ng-model='ctrl.note.text'></textarea>\n" +
     "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
