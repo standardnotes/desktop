@@ -89,6 +89,7 @@
 
 .wrap {
   word-wrap: break-word;
+  word-break: break-all;
 }
 
 .one-line-overflow {
@@ -157,7 +158,7 @@
 }
 
 .inline {
-  display: inline-block;
+  display: inline-block !important;
 }
 .inline.top {
   vertical-align: top;
@@ -423,6 +424,7 @@ body {
   height: 100%;
   font-size: 20px;
   margin: 0;
+  background-color: #e3e3e3;
 }
 
 .dark-button {
@@ -457,31 +459,16 @@ p {
   min-height: 100vh;
   height: 100vh;
   overflow: auto;
-}
-
-.app-body-class {
-  height: 100%;
   background-color: #e3e3e3;
-  min-width: 100px;
-  min-width: 900px;
-}
-
-.app-container {
-  display: table;
-  background-color: #e3e3e3;
-  width: 100%;
-  height: calc(100% - 25px);
-  padding-top: 0px;
-  font-size: 0;
-  margin-top: 0;
 }
 
 .app {
-  height: 100%;
+  height: calc(100% - 25px);
   width: 100%;
-  display: table-row;
+  display: flex;
   vertical-align: top;
   overflow: hidden;
+  position: relative;
 }
 .app .light-button {
   background-color: #e3e3e3;
@@ -498,13 +485,8 @@ p {
 }
 .app .section {
   padding-bottom: 0px;
-  display: block;
   height: 100%;
   max-height: calc(100vh - 25px);
-  float: left;
-  overflow-y: auto;
-  overflow-x: hidden;
-  min-width: 0;
   font-size: 17px;
 }
 .app .section .scrollable {
@@ -516,7 +498,6 @@ p {
   max-height: 100%;
   background-color: white;
   position: relative;
-  box-shadow: 0px 0px 2px rgba(128, 128, 128, 0.3);
 }
 .app .section .section-title-bar {
   padding: 20px;
@@ -546,6 +527,36 @@ p {
 }
 .app .section .section-title-bar > .add-button:hover {
   background-color: rgba(233, 233, 233, 0.8);
+}
+
+.section-menu {
+  width: 100%;
+  padding-top: 0px;
+  padding-left: 21px;
+  padding-right: 21px;
+  background-color: #f1f1f1;
+  color: black;
+  height: 28px;
+  cursor: default;
+}
+.section-menu ol, .section-menu ul {
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+.section-menu ol.dropdown-menu, .section-menu ul.dropdown-menu {
+  margin-top: 10px;
+}
+.section-menu ul li {
+  text-align: left;
+}
+.section-menu ul li.sep {
+  margin: 6px;
+  display: block;
+}
+.section-menu ul li a {
+  font-size: 13px;
+  font-weight: bold;
+  padding: 0 0;
 }
 
 .nt-dropdown-menu {
@@ -611,40 +622,6 @@ p {
 }
 .nt-dropdown-menu.light li .text {
   color: black;
-}
-
-.section-menu {
-  padding-top: 0px;
-  width: 100%;
-  position: absolute;
-  padding-left: inherit;
-  padding-right: inherit;
-  left: 0;
-  right: 0;
-  bottom: 0px;
-  background-color: #f1f1f1;
-  color: black;
-  height: 28px;
-  cursor: default;
-}
-.section-menu ol, .section-menu ul {
-  margin-top: 5px;
-  margin-bottom: 10px;
-}
-.section-menu ol.dropdown-menu, .section-menu ul.dropdown-menu {
-  margin-top: 10px;
-}
-.section-menu ul li {
-  text-align: left;
-}
-.section-menu ul li.sep {
-  margin: 6px;
-  display: block;
-}
-.section-menu ul li a {
-  font-size: 13px;
-  font-weight: bold;
-  padding: 0 0;
 }
 
 .fake-link {
@@ -820,7 +797,9 @@ a.disabled {
   }
 }
 .tags {
-  width: 15%;
+  flex: 1 10%;
+  max-width: 180px;
+  min-width: 100px;
 }
 .tags .tags-title-bar {
   color: black;
@@ -900,9 +879,11 @@ a.disabled {
 }
 
 .notes {
-  width: 25%;
   border-left: 1px solid #dddddd;
   border-right: 1px solid #dddddd;
+  flex: 1 20%;
+  max-width: 350px;
+  min-width: 170px;
 }
 .notes .notes-title-bar {
   color: rgba(0, 0, 0, 0.4);
@@ -978,7 +959,11 @@ a.disabled {
 }
 
 .editor {
-  width: 60%;
+  flex: 1 50%;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
 }
 .editor.fullscreen {
   width: 100%;
@@ -990,16 +975,19 @@ a.disabled {
 }
 .editor .section-title-bar {
   border-bottom: none !important;
+  height: 75px !important;
+}
+.editor .section-menu {
+  flex: 1 0 28px;
+  max-height: 28px;
 }
 
 .editor-heading {
-  position: absolute;
   width: 100%;
   padding: 15px;
   padding-top: 0px;
   background-color: white;
-  min-height: 100px;
-  width: 100%;
+  min-height: 75px;
   padding-right: 10px;
 }
 .editor-heading.fullscreen {
@@ -1048,29 +1036,29 @@ a.disabled {
 }
 
 .editor-content {
-  max-height: 100%;
-  height: 100%;
-  clear: both;
-  min-width: 0;
-  padding-left: 10px;
-  padding-right: 10px;
-  overflow: auto;
-  text-align: center;
+  flex: 1;
   z-index: 10;
-  padding-top: 100px;
+  overflow-y: hidden;
+  height: 100%;
+  display: flex;
+  background-color: white;
 }
 .editor-content.fullscreen {
   padding-top: 0px;
 }
+.editor-content #editor-iframe {
+  flex: 1;
+  width: 100%;
+}
 .editor-content .editable {
   font-family: monospace;
-  max-height: 100%;
-  height: 100%;
+  flex: 1;
+  overflow-y: scroll;
   width: 100%;
   border: none;
   outline: none;
   padding: 15px;
-  padding-top: 17px;
+  padding-top: 11px;
   font-size: 17px;
   resize: none;
 }
@@ -1080,73 +1068,20 @@ a.disabled {
   display: inline-block;
 }
 
-.nav-tabs a {
-  color: black;
-  text-decoration: none;
-}
-.nav-tabs a {
-  background-color: transparent;
-}
-
 .nav {
   padding-left: 0;
   margin-bottom: 0;
   list-style: none;
 }
-
-.nav-pills > li {
-  float: left;
-}
-
-.nav > li {
-  position: relative;
-  display: block;
-}
-
-.nav-pills > li.active > a, .nav-pills > li.active > a:focus, .nav-pills > li.active > a:hover {
-  color: #fff;
-  background-color: #337ab7;
-}
-
-.nav-pills > li > a {
-  border-radius: 4px;
+.nav ul {
+  font-weight: bold;
 }
 
 .nav > li > a {
   position: relative;
   display: block;
-  padding: 10px 15px;
-}
-
-.nav-tabs > li {
-  float: left;
-  margin-bottom: -1px;
-}
-
-.nav > li {
-  position: relative;
-  display: block;
-}
-
-.nav-tabs > li.active > a, .nav-tabs > li.active > a:focus, .nav-tabs > li.active > a:hover {
-  color: black;
-  cursor: pointer;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-bottom-color: transparent;
-}
-
-.nav-tabs > li > a {
-  margin-right: 2px;
-  line-height: 1.42857143;
-  border: 1px solid transparent;
-  cursor: pointer;
-}
-
-.nav > li > a {
-  position: relative;
-  display: block;
-  padding: 10px 15px;
+  font-weight: bold;
+  user-select: none;
 }
 
 .extension-render-modal {
@@ -1194,6 +1129,7 @@ a.disabled {
 }
 .menu-section-header > .title {
   font-size: 14px;
+  font-weight: bold;
 }
 .menu-section-header > .subtitle {
   font-size: 12px;
