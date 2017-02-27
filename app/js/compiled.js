@@ -39774,7 +39774,7 @@ if (!IEOrEdge && window.crypto && window.crypto.subtle) {
   Neeto.crypto = new SNCryptoJS();
 }
 
-angular.module('app.frontend', ['ui.router', 'restangular']).config(function (RestangularProvider, authManagerProvider) {
+angular.module('app.frontend', ['ui.router', 'restangular']).config(['RestangularProvider', 'authManagerProvider', function (RestangularProvider, authManagerProvider) {
   RestangularProvider.setDefaultHeaders({ "Content-Type": "application/json" });
 
   RestangularProvider.setFullRequestInterceptor(function (element, operation, route, url, headers, params, httpConfig) {
@@ -39790,7 +39790,7 @@ angular.module('app.frontend', ['ui.router', 'restangular']).config(function (Re
       httpConfig: httpConfig
     };
   });
-});angular.module('app.frontend').config(function ($stateProvider, $urlRouterProvider, $locationProvider) {
+}]);angular.module('app.frontend').config(['$stateProvider', '$urlRouterProvider', '$locationProvider', function ($stateProvider, $urlRouterProvider, $locationProvider) {
 
   $stateProvider.state('base', {
     abstract: true
@@ -39823,7 +39823,7 @@ angular.module('app.frontend', ['ui.router', 'restangular']).config(function (Re
   } else {
     $locationProvider.html5Mode(false);
   }
-});
+}]);
 ;
 var BaseCtrl = function BaseCtrl(syncManager, dbManager) {
   _classCallCheck(this, BaseCtrl);
@@ -39834,9 +39834,10 @@ var BaseCtrl = function BaseCtrl(syncManager, dbManager) {
     syncManager.sync();
   });
 };
+BaseCtrl.$inject = ['syncManager', 'dbManager'];
 
 angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
-;angular.module('app.frontend').directive("editorSection", function ($timeout, $sce) {
+;angular.module('app.frontend').directive("editorSection", ['$timeout', '$sce', function ($timeout, $sce) {
   return {
     restrict: 'E',
     scope: {
@@ -39880,7 +39881,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}).controller('EditorCtrl', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager) {
+}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager) {
 
   window.addEventListener("message", function (event) {
     // console.log("App received message:", event);
@@ -39889,8 +39890,14 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     } else {
       var id = event.data.id;
       var text = event.data.text;
-      if (this.note.uuid == id) {
+      var data = event.data.data;
+
+      if (this.note.uuid === id) {
         this.note.text = text;
+        var changesMade = this.customEditor.setData(id, data);
+        if (changesMade) {
+          this.customEditor.setDirty(true);
+        }
         this.changesMade();
       }
     }
@@ -39941,7 +39948,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
   this.postNoteToExternalEditor = function () {
     var externalEditorElement = document.getElementById("editor-iframe");
     if (externalEditorElement) {
-      externalEditorElement.contentWindow.postMessage({ text: this.note.text, id: this.note.uuid }, '*');
+      externalEditorElement.contentWindow.postMessage({ text: this.note.text, data: this.customEditor.dataForKey(this.note.uuid), id: this.note.uuid }, '*');
     }
   };
 
@@ -40097,8 +40104,8 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     this.note.dummy = false;
     this.updateTags()(this.note, tags);
   };
-});
-;angular.module('app.frontend').directive("header", function (authManager) {
+}]);
+;angular.module('app.frontend').directive("header", ['authManager', function (authManager) {
   return {
     restrict: 'E',
     scope: {},
@@ -40120,7 +40127,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}).controller('HeaderCtrl', function (authManager, modelManager, $timeout, dbManager, syncManager) {
+}]).controller('HeaderCtrl', ['authManager', 'modelManager', '$timeout', 'dbManager', 'syncManager', function (authManager, modelManager, $timeout, dbManager, syncManager) {
 
   this.user = authManager.user;
 
@@ -40172,8 +40179,8 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
   this.syncUpdated = function () {
     this.lastSyncDate = new Date();
   };
-});
-;angular.module('app.frontend').controller('HomeCtrl', function ($scope, $rootScope, $timeout, modelManager, syncManager, authManager) {
+}]);
+;angular.module('app.frontend').controller('HomeCtrl', ['$scope', '$rootScope', '$timeout', 'modelManager', 'syncManager', 'authManager', function ($scope, $rootScope, $timeout, modelManager, syncManager, authManager) {
   syncManager.loadLocalItems(function (items) {
     $scope.$apply();
 
@@ -40359,7 +40366,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       }
     });
   };
-});
+}]);
 ;angular.module('app.frontend').directive("notesSection", function () {
   return {
     scope: {
@@ -40384,7 +40391,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}).controller('NotesCtrl', function (authManager, $timeout, $rootScope, modelManager) {
+}).controller('NotesCtrl', ['authManager', '$timeout', '$rootScope', 'modelManager', function (authManager, $timeout, $rootScope, modelManager) {
 
   this.sortBy = localStorage.getItem("sortBy") || "created_at";
 
@@ -40489,7 +40496,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     this.sortBy = type;
     localStorage.setItem("sortBy", type);
   };
-});
+}]);
 ;angular.module('app.frontend').directive("tagsSection", function () {
   return {
     restrict: 'E',
@@ -40522,7 +40529,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}).controller('TagsCtrl', function (modelManager) {
+}).controller('TagsCtrl', ['modelManager', function (modelManager) {
 
   var initialLoad = true;
 
@@ -40592,7 +40599,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     var validNotes = Note.filterDummyNotes(tag.notes);
     return validNotes.length;
   };
-});
+}]);
 ;
 var Item = function () {
   function Item(json_obj) {
@@ -40788,13 +40795,15 @@ var Editor = function (_Item) {
       _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'mapContentToLocalProperties', this).call(this, contentObject);
       this.url = contentObject.url;
       this.name = contentObject.name;
+      this.data = contentObject.data || {};
     }
   }, {
     key: 'structureParams',
     value: function structureParams() {
       var params = {
         url: this.url,
-        name: this.name
+        name: this.name,
+        data: this.data
       };
 
       _.merge(params, _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'structureParams', this).call(this));
@@ -40804,6 +40813,21 @@ var Editor = function (_Item) {
     key: 'toJSON',
     value: function toJSON() {
       return { uuid: this.uuid };
+    }
+  }, {
+    key: 'setData',
+    value: function setData(key, value) {
+      var dataHasChanged = JSON.stringify(this.data[key]) !== JSON.stringify(value);
+      if (dataHasChanged) {
+        this.data[key] = value;
+        return true;
+      }
+      return false;
+    }
+  }, {
+    key: 'dataForKey',
+    value: function dataForKey(key) {
+      return this.data[key] || {};
     }
   }, {
     key: 'content_type',
@@ -41270,9 +41294,9 @@ var ItemParams = function () {
     return domain;
   }
 
-  this.$get = function ($rootScope, Restangular, modelManager) {
+  this.$get = ['$rootScope', 'Restangular', 'modelManager', function ($rootScope, Restangular, modelManager) {
     return new AuthManager($rootScope, Restangular, modelManager);
-  };
+  }];
 
   function AuthManager($rootScope, Restangular, modelManager) {
 
@@ -41584,7 +41608,7 @@ angular.module('app.frontend').service('dbManager', DBManager);
     }
   };
 }]);
-;angular.module('app.frontend').directive('delayHide', function ($timeout) {
+;angular.module('app.frontend').directive('delayHide', ['$timeout', function ($timeout) {
   return {
     restrict: 'A',
     scope: {
@@ -41627,7 +41651,7 @@ angular.module('app.frontend').service('dbManager', DBManager);
     }
 
   };
-});
+}]);
 ;angular.module('app.frontend').directive('fileChange', function () {
   return {
     restrict: 'A',
@@ -41703,7 +41727,7 @@ var AccountMenu = function () {
 
   _createClass(AccountMenu, [{
     key: 'controller',
-    value: function controller($scope, authManager, modelManager, syncManager, $timeout) {
+    value: ['$scope', 'authManager', 'modelManager', 'syncManager', '$timeout', function controller($scope, authManager, modelManager, syncManager, $timeout) {
       'ngInject';
 
       $scope.formData = { url: syncManager.serverURL };
@@ -42015,7 +42039,7 @@ var AccountMenu = function () {
         var data = new Blob([JSON.stringify(data, null, 2 /* pretty print */)], { type: 'text/json' });
         return data;
       };
-    }
+    }]
   }]);
 
   return AccountMenu;
@@ -42038,7 +42062,7 @@ var ContextualExtensionsMenu = function () {
 
   _createClass(ContextualExtensionsMenu, [{
     key: 'controller',
-    value: function controller($scope, modelManager, extensionManager) {
+    value: ['$scope', 'modelManager', 'extensionManager', function controller($scope, modelManager, extensionManager) {
       'ngInject';
 
       $scope.renderData = {};
@@ -42112,7 +42136,7 @@ var ContextualExtensionsMenu = function () {
       $scope.accessTypeForExtension = function (extension) {
         return extensionManager.extensionUsesEncryptedData(extension) ? "encrypted" : "decrypted";
       };
-    }
+    }]
   }]);
 
   return ContextualExtensionsMenu;
@@ -42136,7 +42160,7 @@ var EditorMenu = function () {
 
   _createClass(EditorMenu, [{
     key: 'controller',
-    value: function controller($scope, modelManager, extensionManager, syncManager) {
+    value: ['$scope', 'modelManager', 'extensionManager', 'syncManager', function controller($scope, modelManager, extensionManager, syncManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -42195,7 +42219,7 @@ var EditorMenu = function () {
         if (!results[2]) return '';
         return decodeURIComponent(results[2].replace(/\+/g, " "));
       }
-    }
+    }]
   }]);
 
   return EditorMenu;
@@ -42216,7 +42240,7 @@ var GlobalExtensionsMenu = function () {
 
   _createClass(GlobalExtensionsMenu, [{
     key: 'controller',
-    value: function controller($scope, extensionManager, syncManager) {
+    value: ['$scope', 'extensionManager', 'syncManager', function controller($scope, extensionManager, syncManager) {
       'ngInject';
 
       $scope.extensionManager = extensionManager;
@@ -42273,7 +42297,7 @@ var GlobalExtensionsMenu = function () {
           extensionManager.refreshExtensionsFromServer();
         }
       };
-    }
+    }]
   }]);
 
   return GlobalExtensionsMenu;
@@ -42284,6 +42308,7 @@ angular.module('app.frontend').directive('globalExtensionsMenu', function () {
 });
 ;
 var ExtensionManager = function () {
+  ExtensionManager.$inject = ['Restangular', 'modelManager', 'authManager', 'syncManager'];
   function ExtensionManager(Restangular, modelManager, authManager, syncManager) {
     _classCallCheck(this, ExtensionManager);
 
@@ -42790,15 +42815,15 @@ var ExtensionManager = function () {
 }();
 
 angular.module('app.frontend').service('extensionManager', ExtensionManager);
-;angular.module('app.frontend').filter('appDate', function ($filter) {
+;angular.module('app.frontend').filter('appDate', ['$filter', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy', 'UTC') : '';
   };
-}).filter('appDateTime', function ($filter) {
+}]).filter('appDateTime', ['$filter', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy h:mm a') : '';
   };
-});
+}]);
 ;angular.module('app.frontend').filter('startFrom', function () {
   return function (input, start) {
     return input.slice(start);
@@ -42811,6 +42836,7 @@ angular.module('app.frontend').service('extensionManager', ExtensionManager);
 }]);
 ;
 var ModelManager = function () {
+  ModelManager.$inject = ['dbManager'];
   function ModelManager(dbManager) {
     _classCallCheck(this, ModelManager);
 
@@ -43255,6 +43281,7 @@ var ModelManager = function () {
 angular.module('app.frontend').service('modelManager', ModelManager);
 ;
 var SyncManager = function () {
+  SyncManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'dbManager', 'Restangular'];
   function SyncManager($rootScope, modelManager, authManager, dbManager, Restangular) {
     _classCallCheck(this, SyncManager);
 
@@ -44171,9 +44198,9 @@ angular.module('app.frontend').service('syncManager', SyncManager);
   $templateCache.put('frontend/directives/global-extensions-menu.html',
     "<div class='panel panel-default account-panel panel-right'>\n" +
     "  <div class='panel-body'>\n" +
-    "    <div ng-if='!extensionManager.extensions.length' style='font-size: 18px;'>No extensions installed</div>\n" +
+    "    <div ng-if='!extensionManager.extensions.length' style='font-size: 15px;'>No extensions installed</div>\n" +
     "    <div ng-if='extensionManager.extensions.length'>\n" +
-    "      <section class='gray-bg inline-h mb-10 medium-padding' ng-init='extension.formData = {}' ng-repeat='extension in extensionManager.extensions'>\n" +
+    "      <section class='gray-bg inline-h mb-10 medium-padding' ng-init='extension.formData = {}' ng-repeat=\"extension in extensionManager.extensions | orderBy: 'name'\">\n" +
     "        <h3 class='center-align'>{{extension.name}}</h3>\n" +
     "        <div class='center-align centered mt-10'>\n" +
     "          <label class='block normal'>Send data:</label>\n" +
@@ -44286,7 +44313,7 @@ angular.module('app.frontend').service('syncManager', SyncManager);
     "    </div>\n" +
     "    <div class='save-status' ng-bind-html='ctrl.noteStatus' ng-class=\"{'red bold': ctrl.saveError}\"></div>\n" +
     "    <div class='tags'>\n" +
-    "      <input class='tags-input' ng-blur='ctrl.updateTagsFromTagsString($event, ctrl.tagsString)' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.updateTagsFromTagsString($event, ctrl.tagsString)' ng-model='ctrl.tagsString' placeholder='#tags' type='text'>\n" +
+    "      <input class='tags-input' ng-blur='ctrl.updateTagsFromTagsString($event, ctrl.tagsString)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur();' ng-model='ctrl.tagsString' placeholder='#tags' type='text'>\n" +
     "    </div>\n" +
     "  </div>\n" +
     "  <div class='section-menu'>\n" +
