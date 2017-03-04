@@ -53,14 +53,14 @@
     <style>
     .editor-content .editable {
       font-family: Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+      font-size: 16px;
     }
     </style>
 
   </head>
 
   <body ng-class="bodyClass">
-    <div ui-view="content">
-    </div>
+    <div ng-controller="HomeCtrl" ng-include="'frontend/home.html'"></div>
   </body>
 
 </html>

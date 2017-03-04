@@ -212,7 +212,11 @@ app.on('ready', function(){
         },
         {
           label: 'Support',
-          click () { require('electron').shell.openExternal('mailto:standardnotes@bitar.io') }
+          click () { require('electron').shell.openExternal('mailto:hello@standardnotes.org') }
+        },
+        {
+          label: 'Version: ' + app.getVersion(),
+          click () { require('electron').shell.openExternal('https://github.com/standardnotes/desktop/releases') }
         }
       ]
     }
