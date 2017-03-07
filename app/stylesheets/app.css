@@ -469,6 +469,33 @@ p {
   vertical-align: top;
   overflow: hidden;
   position: relative;
+  flex-direction: row;
+}
+@media (max-width: 767px) {
+  .app {
+    flex-direction: column;
+  }
+}
+.app .section-tags-notes {
+  display: flex;
+  flex: 1 20%;
+  max-width: 500px;
+}
+@media (max-width: 1199px) {
+  .app .section-tags-notes {
+    max-width: 400px;
+  }
+}
+@media (max-width: 767px) {
+  .app .section-tags-notes {
+    flex: 1 20%;
+    max-width: none;
+    border-bottom: 1px solid #dddddd;
+  }
+}
+.app .section-editor {
+  display: flex;
+  flex: 1 70%;
 }
 .app .light-button {
   background-color: #e3e3e3;
@@ -488,6 +515,7 @@ p {
   height: 100%;
   max-height: calc(100vh - 25px);
   font-size: 17px;
+  overflow: auto;
 }
 .app .section .scrollable {
   overflow-y: auto;
@@ -505,14 +533,14 @@ p {
   font-weight: bold;
   font-size: 14px;
 }
-.app .section .section-title-bar > .title {
+.app .section .section-title-bar .section-title-bar-title {
   float: left;
   white-space: nowrap;
   text-overflow: ellipsis;
   width: 80%;
   overflow: hidden;
 }
-.app .section .section-title-bar > .add-button {
+.app .section .section-title-bar .add-button {
   float: right;
   font-size: 18px;
   width: 45px;
@@ -525,7 +553,7 @@ p {
   position: absolute;
   right: 12px;
 }
-.app .section .section-title-bar > .add-button:hover {
+.app .section .section-title-bar .add-button:hover {
   background-color: rgba(233, 233, 233, 0.8);
 }
 
@@ -730,6 +758,11 @@ h2 {
   background-color: white;
 }
 
+.refresh-section {
+  position: absolute;
+  right: 8px;
+}
+
 button.light {
   font-weight: bold;
   margin-bottom: 0px;
@@ -881,16 +914,47 @@ a.disabled {
 .notes {
   border-left: 1px solid #dddddd;
   border-right: 1px solid #dddddd;
-  flex: 1 20%;
-  max-width: 350px;
+  flex: 1 50%;
   min-width: 170px;
 }
 .notes .notes-title-bar {
   color: rgba(0, 0, 0, 0.4);
   padding-top: 16px !important;
-  height: 130px !important;
+  height: 126px !important;
   font-weight: normal !important;
   font-size: 18px !important;
+}
+.notes .notes-title-bar .notes-top-header .section-title-bar-title {
+  margin-bottom: 16px;
+}
+.notes .notes-title-bar .notes-top-header .add-button {
+  right: 20px !important;
+}
+@media (max-width: 767px) {
+  .notes .notes-title-bar {
+    padding: 10px !important;
+    height: 80px !important;
+  }
+  .notes .notes-title-bar .notes-top-header {
+    display: flex;
+    flex-direction: row;
+  }
+  .notes .notes-title-bar .notes-top-header .section-title-bar-title {
+    width: auto !important;
+    display: none;
+  }
+  .notes .notes-title-bar .notes-top-header .add-button {
+    height: 32px;
+    padding-top: 5px;
+  }
+  .notes .notes-title-bar .notes-top-header .filter-section {
+    flex: 1 50%;
+    margin-right: 62px;
+    margin-left: 0 !important;
+    clear: none;
+    margin-top: 0;
+    margin-left: 10px;
+  }
 }
 .notes .tag-menu-bar {
   position: relative;
@@ -900,9 +964,9 @@ a.disabled {
   margin-top: 14px;
 }
 .notes .filter-section {
-  clear: left;
+  clear: both;
   height: 32px;
-  margin-top: 20px;
+  margin-top: 100px;
 }
 .notes .filter-section .filter-bar {
   background-color: #e9e9e9;
@@ -917,7 +981,12 @@ a.disabled {
   width: 100%;
 }
 .notes .scrollable {
-  height: calc(100vh - (130px + 25px));
+  height: calc(100vh - (126px + 25px));
+}
+@media (max-width: 767px) {
+  .notes .scrollable {
+    height: calc(100vh - (80px + 25px));
+  }
 }
 .notes .infinite-scroll {
   overflow-x: hidden;
@@ -959,7 +1028,7 @@ a.disabled {
 }
 
 .editor {
-  flex: 1 50%;
+  flex: 1 1 100%;
   min-width: 300px;
   display: flex;
   flex-direction: column;
@@ -993,13 +1062,13 @@ a.disabled {
 .editor-heading.fullscreen {
   position: relative;
 }
-.editor-heading > .title {
+.editor-heading > .section-title-bar-title {
   font-size: 18px;
   font-weight: bold;
   padding-top: 0px;
   width: 100%;
 }
-.editor-heading > .title > .input {
+.editor-heading > .section-title-bar-title > .input {
   float: left;
   text-overflow: ellipsis;
   width: 90%;
@@ -1008,7 +1077,7 @@ a.disabled {
   outline: none;
   background-color: transparent;
 }
-.editor-heading > .title > .input:disabled {
+.editor-heading > .section-title-bar-title > .input:disabled {
   color: black;
 }
 .editor-heading .save-status {
