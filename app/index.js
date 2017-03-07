@@ -102,6 +102,10 @@ function createWindow () {
 
   // auto updater
   autoUpdater.logger = log
+  checkForUpdates();
+}
+
+function checkForUpdates() {
   if(!isDev) {
     autoUpdater.checkForUpdates();
   }
@@ -115,6 +119,7 @@ app.on('activate', function() {
 	} else {
     win.show();
   }
+  checkForUpdates()
 });
 
 app.on('ready', function(){
@@ -204,7 +209,7 @@ app.on('ready', function(){
         },
         {
           label: 'Slack',
-          click () { require('electron').shell.openExternal('https://slackin-ekhdyygaer.now.sh/') }
+          click () { require('electron').shell.openExternal('https://now-examples-slackin-phikcdqtmt.now.sh/') }
         },
         {
           label: 'Website',

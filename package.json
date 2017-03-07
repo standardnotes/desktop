@@ -10,12 +10,6 @@
     "appId": "org.standardnotes.standardnotes",
     "mac": {
       "category": "public.app-category.productivity"
-    },
-    "win": {
-      "iconUrl": "(windows-only) https link to icon"
-    },
-    "linux": {
-      "icon": "icon/icon.png"
     }
   },
   "scripts": {
