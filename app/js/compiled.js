@@ -33701,7 +33701,12 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     }
   }.bind(this), false);
 
+  $rootScope.$on("tag-changed", function () {
+    this.loadTagsString();
+  }.bind(this));
+
   this.setNote = function (note, oldNote) {
+    this.noteReady = false;
     var currentEditor = this.customEditor;
     this.customEditor = null;
     this.showExtensions = false;
@@ -33711,6 +33716,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     var setEditor = function (editor) {
       this.customEditor = editor;
       this.postNoteToExternalEditor();
+      this.noteReady = true;
     }.bind(this);
 
     var editor = this.editorForNote(note);
@@ -33726,6 +33732,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       }
     } else {
       this.customEditor = null;
+      this.noteReady = true;
     }
 
     if (note.safeText().length == 0 && note.dummy) {
@@ -34162,18 +34169,19 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
 
   $scope.tagsSave = function (tag, callback) {
     if (!tag.title || tag.title.length == 0) {
-      $scope.notesRemoveTag(tag);
+      $scope.removeTag(tag);
       return;
     }
     tag.setDirty(true);
     syncManager.sync(callback);
+    $rootScope.$broadcast("tag-changed");
   };
 
   /*
   Notes Ctrl Callbacks
   */
 
-  $scope.notesRemoveTag = function (tag) {
+  $scope.removeTag = function (tag) {
     var validNotes = Note.filterDummyNotes(tag.notes);
     if (validNotes == 0) {
       modelManager.setItemToBeDeleted(tag);
@@ -34267,8 +34275,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     scope: {
       addNew: "&",
       selectionMade: "&",
-      tag: "=",
-      removeTag: "&"
+      tag: "="
     },
 
     templateUrl: 'frontend/notes.html',
@@ -34329,11 +34336,6 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
 
     var createNew = notes.length == 0;
     this.selectFirstNote(createNew);
-  };
-
-  this.selectedTagDelete = function () {
-    this.showMenu = false;
-    this.removeTag()(this.tag);
   };
 
   this.selectFirstNote = function (createNew) {
@@ -34408,7 +34410,8 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       save: "&",
       tags: "=",
       allTag: "=",
-      updateNoteTag: "&"
+      updateNoteTag: "&",
+      removeTag: "&"
     },
     templateUrl: 'frontend/tags.html',
     replace: true,
@@ -34430,7 +34433,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}).controller('TagsCtrl', ['modelManager', function (modelManager) {
+}).controller('TagsCtrl', ['modelManager', '$timeout', function (modelManager, $timeout) {
 
   var initialLoad = true;
 
@@ -34466,11 +34469,6 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     this.addNew()(this.newTag);
   };
 
-  var originalTagName = "";
-  this.onTagTitleFocus = function (tag) {
-    originalTagName = tag.title;
-  };
-
   this.tagTitleDidChange = function (tag) {
     this.editingTag = tag;
   };
@@ -34494,6 +34492,23 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       this.selectTag(tag);
       this.newTag = null;
     }.bind(this));
+  };
+
+  function inputElementForTag(tag) {
+    return document.getElementById("tag-" + tag.uuid);
+  }
+
+  var originalTagName = "";
+  this.selectedRenameTag = function ($event, tag) {
+    originalTagName = tag.title;
+    this.editingTag = tag;
+    $timeout(function () {
+      inputElementForTag(tag).focus();
+    });
+  };
+
+  this.selectedDeleteTag = function (tag) {
+    this.removeTag()(tag);
   };
 
   this.noteCount = function (tag) {
@@ -35765,11 +35780,17 @@ var AccountMenu = function () {
       };
 
       $scope.submitRegistrationForm = function () {
-        var confirmation = prompt("Please confirm your password. Note that because your notes are encrypted using your password, Standard Notes does not have a password reset option. You cannot forget your password.");
+        $scope.formData.confirmPassword = true;
+      };
+
+      $scope.submitPasswordConfirmation = function () {
+        var confirmation = $scope.formData.pw_confirmation;
         if (confirmation !== $scope.formData.user_password) {
           alert("The two passwords you entered do not match. Please try again.");
           return;
         }
+
+        $scope.formData.confirmPassword = false;
         $scope.formData.status = "Generating Account Keys...";
 
         $timeout(function () {
@@ -36847,7 +36868,9 @@ var HttpManager = function () {
         if (xmlhttp.readyState == 4) {
           var response = xmlhttp.responseText;
           if (response) {
-            response = JSON.parse(response);
+            try {
+              response = JSON.parse(response);
+            } catch (e) {}
           }
 
           if (xmlhttp.status >= 200 && xmlhttp.status <= 299) {
@@ -37646,7 +37669,7 @@ var SyncManager = function () {
   }, {
     key: 'serverURL',
     get: function get() {
-      return localStorage.getItem("server") || "https://n3.standardnotes.org";
+      return localStorage.getItem("server") || window._default_sf_server;
     }
   }, {
     key: 'masterKey',
@@ -37752,32 +37775,44 @@ angular.module('app.frontend').service('syncManager', SyncManager);
     "<div class='panel panel-default panel-right account-data-menu'>\n" +
     "  <div class='panel-body large-padding'>\n" +
     "    <div ng-if='!user'>\n" +
-    "      <p>Enter your <a href=\"https://standardnotes.org\" target=\"_blank\">Standard File</a> account information. You can also register for free using the default server address.</p>\n" +
-    "      <div class='small-v-space'></div>\n" +
-    "      <form class='account-form mt-5' name='loginForm'>\n" +
-    "        <input class='form-control' name='server' ng-model='formData.url' placeholder='Server URL' required type='text'>\n" +
-    "        <input autofocus='autofocus' class='form-control' name='email' ng-model='formData.email' placeholder='Email' required type='email'>\n" +
-    "        <input class='form-control' name='password' ng-model='formData.user_password' placeholder='Password' required type='password'>\n" +
-    "        <div class='checkbox' ng-if='localNotesCount() &gt; 0'>\n" +
-    "          <label>\n" +
-    "            <input ng-bind='true' ng-change='mergeLocalChanged()' ng-model='formData.mergeLocal' type='checkbox'>\n" +
-    "              Merge local notes ({{localNotesCount()}} notes)\n" +
-    "            </input>\n" +
-    "          </label>\n" +
-    "        </div>\n" +
-    "        <div ng-if='!formData.status'>\n" +
-    "          <button class='btn dark-button half-button' data-size='s' data-style='expand-right' ng-click='loginSubmitPressed()' state='buttonState'>\n" +
-    "            <span>Sign In</span>\n" +
-    "          </button>\n" +
-    "          <button class='btn dark-button half-button' data-size='s' data-style='expand-right' ng-click='submitRegistrationForm()' state='buttonState'>\n" +
-    "            <span>Register</span>\n" +
-    "          </button>\n" +
-    "          <br>\n" +
-    "          <div class='block' style='margin-top: 10px; font-size: 14px; font-weight: bold; text-align: center;'>\n" +
-    "            <a class='btn' ng-click='showResetForm = !showResetForm'>Passwords cannot be forgotten.</a>\n" +
+    "      <div ng-if='!formData.confirmPassword'>\n" +
+    "        <p>Enter your <a href=\"https://standardnotes.org\" target=\"_blank\">Standard File</a> account information. You can also register for free using the default server address.</p>\n" +
+    "        <div class='small-v-space'></div>\n" +
+    "        <form class='mt-5'>\n" +
+    "          <input class='form-control' name='server' ng-model='formData.url' placeholder='Server URL' required type='text'>\n" +
+    "          <input autofocus='autofocus' class='form-control' name='email' ng-model='formData.email' placeholder='Email' required type='email'>\n" +
+    "          <input class='form-control' name='password' ng-model='formData.user_password' placeholder='Password' required type='password'>\n" +
+    "          <div class='checkbox' ng-if='localNotesCount() &gt; 0'>\n" +
+    "            <label>\n" +
+    "              <input ng-bind='true' ng-change='mergeLocalChanged()' ng-model='formData.mergeLocal' type='checkbox'>\n" +
+    "                Merge local notes ({{localNotesCount()}} notes)\n" +
+    "              </input>\n" +
+    "            </label>\n" +
     "          </div>\n" +
-    "        </div>\n" +
-    "      </form>\n" +
+    "          <div ng-if='!formData.status'>\n" +
+    "            <button class='btn dark-button half-button' ng-click='loginSubmitPressed()'>\n" +
+    "              <span>Sign In</span>\n" +
+    "            </button>\n" +
+    "            <button class='btn dark-button half-button' ng-click='submitRegistrationForm()'>\n" +
+    "              <span>Register</span>\n" +
+    "            </button>\n" +
+    "            <br>\n" +
+    "            <div class='block' style='margin-top: 10px; font-size: 14px; font-weight: bold; text-align: center;'>\n" +
+    "              <a class='btn' ng-click='showResetForm = !showResetForm'>Passwords cannot be forgotten.</a>\n" +
+    "            </div>\n" +
+    "          </div>\n" +
+    "        </form>\n" +
+    "      </div>\n" +
+    "      <div ng-if='formData.confirmPassword'>\n" +
+    "        <h3>Confirm your password.</h3>\n" +
+    "        <p class='mt-5'>Note that because your notes are encrypted using your password, Standard Notes does not have a password reset option. You cannot forget your password.</p>\n" +
+    "        <form class='mt-10'>\n" +
+    "          <input class='form-control' name='password' ng-model='formData.pw_confirmation' placeholder='Confirm Password' required type='password'>\n" +
+    "          <button class='btn dark-button btn-block' ng-click='submitPasswordConfirmation()'>\n" +
+    "            <span>Confirm</span>\n" +
+    "          </button>\n" +
+    "        </form>\n" +
+    "      </div>\n" +
     "      <em class='block center-align mt-10' ng-if='formData.status' style='font-size: 14px;'>{{formData.status}}</em>\n" +
     "      <div ng-if='showResetForm'>\n" +
     "        <p style='font-size: 13px; text-align: center;'>\n" +
@@ -38383,7 +38418,7 @@ angular.module('app.frontend').service('syncManager', SyncManager);
     "      <input class='input' id='note-title-editor' ng-change='ctrl.nameChanged()' ng-focus='ctrl.onNameFocus()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTitle($event)' ng-model='ctrl.note.title' select-on-click='true'>\n" +
     "    </div>\n" +
     "    <div class='save-status' ng-bind-html='ctrl.noteStatus' ng-class=\"{'red bold': ctrl.saveError}\"></div>\n" +
-    "    <div class='tags'>\n" +
+    "    <div class='editor-tags'>\n" +
     "      <input class='tags-input' ng-blur='ctrl.updateTagsFromTagsString($event, ctrl.tagsString)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur();' ng-model='ctrl.tagsString' placeholder='#tags' type='text'>\n" +
     "    </div>\n" +
     "  </div>\n" +
@@ -38424,7 +38459,7 @@ angular.module('app.frontend').service('syncManager', SyncManager);
     "      </li>\n" +
     "    </ul>\n" +
     "  </div>\n" +
-    "  <div class='editor-content' ng-class=\"{'fullscreen' : ctrl.fullscreen }\">\n" +
+    "  <div class='editor-content' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.noteReady'>\n" +
     "    <iframe frameBorder='0' id='editor-iframe' ng-if='ctrl.customEditor' ng-src='{{ctrl.customEditor.url | trusted}}' style='width: 100%;'></iframe>\n" +
     "    <textarea class='editable' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.customEditor' ng-model='ctrl.note.text'></textarea>\n" +
     "  </div>\n" +
@@ -38470,8 +38505,8 @@ angular.module('app.frontend').service('syncManager', SyncManager);
   $templateCache.put('frontend/home.html',
     "<div class='main-ui-view'>\n" +
     "  <div class='app'>\n" +
-    "    <tags-section add-new='tagsAddNew' all-tag='allTag' save='tagsSave' selection-made='tagsSelectionMade' tags='tags' will-select='tagsWillMakeSelection'></tags-section>\n" +
-    "    <notes-section add-new='notesAddNew' remove-tag='notesRemoveTag' selection-made='notesSelectionMade' tag='selectedTag'></notes-section>\n" +
+    "    <tags-section add-new='tagsAddNew' all-tag='allTag' remove-tag='removeTag' save='tagsSave' selection-made='tagsSelectionMade' tags='tags' will-select='tagsWillMakeSelection'></tags-section>\n" +
+    "    <notes-section add-new='notesAddNew' selection-made='notesSelectionMade' tag='selectedTag'></notes-section>\n" +
     "    <editor-section note='selectedNote' remove='deleteNote' save='saveNote' update-tags='updateTagsForNote'></editor-section>\n" +
     "  </div>\n" +
     "  <header></header>\n" +
@@ -38522,7 +38557,7 @@ angular.module('app.frontend').service('syncManager', SyncManager);
     "        <ul class='nav nav-pills'>\n" +
     "          <li class='dropdown'>\n" +
     "            <a class='dropdown-toggle' ng-click='ctrl.showMenu = !ctrl.showMenu'>\n" +
-    "              Menu\n" +
+    "              Sort\n" +
     "              <span class='caret'></span>\n" +
     "              <span class='sr-only'></span>\n" +
     "            </a>\n" +
@@ -38530,17 +38565,14 @@ angular.module('app.frontend').service('syncManager', SyncManager);
     "              <li>\n" +
     "                <a class='text' ng-click='ctrl.selectedMenuItem(); ctrl.selectedSortByCreated()'>\n" +
     "                  <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'created_at'\">✓</span>\n" +
-    "                  Sort by date created\n" +
+    "                  By date added\n" +
     "                </a>\n" +
     "              </li>\n" +
     "              <li>\n" +
     "                <a class='text' ng-click='ctrl.selectedMenuItem(); ctrl.selectedSortByUpdated()'>\n" +
     "                  <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'updated_at'\">✓</span>\n" +
-    "                  Sort by date updated\n" +
+    "                  By date modified\n" +
     "                </a>\n" +
-    "              </li>\n" +
-    "              <li>\n" +
-    "                <a class='text' ng-click='ctrl.selectedMenuItem(); ctrl.selectedTagDelete()'>Delete Tag</a>\n" +
     "              </li>\n" +
     "            </ul>\n" +
     "          </li>\n" +
@@ -38575,12 +38607,21 @@ angular.module('app.frontend').service('syncManager', SyncManager);
     "    </div>\n" +
     "    <div class='scrollable'>\n" +
     "      <div class='tag' ng-class=\"{'selected' : ctrl.selectedTag == ctrl.allTag}\" ng-click='ctrl.selectTag(ctrl.allTag)' ng-if='ctrl.allTag'>\n" +
-    "        <input class='title' ng-disabled='true' ng-model='ctrl.allTag.title'>\n" +
-    "        <div class='count'>{{ctrl.noteCount(ctrl.allTag)}}</div>\n" +
+    "        <div class='info'>\n" +
+    "          <input class='title' ng-disabled='true' ng-model='ctrl.allTag.title'>\n" +
+    "          <div class='count'>{{ctrl.noteCount(ctrl.allTag)}}</div>\n" +
+    "        </div>\n" +
     "      </div>\n" +
-    "      <div class='tag' drop='ctrl.handleDrop' droppable ng-class=\"{'selected' : ctrl.selectedTag == tag}\" ng-click='ctrl.selectTag(tag)' ng-repeat='tag in ctrl.tags' tag='tag'>\n" +
-    "        <input class='title' mb-autofocus='true' ng-blur='ctrl.saveTag($event, tag)' ng-change='ctrl.tagTitleDidChange(tag)' ng-disabled='tag != ctrl.selectedTag' ng-focus='ctrl.onTagTitleFocus(tag)' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTag($event, tag)' ng-model='tag.title' should-focus='ctrl.newTag'>\n" +
-    "        <div class='count'>{{ctrl.noteCount(tag)}}</div>\n" +
+    "      <div class='tag' ng-class=\"{'selected' : ctrl.selectedTag == tag}\" ng-click='ctrl.selectTag(tag)' ng-repeat='tag in ctrl.tags'>\n" +
+    "        <div class='info'>\n" +
+    "          <input class='title' mb-autofocus='true' ng-attr-id='tag-{{tag.uuid}}' ng-blur='ctrl.saveTag($event, tag)' ng-change='ctrl.tagTitleDidChange(tag)' ng-click='ctrl.selectTag(tag)' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTag($event, tag)' ng-model='tag.title' should-focus='ctrl.newTag || ctrl.editingTag == tag' spellcheck='false'>\n" +
+    "          <div class='count'>{{ctrl.noteCount(tag)}}</div>\n" +
+    "        </div>\n" +
+    "        <div class='menu' ng-if='ctrl.selectedTag == tag'>\n" +
+    "          <a class='item' ng-click='ctrl.selectedRenameTag($event, tag)' ng-if='!ctrl.editingTag'>Rename</a>\n" +
+    "          <a class='item' ng-click='ctrl.saveTag($event, tag)' ng-if='ctrl.editingTag'>Save</a>\n" +
+    "          <a class='item' ng-click='ctrl.selectedDeleteTag(tag)'>Delete</a>\n" +
+    "        </div>\n" +
     "      </div>\n" +
     "    </div>\n" +
     "  </div>\n" +

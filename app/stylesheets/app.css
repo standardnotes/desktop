@@ -824,7 +824,7 @@ a.disabled {
   height: calc(100vh - (55px + 25px));
 }
 .tags .tag {
-  height: 30px;
+  min-height: 30px;
   padding: 5px 12px;
   cursor: pointer;
   transition: height .1s ease-in-out;
@@ -832,12 +832,10 @@ a.disabled {
   font-size: 14px;
   /* When a note is dragged over tag */
 }
-.tags .tag > .icon {
-  float: left;
-  padding-top: 6px;
-  margin-right: 5px;
+.tags .tag > .info {
+  height: 20px;
 }
-.tags .tag > .title {
+.tags .tag > .info > .title {
   width: 80%;
   background-color: transparent;
   font-weight: 600;
@@ -847,12 +845,27 @@ a.disabled {
   cursor: pointer;
   text-overflow: ellipsis;
   width: 75%;
+  pointer-events: none;
 }
-.tags .tag > .count {
+.tags .tag > .info > .count {
   position: absolute;
   right: 17px;
   padding-top: 1px;
   font-weight: bold;
+}
+.tags .tag > .menu {
+  font-size: 11px;
+  opacity: 0.5;
+  font-weight: bold;
+  clear: both;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+.tags .tag > .menu > .item {
+  margin-right: 2px;
+}
+.tags .tag > .menu:hover {
+  opacity: 1.0;
 }
 .tags .tag.selected {
   background-color: #dbdbdb;
@@ -964,6 +977,7 @@ a.disabled {
   display: flex;
   flex-direction: column;
   overflow-y: hidden;
+  background-color: white;
 }
 .editor.fullscreen {
   width: 100%;
@@ -1024,12 +1038,12 @@ a.disabled {
   text-align: right;
   color: rgba(0, 0, 0, 0.23);
 }
-.editor-heading .tags {
+.editor-heading .editor-tags {
   clear: left;
   width: 100%;
   height: 25px;
 }
-.editor-heading .tags .tags-input {
+.editor-heading .editor-tags .tags-input {
   background-color: transparent;
   width: 100%;
   border: none;
