@@ -38413,11 +38413,11 @@ angular.module('app.frontend').service('syncManager', SyncManager);
 
   $templateCache.put('frontend/editor.html',
     "<div class='section editor' ng-class=\"{'fullscreen' : ctrl.fullscreen}\">\n" +
-    "  <div class='section-title-bar editor-heading' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.note'>\n" +
+    "  <div class='section-title-bar' id='editor-title-bar' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.note'>\n" +
     "    <div class='title'>\n" +
     "      <input class='input' id='note-title-editor' ng-change='ctrl.nameChanged()' ng-focus='ctrl.onNameFocus()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTitle($event)' ng-model='ctrl.note.title' select-on-click='true'>\n" +
     "    </div>\n" +
-    "    <div class='save-status' ng-bind-html='ctrl.noteStatus' ng-class=\"{'red bold': ctrl.saveError}\"></div>\n" +
+    "    <div id='save-status' ng-bind-html='ctrl.noteStatus' ng-class=\"{'red bold': ctrl.saveError}\"></div>\n" +
     "    <div class='editor-tags'>\n" +
     "      <input class='tags-input' ng-blur='ctrl.updateTagsFromTagsString($event, ctrl.tagsString)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur();' ng-model='ctrl.tagsString' placeholder='#tags' type='text'>\n" +
     "    </div>\n" +
@@ -38468,7 +38468,7 @@ angular.module('app.frontend').service('syncManager', SyncManager);
 
 
   $templateCache.put('frontend/header.html',
-    "<div class='footer-bar'>\n" +
+    "<div id='footer-bar'>\n" +
     "  <div class='pull-left'>\n" +
     "    <div class='footer-bar-link' click-outside='ctrl.showAccountMenu = false;' is-open='ctrl.showAccountMenu'>\n" +
     "      <a ng-class='{red: ctrl.error}' ng-click='ctrl.accountMenuPressed()'>Account</a>\n" +
@@ -38546,7 +38546,7 @@ angular.module('app.frontend').service('syncManager', SyncManager);
   $templateCache.put('frontend/notes.html',
     "<div class='section notes'>\n" +
     "  <div class='content'>\n" +
-    "    <div class='section-title-bar notes-title-bar'>\n" +
+    "    <div class='section-title-bar' id='notes-title-bar'>\n" +
     "      <div class='title'>{{ctrl.tag.title}} notes</div>\n" +
     "      <div class='add-button' ng-click='ctrl.createNewNote()'>+</div>\n" +
     "      <br>\n" +
@@ -38599,10 +38599,10 @@ angular.module('app.frontend').service('syncManager', SyncManager);
 
   $templateCache.put('frontend/tags.html',
     "<div class='section tags'>\n" +
-    "  <div class='content'>\n" +
-    "    <div class='section-title-bar tags-title-bar'>\n" +
+    "  <div class='content' id='tags-content'>\n" +
+    "    <div class='section-title-bar' id='tags-title-bar'>\n" +
     "      <div class='title'>Tags</div>\n" +
-    "      <div class='add-button tag-add-button' ng-click='ctrl.clickedAddNewTag()'>+</div>\n" +
+    "      <div class='add-button' id='tag-add-button' ng-click='ctrl.clickedAddNewTag()'>+</div>\n" +
     "      {{ctrl.test}}\n" +
     "    </div>\n" +
     "    <div class='scrollable'>\n" +

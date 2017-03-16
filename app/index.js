@@ -1,16 +1,23 @@
-const {app, Menu, BrowserWindow} = require('electron')
+const {app, Menu, BrowserWindow, dialog} = require('electron')
+app.setName('Standard Notes');
+
 const path = require('path')
 const {autoUpdater} = require("electron-updater")
 const url = require('url')
 const windowStateKeeper = require('electron-window-state')
-const isDev = require('electron-is-dev');
-const log = require('electron-log')
-log.transports.file.level = 'info';
 const shell = require('electron').shell;
 
-app.setName('Standard Notes');
+const isDev = require('electron-is-dev');
 
-let win
+const log = require('electron-log')
+log.transports.file.level = 'info';
+
+const Store = require('./store.js');
+const store = new Store({
+  configName: 'user-preferences',
+});
+
+let win;
 let willQuitApp = false;
 
 autoUpdater.on("update-downloaded", function() {
@@ -63,6 +70,10 @@ function createWindow () {
   })
 
   win.once('ready-to-show', () => {
+    let themePath = store.get("themePath");
+    if(themePath) {
+      setThemeFromFile(themePath);
+    }
     win.show()
   })
 
@@ -77,13 +88,14 @@ function createWindow () {
     }
   })
 
-  win.webContents.session.clearCache(function(){
-    let url = 'file://' + __dirname + '/index.html';
-     if ('APP_RELATIVE_PATH' in process.env) {
-       url = 'file://' + __dirname + '/' + process.env.APP_RELATIVE_PATH;
-     }
-    win.loadURL(url);
-  });
+  let url = 'file://' + __dirname + '/index.html';
+  if ('APP_RELATIVE_PATH' in process.env) {
+    url = 'file://' + __dirname + '/' + process.env.APP_RELATIVE_PATH;
+  }
+  win.loadURL(url);
+
+  // win.webContents.session.clearCache(function(){
+  // });
 
   // handle link clicks
   win.webContents.on('new-window', function(e, url) {
@@ -130,6 +142,93 @@ app.on('ready', function(){
     win.focus();
   }
 
+  reloadThemesAndMenu();
+})
+
+function reloadThemesAndMenu() {
+  initializeThemes(function(){
+    loadMenu();
+  })
+}
+
+let fs = require('fs');
+let themesDir = path.join(app.getPath('userData'), 'themes/');
+var themes;
+
+function saveThemeData(name, data) {
+  let themePath = path.join(themesDir, name);
+  fs.writeFileSync(themePath, data);
+}
+
+function setThemeFromFile(filePath) {
+  store.set("themePath", filePath);
+  if(!filePath) {
+    // default
+    reloadThemesAndMenu();
+    win.reload();
+    return;
+  }
+
+  fs.readFile(filePath, 'utf-8', function (err, data) {
+    if(err) {
+      return;
+    }
+    win.webContents.insertCSS(data);
+    reloadThemesAndMenu();
+  });
+}
+
+function fileNameFromPath(filePath) {
+  return filePath.replace(/^.*[\\\/]/, '');
+}
+
+function initializeThemes(callback) {
+  if (!fs.existsSync(themesDir)){
+    fs.mkdirSync(themesDir);
+  }
+
+  themes = [];
+  var index = 0;
+
+  function capitalizeString(string) {
+    return string.replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
+  };
+
+  function displayNameForThemeFile(fileName) {
+    let name = fileName.split(".")[0];
+    let cleaned = name.split("-").join(" ");
+    return capitalizeString(cleaned);
+  }
+
+  fs.readdir(themesDir, function(err, dir){
+
+    for(let fileName of dir) {
+      if(fileName.includes(".css") === false) {
+        continue;
+      }
+      var themePath = path.join(themesDir, fileName);
+      themes.push({
+        label: displayNameForThemeFile(fileName),
+        type: "checkbox",
+        checked: store.get("themePath") === themePath,
+        click () {
+          setThemeFromFile(themePath);
+        }
+      })
+
+      if(index == dir.length - 1) {
+        callback();
+        return;
+      } else {
+        index++;
+      }
+    }
+    callback();
+  })
+}
+
+function loadMenu() {
+
   const template = [
     {
       label: 'Edit',
@@ -160,6 +259,7 @@ app.on('ready', function(){
         }
       ]
     },
+
     {
       label: 'View',
       submenu: [
@@ -199,6 +299,43 @@ app.on('ready', function(){
           role: 'close'
         }
       ]
+    },
+    {
+      label: 'Theme',
+      submenu: [
+        {
+          label: 'Add New Theme',
+          click () {
+            dialog.showOpenDialog(function (fileNames) {
+              if (fileNames === undefined) return;
+              var fileName = fileNames[0];
+              fs.readFile(fileName, 'utf-8', function (err, data) {
+                fileName = fileNameFromPath(fileName);
+                saveThemeData(fileName, data);
+                setThemeFromFile(path.join(themesDir, fileName));
+              });
+            });
+          }
+        },
+        {
+          label: "Open Themes Directory",
+          click() {
+            shell.openItem(themesDir);
+          }
+        },
+        {
+          type: "separator"
+        },
+        {
+          label: "Default",
+          type: "checkbox",
+          checked: store.get("themePath") == null,
+          click() {
+            store.set("themePath", null);
+            setThemeFromFile(null);
+          }
+        }
+      ].concat(themes)
     },
     {
       role: 'help',
@@ -304,6 +441,6 @@ app.on('ready', function(){
     ]
   }
 
-  const menu = Menu.buildFromTemplate(template)
+  var menu = Menu.buildFromTemplate(template)
   Menu.setApplicationMenu(menu)
-})
+}
