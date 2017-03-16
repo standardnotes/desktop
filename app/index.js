@@ -324,6 +324,10 @@ function loadMenu() {
           }
         },
         {
+          label: "Browse Themes",
+          click () { shell.openExternal('https://standardnotes.org/extensions/themes') }
+        },
+        {
           type: "separator"
         },
         {
@@ -342,23 +346,23 @@ function loadMenu() {
       submenu: [
         {
           label: 'Github',
-          click () { require('electron').shell.openExternal('https://github.com/standardnotes') }
+          click () { shell.openExternal('https://github.com/standardnotes') }
         },
         {
           label: 'Slack',
-          click () { require('electron').shell.openExternal('https://now-examples-slackin-phikcdqtmt.now.sh/') }
+          click () { shell.openExternal('https://now-examples-slackin-phikcdqtmt.now.sh/') }
         },
         {
           label: 'Website',
-          click () { require('electron').shell.openExternal('https://standardnotes.org') }
+          click () { shell.openExternal('https://standardnotes.org') }
         },
         {
           label: 'Support',
-          click () { require('electron').shell.openExternal('mailto:hello@standardnotes.org') }
+          click () { shell.openExternal('mailto:hello@standardnotes.org') }
         },
         {
           label: 'Version: ' + app.getVersion(),
-          click () { require('electron').shell.openExternal('https://github.com/standardnotes/desktop/releases') }
+          click () { shell.openExternal('https://github.com/standardnotes/desktop/releases') }
         }
       ]
     }
