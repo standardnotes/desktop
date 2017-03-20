@@ -350,7 +350,7 @@ function loadMenu() {
         },
         {
           label: 'Slack',
-          click () { shell.openExternal('https://now-examples-slackin-phikcdqtmt.now.sh/') }
+          click () { shell.openExternal('https://standardnotes.org/slack') }
         },
         {
           label: 'Website',
