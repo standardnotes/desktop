@@ -33166,8 +33166,8 @@ var SNCrypto = function () {
 
   _createClass(SNCrypto, [{
     key: 'generateRandomKey',
-    value: function generateRandomKey() {
-      return CryptoJS.lib.WordArray.random(512 / 8).toString();
+    value: function generateRandomKey(bits) {
+      return CryptoJS.lib.WordArray.random(bits / 8).toString();
     }
   }, {
     key: 'generateUUID',
@@ -33198,26 +33198,47 @@ var SNCrypto = function () {
     }
   }, {
     key: 'decryptText',
-    value: function decryptText(encrypted_content, key) {
-      var keyData = CryptoJS.enc.Hex.parse(key);
-      var ivData = CryptoJS.enc.Hex.parse("");
-      var decrypted = CryptoJS.AES.decrypt(encrypted_content, keyData, { iv: ivData, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+    value: function decryptText() {
+      var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+          ciphertextToAuth = _ref.ciphertextToAuth,
+          contentCiphertext = _ref.contentCiphertext,
+          encryptionKey = _ref.encryptionKey,
+          iv = _ref.iv,
+          authHash = _ref.authHash,
+          authKey = _ref.authKey;
+
+      var requiresAuth = arguments[1];
+
+      if (requiresAuth && !authHash) {
+        console.error("Auth hash is required.");
+        return;
+      }
+
+      if (authHash) {
+        var localAuthHash = Neeto.crypto.hmac256(ciphertextToAuth, authKey);
+        if (authHash !== localAuthHash) {
+          console.error("Auth hash does not match, returning null.");
+          return null;
+        }
+      }
+      var keyData = CryptoJS.enc.Hex.parse(encryptionKey);
+      var ivData = CryptoJS.enc.Hex.parse(iv || "");
+      var decrypted = CryptoJS.AES.decrypt(contentCiphertext, keyData, { iv: ivData, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
       return decrypted.toString(CryptoJS.enc.Utf8);
     }
   }, {
     key: 'encryptText',
-    value: function encryptText(text, key) {
+    value: function encryptText(text, key, iv) {
       var keyData = CryptoJS.enc.Hex.parse(key);
-      // items are encrypted with random keys; no two items are encrypted with same key, thus IV is not needed
-      var ivData = CryptoJS.enc.Hex.parse("");
+      var ivData = CryptoJS.enc.Hex.parse(iv || "");
       var encrypted = CryptoJS.AES.encrypt(text, keyData, { iv: ivData, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
       return encrypted.toString();
     }
   }, {
     key: 'generateRandomEncryptionKey',
     value: function generateRandomEncryptionKey() {
-      var salt = Neeto.crypto.generateRandomKey();
-      var passphrase = Neeto.crypto.generateRandomKey();
+      var salt = Neeto.crypto.generateRandomKey(512);
+      var passphrase = Neeto.crypto.generateRandomKey(512);
       return CryptoJS.PBKDF2(passphrase, salt, { keySize: 512 / 32 }).toString();
     }
   }, {
@@ -33233,13 +33254,11 @@ var SNCrypto = function () {
   }, {
     key: 'base64',
     value: function base64(text) {
-      // return CryptoJS.enc.Utf8.parse(text).toString(CryptoJS.enc.Base64)
       return window.btoa(text);
     }
   }, {
     key: 'base64Decode',
     value: function base64Decode(base64String) {
-      // return CryptoJS.enc.Base64.parse(base64String).toString(CryptoJS.enc.Utf8)
       return window.atob(base64String);
     }
   }, {
@@ -33257,18 +33276,26 @@ var SNCrypto = function () {
     value: function hmac256(message, key) {
       var keyData = CryptoJS.enc.Hex.parse(key);
       var messageData = CryptoJS.enc.Utf8.parse(message);
-      return CryptoJS.HmacSHA256(messageData, keyData).toString();
+      var result = CryptoJS.HmacSHA256(messageData, keyData).toString();
+      return result;
+    }
+  }, {
+    key: 'generateKeysFromMasterKey',
+    value: function generateKeysFromMasterKey(mk) {
+      var encryptionKey = Neeto.crypto.hmac256(mk, CryptoJS.enc.Utf8.parse("e").toString(CryptoJS.enc.Hex));
+      var authKey = Neeto.crypto.hmac256(mk, CryptoJS.enc.Utf8.parse("a").toString(CryptoJS.enc.Hex));
+      return { encryptionKey: encryptionKey, authKey: authKey };
     }
   }, {
     key: 'computeEncryptionKeysForUser',
     value: function computeEncryptionKeysForUser() {
-      var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-          password = _ref.password,
-          pw_salt = _ref.pw_salt,
-          pw_func = _ref.pw_func,
-          pw_alg = _ref.pw_alg,
-          pw_cost = _ref.pw_cost,
-          pw_key_size = _ref.pw_key_size;
+      var _ref2 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+          password = _ref2.password,
+          pw_salt = _ref2.pw_salt,
+          pw_func = _ref2.pw_func,
+          pw_alg = _ref2.pw_alg,
+          pw_cost = _ref2.pw_cost,
+          pw_key_size = _ref2.pw_key_size;
 
       var callback = arguments[1];
 
@@ -33277,15 +33304,15 @@ var SNCrypto = function () {
         var pw = keys[0];
         var mk = keys[1];
 
-        callback({ pw: pw, mk: mk });
-      });
+        callback(_.merge({ pw: pw, mk: mk }, this.generateKeysFromMasterKey(mk)));
+      }.bind(this));
     }
   }, {
     key: 'generateInitialEncryptionKeysForUser',
     value: function generateInitialEncryptionKeysForUser() {
-      var _ref2 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-          email = _ref2.email,
-          password = _ref2.password;
+      var _ref3 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+          email = _ref3.email,
+          password = _ref3.password;
 
       var callback = arguments[1];
 
@@ -33295,15 +33322,15 @@ var SNCrypto = function () {
           pw_key_size = defaults.pw_key_size,
           pw_cost = defaults.pw_cost;
 
-      var pw_nonce = this.generateRandomKey();
+      var pw_nonce = this.generateRandomKey(512);
       var pw_salt = this.sha1(email + "SN" + pw_nonce);
       _.merge(defaults, { pw_salt: pw_salt, pw_nonce: pw_nonce });
       this.generateSymmetricKeyPair(_.merge({ email: email, password: password, pw_salt: pw_salt }, defaults), function (keys) {
         var pw = keys[0];
         var mk = keys[1];
 
-        callback({ pw: pw, mk: mk }, defaults);
-      });
+        callback(_.merge({ pw: pw, mk: mk }, this.generateKeysFromMasterKey(mk)), defaults);
+      }.bind(this));
     }
   }]);
 
@@ -33327,13 +33354,13 @@ var SNCryptoJS = function (_SNCrypto) {
 
     /** Generates two deterministic keys based on one input */
     value: function generateSymmetricKeyPair() {
-      var _ref3 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-          password = _ref3.password,
-          pw_salt = _ref3.pw_salt,
-          pw_func = _ref3.pw_func,
-          pw_alg = _ref3.pw_alg,
-          pw_cost = _ref3.pw_cost,
-          pw_key_size = _ref3.pw_key_size;
+      var _ref4 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+          password = _ref4.password,
+          pw_salt = _ref4.pw_salt,
+          pw_func = _ref4.pw_func,
+          pw_alg = _ref4.pw_alg,
+          pw_cost = _ref4.pw_cost,
+          pw_key_size = _ref4.pw_key_size;
 
       var callback = arguments[1];
 
@@ -33372,38 +33399,103 @@ var EncryptionHelper = function () {
   }
 
   _createClass(EncryptionHelper, null, [{
-    key: 'encryptItem',
-    value: function encryptItem(item, key) {
-      var item_key = Neeto.crypto.generateRandomEncryptionKey();
-      item.enc_item_key = Neeto.crypto.encryptText(item_key, key);
+    key: '_private_encryptString',
+    value: function _private_encryptString(string, encryptionKey, authKey, version) {
+      var fullCiphertext, contentCiphertext;
+      if (version === "001") {
+        contentCiphertext = Neeto.crypto.encryptText(string, encryptionKey, null);
+        fullCiphertext = version + contentCiphertext;
+      } else {
+        var iv = Neeto.crypto.generateRandomKey(128);
+        contentCiphertext = Neeto.crypto.encryptText(string, encryptionKey, iv);
+        var ciphertextToAuth = [version, iv, contentCiphertext].join(":");
+        var authHash = Neeto.crypto.hmac256(ciphertextToAuth, authKey);
+        fullCiphertext = [version, authHash, iv, contentCiphertext].join(":");
+      }
 
+      return fullCiphertext;
+    }
+  }, {
+    key: 'encryptItem',
+    value: function encryptItem(item, keys, version) {
+      // encrypt item key
+      var item_key = Neeto.crypto.generateRandomEncryptionKey();
+      if (version === "001") {
+        // legacy
+        item.enc_item_key = Neeto.crypto.encryptText(item_key, keys.mk, null);
+      } else {
+        item.enc_item_key = this._private_encryptString(item_key, keys.encryptionKey, keys.authKey, version);
+      }
+
+      // encrypt content
       var ek = Neeto.crypto.firstHalfOfKey(item_key);
       var ak = Neeto.crypto.secondHalfOfKey(item_key);
-      var encryptedContent = "001" + Neeto.crypto.encryptText(JSON.stringify(item.createContentJSONFromProperties()), ek);
-      var authHash = Neeto.crypto.hmac256(encryptedContent, ak);
+      var ciphertext = this._private_encryptString(JSON.stringify(item.createContentJSONFromProperties()), ek, ak, version);
+      if (version === "001") {
+        var authHash = Neeto.crypto.hmac256(ciphertext, ak);
+        item.auth_hash = authHash;
+      }
 
-      item.content = encryptedContent;
-      item.auth_hash = authHash;
+      item.content = ciphertext;
+    }
+  }, {
+    key: 'encryptionComponentsFromString',
+    value: function encryptionComponentsFromString(string, baseKey, encryptionKey, authKey) {
+      var encryptionVersion = string.substring(0, 3);
+      if (encryptionVersion === "001") {
+        return {
+          contentCiphertext: string.substring(3, string.length),
+          encryptionVersion: encryptionVersion,
+          ciphertextToAuth: string,
+          iv: null,
+          authHash: null,
+          encryptionKey: baseKey,
+          authKey: authKey
+        };
+      } else {
+        var components = string.split(":");
+        return {
+          encryptionVersion: components[0],
+          authHash: components[1],
+          iv: components[2],
+          contentCiphertext: components[3],
+          ciphertextToAuth: [components[0], components[2], components[3]].join(":"),
+          encryptionKey: encryptionKey,
+          authKey: authKey
+        };
+      }
     }
   }, {
     key: 'decryptItem',
-    value: function decryptItem(item, key) {
-      var item_key = Neeto.crypto.decryptText(item.enc_item_key, key);
+    value: function decryptItem(item, keys) {
+      // decrypt encrypted key
+      var encryptedItemKey = item.enc_item_key;
+      var requiresAuth = true;
+      if (encryptedItemKey.startsWith("002") === false) {
+        // legacy encryption type, has no prefix
+        encryptedItemKey = "001" + encryptedItemKey;
+        requiresAuth = false;
+      }
+      var keyParams = this.encryptionComponentsFromString(encryptedItemKey, keys.mk, keys.encryptionKey, keys.authKey);
+      var item_key = Neeto.crypto.decryptText(keyParams, requiresAuth);
 
-      var ek = Neeto.crypto.firstHalfOfKey(item_key);
-      var ak = Neeto.crypto.secondHalfOfKey(item_key);
-      var authHash = Neeto.crypto.hmac256(item.content, ak);
-      if (authHash !== item.auth_hash || !item.auth_hash) {
-        console.log("Authentication hash does not match.");
+      if (!item_key) {
         return;
       }
 
-      var content = Neeto.crypto.decryptText(item.content.substring(3, item.content.length), ek);
+      // decrypt content
+      var ek = Neeto.crypto.firstHalfOfKey(item_key);
+      var ak = Neeto.crypto.secondHalfOfKey(item_key);
+      var itemParams = this.encryptionComponentsFromString(item.content, ek, ek, ak);
+      if (!itemParams.authHash) {
+        itemParams.authHash = item.auth_hash;
+      }
+      var content = Neeto.crypto.decryptText(itemParams, true);
       item.content = content;
     }
   }, {
     key: 'decryptMultipleItems',
-    value: function decryptMultipleItems(items, key, throws) {
+    value: function decryptMultipleItems(items, keys, throws) {
       var _iteratorNormalCompletion = true;
       var _didIteratorError = false;
       var _iteratorError = undefined;
@@ -33419,9 +33511,9 @@ var EncryptionHelper = function () {
           var isString = typeof item.content === 'string' || item.content instanceof String;
           if (isString) {
             try {
-              if (item.content.substring(0, 3) == "001" && item.enc_item_key) {
+              if ((item.content.startsWith("001") || item.content.startsWith("002")) && item.enc_item_key) {
                 // is encrypted
-                this.decryptItem(item, key);
+                this.decryptItem(item, keys);
               } else {
                 // is base64 encoded
                 item.content = Neeto.crypto.base64Decode(item.content.substring(3, item.content.length));
@@ -33482,13 +33574,13 @@ var SNCryptoWeb = function (_SNCrypto2) {
   }, {
     key: 'generateSymmetricKeyPair',
     value: function generateSymmetricKeyPair() {
-      var _ref4 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-          password = _ref4.password,
-          pw_salt = _ref4.pw_salt,
-          pw_func = _ref4.pw_func,
-          pw_alg = _ref4.pw_alg,
-          pw_cost = _ref4.pw_cost,
-          pw_key_size = _ref4.pw_key_size;
+      var _ref5 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+          password = _ref5.password,
+          pw_salt = _ref5.pw_salt,
+          pw_func = _ref5.pw_func,
+          pw_alg = _ref5.pw_alg,
+          pw_cost = _ref5.pw_cost,
+          pw_key_size = _ref5.pw_key_size;
 
       var callback = arguments[1];
 
@@ -33507,13 +33599,13 @@ var SNCryptoWeb = function (_SNCrypto2) {
   }, {
     key: 'stretchPassword',
     value: function stretchPassword() {
-      var _ref5 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-          password = _ref5.password,
-          pw_salt = _ref5.pw_salt,
-          pw_cost = _ref5.pw_cost,
-          pw_func = _ref5.pw_func,
-          pw_alg = _ref5.pw_alg,
-          pw_key_size = _ref5.pw_key_size;
+      var _ref6 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+          password = _ref6.password,
+          pw_salt = _ref6.pw_salt,
+          pw_cost = _ref6.pw_cost,
+          pw_func = _ref6.pw_func,
+          pw_alg = _ref6.pw_alg,
+          pw_key_size = _ref6.pw_key_size;
 
       var callback = arguments[1];
 
@@ -33549,13 +33641,13 @@ var SNCryptoWeb = function (_SNCrypto2) {
   }, {
     key: 'webCryptoDeriveBits',
     value: function webCryptoDeriveBits() {
-      var _ref6 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-          key = _ref6.key,
-          pw_func = _ref6.pw_func,
-          pw_alg = _ref6.pw_alg,
-          pw_salt = _ref6.pw_salt,
-          pw_cost = _ref6.pw_cost,
-          pw_key_size = _ref6.pw_key_size;
+      var _ref7 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+          key = _ref7.key,
+          pw_func = _ref7.pw_func,
+          pw_alg = _ref7.pw_alg,
+          pw_salt = _ref7.pw_salt,
+          pw_cost = _ref7.pw_cost,
+          pw_key_size = _ref7.pw_key_size;
 
       var callback = arguments[1];
 
@@ -33615,7 +33707,7 @@ var SNCryptoWeb = function (_SNCrypto2) {
 exports.SNCryptoWeb = SNCryptoWeb;
 'use strict';
 
-var Neeto = Neeto || {};
+var Neeto = window.Neeto = Neeto || {};
 var SN = SN || {};
 
 // detect IE8 and above, and edge.
@@ -35190,11 +35282,11 @@ var Tag = function (_Item4) {
 
 ;
 var ItemParams = function () {
-  function ItemParams(item, ek) {
+  function ItemParams(item, keys) {
     _classCallCheck(this, ItemParams);
 
     this.item = item;
-    this.ek = ek;
+    this.keys = keys;
   }
 
   _createClass(ItemParams, [{
@@ -35224,17 +35316,23 @@ var ItemParams = function () {
   }, {
     key: '__params',
     value: function __params() {
+      var encryptionVersion = "001";
+
       var itemCopy = _.cloneDeep(this.item);
 
       console.assert(!this.item.dummy, "Item is dummy, should not have gotten here.", this.item.dummy);
 
       var params = { uuid: this.item.uuid, content_type: this.item.content_type, deleted: this.item.deleted, created_at: this.item.created_at };
 
-      if (this.ek) {
-        EncryptionHelper.encryptItem(itemCopy, this.ek);
+      if (this.keys) {
+        EncryptionHelper.encryptItem(itemCopy, this.keys, encryptionVersion);
         params.content = itemCopy.content;
         params.enc_item_key = itemCopy.enc_item_key;
-        params.auth_hash = itemCopy.auth_hash;
+        if (encryptionVersion === "001") {
+          params.auth_hash = itemCopy.auth_hash;
+        } else {
+          params.auth_hash = null;
+        }
       } else {
         params.content = this.forExportFile ? itemCopy.createContentJSONFromProperties() : "000" + Neeto.crypto.base64(JSON.stringify(itemCopy.createContentJSONFromProperties()));
         if (!this.forExportFile) {
@@ -35285,6 +35383,18 @@ var ItemParams = function () {
 
     this.getAuthParams = function () {
       return JSON.parse(localStorage.getItem("auth_params"));
+    };
+
+    this.keys = function () {
+      var keys = { mk: localStorage.getItem("mk") };
+      if (!localStorage.getItem("encryptionKey")) {
+        _.merge(keys, Neeto.crypto.generateKeysFromMasterKey(keys.mk));
+        localStorage.setItem("encryptionKey", keys.encryptionKey);
+        localStorage.setItem("authKey", keys.authKey);
+      } else {
+        _.merge(keys, { encryptionKey: localStorage.getItem("encryptionKey"), authKey: localStorage.getItem("authKey") });
+      }
+      return keys;
     };
 
     this.getAuthParamsForEmail = function (url, email, callback) {
@@ -35699,7 +35809,7 @@ var AccountMenu = function () {
       $scope.syncStatus = syncManager.syncStatus;
 
       $scope.encryptionKey = function () {
-        return syncManager.masterKey;
+        return authManager.keys().mk;
       };
 
       $scope.serverPassword = function () {
@@ -35911,9 +36021,8 @@ var AccountMenu = function () {
 
         if (data.auth_params) {
           Neeto.crypto.computeEncryptionKeysForUser(_.merge({ password: password }, data.auth_params), function (keys) {
-            var mk = keys.mk;
             try {
-              EncryptionHelper.decryptMultipleItems(data.items, mk, true);
+              EncryptionHelper.decryptMultipleItems(data.items, keys, true);
               // delete items enc_item_key since the user's actually key will do the encrypting once its passed off
               data.items.forEach(function (item) {
                 item.enc_item_key = null;
@@ -36006,26 +36115,26 @@ var AccountMenu = function () {
 
       $scope.downloadDataArchive = function () {
         // download in Standard File format
-        var ek = $scope.archiveFormData.encrypted ? syncManager.masterKey : null;
-        var data = $scope.itemsData(ek);
+        var keys = $scope.archiveFormData.encrypted ? authManager.keys() : null;
+        var data = $scope.itemsData(keys);
         downloadData(data, 'SN Archive - ' + new Date() + '.txt');
 
         // download as zipped plain text files
-        if (!ek) {
+        if (!keys) {
           var notes = modelManager.allItemsMatchingTypes(["Note"]);
           downloadZippedNotes(notes);
         }
       };
 
-      $scope.itemsData = function (ek) {
+      $scope.itemsData = function (keys) {
         var items = _.map(modelManager.allItemsMatchingTypes(["Tag", "Note"]), function (item) {
-          var itemParams = new ItemParams(item, ek);
+          var itemParams = new ItemParams(item, keys);
           return itemParams.paramsForExportFile();
         }.bind(this));
 
         var data = { items: items };
 
-        if (ek) {
+        if (keys) {
           // auth params are only needed when encrypted with a standard file key
           data["auth_params"] = authManager.getAuthParams();
         }
@@ -36490,6 +36599,10 @@ var ExtensionManager = function () {
     key: 'retrieveExtensionFromServer',
     value: function retrieveExtensionFromServer(url, callback) {
       this.httpManager.getAbsolute(url, {}, function (response) {
+        if ((typeof response === 'undefined' ? 'undefined' : _typeof(response)) !== 'object') {
+          callback(null);
+          return;
+        }
         var ext = this.handleExtensionLoadExternalResponseItem(url, response);
         if (callback) {
           callback(ext);
@@ -36597,7 +36710,7 @@ var ExtensionManager = function () {
             this.httpManager.getAbsolute(action.url, {}, function (response) {
               action.error = false;
               var items = response.items || [response.item];
-              EncryptionHelper.decryptMultipleItems(items, localStorage.getItem("mk"));
+              EncryptionHelper.decryptMultipleItems(items, this.authManager.keys());
               items = this.modelManager.mapResponseItemsToLocalModels(items);
               var _iteratorNormalCompletion15 = true;
               var _didIteratorError15 = false;
@@ -36639,7 +36752,7 @@ var ExtensionManager = function () {
 
             this.httpManager.getAbsolute(action.url, {}, function (response) {
               action.error = false;
-              EncryptionHelper.decryptItem(response.item, localStorage.getItem("mk"));
+              EncryptionHelper.decryptItem(response.item, this.authManager.keys());
               var item = this.modelManager.createItem(response.item);
               customCallback({ item: item });
             }.bind(this), function (response) {
@@ -36772,11 +36885,11 @@ var ExtensionManager = function () {
   }, {
     key: 'outgoingParamsForItem',
     value: function outgoingParamsForItem(item, extension) {
-      var ek = this.syncManager.masterKey;
+      var keys = this.authManager.keys();
       if (!this.extensionUsesEncryptedData(extension)) {
-        ek = null;
+        keys = null;
       }
-      var itemParams = new ItemParams(item, ek);
+      var itemParams = new ItemParams(item, keys);
       return itemParams.paramsForExtension();
     }
   }, {
@@ -37559,7 +37672,7 @@ var SyncManager = function () {
       var params = {};
       params.limit = 150;
       params.items = _.map(subItems, function (item) {
-        var itemParams = new ItemParams(item, localStorage.getItem("mk"));
+        var itemParams = new ItemParams(item, this.authManager.keys());
         itemParams.additionalFields = options.additionalFields;
         return itemParams.paramsForSync();
       }.bind(this));
@@ -37567,7 +37680,7 @@ var SyncManager = function () {
       params.sync_token = this.syncToken;
       params.cursor_token = this.cursorToken;
 
-      this.httpManager.postAbsolute(this.syncURL, params, function (response) {
+      var onSyncSuccess = function (response) {
         this.modelManager.clearDirtyItems(subItems);
         this.syncStatus.error = null;
 
@@ -37604,18 +37717,31 @@ var SyncManager = function () {
         } else {
           this.callQueuedCallbacksAndCurrent(callback, response);
         }
-      }.bind(this), function (response) {
-        console.log("Sync error: ", response);
-        var error = response ? response.error : { message: "Could not connect to server." };
+      }.bind(this);
 
-        this.syncStatus.syncOpInProgress = false;
-        this.syncStatus.error = error;
-        this.writeItemsToLocalStorage(allDirtyItems, false, null);
+      try {
+        this.httpManager.postAbsolute(this.syncURL, params, function (response) {
 
-        this.$rootScope.$broadcast("sync:error", error);
+          try {
+            onSyncSuccess(response);
+          } catch (e) {
+            console.log("Caught sync success exception:", e);
+          }
+        }.bind(this), function (response) {
+          console.log("Sync error: ", response);
+          var error = response ? response.error : { message: "Could not connect to server." };
 
-        this.callQueuedCallbacksAndCurrent(callback, { error: "Sync error" });
-      }.bind(this));
+          this.syncStatus.syncOpInProgress = false;
+          this.syncStatus.error = error;
+          this.writeItemsToLocalStorage(allDirtyItems, false, null);
+
+          this.$rootScope.$broadcast("sync:error", error);
+
+          this.callQueuedCallbacksAndCurrent(callback, { error: "Sync error" });
+        }.bind(this));
+      } catch (e) {
+        console.log("Sync exception caught:", e);
+      }
     }
   }, {
     key: 'handleUnsavedItemsResponse',
@@ -37648,7 +37774,7 @@ var SyncManager = function () {
   }, {
     key: 'handleItemsResponse',
     value: function handleItemsResponse(responseItems, omitFields) {
-      EncryptionHelper.decryptMultipleItems(responseItems, localStorage.getItem("mk"));
+      EncryptionHelper.decryptMultipleItems(responseItems, this.authManager.keys());
       return this.modelManager.mapResponseItemsToLocalModelsOmittingFields(responseItems, omitFields);
     }
   }, {
@@ -38413,11 +38539,11 @@ angular.module('app.frontend').service('syncManager', SyncManager);
 
   $templateCache.put('frontend/editor.html',
     "<div class='section editor' ng-class=\"{'fullscreen' : ctrl.fullscreen}\">\n" +
-    "  <div class='section-title-bar editor-heading' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.note'>\n" +
+    "  <div class='section-title-bar' id='editor-title-bar' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.note'>\n" +
     "    <div class='title'>\n" +
     "      <input class='input' id='note-title-editor' ng-change='ctrl.nameChanged()' ng-focus='ctrl.onNameFocus()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTitle($event)' ng-model='ctrl.note.title' select-on-click='true'>\n" +
     "    </div>\n" +
-    "    <div class='save-status' ng-bind-html='ctrl.noteStatus' ng-class=\"{'red bold': ctrl.saveError}\"></div>\n" +
+    "    <div id='save-status' ng-bind-html='ctrl.noteStatus' ng-class=\"{'red bold': ctrl.saveError}\"></div>\n" +
     "    <div class='editor-tags'>\n" +
     "      <input class='tags-input' ng-blur='ctrl.updateTagsFromTagsString($event, ctrl.tagsString)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur();' ng-model='ctrl.tagsString' placeholder='#tags' type='text'>\n" +
     "    </div>\n" +
@@ -38468,7 +38594,7 @@ angular.module('app.frontend').service('syncManager', SyncManager);
 
 
   $templateCache.put('frontend/header.html',
-    "<div class='footer-bar'>\n" +
+    "<div id='footer-bar'>\n" +
     "  <div class='pull-left'>\n" +
     "    <div class='footer-bar-link' click-outside='ctrl.showAccountMenu = false;' is-open='ctrl.showAccountMenu'>\n" +
     "      <a ng-class='{red: ctrl.error}' ng-click='ctrl.accountMenuPressed()'>Account</a>\n" +
@@ -38546,7 +38672,7 @@ angular.module('app.frontend').service('syncManager', SyncManager);
   $templateCache.put('frontend/notes.html',
     "<div class='section notes'>\n" +
     "  <div class='content'>\n" +
-    "    <div class='section-title-bar notes-title-bar'>\n" +
+    "    <div class='section-title-bar' id='notes-title-bar'>\n" +
     "      <div class='title'>{{ctrl.tag.title}} notes</div>\n" +
     "      <div class='add-button' ng-click='ctrl.createNewNote()'>+</div>\n" +
     "      <br>\n" +
@@ -38599,10 +38725,10 @@ angular.module('app.frontend').service('syncManager', SyncManager);
 
   $templateCache.put('frontend/tags.html',
     "<div class='section tags'>\n" +
-    "  <div class='content'>\n" +
-    "    <div class='section-title-bar tags-title-bar'>\n" +
+    "  <div class='content' id='tags-content'>\n" +
+    "    <div class='section-title-bar' id='tags-title-bar'>\n" +
     "      <div class='title'>Tags</div>\n" +
-    "      <div class='add-button tag-add-button' ng-click='ctrl.clickedAddNewTag()'>+</div>\n" +
+    "      <div class='add-button' id='tag-add-button' ng-click='ctrl.clickedAddNewTag()'>+</div>\n" +
     "      {{ctrl.test}}\n" +
     "    </div>\n" +
     "    <div class='scrollable'>\n" +
