@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html ng-app="app.frontend" ng-controller="BaseCtrl">
+  <head>
+    <meta charset="utf-8"/>
+    <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <meta name="theme-color" content="#ffffff">
+    <title>Notes</title>
+
+    <script>
+      try {
+        const {ipcRenderer} = require('electron');
+
+        window.nodeRequire = require;
+        delete window.require;
+        delete window.exports;
+        delete window.module;
+
+        ipcRenderer.on('notify', function (event, message) {
+            alert(message);
+        });
+
+        const {remote} = window.nodeRequire('electron')
+        const {Menu, MenuItem} = remote
+
+        window.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          var mainMenu = Menu.getApplicationMenu().items.filter(function(item){
+            return item.label == "Edit";
+          })[0].submenu;
+          mainMenu.popup(remote.getCurrentWindow());
+        }, false);
+      }
+      catch (e) {
+        console.log(e);
+      }
+
+      // load zip library (for exporting items as zip)
+      var scriptTag = document.createElement('script');
+      scriptTag.src = "./js/zip/zip.js";
+      scriptTag.async = true;
+      var headTag = document.getElementsByTagName('head')[0];
+      headTag.appendChild(scriptTag);
+      scriptTag.onload = function() {
+        zip.workerScriptsPath = "js/zip/";
+      }
+
+      window._default_sf_server = "https://n3.standardnotes.org";
+
+    </script>
+
+    <script src="./js/compiled.js" debug="false"></script>
+    <link rel="stylesheet" media="all" href="./stylesheets/app.css" debug="false" />
+
+    <style>
+    .editor-content .editable {
+      font-family: Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+      font-size: 16px;
+    }
+    </style>
+
+  </head>
+
+  <body ng-class="bodyClass">
+    <div ng-controller="HomeCtrl" ng-include="'frontend/home.html'"></div>
+  </body>
+
+</html>
