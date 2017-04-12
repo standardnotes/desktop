@@ -66,6 +66,10 @@
   margin-right: 20px;
 }
 
+.ml-2 {
+  margin-left: 2px;
+}
+
 .pb-0 {
   padding-bottom: 0px !important;
 }
@@ -674,6 +678,9 @@ h2 {
 #footer-bar strong {
   display: block;
 }
+#footer-bar h1 {
+  font-size: 16px;
+}
 #footer-bar h3 {
   font-size: 14px;
   margin-top: 4px;
@@ -767,6 +774,20 @@ button.light:hover {
 
 a.disabled {
   pointer-events: none;
+}
+
+/* Global Ext Menu */
+.ext-section {
+  min-height: 50px;
+}
+.ext-section h1 {
+  margin: 0;
+  padding: 0;
+  padding-top: 5px;
+}
+.ext-section.opened h1 {
+  padding-top: 0px;
+  padding-bottom: 6px;
 }
 
 .spinner {

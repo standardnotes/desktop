@@ -34129,7 +34129,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     this.lastSyncDate = new Date();
   };
 }]);
-;angular.module('app.frontend').controller('HomeCtrl', ['$scope', '$location', '$rootScope', '$timeout', 'modelManager', 'syncManager', 'authManager', function ($scope, $location, $rootScope, $timeout, modelManager, syncManager, authManager) {
+;angular.module('app.frontend').controller('HomeCtrl', ['$scope', '$location', '$rootScope', '$timeout', 'modelManager', 'syncManager', 'authManager', 'themeManager', function ($scope, $location, $rootScope, $timeout, modelManager, syncManager, authManager, themeManager) {
 
   function urlParam(key) {
     return $location.search()[key];
@@ -34164,6 +34164,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
 
   syncManager.loadLocalItems(function (items) {
     $scope.allTag.didLoad = true;
+    themeManager.activateInitialTheme();
     $scope.$apply();
 
     syncManager.sync(null);
@@ -35281,6 +35282,49 @@ var Tag = function (_Item4) {
 }(Item);
 
 ;
+var Theme = function (_Item5) {
+  _inherits(Theme, _Item5);
+
+  function Theme(json_obj) {
+    _classCallCheck(this, Theme);
+
+    return _possibleConstructorReturn(this, (Theme.__proto__ || Object.getPrototypeOf(Theme)).call(this, json_obj));
+  }
+
+  _createClass(Theme, [{
+    key: 'mapContentToLocalProperties',
+    value: function mapContentToLocalProperties(contentObject) {
+      _get(Theme.prototype.__proto__ || Object.getPrototypeOf(Theme.prototype), 'mapContentToLocalProperties', this).call(this, contentObject);
+      this.url = contentObject.url;
+      this.name = contentObject.name;
+    }
+  }, {
+    key: 'structureParams',
+    value: function structureParams() {
+      var params = {
+        url: this.url,
+        name: this.name
+      };
+
+      _.merge(params, _get(Theme.prototype.__proto__ || Object.getPrototypeOf(Theme.prototype), 'structureParams', this).call(this));
+      return params;
+    }
+  }, {
+    key: 'toJSON',
+    value: function toJSON() {
+      return { uuid: this.uuid };
+    }
+  }, {
+    key: 'content_type',
+    get: function get() {
+      return "SN|Theme";
+    }
+  }]);
+
+  return Theme;
+}(Item);
+
+;
 var ItemParams = function () {
   function ItemParams(item, keys) {
     _classCallCheck(this, ItemParams);
@@ -36343,10 +36387,12 @@ var GlobalExtensionsMenu = function () {
 
   _createClass(GlobalExtensionsMenu, [{
     key: 'controller',
-    value: ['$scope', 'extensionManager', 'syncManager', function controller($scope, extensionManager, syncManager) {
+    value: ['$scope', 'extensionManager', 'syncManager', 'modelManager', 'themeManager', function controller($scope, extensionManager, syncManager, modelManager, themeManager) {
       'ngInject';
 
       $scope.extensionManager = extensionManager;
+      $scope.themeManager = themeManager;
+      $scope.state = { showDataExts: true, showThemes: true };
 
       $scope.toggleExtensionForm = function () {
         $scope.newExtensionData = {};
@@ -36398,6 +36444,18 @@ var GlobalExtensionsMenu = function () {
       $scope.reloadExtensionsPressed = function () {
         if (confirm("For your security, reloading extensions will disable any currently enabled repeat actions.")) {
           extensionManager.refreshExtensionsFromServer();
+        }
+      };
+
+      $scope.submitTheme = function () {
+        themeManager.submitTheme($scope.state.themeUrl);
+      };
+
+      $scope.deleteTheme = function (theme) {
+        if (confirm("Are you sure you want to delete this theme?")) {
+          themeManager.deactivateTheme(theme);
+          modelManager.setItemToBeDeleted(theme);
+          syncManager.sync();
         }
       };
     }]
@@ -37039,7 +37097,7 @@ var ModelManager = function () {
     this.itemChangeObservers = [];
     this.items = [];
     this._extensions = [];
-    this.acceptableContentTypes = ["Note", "Tag", "Extension", "SN|Editor"];
+    this.acceptableContentTypes = ["Note", "Tag", "Extension", "SN|Editor", "SN|Theme"];
   }
 
   _createClass(ModelManager, [{
@@ -37226,6 +37284,8 @@ var ModelManager = function () {
         item = new Extension(json_obj);
       } else if (json_obj.content_type == "SN|Editor") {
         item = new Editor(json_obj);
+      } else if (json_obj.content_type == "SN|Theme") {
+        item = new Theme(json_obj);
       } else {
         item = new Item(json_obj);
       }
@@ -37854,6 +37914,106 @@ var SyncManager = function () {
 }();
 
 angular.module('app.frontend').service('syncManager', SyncManager);
+;
+var ThemeManager = function () {
+  ThemeManager.$inject = ['modelManager', 'syncManager'];
+  function ThemeManager(modelManager, syncManager) {
+    _classCallCheck(this, ThemeManager);
+
+    this.syncManager = syncManager;
+    this.modelManager = modelManager;
+  }
+
+  _createClass(ThemeManager, [{
+    key: 'activateInitialTheme',
+    value: function activateInitialTheme() {
+      var theme = this.activeTheme;
+      if (theme) {
+        this.activateTheme(theme);
+      }
+    }
+  }, {
+    key: 'submitTheme',
+    value: function submitTheme(url) {
+      var name = this.displayNameForThemeFile(this.fileNameFromPath(url));
+      var theme = this.modelManager.createItem({ content_type: "SN|Theme", url: url, name: name });
+      this.modelManager.addItem(theme);
+      theme.setDirty(true);
+      this.syncManager.sync();
+    }
+  }, {
+    key: 'activateTheme',
+    value: function activateTheme(theme) {
+      var activeTheme = this.activeTheme;
+      if (activeTheme) {
+        this.deactivateTheme(activeTheme);
+      }
+
+      var link = document.createElement("link");
+      link.href = theme.url;
+      link.type = "text/css";
+      link.rel = "stylesheet";
+      link.media = "screen,print";
+      link.id = theme.uuid;
+      document.getElementsByTagName("head")[0].appendChild(link);
+      localStorage.setItem("activeTheme", theme.uuid);
+    }
+  }, {
+    key: 'deactivateTheme',
+    value: function deactivateTheme(theme) {
+      localStorage.removeItem("activeTheme");
+      var element = document.getElementById(theme.uuid);
+      if (element) {
+        element.disabled = true;
+        element.parentNode.removeChild(element);
+      }
+    }
+  }, {
+    key: 'isThemeActive',
+    value: function isThemeActive(theme) {
+      return localStorage.getItem("activeTheme") === theme.uuid;
+    }
+  }, {
+    key: 'fileNameFromPath',
+    value: function fileNameFromPath(filePath) {
+      return filePath.replace(/^.*[\\\/]/, '');
+    }
+  }, {
+    key: 'capitalizeString',
+    value: function capitalizeString(string) {
+      return string.replace(/(?:^|\s)\S/g, function (a) {
+        return a.toUpperCase();
+      });
+    }
+  }, {
+    key: 'displayNameForThemeFile',
+    value: function displayNameForThemeFile(fileName) {
+      var name = fileName.split(".")[0];
+      var cleaned = name.split("-").join(" ");
+      return this.capitalizeString(cleaned);
+    }
+  }, {
+    key: 'themes',
+    get: function get() {
+      return this.modelManager.itemsForContentType("SN|Theme");
+    }
+  }, {
+    key: 'activeTheme',
+    get: function get() {
+      var activeThemeId = localStorage.getItem("activeTheme");
+      if (!activeThemeId) {
+        return null;
+      }
+
+      var theme = _.find(this.themes, { uuid: activeThemeId });
+      return theme;
+    }
+  }]);
+
+  return ThemeManager;
+}();
+
+angular.module('app.frontend').service('themeManager', ThemeManager);
 
 
 },{}]},{},[1]);
@@ -38430,70 +38590,96 @@ angular.module('app.frontend').service('syncManager', SyncManager);
   $templateCache.put('frontend/directives/global-extensions-menu.html',
     "<div class='panel panel-default account-panel panel-right'>\n" +
     "  <div class='panel-body'>\n" +
-    "    <div ng-if='!extensionManager.extensions.length' style='font-size: 15px;'>No extensions installed</div>\n" +
-    "    <div ng-if='extensionManager.extensions.length'>\n" +
-    "      <section class='gray-bg inline-h mb-10 medium-padding' ng-init='extension.formData = {}' ng-repeat=\"extension in extensionManager.extensions | orderBy: 'name'\">\n" +
-    "        <h3 class='center-align'>{{extension.name}}</h3>\n" +
-    "        <div class='center-align centered mt-10'>\n" +
-    "          <label class='block normal'>Send data:</label>\n" +
-    "          <label class='normal'>\n" +
-    "            <input ng-change='changeExtensionEncryptionFormat(true, extension)' ng-model='extension.encrypted' ng-value='true' type='radio'>\n" +
-    "            Encrypted\n" +
-    "          </label>\n" +
-    "          <label class='normal'>\n" +
-    "            <input ng-change='changeExtensionEncryptionFormat(false, extension)' ng-model='extension.encrypted' ng-value='false' type='radio'>\n" +
-    "            Decrypted\n" +
-    "          </label>\n" +
+    "    <div class='white-bg medium-padding ext-section' ng-class=\"{'opened': state.showDataExts}\">\n" +
+    "      <h1>\n" +
+    "        <a ng-click='state.showDataExts = !state.showDataExts'>Data Extensions</a>\n" +
+    "      </h1>\n" +
+    "      <div ng-if='state.showDataExts'>\n" +
+    "        <div ng-if='!extensionManager.extensions.length' style='font-size: 15px;'>No extensions installed</div>\n" +
+    "        <div ng-if='extensionManager.extensions.length'>\n" +
+    "          <section class='gray-bg inline-h mb-10 medium-padding' ng-init='extension.formData = {}' ng-repeat=\"extension in extensionManager.extensions | orderBy: 'name'\">\n" +
+    "            <h3 class='center-align'>{{extension.name}}</h3>\n" +
+    "            <div class='center-align centered mt-10'>\n" +
+    "              <label class='block normal'>Send data:</label>\n" +
+    "              <label class='normal'>\n" +
+    "                <input ng-change='changeExtensionEncryptionFormat(true, extension)' ng-model='extension.encrypted' ng-value='true' type='radio'>\n" +
+    "                Encrypted\n" +
+    "              </label>\n" +
+    "              <label class='normal'>\n" +
+    "                <input ng-change='changeExtensionEncryptionFormat(false, extension)' ng-model='extension.encrypted' ng-value='false' type='radio'>\n" +
+    "                Decrypted\n" +
+    "              </label>\n" +
+    "            </div>\n" +
+    "            <div class='small-v-space'></div>\n" +
+    "            <section class='inline-h white-bg medium-padding mb-10 pb-4' ng-repeat='action in extension.actionsInGlobalContext()'>\n" +
+    "              <label class='block'>{{action.label}}</label>\n" +
+    "              <em style='font-style: italic;'>{{action.desc}}</em>\n" +
+    "              <em ng-if=\"action.repeat_mode == 'watch'\">\n" +
+    "                Repeats when a change is made to your items.\n" +
+    "              </em>\n" +
+    "              <em ng-if=\"action.repeat_mode == 'loop'\">\n" +
+    "                Repeats at most once every {{action.repeat_timeout}} seconds\n" +
+    "              </em>\n" +
+    "              <div>\n" +
+    "                <a ng-click='action.showPermissions = !action.showPermissions'>{{action.showPermissions ? \"Hide permissions\" : \"Show permissions\"}}</a>\n" +
+    "                <div ng-if='action.showPermissions'>\n" +
+    "                  {{action.permissionsString()}}\n" +
+    "                  <label class='block normal'>{{action.encryptionModeString()}}</label>\n" +
+    "                </div>\n" +
+    "              </div>\n" +
+    "              <div>\n" +
+    "                <div class='mt-5' ng-if='action.repeat_mode'>\n" +
+    "                  <button class='light' ng-click='extensionManager.disableRepeatAction(action, extension)' ng-if='extensionManager.isRepeatActionEnabled(action)'>Disable</button>\n" +
+    "                  <button class='light' ng-click='extensionManager.enableRepeatAction(action, extension)' ng-if='!extensionManager.isRepeatActionEnabled(action)'>Enable</button>\n" +
+    "                </div>\n" +
+    "                <button class='light mt-10' ng-click='selectedAction(action, extension)' ng-if='!action.running &amp;&amp; !action.repeat_mode'>\n" +
+    "                  Perform Action\n" +
+    "                </button>\n" +
+    "                <div class='spinner mb-5 centered center-align block' ng-if='action.running'></div>\n" +
+    "              </div>\n" +
+    "              <p class='mb-5 mt-5 small' ng-if='!action.error &amp;&amp; action.lastExecuted &amp;&amp; !action.running'>\n" +
+    "                Last run {{action.lastExecuted | appDateTime}}\n" +
+    "              </p>\n" +
+    "              <label class='red' ng-if='action.error'>\n" +
+    "                Error performing action.\n" +
+    "              </label>\n" +
+    "            </section>\n" +
+    "            <a class='block center-align mt-10' ng-click='extension.showURL = !extension.showURL'>Show URL</a>\n" +
+    "            <p class='center-align wrap' ng-if='extension.showURL'>{{extension.url}}</p>\n" +
+    "            <a class='block center-align mt-5' ng-click='deleteExtension(extension)'>Remove extension</a>\n" +
+    "          </section>\n" +
     "        </div>\n" +
-    "        <div class='small-v-space'></div>\n" +
-    "        <section class='inline-h white-bg medium-padding mb-10 pb-4' ng-repeat='action in extension.actionsInGlobalContext()'>\n" +
-    "          <label class='block'>{{action.label}}</label>\n" +
-    "          <em style='font-style: italic;'>{{action.desc}}</em>\n" +
-    "          <em ng-if=\"action.repeat_mode == 'watch'\">\n" +
-    "            Repeats when a change is made to your items.\n" +
-    "          </em>\n" +
-    "          <em ng-if=\"action.repeat_mode == 'loop'\">\n" +
-    "            Repeats at most once every {{action.repeat_timeout}} seconds\n" +
-    "          </em>\n" +
-    "          <div>\n" +
-    "            <a ng-click='action.showPermissions = !action.showPermissions'>{{action.showPermissions ? \"Hide permissions\" : \"Show permissions\"}}</a>\n" +
-    "            <div ng-if='action.showPermissions'>\n" +
-    "              {{action.permissionsString()}}\n" +
-    "              <label class='block normal'>{{action.encryptionModeString()}}</label>\n" +
-    "            </div>\n" +
-    "          </div>\n" +
-    "          <div>\n" +
-    "            <div class='mt-5' ng-if='action.repeat_mode'>\n" +
-    "              <button class='light' ng-click='extensionManager.disableRepeatAction(action, extension)' ng-if='extensionManager.isRepeatActionEnabled(action)'>Disable</button>\n" +
-    "              <button class='light' ng-click='extensionManager.enableRepeatAction(action, extension)' ng-if='!extensionManager.isRepeatActionEnabled(action)'>Enable</button>\n" +
-    "            </div>\n" +
-    "            <button class='light mt-10' ng-click='selectedAction(action, extension)' ng-if='!action.running &amp;&amp; !action.repeat_mode'>\n" +
-    "              Perform Action\n" +
-    "            </button>\n" +
-    "            <div class='spinner mb-5 centered center-align block' ng-if='action.running'></div>\n" +
-    "          </div>\n" +
-    "          <p class='mb-5 mt-5 small' ng-if='!action.error &amp;&amp; action.lastExecuted &amp;&amp; !action.running'>\n" +
-    "            Last run {{action.lastExecuted | appDateTime}}\n" +
-    "          </p>\n" +
-    "          <label class='red' ng-if='action.error'>\n" +
-    "            Error performing action.\n" +
-    "          </label>\n" +
-    "        </section>\n" +
-    "        <a class='block center-align mt-10' ng-click='extension.showURL = !extension.showURL'>Show URL</a>\n" +
-    "        <p class='center-align wrap' ng-if='extension.showURL'>{{extension.url}}</p>\n" +
-    "        <a class='block center-align mt-5' ng-click='deleteExtension(extension)'>Remove extension</a>\n" +
-    "      </section>\n" +
+    "        <div class='large-v-space'></div>\n" +
+    "        <a class='block' ng-click='toggleExtensionForm()'>Add new extension</a>\n" +
+    "        <form class='mt-10 mb-10' ng-if='showNewExtensionForm'>\n" +
+    "          <input autofocus='autofocus' class='form-control' name='url' ng-model='newExtensionData.url' placeholder='Extension URL' required type='url'>\n" +
+    "          <button class='btn dark-button btn-block' data-size='s' data-style='expand-right' ng-click='submitNewExtensionForm()' state='buttonState' type='submit'>\n" +
+    "            Add Extension\n" +
+    "          </button>\n" +
+    "        </form>\n" +
+    "        <a class='block mt-5' ng-click='reloadExtensionsPressed()' ng-if='extensionManager.extensions.length &gt; 0'>Reload all extensions</a>\n" +
+    "        <a class='block mt-5' href='https://standardnotes.org/extensions' target='_blank'>Available Extensions</a>\n" +
+    "      </div>\n" +
     "    </div>\n" +
-    "    <div class='large-v-space'></div>\n" +
-    "    <a class='block' ng-click='toggleExtensionForm()'>Add new extension</a>\n" +
-    "    <form class='mt-10 mb-10' ng-if='showNewExtensionForm'>\n" +
-    "      <input autofocus='autofocus' class='form-control' name='url' ng-model='newExtensionData.url' placeholder='Extension URL' required type='url'>\n" +
-    "      <button class='btn dark-button btn-block' data-size='s' data-style='expand-right' ng-click='submitNewExtensionForm()' state='buttonState' type='submit'>\n" +
-    "        Add Extension\n" +
-    "      </button>\n" +
-    "    </form>\n" +
-    "    <a class='block mt-5' ng-click='reloadExtensionsPressed()' ng-if='extensionManager.extensions.length &gt; 0'>Reload all extensions</a>\n" +
-    "    <a class='block mt-5' href='https://standardnotes.org/extensions' target='_blank'>List of available extensions</a>\n" +
+    "    <div class='white-bg medium-padding mt-10 ext-section' ng-class=\"{'opened': state.showThemes}\">\n" +
+    "      <h1>\n" +
+    "        <a ng-click='state.showThemes = !state.showThemes'>Themes</a>\n" +
+    "      </h1>\n" +
+    "      <div ng-if='state.showThemes'>\n" +
+    "        <section ng-repeat='theme in themeManager.themes'>\n" +
+    "          <label>{{theme.name}}</label>\n" +
+    "          <p>{{theme.url}}</p>\n" +
+    "          <a ng-click='themeManager.activateTheme(theme)' ng-if='!themeManager.isThemeActive(theme)'>Activate</a>\n" +
+    "          <a ng-click='themeManager.deactivateTheme(theme)' ng-if='themeManager.isThemeActive(theme)'>Deactivate</a>\n" +
+    "          <a class='red ml-2' ng-click='deleteTheme(theme)'>Delete</a>\n" +
+    "        </section>\n" +
+    "        <section>\n" +
+    "          <p class='bold mb-5'>Install New Theme</p>\n" +
+    "          <input autofocus='autofocus' class='form-control' name='url' ng-keyup='$event.keyCode == 13 &amp;&amp; submitTheme();' ng-model='state.themeUrl' placeholder='New Theme URL' required type='url'>\n" +
+    "        </section>\n" +
+    "        <a class='block mt-5' href='https://standardnotes.org/extensions/themes' target='_blank'>Available Themes</a>\n" +
+    "      </div>\n" +
+    "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
   );

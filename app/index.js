@@ -12,11 +12,6 @@ const isDev = require('electron-is-dev');
 const log = require('electron-log')
 log.transports.file.level = 'info';
 
-const Store = require('./store.js');
-const store = new Store({
-  configName: 'user-preferences',
-});
-
 let win;
 let willQuitApp = false;
 
@@ -70,10 +65,6 @@ function createWindow () {
   })
 
   win.once('ready-to-show', () => {
-    let themePath = store.get("themePath");
-    if(themePath) {
-      setThemeFromFile(themePath);
-    }
     win.show()
   })
 
@@ -142,90 +133,9 @@ app.on('ready', function(){
     win.focus();
   }
 
-  reloadThemesAndMenu();
+  loadMenu();
 })
 
-function reloadThemesAndMenu() {
-  initializeThemes(function(){
-    loadMenu();
-  })
-}
-
-let fs = require('fs');
-let themesDir = path.join(app.getPath('userData'), 'themes/');
-var themes;
-
-function saveThemeData(name, data) {
-  let themePath = path.join(themesDir, name);
-  fs.writeFileSync(themePath, data);
-}
-
-function setThemeFromFile(filePath) {
-  store.set("themePath", filePath);
-  if(!filePath) {
-    // default
-    reloadThemesAndMenu();
-    win.reload();
-    return;
-  }
-
-  fs.readFile(filePath, 'utf-8', function (err, data) {
-    if(err) {
-      return;
-    }
-    win.webContents.insertCSS(data);
-    reloadThemesAndMenu();
-  });
-}
-
-function fileNameFromPath(filePath) {
-  return filePath.replace(/^.*[\\\/]/, '');
-}
-
-function initializeThemes(callback) {
-  if (!fs.existsSync(themesDir)){
-    fs.mkdirSync(themesDir);
-  }
-
-  themes = [];
-  var index = 0;
-
-  function capitalizeString(string) {
-    return string.replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
-  };
-
-  function displayNameForThemeFile(fileName) {
-    let name = fileName.split(".")[0];
-    let cleaned = name.split("-").join(" ");
-    return capitalizeString(cleaned);
-  }
-
-  fs.readdir(themesDir, function(err, dir){
-
-    for(let fileName of dir) {
-      if(fileName.includes(".css") === false) {
-        continue;
-      }
-      var themePath = path.join(themesDir, fileName);
-      themes.push({
-        label: displayNameForThemeFile(fileName),
-        type: "checkbox",
-        checked: store.get("themePath") === themePath,
-        click () {
-          setThemeFromFile(themePath);
-        }
-      })
-
-      if(index == dir.length - 1) {
-        callback();
-        return;
-      } else {
-        index++;
-      }
-    }
-    callback();
-  })
-}
 
 function loadMenu() {
 
@@ -301,51 +211,10 @@ function loadMenu() {
       ]
     },
     {
-      label: 'Theme',
-      submenu: [
-        {
-          label: 'Add New Theme',
-          click () {
-            dialog.showOpenDialog(function (fileNames) {
-              if (fileNames === undefined) return;
-              var fileName = fileNames[0];
-              fs.readFile(fileName, 'utf-8', function (err, data) {
-                fileName = fileNameFromPath(fileName);
-                saveThemeData(fileName, data);
-                setThemeFromFile(path.join(themesDir, fileName));
-              });
-            });
-          }
-        },
-        {
-          label: "Open Themes Directory",
-          click() {
-            shell.openItem(themesDir);
-          }
-        },
-        {
-          label: "Browse Themes",
-          click () { shell.openExternal('https://standardnotes.org/extensions/themes') }
-        },
-        {
-          type: "separator"
-        },
-        {
-          label: "Default",
-          type: "checkbox",
-          checked: store.get("themePath") == null,
-          click() {
-            store.set("themePath", null);
-            setThemeFromFile(null);
-          }
-        }
-      ].concat(themes)
-    },
-    {
       role: 'help',
       submenu: [
         {
-          label: 'Github',
+          label: 'GitHub',
           click () { shell.openExternal('https://github.com/standardnotes') }
         },
         {
