@@ -598,13 +598,9 @@ p {
   background-color: #f5f5f5;
   color: black;
 }
-.nt-dropdown-menu.dark li:hover a {
-  color: black !important;
-}
 .nt-dropdown-menu.dark li a {
-  color: black !important;
   height: 100%;
-  font-weight: bold !important;
+  font-weight: bold;
 }
 .nt-dropdown-menu.dark li .text {
   color: black;
@@ -1206,6 +1202,7 @@ a.disabled {
 .dropdown-menu.editor-menu ul li.menu-item .menu-item-title {
   font-weight: bold;
   font-size: 14px;
+  margin-bottom: 3px;
 }
 .dropdown-menu.editor-menu ul li.menu-item .menu-item-subtitle {
   font-weight: normal;

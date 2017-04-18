@@ -33735,7 +33735,7 @@ angular.module('app.frontend', []);angular.module('app.frontend').config(['$loca
   }
 }]);
 ;
-var BaseCtrl = function BaseCtrl(syncManager, dbManager) {
+var BaseCtrl = function BaseCtrl(syncManager, dbManager, authManager) {
   _classCallCheck(this, BaseCtrl);
 
   dbManager.openDatabase(null, function () {
@@ -33743,8 +33743,28 @@ var BaseCtrl = function BaseCtrl(syncManager, dbManager) {
     syncManager.clearSyncToken();
     syncManager.sync();
   });
+
+  // load analytics
+  window._paq = window._paq || [];
+
+  (function () {
+    var u = "https://piwik.standardnotes.org/";
+    window._paq.push(['setTrackerUrl', u + 'piwik.php']);
+    window._paq.push(['setSiteId', '2']);
+    var d = document,
+        g = d.createElement('script'),
+        s = d.getElementsByTagName('script')[0];
+    g.type = 'text/javascript';g.async = true;g.defer = true;g.src = u + 'piwik.js';s.parentNode.insertBefore(g, s);
+  })();
+
+  var analyticsId = authManager.getUserAnalyticsId();
+  if (analyticsId) {
+    window._paq.push(['setUserId', analyticsId]);
+  }
+  window._paq.push(['trackPageView']);
+  window._paq.push(['enableLinkTracking']);
 };
-BaseCtrl.$inject = ['syncManager', 'dbManager'];
+BaseCtrl.$inject = ['syncManager', 'dbManager', 'authManager'];
 
 angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
 ;angular.module('app.frontend').directive("editorSection", ['$timeout', '$sce', function ($timeout, $sce) {
@@ -33770,7 +33790,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager) {
+}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', 'editorManager', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager) {
 
   window.addEventListener("message", function (event) {
     if (event.data.status) {
@@ -33783,9 +33803,9 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       if (this.note.uuid === id) {
         this.note.text = text;
         if (data) {
-          var changesMade = this.customEditor.setData(id, data);
+          var changesMade = this.editor.setData(id, data);
           if (changesMade) {
-            this.customEditor.setDirty(true);
+            this.editor.setDirty(true);
           }
         }
         this.changesMade();
@@ -33799,14 +33819,14 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
 
   this.setNote = function (note, oldNote) {
     this.noteReady = false;
-    var currentEditor = this.customEditor;
-    this.customEditor = null;
+    var currentEditor = this.editor;
+    this.editor = null;
     this.showExtensions = false;
     this.showMenu = false;
     this.loadTagsString();
 
     var setEditor = function (editor) {
-      this.customEditor = editor;
+      this.editor = editor;
       this.postNoteToExternalEditor();
       this.noteReady = true;
     }.bind(this);
@@ -33823,7 +33843,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
         setEditor(editor);
       }
     } else {
-      this.customEditor = null;
+      this.editor = null;
       this.noteReady = true;
     }
 
@@ -33843,18 +33863,15 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
   this.selectedEditor = function (editor) {
     this.showEditorMenu = false;
 
-    if (this.customEditor && editor !== this.customEditor) {
-      this.customEditor.removeItemAsRelationship(this.note);
-      this.customEditor.setDirty(true);
+    if (this.editor && editor !== this.editor) {
+      this.editor.removeItemAsRelationship(this.note);
+      this.editor.setDirty(true);
     }
 
-    if (editor.default) {
-      this.customEditor = null;
-    } else {
-      this.customEditor = editor;
-      this.customEditor.addItemAsRelationship(this.note);
-      this.customEditor.setDirty(true);
-    }
+    editor.addItemAsRelationship(this.note);
+    editor.setDirty(true);
+
+    this.editor = editor;
   }.bind(this);
 
   this.editorForNote = function (note) {
@@ -33886,13 +33903,13 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       }
     }
 
-    return null;
+    return _.find(editors, { default: true });
   };
 
   this.postNoteToExternalEditor = function () {
     var externalEditorElement = document.getElementById("editor-iframe");
     if (externalEditorElement) {
-      externalEditorElement.contentWindow.postMessage({ text: this.note.text, data: this.customEditor.dataForKey(this.note.uuid), id: this.note.uuid }, '*');
+      externalEditorElement.contentWindow.postMessage({ text: this.note.text, data: this.editor.dataForKey(this.note.uuid), id: this.note.uuid }, '*');
     }
   };
 
@@ -34813,6 +34830,8 @@ var Editor = function (_Item) {
       this.url = contentObject.url;
       this.name = contentObject.name;
       this.data = contentObject.data || {};
+      this.default = contentObject.default;
+      this.systemEditor = contentObject.systemEditor;
     }
   }, {
     key: 'structureParams',
@@ -34820,7 +34839,9 @@ var Editor = function (_Item) {
       var params = {
         url: this.url,
         name: this.name,
-        data: this.data
+        data: this.data,
+        default: this.default,
+        systemEditor: this.systemEditor
       };
 
       _.merge(params, _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'structureParams', this).call(this));
@@ -35421,6 +35442,14 @@ var ItemParams = function () {
       }
     }
 
+    this.getUserAnalyticsId = function () {
+      if (!this.user || !this.user.uuid) {
+        return null;
+      }
+      // anonymize user id irreversably
+      return Neeto.crypto.hmac256(this.user.uuid, Neeto.crypto.sha256(localStorage.getItem("pw")));
+    };
+
     this.offline = function () {
       return !this.user;
     };
@@ -35861,7 +35890,7 @@ var AccountMenu = function () {
       };
 
       $scope.dashboardURL = function () {
-        return $scope.server + '/dashboard/?server=' + $scope.server + '&id=' + $scope.user.email + '&pw=' + $scope.serverPassword();
+        return $scope.server + '/dashboard/?server=' + $scope.server + '&id=' + encodeURIComponent($scope.user.email) + '&pw=' + $scope.serverPassword();
       };
 
       $scope.newPasswordData = {};
@@ -36307,26 +36336,11 @@ var EditorMenu = function () {
 
   _createClass(EditorMenu, [{
     key: 'controller',
-    value: ['$scope', 'modelManager', 'extensionManager', 'syncManager', function controller($scope, modelManager, extensionManager, syncManager) {
+    value: ['$scope', 'editorManager', function controller($scope, editorManager) {
       'ngInject';
 
       $scope.formData = {};
-
-      var editorContentType = "SN|Editor";
-
-      var defaultEditor = {
-        default: true,
-        name: "Plain"
-      };
-
-      $scope.sysEditors = [defaultEditor];
-      $scope.editors = modelManager.itemsForContentType(editorContentType);
-
-      $scope.editorForUrl = function (url) {
-        return $scope.editors.filter(function (editor) {
-          return editor.url == url;
-        })[0];
-      };
+      $scope.editorManager = editorManager;
 
       $scope.selectEditor = function (editor) {
         $scope.callback()(editor);
@@ -36334,38 +36348,22 @@ var EditorMenu = function () {
 
       $scope.deleteEditor = function (editor) {
         if (confirm("Are you sure you want to delete this editor?")) {
-          modelManager.setItemToBeDeleted(editor);
-          syncManager.sync();
-          _.pull($scope.editors, editor);
+          editorManager.deleteEditor(editor);
         }
       };
 
-      $scope.submitNewEditorRequest = function () {
-        var editor = createEditor($scope.formData.url);
-        modelManager.addItem(editor);
-        editor.setDirty(true);
-        syncManager.sync();
-        $scope.editors.push(editor);
-        $scope.formData = {};
+      $scope.setDefaultEditor = function (editor) {
+        editorManager.setDefaultEditor(editor);
       };
 
-      function createEditor(url) {
-        var name = getParameterByName("name", url);
-        return modelManager.createItem({
-          content_type: editorContentType,
-          url: url,
-          name: name
-        });
-      }
+      $scope.removeDefaultEditor = function (editor) {
+        editorManager.removeDefaultEditor(editor);
+      };
 
-      function getParameterByName(name, url) {
-        name = name.replace(/[\[\]]/g, "\\$&");
-        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-            results = regex.exec(url);
-        if (!results) return null;
-        if (!results[2]) return '';
-        return decodeURIComponent(results[2].replace(/\+/g, " "));
-      }
+      $scope.submitNewEditorRequest = function () {
+        editorManager.addNewEditorFromURL($scope.formData.url);
+        $scope.formData = {};
+      };
     }]
   }]);
 
@@ -36467,6 +36465,134 @@ var GlobalExtensionsMenu = function () {
 angular.module('app.frontend').directive('globalExtensionsMenu', function () {
   return new GlobalExtensionsMenu();
 });
+;
+var EditorManager = function () {
+  EditorManager.$inject = ['$rootScope', 'modelManager', 'syncManager'];
+  function EditorManager($rootScope, modelManager, syncManager) {
+    _classCallCheck(this, EditorManager);
+
+    this.syncManager = syncManager;
+    this.modelManager = modelManager;
+
+    this.editorType = "SN|Editor";
+    this._systemEditor = {
+      systemEditor: true,
+      name: "Plain"
+    };
+
+    $rootScope.$on("sync:completed", function () {
+      // we want to wait for sync completion before creating a syncable system editor
+      // we need to sync the system editor so that we can assign note preferences to it
+      // that is, when a user selects Plain for a note, we need to remember that
+      if (this.systemEditor.uuid) {
+        return;
+      }
+
+      var liveSysEditor = _.find(this.allEditors, { systemEditor: true });
+      if (liveSysEditor) {
+        this._systemEditor = liveSysEditor;
+      } else {
+        this._systemEditor = modelManager.createItem({
+          content_type: this.editorType,
+          systemEditor: true,
+          name: "Plain"
+        });
+        modelManager.addItem(this._systemEditor);
+        this._systemEditor.setDirty(true);
+        syncManager.sync();
+      }
+    }.bind(this));
+  }
+
+  _createClass(EditorManager, [{
+    key: 'editorForUrl',
+    value: function editorForUrl(url) {
+      return this.externalEditors.filter(function (editor) {
+        return editor.url == url;
+      })[0];
+    }
+  }, {
+    key: 'setDefaultEditor',
+    value: function setDefaultEditor(editor) {
+      var defaultEditor = this.defaultEditor;
+      if (defaultEditor) {
+        defaultEditor.default = false;
+        defaultEditor.setDirty(true);
+      }
+      editor.default = true;
+      editor.setDirty(true);
+      this.syncManager.sync();
+    }
+  }, {
+    key: 'removeDefaultEditor',
+    value: function removeDefaultEditor(editor) {
+      editor.default = false;
+      editor.setDirty(true);
+      this.syncManager.sync();
+    }
+  }, {
+    key: 'addNewEditorFromURL',
+    value: function addNewEditorFromURL(url) {
+      var name = this.getParameterByName("name", url);
+      var editor = this.modelManager.createItem({
+        content_type: this.editorType,
+        url: url,
+        name: name
+      });
+
+      this.modelManager.addItem(editor);
+      editor.setDirty(true);
+      this.syncManager.sync();
+    }
+  }, {
+    key: 'deleteEditor',
+    value: function deleteEditor(editor) {
+      this.modelManager.setItemToBeDeleted(editor);
+      this.syncManager.sync();
+    }
+  }, {
+    key: 'getParameterByName',
+    value: function getParameterByName(name, url) {
+      name = name.replace(/[\[\]]/g, "\\$&");
+      var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+          results = regex.exec(url);
+      if (!results) return null;
+      if (!results[2]) return '';
+      return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+  }, {
+    key: 'allEditors',
+    get: function get() {
+      return this.modelManager.itemsForContentType(this.editorType);
+    }
+  }, {
+    key: 'externalEditors',
+    get: function get() {
+      return this.allEditors.filter(function (editor) {
+        return !editor.systemEditor;
+      });
+    }
+  }, {
+    key: 'systemEditors',
+    get: function get() {
+      return [this.systemEditor];
+    }
+  }, {
+    key: 'systemEditor',
+    get: function get() {
+      return this._systemEditor;
+    }
+  }, {
+    key: 'defaultEditor',
+    get: function get() {
+      return _.find(this.externalEditors, { default: true });
+    }
+  }]);
+
+  return EditorManager;
+}();
+
+angular.module('app.frontend').service('editorManager', EditorManager);
 ;
 var ExtensionManager = function () {
   ExtensionManager.$inject = ['httpManager', 'modelManager', 'authManager', 'syncManager'];
@@ -37075,7 +37201,7 @@ var HttpManager = function () {
     key: 'formatParams',
     value: function formatParams(params) {
       return "?" + Object.keys(params).map(function (key) {
-        return key + "=" + params[key];
+        return key + "=" + encodeURIComponent(params[key]);
       }).join("&");
     }
   }]);
@@ -37776,6 +37902,7 @@ var SyncManager = function () {
           }.bind(this), 10); // wait 10ms to allow UI to update
         } else {
           this.callQueuedCallbacksAndCurrent(callback, response);
+          this.$rootScope.$broadcast("sync:completed");
         }
       }.bind(this);
 
@@ -38556,23 +38683,26 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    <div class='title'>System Editors</div>\n" +
     "  </div>\n" +
     "  <ul>\n" +
-    "    <li class='menu-item' ng-click='selectEditor(editor)' ng-repeat='editor in sysEditors'>\n" +
-    "      <span class='pull-left mr-10' ng-if='!selectedEditor'>✓</span>\n" +
+    "    <li class='menu-item' ng-click='selectEditor(editor)' ng-repeat='editor in editorManager.systemEditors'>\n" +
+    "      <span class='pull-left mr-10' ng-if='selectedEditor === editor'>✓</span>\n" +
     "      <div class='menu-item-title pull-left'>{{editor.name}}</div>\n" +
     "    </li>\n" +
     "  </ul>\n" +
-    "  <div ng-if='editors.length &gt; 0'>\n" +
+    "  <div ng-if='editorManager.externalEditors.length &gt; 0'>\n" +
     "    <div class='menu-section-header'>\n" +
     "      <div class='title'>External Editors</div>\n" +
     "      <div class='subtitle'>Can access your current note decrypted.</div>\n" +
     "    </div>\n" +
     "    <ul>\n" +
-    "      <li class='menu-item' ng-click='selectEditor(editor)' ng-repeat='editor in editors'>\n" +
-    "        <span class='pull-left mr-10' ng-if='selectedEditor == editor'>✓</span>\n" +
+    "      <li class='menu-item' ng-click='selectEditor(editor)' ng-repeat='editor in editorManager.externalEditors'>\n" +
     "        <div class='pull-left' style='width: 60%'>\n" +
     "          <div class='menu-item-title'>{{editor.name}}</div>\n" +
-    "          <div class='menu-item-subtitle wrap'>{{editor.url}}</div>\n" +
+    "          <a class='faded' ng-click='setDefaultEditor(editor); $event.stopPropagation();' ng-if='!editor.default'>Set Default</a>\n" +
+    "          <a class='red' ng-click='removeDefaultEditor(editor); $event.stopPropagation();' ng-if='editor.default'>Remove Default</a>\n" +
+    "          <a class='faded' ng-click='editor.showUrl = !editor.showUrl; $event.stopPropagation();'>Show URL</a>\n" +
+    "          <div class='menu-item-subtitle wrap' ng-if='editor.showUrl'>{{editor.url}}</div>\n" +
     "        </div>\n" +
+    "        <span class='pull-left ml-10' ng-if='selectedEditor === editor'>✓</span>\n" +
     "        <div class='pull-right'>\n" +
     "          <button class='white medium inline top' ng-click='deleteEditor(editor); $event.stopPropagation();' style='width: 50px; height: 40px;'>☓</button>\n" +
     "        </div>\n" +
@@ -38758,7 +38888,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "          <span class='caret'></span>\n" +
     "          <span class='sr-only'></span>\n" +
     "        </a>\n" +
-    "        <editor-menu callback='ctrl.selectedEditor' ng-if='ctrl.showEditorMenu' selected-editor='ctrl.customEditor'></editor-menu>\n" +
+    "        <editor-menu callback='ctrl.selectedEditor' ng-if='ctrl.showEditorMenu' selected-editor='ctrl.editor'></editor-menu>\n" +
     "      </li>\n" +
     "      <li class='sep'></li>\n" +
     "      <li class='dropdown pull-left' click-outside='ctrl.showExtensions = false;' is-open='ctrl.showExtensions' ng-if='ctrl.hasAvailableExtensions()'>\n" +
@@ -38772,8 +38902,8 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    </ul>\n" +
     "  </div>\n" +
     "  <div class='editor-content' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.noteReady'>\n" +
-    "    <iframe frameBorder='0' id='editor-iframe' ng-if='ctrl.customEditor' ng-src='{{ctrl.customEditor.url | trusted}}' style='width: 100%;'></iframe>\n" +
-    "    <textarea class='editable' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.customEditor' ng-model='ctrl.note.text'></textarea>\n" +
+    "    <iframe frameBorder='0' id='editor-iframe' ng-if='ctrl.editor &amp;&amp; !ctrl.editor.systemEditor' ng-src='{{ctrl.editor.url | trusted}}' style='width: 100%;'></iframe>\n" +
+    "    <textarea class='editable' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.editor || ctrl.editor.systemEditor' ng-model='ctrl.note.text'></textarea>\n" +
     "  </div>\n" +
     "</div>\n"
   );
