@@ -33735,7 +33735,7 @@ angular.module('app.frontend', []);angular.module('app.frontend').config(['$loca
   }
 }]);
 ;
-var BaseCtrl = function BaseCtrl(syncManager, dbManager, authManager) {
+var BaseCtrl = function BaseCtrl(syncManager, dbManager, analyticsManager) {
   _classCallCheck(this, BaseCtrl);
 
   dbManager.openDatabase(null, function () {
@@ -33743,28 +33743,8 @@ var BaseCtrl = function BaseCtrl(syncManager, dbManager, authManager) {
     syncManager.clearSyncToken();
     syncManager.sync();
   });
-
-  // load analytics
-  window._paq = window._paq || [];
-
-  (function () {
-    var u = "https://piwik.standardnotes.org/";
-    window._paq.push(['setTrackerUrl', u + 'piwik.php']);
-    window._paq.push(['setSiteId', '2']);
-    var d = document,
-        g = d.createElement('script'),
-        s = d.getElementsByTagName('script')[0];
-    g.type = 'text/javascript';g.async = true;g.defer = true;g.src = u + 'piwik.js';s.parentNode.insertBefore(g, s);
-  })();
-
-  var analyticsId = authManager.getUserAnalyticsId();
-  if (analyticsId) {
-    window._paq.push(['setUserId', analyticsId]);
-  }
-  window._paq.push(['trackPageView']);
-  window._paq.push(['enableLinkTracking']);
 };
-BaseCtrl.$inject = ['syncManager', 'dbManager', 'authManager'];
+BaseCtrl.$inject = ['syncManager', 'dbManager', 'analyticsManager'];
 
 angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
 ;angular.module('app.frontend').directive("editorSection", ['$timeout', '$sce', function ($timeout, $sce) {
@@ -33790,12 +33770,21 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', 'editorManager', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager) {
+}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', 'editorManager', 'themeManager', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager, themeManager) {
+
+  $rootScope.$on("theme-changed", function () {
+    this.postThemeToExternalEditor();
+  }.bind(this));
+
+  $rootScope.$on("sync:taking-too-long", function () {
+    this.syncTakingTooLong = true;
+  }.bind(this));
 
   window.addEventListener("message", function (event) {
     if (event.data.status) {
       this.postNoteToExternalEditor();
     } else {
+      console.log("Received message", event.data);
       var id = event.data.id;
       var text = event.data.text;
       var data = event.data.data;
@@ -33871,6 +33860,8 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     editor.addItemAsRelationship(this.note);
     editor.setDirty(true);
 
+    syncManager.sync();
+
     this.editor = editor;
   }.bind(this);
 
@@ -33906,11 +33897,31 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     return _.find(editors, { default: true });
   };
 
-  this.postNoteToExternalEditor = function () {
+  this.postDataToExternalEditor = function (data) {
     var externalEditorElement = document.getElementById("editor-iframe");
     if (externalEditorElement) {
-      externalEditorElement.contentWindow.postMessage({ text: this.note.text, data: this.editor.dataForKey(this.note.uuid), id: this.note.uuid }, '*');
+      externalEditorElement.contentWindow.postMessage(data, '*');
     }
+  };
+
+  function themeData() {
+    return {
+      themes: [themeManager.currentTheme ? themeManager.currentTheme.url : null]
+    };
+  }
+
+  this.postThemeToExternalEditor = function () {
+    this.postDataToExternalEditor(themeData());
+  };
+
+  this.postNoteToExternalEditor = function () {
+    var data = {
+      text: this.note.text,
+      data: this.editor.dataForKey(this.note.uuid),
+      id: this.note.uuid
+    };
+    _.merge(data, themeData());
+    this.postDataToExternalEditor(data);
   };
 
   this.hasAvailableExtensions = function () {
@@ -33942,6 +33953,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     var note = this.note;
     note.dummy = false;
     this.save()(note, function (success) {
+      this.syncTakingTooLong = false;
       if (success) {
         if (statusTimeout) $timeout.cancel(statusTimeout);
         statusTimeout = $timeout(function () {
@@ -34292,16 +34304,13 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
   */
 
   $scope.removeTag = function (tag) {
-    var validNotes = Note.filterDummyNotes(tag.notes);
-    if (validNotes == 0) {
+    if (confirm("Are you sure you want to delete this tag?")) {
       modelManager.setItemToBeDeleted(tag);
       // if no more notes, delete tag
       syncManager.sync(function () {
         // force scope tags to update on sub directives
         $scope.safeApply();
       });
-    } else {
-      alert("To delete this tag, remove all its notes first.");
     }
   };
 
@@ -34462,6 +34471,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
 
   this.selectNote = function (note) {
     this.selectedNote = note;
+    note.conflict_of = null; // clear conflict
     this.selectionMade()(note);
   };
 
@@ -34565,6 +34575,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
   this.selectTag = function (tag) {
     this.willSelect()(tag);
     this.selectedTag = tag;
+    tag.conflict_of = null; // clear conflict
     this.selectionMade()(tag);
   };
 
@@ -35417,6 +35428,68 @@ var ItemParams = function () {
   return ItemParams;
 }();
 
+;
+var AnalyticsManager = function () {
+  AnalyticsManager.$inject = ['authManager'];
+  function AnalyticsManager(authManager) {
+    _classCallCheck(this, AnalyticsManager);
+
+    this.authManager = authManager;
+
+    var status = localStorage.getItem("analyticsEnabled");
+    if (status === null) {
+      this.enabled = true;
+    } else {
+      this.enabled = JSON.parse(status);
+    }
+
+    if (this.enabled === true) {
+      this.initialize();
+    }
+  }
+
+  _createClass(AnalyticsManager, [{
+    key: 'setStatus',
+    value: function setStatus(enabled) {
+      this.enabled = enabled;
+      localStorage.setItem("analyticsEnabled", JSON.stringify(enabled));
+
+      window.location.reload();
+    }
+  }, {
+    key: 'toggleStatus',
+    value: function toggleStatus() {
+      this.setStatus(!this.enabled);
+    }
+  }, {
+    key: 'initialize',
+    value: function initialize() {
+      // load analytics
+      window._paq = window._paq || [];
+
+      (function () {
+        var u = "https://piwik.standardnotes.org/";
+        window._paq.push(['setTrackerUrl', u + 'piwik.php']);
+        window._paq.push(['setSiteId', '2']);
+        var d = document,
+            g = d.createElement('script'),
+            s = d.getElementsByTagName('script')[0];
+        g.type = 'text/javascript';g.id = "piwik", g.async = true;g.defer = true;g.src = u + 'piwik.js';s.parentNode.insertBefore(g, s);
+      })();
+
+      var analyticsId = this.authManager.getUserAnalyticsId();
+      if (analyticsId) {
+        window._paq.push(['setUserId', analyticsId]);
+      }
+      window._paq.push(['trackPageView', "AppInterface"]);
+      window._paq.push(['enableLinkTracking']);
+    }
+  }]);
+
+  return AnalyticsManager;
+}();
+
+angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
 ;angular.module('app.frontend').provider('authManager', function () {
 
   function domainName() {
@@ -35872,7 +35945,7 @@ var AccountMenu = function () {
 
   _createClass(AccountMenu, [{
     key: 'controller',
-    value: ['$scope', 'authManager', 'modelManager', 'syncManager', 'dbManager', '$timeout', function controller($scope, authManager, modelManager, syncManager, dbManager, $timeout) {
+    value: ['$scope', 'authManager', 'modelManager', 'syncManager', 'dbManager', 'analyticsManager', '$timeout', function controller($scope, authManager, modelManager, syncManager, dbManager, analyticsManager, $timeout) {
       'ngInject';
 
       $scope.formData = { mergeLocal: true, url: syncManager.serverURL };
@@ -35880,6 +35953,7 @@ var AccountMenu = function () {
       $scope.server = syncManager.serverURL;
 
       $scope.syncStatus = syncManager.syncStatus;
+      $scope.analyticsManager = analyticsManager;
 
       $scope.encryptionKey = function () {
         return authManager.keys().mk;
@@ -36343,6 +36417,7 @@ var EditorMenu = function () {
       $scope.editorManager = editorManager;
 
       $scope.selectEditor = function (editor) {
+        editor.conflict_of = null; // clear conflict if applicable
         $scope.callback()(editor);
       };
 
@@ -37668,8 +37743,8 @@ var ModelManager = function () {
 angular.module('app.frontend').service('modelManager', ModelManager);
 ;
 var SyncManager = function () {
-  SyncManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'dbManager', 'httpManager'];
-  function SyncManager($rootScope, modelManager, authManager, dbManager, httpManager) {
+  SyncManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'dbManager', 'httpManager', '$interval'];
+  function SyncManager($rootScope, modelManager, authManager, dbManager, httpManager, $interval) {
     _classCallCheck(this, SyncManager);
 
     this.$rootScope = $rootScope;
@@ -37677,6 +37752,7 @@ var SyncManager = function () {
     this.modelManager = modelManager;
     this.authManager = authManager;
     this.dbManager = dbManager;
+    this.$interval = $interval;
     this.syncStatus = {};
   }
 
@@ -37813,21 +37889,44 @@ var SyncManager = function () {
       }
     }
   }, {
+    key: 'beginCheckingIfSyncIsTakingTooLong',
+    value: function beginCheckingIfSyncIsTakingTooLong() {
+      this.syncStatus.checker = this.$interval(function () {
+        // check to see if the ongoing sync is taking too long, alert the user
+        var secondsPassed = (new Date() - this.syncStatus.syncStart) / 1000;
+        var warningThreshold = 5; // seconds
+        if (secondsPassed > warningThreshold) {
+          this.$rootScope.$broadcast("sync:taking-too-long");
+          this.stopCheckingIfSyncIsTakingTooLong();
+        }
+      }.bind(this), 500);
+    }
+  }, {
+    key: 'stopCheckingIfSyncIsTakingTooLong',
+    value: function stopCheckingIfSyncIsTakingTooLong() {
+      this.$interval.cancel(this.syncStatus.checker);
+    }
+  }, {
     key: 'sync',
     value: function sync(callback) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
+
+      var allDirtyItems = this.modelManager.getDirtyItems();
 
       if (this.syncStatus.syncOpInProgress) {
         this.repeatOnCompletion = true;
         if (callback) {
           this.queuedCallbacks.push(callback);
         }
+
+        // write to local storage nonetheless, since some users may see several second delay in server response.
+        // if they close the browser before the ongoing sync request completes, local changes will be lost if we dont save here
+        this.writeItemsToLocalStorage(allDirtyItems, false, null);
+
         console.log("Sync op in progress; returning.");
         return;
       }
-
-      var allDirtyItems = this.modelManager.getDirtyItems();
 
       // we want to write all dirty items to disk only if the user is offline, or if the sync op fails
       // if the sync op succeeds, these items will be written to disk by handling the "saved_items" response from the server
@@ -37840,6 +37939,8 @@ var SyncManager = function () {
       var isContinuationSync = this.syncStatus.needsMoreSync;
 
       this.syncStatus.syncOpInProgress = true;
+      this.syncStatus.syncStart = new Date();
+      this.beginCheckingIfSyncIsTakingTooLong();
 
       var submitLimit = 100;
       var subItems = allDirtyItems.slice(0, submitLimit);
@@ -37866,6 +37967,10 @@ var SyncManager = function () {
       params.sync_token = this.syncToken;
       params.cursor_token = this.cursorToken;
 
+      var onSyncCompletion = function (response) {
+        this.stopCheckingIfSyncIsTakingTooLong();
+      }.bind(this);
+
       var onSyncSuccess = function (response) {
         this.modelManager.clearDirtyItems(subItems);
         this.syncStatus.error = null;
@@ -37890,6 +37995,8 @@ var SyncManager = function () {
         // set the sync token at the end, so that if any errors happen above, you can resync
         this.syncToken = response.sync_token;
         this.cursorToken = response.cursor_token;
+
+        onSyncCompletion(response);
 
         if (this.cursorToken || this.syncStatus.needsMoreSync) {
           setTimeout(function () {
@@ -37921,6 +38028,8 @@ var SyncManager = function () {
           this.syncStatus.syncOpInProgress = false;
           this.syncStatus.error = error;
           this.writeItemsToLocalStorage(allDirtyItems, false, null);
+
+          onSyncCompletion(response);
 
           this.$rootScope.$broadcast("sync:error", error);
 
@@ -37962,7 +38071,51 @@ var SyncManager = function () {
     key: 'handleItemsResponse',
     value: function handleItemsResponse(responseItems, omitFields) {
       EncryptionHelper.decryptMultipleItems(responseItems, this.authManager.keys());
-      return this.modelManager.mapResponseItemsToLocalModelsOmittingFields(responseItems, omitFields);
+      var items = this.modelManager.mapResponseItemsToLocalModelsOmittingFields(responseItems, omitFields);
+      this.handleSyncConflicts(items);
+      return items;
+    }
+  }, {
+    key: 'handleSyncConflicts',
+    value: function handleSyncConflicts(items) {
+      var needsSync = false;
+      var _iteratorNormalCompletion25 = true;
+      var _didIteratorError25 = false;
+      var _iteratorError25 = undefined;
+
+      try {
+        for (var _iterator25 = items[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
+          var item = _step25.value;
+
+          if (item.conflict_of) {
+            var original = this.modelManager.findItem(item.conflict_of);
+            // check if item contents are equal. If so, automatically delete conflict
+            if (JSON.stringify(item.structureParams()) === JSON.stringify(original.structureParams())) {
+              this.modelManager.setItemToBeDeleted(item);
+              needsSync = true;
+            }
+          }
+        }
+      } catch (err) {
+        _didIteratorError25 = true;
+        _iteratorError25 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion25 && _iterator25.return) {
+            _iterator25.return();
+          }
+        } finally {
+          if (_didIteratorError25) {
+            throw _iteratorError25;
+          }
+        }
+      }
+
+      if (needsSync) {
+        setTimeout(function () {
+          this.sync();
+        }.bind(this), 100);
+      }
     }
   }, {
     key: 'clearSyncToken',
@@ -38043,12 +38196,13 @@ var SyncManager = function () {
 angular.module('app.frontend').service('syncManager', SyncManager);
 ;
 var ThemeManager = function () {
-  ThemeManager.$inject = ['modelManager', 'syncManager'];
-  function ThemeManager(modelManager, syncManager) {
+  ThemeManager.$inject = ['modelManager', 'syncManager', '$rootScope'];
+  function ThemeManager(modelManager, syncManager, $rootScope) {
     _classCallCheck(this, ThemeManager);
 
     this.syncManager = syncManager;
     this.modelManager = modelManager;
+    this.$rootScope = $rootScope;
   }
 
   _createClass(ThemeManager, [{
@@ -38084,6 +38238,9 @@ var ThemeManager = function () {
       link.id = theme.uuid;
       document.getElementsByTagName("head")[0].appendChild(link);
       localStorage.setItem("activeTheme", theme.uuid);
+
+      this.currentTheme = theme;
+      this.$rootScope.$broadcast("theme-changed");
     }
   }, {
     key: 'deactivateTheme',
@@ -38094,6 +38251,9 @@ var ThemeManager = function () {
         element.disabled = true;
         element.parentNode.removeChild(element);
       }
+
+      this.currentTheme = null;
+      this.$rootScope.$broadcast("theme-changed");
     }
   }, {
     key: 'isThemeActive',
@@ -38124,6 +38284,12 @@ var ThemeManager = function () {
     get: function get() {
       return this.modelManager.itemsForContentType("SN|Theme");
     }
+
+    /*
+      activeTheme: computed property that returns saved theme
+      currentTheme: stored variable that allows other classes to watch changes
+    */
+
   }, {
     key: 'activeTheme',
     get: function get() {
@@ -38189,7 +38355,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "  <div class='panel-body large-padding'>\n" +
     "    <div ng-if='!user'>\n" +
     "      <div ng-if='!formData.confirmPassword'>\n" +
-    "        <p>Enter your <a href=\"https://standardnotes.org\" target=\"_blank\">Standard File</a> account information. You can also register for free using the default server address.</p>\n" +
+    "        <p>Enter your account information. You can also register for free using the default server address.</p>\n" +
     "        <div class='small-v-space'></div>\n" +
     "        <form class='mt-5'>\n" +
     "          <input class='form-control' name='server' ng-model='formData.url' placeholder='Server URL' required type='text'>\n" +
@@ -38210,8 +38376,8 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "              <span>Register</span>\n" +
     "            </button>\n" +
     "            <br>\n" +
-    "            <div class='block' style='margin-top: 10px; font-size: 14px; font-weight: bold; text-align: center;'>\n" +
-    "              <a class='btn' ng-click='showResetForm = !showResetForm'>Passwords cannot be forgotten.</a>\n" +
+    "            <div class='block bold center-align' style='font-size: 14px;'>\n" +
+    "              <a class='btn mt-5' ng-click='formData.showResetForm = !formData.showResetForm'>Passwords cannot be forgotten.</a>\n" +
     "            </div>\n" +
     "          </div>\n" +
     "        </form>\n" +
@@ -38227,10 +38393,12 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        </form>\n" +
     "      </div>\n" +
     "      <em class='block center-align mt-10' ng-if='formData.status' style='font-size: 14px;'>{{formData.status}}</em>\n" +
-    "      <div ng-if='showResetForm'>\n" +
-    "        <p style='font-size: 13px; text-align: center;'>\n" +
+    "      <div class='gray-bg medium-padding' ng-if='formData.showResetForm'>\n" +
+    "        <p style='font-size: 13px;'>\n" +
     "          Because notes are locally encrypted using a secret key derived from your password, there's no way to decrypt these notes if you forget your password.\n" +
-    "          For this reason, Standard Notes cannot offer a password reset option. You <strong>must</strong> make sure to store or remember your password.\n" +
+    "          For this reason, Standard Notes cannot offer a password reset option. You\n" +
+    "          <span class='bold'>must</span>\n" +
+    "          make sure to store or remember your password.\n" +
     "        </p>\n" +
     "      </div>\n" +
     "    </div>\n" +
@@ -38295,7 +38463,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "          Decrypted\n" +
     "        </label>\n" +
     "      </div>\n" +
-    "      <a class='block' ng-click='downloadDataArchive()'>Download Data Archive</a>\n" +
+    "      <a class='block' ng-class=\"{'mt-5' : !user}\" ng-click='downloadDataArchive()'>Download Data Archive</a>\n" +
     "      <label class='block mt-5'>\n" +
     "        <input file-change='-&gt;' handler='importFileSelected(files)' style='display: none;' type='file'>\n" +
     "        <div class='fake-link'>Import Data from Archive</div>\n" +
@@ -38308,6 +38476,18 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      <p class='mt-5' ng-if='user'>Notes are downloaded in the Standard File format, which allows you to re-import back into this app easily. To download as plain text files, choose \"Decrypted\".</p>\n" +
     "    </div>\n" +
     "    <div class='spinner mt-10' ng-if='importData.loading'></div>\n" +
+    "    <div class='mt-25'>\n" +
+    "      <h4>Analytics</h4>\n" +
+    "      <p>\n" +
+    "        Help Standard Notes improve by sending anonymous data on general usage. Learn more\n" +
+    "        <a href='https://standardnotes.org/philosophy' target='_blank'>here.</a>\n" +
+    "      </p>\n" +
+    "      <div class='mt-5'>\n" +
+    "        <label>Status:</label>\n" +
+    "        {{analyticsManager.enabled ? \"Enabled\" : \"Disabled\"}}\n" +
+    "        <a ng-click='analyticsManager.toggleStatus()'>{{analyticsManager.enabled ? \"Disable\" : \"Enable\"}}</a>\n" +
+    "      </div>\n" +
+    "    </div>\n" +
     "    <a class='block mt-25 red' ng-click='destroyLocalData()'>{{ user ? \"Sign out and clear local data\" : \"Clear all local data\" }}</a>\n" +
     "  </div>\n" +
     "</div>\n"
@@ -38696,6 +38876,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    <ul>\n" +
     "      <li class='menu-item' ng-click='selectEditor(editor)' ng-repeat='editor in editorManager.externalEditors'>\n" +
     "        <div class='pull-left' style='width: 60%'>\n" +
+    "          <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
     "          <div class='menu-item-title'>{{editor.name}}</div>\n" +
     "          <a class='faded' ng-click='setDefaultEditor(editor); $event.stopPropagation();' ng-if='!editor.default'>Set Default</a>\n" +
     "          <a class='red' ng-click='removeDefaultEditor(editor); $event.stopPropagation();' ng-if='editor.default'>Remove Default</a>\n" +
@@ -38714,6 +38895,52 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    <a class='block blue' href='https://standardnotes.org/extensions' target='_blank'>Available Editors</a>\n" +
     "  </div>\n" +
     "</ul>\n"
+  );
+
+
+  $templateCache.put('frontend/directives/extensions-intro-modal.html',
+    "<section>\n" +
+    "  <div class='modal ext-intro-modal'>\n" +
+    "    <div class='content'>\n" +
+    "      <h1 class='normal'>Get Started with Extensions</h1>\n" +
+    "      <div class='text-container'>\n" +
+    "        <p>Standard Notes starts simple and can be customized with extensions that make the experience yours.</p>\n" +
+    "      </div>\n" +
+    "      <div class='ext-sections mt-50'>\n" +
+    "        <div class='ext-section'>\n" +
+    "          <div class='title'>Editors</div>\n" +
+    "          <div class='items'>\n" +
+    "            <div class='item'>Advanced Markdown</div>\n" +
+    "            <div class='item'>Code Editor</div>\n" +
+    "            <div class='item'>Minimal Markdown</div>\n" +
+    "          </div>\n" +
+    "        </div>\n" +
+    "        <div class='ext-section'>\n" +
+    "          <div class='title'>Sync Plugins</div>\n" +
+    "          <div class='items'>\n" +
+    "            <div class='item'>Dropbox</div>\n" +
+    "            <div class='item'>Google Drive</div>\n" +
+    "            <div class='item'>Version History</div>\n" +
+    "          </div>\n" +
+    "        </div>\n" +
+    "        <div class='ext-section'>\n" +
+    "          <div class='title'>Themes</div>\n" +
+    "          <div class='items'>\n" +
+    "            <div class='item'>Midnight</div>\n" +
+    "            <div class='item'>+ community themes</div>\n" +
+    "          </div>\n" +
+    "        </div>\n" +
+    "      </div>\n" +
+    "      <div class='text-container'>\n" +
+    "        <p class='mt-50'>Visit the Extensions portal to get started.</p>\n" +
+    "        <div class='link-group'>\n" +
+    "          <a class='bold blue' href='https://standardnotes.org/extensions' target='_blank'>Extensions Portal</a>\n" +
+    "          <a class='blue pointer' ng-click='close()'>Maybe Later</a>\n" +
+    "        </div>\n" +
+    "      </div>\n" +
+    "    </div>\n" +
+    "  </div>\n" +
+    "</section>\n"
   );
 
 
@@ -38859,7 +39086,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    <div class='title'>\n" +
     "      <input class='input' id='note-title-editor' ng-change='ctrl.nameChanged()' ng-focus='ctrl.onNameFocus()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTitle($event)' ng-model='ctrl.note.title' select-on-click='true'>\n" +
     "    </div>\n" +
-    "    <div id='save-status' ng-bind-html='ctrl.noteStatus' ng-class=\"{'red bold': ctrl.saveError}\"></div>\n" +
+    "    <div id='save-status' ng-bind-html='ctrl.noteStatus' ng-class=\"{'red bold': ctrl.saveError, 'orange bold': ctrl.syncTakingTooLong}\"></div>\n" +
     "    <div class='editor-tags'>\n" +
     "      <input class='tags-input' ng-blur='ctrl.updateTagsFromTagsString($event, ctrl.tagsString)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur();' ng-model='ctrl.tagsString' placeholder='#tags' type='text'>\n" +
     "    </div>\n" +
@@ -38921,7 +39148,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      <global-extensions-menu ng-if='ctrl.showExtensionsMenu'></global-extensions-menu>\n" +
     "    </div>\n" +
     "    <div class='footer-bar-link'>\n" +
-    "      <a href='https://standardnotes.org' target='_blank'>\n" +
+    "      <a href='https://standardnotes.org/help' target='_blank'>\n" +
     "        Help\n" +
     "      </a>\n" +
     "    </div>\n" +
@@ -39024,6 +39251,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    <div class='scrollable'>\n" +
     "      <div can-load='true' class='infinite-scroll' infinite-scroll='ctrl.paginate()' threshold='200'>\n" +
     "        <div class='note' ng-class=\"{'selected' : ctrl.selectedNote == note}\" ng-click='ctrl.selectNote(note)' ng-repeat='note in (ctrl.sortedNotes = (ctrl.tag.notes | filter: ctrl.filterNotes | orderBy: ctrl.sortBy:true | limitTo:ctrl.notesToDisplay))'>\n" +
+    "          <strong class='red medium' ng-if='note.conflict_of'>Conflicted copy</strong>\n" +
     "          <div class='name' ng-if='note.title'>\n" +
     "            {{note.title}}\n" +
     "          </div>\n" +
@@ -39059,6 +39287,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "          <input class='title' mb-autofocus='true' ng-attr-id='tag-{{tag.uuid}}' ng-blur='ctrl.saveTag($event, tag)' ng-change='ctrl.tagTitleDidChange(tag)' ng-click='ctrl.selectTag(tag)' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTag($event, tag)' ng-model='tag.title' should-focus='ctrl.newTag || ctrl.editingTag == tag' spellcheck='false'>\n" +
     "          <div class='count'>{{ctrl.noteCount(tag)}}</div>\n" +
     "        </div>\n" +
+    "        <div class='red small bold' ng-if='tag.conflict_of'>Conflicted copy</div>\n" +
     "        <div class='menu' ng-if='ctrl.selectedTag == tag'>\n" +
     "          <a class='item' ng-click='ctrl.selectedRenameTag($event, tag)' ng-if='!ctrl.editingTag'>Rename</a>\n" +
     "          <a class='item' ng-click='ctrl.saveTag($event, tag)' ng-if='ctrl.editingTag'>Save</a>\n" +

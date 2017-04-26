@@ -117,12 +117,15 @@ function checkForUpdates() {
 app.on('before-quit', () => willQuitApp = true);
 
 app.on('activate', function() {
+
 	if (!win) {
     createWindow();
 	} else {
     win.show();
   }
   checkForUpdates()
+
+  win.webContents.send("window-activated")
 });
 
 app.on('ready', function(){

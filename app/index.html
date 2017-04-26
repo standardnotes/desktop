@@ -20,6 +20,11 @@
             alert(message);
         });
 
+        ipcRenderer.on('window-activated', function (event, message) {
+          var syncManager = angular.element(document).injector().get('syncManager');
+          syncManager.sync();
+        });
+
         const {remote} = window.nodeRequire('electron')
         const {Menu, MenuItem} = remote
 
