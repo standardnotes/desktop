@@ -62,6 +62,10 @@
   margin-right: 10px;
 }
 
+.mr-15 {
+  margin-right: 15px;
+}
+
 .mr-20 {
   margin-right: 20px;
 }
@@ -72,6 +76,10 @@
 
 .pb-0 {
   padding-bottom: 0px !important;
+}
+
+.pt-5 {
+  padding-top: 5px;
 }
 
 .faded {
@@ -274,151 +282,6 @@ button.white:hover {
   position: absolute !important;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-*:focus {
-  outline: 0;
-}
-
-.dropup, .dropdown {
-  position: relative;
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  z-index: 1000;
-  float: left;
-  min-width: 160px;
-  padding: 5px 0;
-  margin: 2px 0 0;
-  list-style: none;
-  font-size: 14px;
-  text-align: left;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 4px;
-  -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
-  background-clip: padding-box;
-}
-
-.dropdown-menu > li > a {
-  display: block;
-  padding: 3px 20px;
-  clear: both;
-  font-weight: 400;
-  line-height: 1.42857143;
-  color: #333;
-  white-space: nowrap;
-}
-
-.dropdown-menu > li > a:focus, .dropdown-menu > li > a:hover {
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.caret {
-  display: inline-block;
-  width: 0;
-  height: 0;
-  margin-left: 2px;
-  vertical-align: middle;
-  border-top: 4px dashed;
-  border-top: 4px solid\9;
-  border-right: 4px solid transparent;
-  border-left: 4px solid transparent;
-}
-
-button:focus {
-  outline: 0;
-}
-
-.dropdown-menu-right {
-  left: auto;
-  right: 0;
-}
-
-.btn {
-  display: inline-block;
-  margin-bottom: 0;
-  font-weight: normal;
-  text-align: center;
-  vertical-align: middle;
-  touch-action: manipulation;
-  cursor: pointer;
-  background-image: none;
-  border: 1px solid transparent;
-  white-space: nowrap;
-  padding: 6px 12px;
-  font-size: 14px;
-  line-height: 1.42857;
-  border-radius: 4px;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
-.btn-block {
-  display: block;
-  width: 100%;
-}
-
-.panel {
-  position: absolute;
-  right: 0px;
-  min-width: 300px;
-  z-index: 1000;
-  margin-top: 10px;
-  box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
-  border: none;
-  background-color: white;
-}
-
-.panel-right {
-  left: 0px;
-}
-
-.panel-body {
-  padding: 15px;
-}
-
-.form-control {
-  display: block;
-  width: 100%;
-  height: 34px;
-  padding: 6px 12px;
-  font-size: 14px;
-  line-height: 1.42857;
-  color: #555555;
-  background-color: #fff;
-  background-image: none;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-shadow: 0;
-  -webkit-transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
-  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
-}
-
-input, button, select, textarea {
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
-}
-
-.checkbox {
-  font-size: 14px;
-  font-weight: bold;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 10px;
-}
-
 .blue {
   color: #086dd6;
 }
@@ -537,95 +400,98 @@ p {
   background-color: rgba(233, 233, 233, 0.8);
 }
 
-.section-menu {
-  width: 100%;
-  padding-top: 0px;
-  padding-left: 21px;
-  padding-right: 21px;
-  background-color: #f1f1f1;
-  color: black;
-  height: 28px;
-  cursor: default;
+* {
+  box-sizing: border-box;
 }
-.section-menu ol, .section-menu ul {
-  margin-top: 5px;
+
+*:focus {
+  outline: 0;
+}
+
+.float-group {
+  height: 15px;
+  clear: both;
+}
+.float-group.h10 {
+  height: 10px;
+}
+.float-group.h20 {
+  height: 20px;
+}
+.float-group.h30 {
+  height: 30px;
+}
+
+button:focus {
+  outline: 0;
+}
+
+.button-group {
+  clear: both;
+  height: 36px;
+}
+
+.ui-button {
+  background-color: #086dd6;
+  border: 0;
+  color: white;
+  font-weight: bold;
+  min-height: 36px;
+  font-size: 14px;
+}
+.ui-button.block {
+  width: 100%;
+}
+
+.panel {
+  position: absolute;
+  right: 0px;
+  min-width: 300px;
+  z-index: 1000;
+  margin-top: 10px;
+  box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+  border: none;
+  background-color: white;
+}
+
+.panel-right {
+  left: 0px;
+}
+
+.panel-body {
+  padding: 15px;
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  height: 34px;
+  padding: 6px 12px;
+  font-size: 14px;
+  line-height: 1.42857;
+  color: #555555;
+  background-color: #fff;
+  background-image: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0;
+}
+
+input, button, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.checkbox {
+  font-size: 14px;
+  font-weight: bold;
+  margin-left: auto;
+  margin-right: auto;
   margin-bottom: 10px;
 }
-.section-menu ol.dropdown-menu, .section-menu ul.dropdown-menu {
-  margin-top: 10px;
-}
-.section-menu ul li {
-  text-align: left;
-}
-.section-menu ul li.sep {
-  margin: 6px;
-  display: block;
-}
-.section-menu ul li a {
-  font-size: 13px;
-  font-weight: bold;
-  padding: 0 0;
-}
-
-.nt-dropdown-menu {
-  border-radius: 0;
-  padding: 0 0;
-  margin-top: 15px;
-  border: none;
-  width: 280px;
-}
-.nt-dropdown-menu li {
-  height: 35px;
-  overflow: hidden;
-}
-.nt-dropdown-menu li .text {
-  padding: 10px;
-  padding-top: 7px;
-  height: 100%;
-  height: 100%;
-  float: left;
-}
-.nt-dropdown-menu li .shortcut {
-  float: right;
-  font-size: 12px;
-  font-weight: normal;
-  opacity: 0.5;
-  margin-top: 10px;
-  padding-right: 10px;
-}
-
-.nt-dropdown-menu.dark {
-  background-color: white;
-  color: black;
-}
-.nt-dropdown-menu.dark li:hover {
-  background-color: #f5f5f5;
-  color: black;
-}
-.nt-dropdown-menu.dark li a {
-  height: 100%;
-  font-weight: bold;
-}
-.nt-dropdown-menu.dark li .text {
-  color: black;
-}
-
-.nt-dropdown-menu.light {
-  background-color: white;
-  color: black;
-}
-.nt-dropdown-menu.light li:hover {
-  background-color: #2e2e2e;
-  color: white;
-}
-.nt-dropdown-menu.light li:hover a {
-  color: white;
-}
-.nt-dropdown-menu.light li a {
-  color: black;
-}
-.nt-dropdown-menu.light li .text {
-  color: black;
+.checkbox input {
+  margin-left: 0px;
 }
 
 .fake-link {
@@ -701,7 +567,6 @@ h2 {
   padding-right: 0;
 }
 #footer-bar input {
-  margin-bottom: 10px;
   border-radius: 0px;
 }
 
@@ -714,6 +579,7 @@ h2 {
   display: inline-block;
   position: relative;
   cursor: pointer;
+  user-select: none;
 }
 #footer-bar .footer-bar-link > a {
   color: #515263;
@@ -787,7 +653,6 @@ a.disabled {
 }
 .ext-section.opened h1 {
   padding-top: 0px;
-  padding-bottom: 6px;
 }
 
 .spinner {
@@ -920,11 +785,16 @@ a.disabled {
   font-weight: normal;
   font-size: 18px;
 }
-.notes .tag-menu-bar {
+.notes #notes-title-bar .title {
+  width: calc(90% - 45px);
+}
+.notes #notes-add-button {
+  right: 20px;
+}
+.notes #tag-menu-bar {
   position: relative;
   margin: 0 -20px;
   width: auto;
-  padding-top: 1px;
   margin-top: 14px;
 }
 .notes .filter-section {
@@ -1002,7 +872,7 @@ a.disabled {
   z-index: 200;
   padding: 0;
 }
-.editor .section-menu {
+.editor .section-menu-bar {
   flex: 1 0 28px;
   max-height: 28px;
 }
@@ -1095,22 +965,6 @@ a.disabled {
   margin-right: auto;
 }
 
-.nav {
-  padding-left: 0;
-  margin-bottom: 0;
-  list-style: none;
-}
-.nav ul {
-  font-weight: bold;
-}
-
-.nav > li > a {
-  position: relative;
-  display: block;
-  font-weight: bold;
-  user-select: none;
-}
-
 .extension-render-modal {
   position: fixed;
   margin-left: auto;
@@ -1139,80 +993,170 @@ a.disabled {
   overflow-y: scroll;
 }
 
-.menu-section-footer {
-  background-color: #ededed;
-  border-top: 1px solid #d3d3d3;
+ul.section-menu-bar {
+  width: 100%;
+  padding-top: 0px;
+  padding-left: 15px;
+  padding-right: 21px;
+  background-color: #f1f1f1;
+  color: black;
+  height: 28px;
+  cursor: default;
+  margin-top: 0px;
+  margin-bottom: 0;
+  list-style: none;
+  font-weight: bold;
+  font-size: 0;
+  /* trick to remove gaps between li inline-block elements */
+}
+ul.section-menu-bar > li {
+  padding: 6px 8px;
+  text-align: left;
+  display: inline-block;
   position: relative;
-  padding: 10px;
+  font-size: 13px;
+  font-weight: bold;
+  user-select: none;
+}
+ul.section-menu-bar > li.selected {
+  background-color: #086dd6;
+  border-radius: 1px;
+  color: white;
 }
 
-.menu-section-header {
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  float: left;
+  min-width: 160px;
+  z-index: 100;
+  list-style: none;
+  font-size: 14px;
+  text-align: left;
+  padding: 0 0;
+  border: none;
+  width: 280px;
+  -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+  background-clip: padding-box;
+  background-color: white;
+  color: black;
+}
+.dropdown-menu li:hover {
+  background-color: #086dd6;
+  color: white;
+}
+.dropdown-menu > li {
+  width: 100%;
+  height: 35px;
+  overflow: hidden;
+  cursor: pointer;
+  color: black;
+  float: left;
+}
+.dropdown-menu > li label {
+  padding: 10px;
+  padding-top: 8px;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: pointer;
+}
+.dropdown-menu > li .shortcut {
+  float: right;
+  font-size: 12px;
+  font-weight: normal;
+  opacity: 0.5;
+  margin-top: 10px;
+  padding-right: 10px;
+}
+
+.dropdown-menu.sectioned-menu {
+  overflow-y: scroll;
+  max-height: calc(85vh - 90px);
+}
+.dropdown-menu.sectioned-menu:not(:first-child) {
+  margin-top: 18px;
+}
+.dropdown-menu.sectioned-menu ul {
+  margin-top: 0px;
+  margin-bottom: 0px;
+  padding-left: 0;
+  position: relative;
+}
+.dropdown-menu.sectioned-menu ul li {
+  cursor: pointer;
+  height: auto;
+  padding: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: rgba(255, 255, 255, 0.9);
+  height: auto;
+}
+.dropdown-menu.sectioned-menu ul li .left-side {
+  left: 0;
+  width: 60%;
+  display: inline-block;
+  vertical-align: top;
+  user-select: text;
+}
+.dropdown-menu.sectioned-menu ul li .right-side {
+  right: 12px;
+  width: 30%;
+  display: inline-block;
+  vertical-align: top;
+  text-align: right;
+  position: absolute;
+}
+.dropdown-menu.sectioned-menu ul li:hover {
+  background-color: #086dd6;
+}
+.dropdown-menu.sectioned-menu ul li:hover .blue {
+  color: white;
+}
+.dropdown-menu.sectioned-menu ul li .menu-item-title {
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 3px;
+}
+.dropdown-menu.sectioned-menu ul li .menu-item-subtitle {
+  font-weight: normal;
+  opacity: 0.5;
+  margin-top: 1px;
+  font-size: 12px;
+}
+.dropdown-menu.sectioned-menu .header {
   background-color: #ededed;
   border-bottom: 1px solid #d3d3d3;
   position: relative;
   padding-top: 12px;
   padding-left: 10px;
   padding-bottom: 10px;
+  cursor: pointer;
+  user-select: none;
 }
-.menu-section-header > .title {
+.dropdown-menu.sectioned-menu .header > .title {
   font-size: 14px;
   font-weight: bold;
 }
-.menu-section-header > .subtitle {
+.dropdown-menu.sectioned-menu .header > .subtitle {
   font-size: 12px;
   opacity: 0.5;
   font-weight: normal;
   margin-top: 2px;
 }
-.menu-section-header > .loading {
+.dropdown-menu.sectioned-menu .header > .loading {
   position: absolute;
   height: 15px;
   width: 15px;
   right: 10px;
   top: 20px;
 }
-
-.dropdown-menu.editor-menu {
-  overflow-y: scroll;
-  max-height: 85vh;
-}
-.dropdown-menu.editor-menu:not(:first-child) {
-  margin-top: 18px;
-}
-.dropdown-menu.editor-menu ul {
-  margin-top: 0px;
-  margin-bottom: 0px;
-  list-style: none;
-  padding-left: 0;
-}
-.dropdown-menu.editor-menu ul li {
-  cursor: pointer;
-  height: auto;
-}
-.dropdown-menu.editor-menu ul li.menu-item {
+.dropdown-menu.sectioned-menu .footer {
+  background-color: #ededed;
+  border-top: 1px solid #d3d3d3;
+  position: relative;
   padding: 10px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  background-color: rgba(255, 255, 255, 0.9);
-}
-.dropdown-menu.editor-menu ul li.menu-item:hover {
-  background-color: rgba(128, 128, 128, 0.05);
-}
-.dropdown-menu.editor-menu ul li.menu-item.nonactive {
-  cursor: default;
-}
-.dropdown-menu.editor-menu ul li.menu-item.nonactive:hover {
-  background-color: rgba(255, 255, 255, 0.9) !important;
-}
-.dropdown-menu.editor-menu ul li.menu-item .menu-item-title {
-  font-weight: bold;
-  font-size: 14px;
-  margin-bottom: 3px;
-}
-.dropdown-menu.editor-menu ul li.menu-item .menu-item-subtitle {
-  font-weight: normal;
-  opacity: 0.5;
-  margin-top: 1px;
-  font-size: 12px;
 }
 
 /*# sourceMappingURL=app.css.map */

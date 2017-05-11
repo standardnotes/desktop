@@ -33673,15 +33673,20 @@ var SNCryptoWeb = function (_SNCrypto2) {
     key: 'stringToArrayBuffer',
     value: function stringToArrayBuffer(string) {
       // not available on Edge/IE
-      // var encoder = new TextEncoder("utf-8");
-      // var result = encoder.encode(string);
 
-      var buf = new ArrayBuffer(string.length);
-      var bufView = new Uint8Array(buf);
-      for (var i = 0, strLen = string.length; i < strLen; i++) {
-        bufView[i] = string.charCodeAt(i);
+      if (window.TextEncoder) {
+        var encoder = new TextEncoder("utf-8");
+        var result = encoder.encode(string);
+        return result;
+      } else {
+        string = unescape(encodeURIComponent(string));
+        var buf = new ArrayBuffer(string.length);
+        var bufView = new Uint8Array(buf);
+        for (var i = 0, strLen = string.length; i < strLen; i++) {
+          bufView[i] = string.charCodeAt(i);
+        }
+        return buf;
       }
-      return buf;
     }
   }, {
     key: 'arrayBufferToHexString',
@@ -33768,6 +33773,20 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
           ctrl.setNote(note, oldNote);
         }
       });
+
+      scope.$watch('ctrl.note.text', function (newText) {
+        if (!ctrl.note) {
+          return;
+        }
+
+        // ignore this change if it originated from here
+        if (ctrl.changingTextFromEditor) {
+          ctrl.changingTextFromEditor = false;
+          return;
+        }
+
+        ctrl.postNoteToExternalEditor(ctrl.note);
+      });
     }
   };
 }]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', 'editorManager', 'themeManager', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager, themeManager) {
@@ -33780,16 +33799,22 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     this.syncTakingTooLong = true;
   }.bind(this));
 
+  $rootScope.$on("tag-changed", function () {
+    this.loadTagsString();
+  }.bind(this));
+
   window.addEventListener("message", function (event) {
     if (event.data.status) {
       this.postNoteToExternalEditor();
     } else {
-      console.log("Received message", event.data);
+      // console.log("Received message", event.data);
       var id = event.data.id;
       var text = event.data.text;
       var data = event.data.data;
 
       if (this.note.uuid === id) {
+        // to ignore $watch events
+        this.changingTextFromEditor = true;
         this.note.text = text;
         if (data) {
           var changesMade = this.editor.setData(id, data);
@@ -33801,10 +33826,6 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       }
     }
   }.bind(this), false);
-
-  $rootScope.$on("tag-changed", function () {
-    this.loadTagsString();
-  }.bind(this));
 
   this.setNote = function (note, oldNote) {
     this.noteReady = false;
@@ -33915,6 +33936,10 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
   };
 
   this.postNoteToExternalEditor = function () {
+    if (!this.editor) {
+      return;
+    }
+
     var data = {
       text: this.note.text,
       data: this.editor.dataForKey(this.note.uuid),
@@ -34020,7 +34045,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     }
   };
 
-  this.selectedMenuItem = function () {
+  this.selectedMenuItem = function ($event) {
     this.showMenu = false;
   };
 
@@ -34215,17 +34240,19 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
   */
 
   $scope.updateTagsForNote = function (note, stringTags) {
-    note.removeAllRelationships();
-    var tags = [];
+    var toRemove = [];
     var _iteratorNormalCompletion4 = true;
     var _didIteratorError4 = false;
     var _iteratorError4 = undefined;
 
     try {
-      for (var _iterator4 = stringTags[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-        var tagString = _step4.value;
+      for (var _iterator4 = note.tags[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+        var tag = _step4.value;
 
-        tags.push(modelManager.findOrCreateTagByTitle(tagString));
+        if (stringTags.indexOf(tag.title) === -1) {
+          // remove this tag
+          toRemove.push(tag);
+        }
       }
     } catch (err) {
       _didIteratorError4 = true;
@@ -34247,10 +34274,12 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     var _iteratorError5 = undefined;
 
     try {
-      for (var _iterator5 = tags[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-        var tag = _step5.value;
+      for (var _iterator5 = toRemove[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+        var tagToRemove = _step5.value;
 
-        modelManager.createRelationshipBetweenItems(note, tag);
+        note.removeItemAsRelationship(tagToRemove);
+        tagToRemove.removeItemAsRelationship(note);
+        tagToRemove.setDirty(true);
       }
     } catch (err) {
       _didIteratorError5 = true;
@@ -34263,6 +34292,60 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       } finally {
         if (_didIteratorError5) {
           throw _iteratorError5;
+        }
+      }
+    }
+
+    var tags = [];
+    var _iteratorNormalCompletion6 = true;
+    var _didIteratorError6 = false;
+    var _iteratorError6 = undefined;
+
+    try {
+      for (var _iterator6 = stringTags[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+        var tagString = _step6.value;
+
+        var existingRelationship = _.find(note.tags, { title: tagString });
+        if (!existingRelationship) {
+          tags.push(modelManager.findOrCreateTagByTitle(tagString));
+        }
+      }
+    } catch (err) {
+      _didIteratorError6 = true;
+      _iteratorError6 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion6 && _iterator6.return) {
+          _iterator6.return();
+        }
+      } finally {
+        if (_didIteratorError6) {
+          throw _iteratorError6;
+        }
+      }
+    }
+
+    var _iteratorNormalCompletion7 = true;
+    var _didIteratorError7 = false;
+    var _iteratorError7 = undefined;
+
+    try {
+      for (var _iterator7 = tags[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+        var tag = _step7.value;
+
+        modelManager.createRelationshipBetweenItems(note, tag);
+      }
+    } catch (err) {
+      _didIteratorError7 = true;
+      _iteratorError7 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion7 && _iterator7.return) {
+          _iterator7.return();
+        }
+      } finally {
+        if (_didIteratorError7) {
+          throw _iteratorError7;
         }
       }
     }
@@ -34304,7 +34387,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
   */
 
   $scope.removeTag = function (tag) {
-    if (confirm("Are you sure you want to delete this tag?")) {
+    if (confirm("Are you sure you want to delete this tag? Note: deleting a tag will not delete its notes.")) {
       modelManager.setItemToBeDeleted(tag);
       // if no more notes, delete tag
       syncManager.sync(function () {
@@ -34503,7 +34586,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     }.bind(this), 100);
   };
 
-  this.selectedMenuItem = function () {
+  this.selectedMenuItem = function ($event) {
     this.showMenu = false;
   };
 
@@ -34699,27 +34782,27 @@ var Item = function () {
   }, {
     key: 'notifyObserversOfChange',
     value: function notifyObserversOfChange() {
-      var _iteratorNormalCompletion6 = true;
-      var _didIteratorError6 = false;
-      var _iteratorError6 = undefined;
+      var _iteratorNormalCompletion8 = true;
+      var _didIteratorError8 = false;
+      var _iteratorError8 = undefined;
 
       try {
-        for (var _iterator6 = this.observers[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-          var observer = _step6.value;
+        for (var _iterator8 = this.observers[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+          var observer = _step8.value;
 
           observer.callback(this);
         }
       } catch (err) {
-        _didIteratorError6 = true;
-        _iteratorError6 = err;
+        _didIteratorError8 = true;
+        _iteratorError8 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion6 && _iterator6.return) {
-            _iterator6.return();
+          if (!_iteratorNormalCompletion8 && _iterator8.return) {
+            _iterator8.return();
           }
         } finally {
-          if (_didIteratorError6) {
-            throw _iteratorError6;
+          if (_didIteratorError8) {
+            throw _iteratorError8;
           }
         }
       }
@@ -34768,6 +34851,16 @@ var Item = function () {
     key: 'mergeMetadataFromItem',
     value: function mergeMetadataFromItem(item) {
       _.merge(this, _.omit(item, ["content"]));
+    }
+  }, {
+    key: 'informReferencesOfUUIDChange',
+    value: function informReferencesOfUUIDChange(oldUUID, newUUID) {
+      // optional override
+    }
+  }, {
+    key: 'potentialItemOfInterestHasChangedItsUUID',
+    value: function potentialItemOfInterestHasChangedItsUUID(newItem, oldUUID, newUUID) {
+      // optional override
     }
   }, {
     key: 'allReferencedObjects',
@@ -34898,6 +34991,14 @@ var Editor = function (_Item) {
       this.notes = [];
     }
   }, {
+    key: 'potentialItemOfInterestHasChangedItsUUID',
+    value: function potentialItemOfInterestHasChangedItsUUID(newItem, oldUUID, newUUID) {
+      if (newItem.content_type === "Note" && _.find(this.notes, { uuid: oldUUID })) {
+        _.pull(this.notes, { uuid: oldUUID });
+        this.notes.push(newItem);
+      }
+    }
+  }, {
     key: 'allReferencedObjects',
     value: function allReferencedObjects() {
       return this.notes;
@@ -34955,13 +35056,13 @@ var Action = function () {
 
       var permission = this.permissions.charAt(0).toUpperCase() + this.permissions.slice(1); // capitalize first letter
       permission += ": ";
-      var _iteratorNormalCompletion7 = true;
-      var _didIteratorError7 = false;
-      var _iteratorError7 = undefined;
+      var _iteratorNormalCompletion9 = true;
+      var _didIteratorError9 = false;
+      var _iteratorError9 = undefined;
 
       try {
-        for (var _iterator7 = this.content_types[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-          var contentType = _step7.value;
+        for (var _iterator9 = this.content_types[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+          var contentType = _step9.value;
 
           if (contentType == "*") {
             permission += "All items";
@@ -34972,16 +35073,16 @@ var Action = function () {
           permission += " ";
         }
       } catch (err) {
-        _didIteratorError7 = true;
-        _iteratorError7 = err;
+        _didIteratorError9 = true;
+        _iteratorError9 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion7 && _iterator7.return) {
-            _iterator7.return();
+          if (!_iteratorNormalCompletion9 && _iterator9.return) {
+            _iterator9.return();
           }
         } finally {
-          if (_didIteratorError7) {
-            throw _iteratorError7;
+          if (_didIteratorError9) {
+            throw _iteratorError9;
           }
         }
       }
@@ -35051,11 +35152,16 @@ var Extension = function (_Item2) {
     value: function mapContentToLocalProperties(contentObject) {
       _get(Extension.prototype.__proto__ || Object.getPrototypeOf(Extension.prototype), 'mapContentToLocalProperties', this).call(this, contentObject);
       this.name = contentObject.name;
+      this.description = contentObject.description;
       this.url = contentObject.url;
       this.supported_types = contentObject.supported_types;
-      this.actions = contentObject.actions.map(function (action) {
-        return new Action(action);
-      });
+      if (contentObject.actions) {
+        this.actions = contentObject.actions.map(function (action) {
+          return new Action(action);
+        });
+      } else {
+        this.actions = [];
+      }
     }
   }, {
     key: 'updateFromExternalResponseItem',
@@ -35076,6 +35182,7 @@ var Extension = function (_Item2) {
       var params = {
         name: this.name,
         url: this.url,
+        description: this.description,
         actions: this.actions,
         supported_types: this.supported_types
       };
@@ -35173,6 +35280,35 @@ var Note = function (_Item3) {
         _.pull(tag.notes, this);
       }.bind(this));
       _get(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'isBeingRemovedLocally', this).call(this);
+    }
+  }, {
+    key: 'informReferencesOfUUIDChange',
+    value: function informReferencesOfUUIDChange(oldUUID, newUUID) {
+      var _iteratorNormalCompletion10 = true;
+      var _didIteratorError10 = false;
+      var _iteratorError10 = undefined;
+
+      try {
+        for (var _iterator10 = this.tags[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+          var tag = _step10.value;
+
+          _.pull(tag.notes, { uuid: oldUUID });
+          tag.notes.push(this);
+        }
+      } catch (err) {
+        _didIteratorError10 = true;
+        _iteratorError10 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion10 && _iterator10.return) {
+            _iterator10.return();
+          }
+        } finally {
+          if (_didIteratorError10) {
+            throw _iteratorError10;
+          }
+        }
+      }
     }
   }, {
     key: 'allReferencedObjects',
@@ -35297,6 +35433,35 @@ var Tag = function (_Item4) {
         _.pull(note.tags, this);
       }.bind(this));
       _get(Tag.prototype.__proto__ || Object.getPrototypeOf(Tag.prototype), 'isBeingRemovedLocally', this).call(this);
+    }
+  }, {
+    key: 'informReferencesOfUUIDChange',
+    value: function informReferencesOfUUIDChange(oldUUID, newUUID) {
+      var _iteratorNormalCompletion11 = true;
+      var _didIteratorError11 = false;
+      var _iteratorError11 = undefined;
+
+      try {
+        for (var _iterator11 = this.notes[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+          var note = _step11.value;
+
+          _.pull(note.tags, { uuid: oldUUID });
+          note.tags.push(this);
+        }
+      } catch (err) {
+        _didIteratorError11 = true;
+        _iteratorError11 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion11 && _iterator11.return) {
+            _iterator11.return();
+          }
+        } finally {
+          if (_didIteratorError11) {
+            throw _iteratorError11;
+          }
+        }
+      }
     }
   }, {
     key: 'allReferencedObjects',
@@ -36019,7 +36184,15 @@ var AccountMenu = function () {
         });
       };
 
-      $scope.loginSubmitPressed = function () {
+      $scope.submitAuthForm = function () {
+        if ($scope.formData.showLogin) {
+          $scope.login();
+        } else {
+          $scope.register();
+        }
+      };
+
+      $scope.login = function () {
         $scope.formData.status = "Generating Login Keys...";
         $timeout(function () {
           authManager.login($scope.formData.url, $scope.formData.email, $scope.formData.user_password, function (response) {
@@ -36036,12 +36209,8 @@ var AccountMenu = function () {
         });
       };
 
-      $scope.submitRegistrationForm = function () {
-        $scope.formData.confirmPassword = true;
-      };
-
-      $scope.submitPasswordConfirmation = function () {
-        var confirmation = $scope.formData.pw_confirmation;
+      $scope.register = function () {
+        var confirmation = $scope.formData.password_conf;
         if (confirmation !== $scope.formData.user_password) {
           alert("The two passwords you entered do not match. Please try again.");
           return;
@@ -36274,7 +36443,7 @@ var AccountMenu = function () {
       };
 
       $scope.itemsData = function (keys) {
-        var items = _.map(modelManager.allItemsMatchingTypes(["Tag", "Note"]), function (item) {
+        var items = _.map(modelManager.allItems, function (item) {
           var itemParams = new ItemParams(item, keys);
           return itemParams.paramsForExportFile();
         }.bind(this));
@@ -36318,46 +36487,48 @@ var ContextualExtensionsMenu = function () {
       $scope.renderData = {};
 
       $scope.extensions = _.map(extensionManager.extensionsInContextOfItem($scope.item), function (ext) {
-        return _.cloneDeep(ext);
+        // why are we cloning deep? commenting out because we want original reference so that extension.hide is saved between menu opens
+        // return _.cloneDeep(ext);
+        return ext;
       });
 
       var _loop = function _loop(ext) {
         ext.loading = true;
         extensionManager.loadExtensionInContextOfItem(ext, $scope.item, function (scopedExtension) {
           ext.loading = false;
-          if (scopedExtension) {
-            _.merge(ext, scopedExtension);
-            ext.actions = scopedExtension.actions;
-          }
         });
       };
 
-      var _iteratorNormalCompletion8 = true;
-      var _didIteratorError8 = false;
-      var _iteratorError8 = undefined;
+      var _iteratorNormalCompletion12 = true;
+      var _didIteratorError12 = false;
+      var _iteratorError12 = undefined;
 
       try {
-        for (var _iterator8 = $scope.extensions[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-          var ext = _step8.value;
+        for (var _iterator12 = $scope.extensions[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+          var ext = _step12.value;
 
           _loop(ext);
         }
       } catch (err) {
-        _didIteratorError8 = true;
-        _iteratorError8 = err;
+        _didIteratorError12 = true;
+        _iteratorError12 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion8 && _iterator8.return) {
-            _iterator8.return();
+          if (!_iteratorNormalCompletion12 && _iterator12.return) {
+            _iterator12.return();
           }
         } finally {
-          if (_didIteratorError8) {
-            throw _iteratorError8;
+          if (_didIteratorError12) {
+            throw _iteratorError12;
           }
         }
       }
 
       $scope.executeAction = function (action, extension) {
+        if (!$scope.isActionEnabled(action, extension)) {
+          alert("This action requires " + action.access_type + " access to this note. You can change this setting in the Extensions menu on the bottom of the app.");
+          return;
+        }
         if (action.verb == "nested") {
           action.showNestedActions = !action.showNestedActions;
           return;
@@ -36366,6 +36537,9 @@ var ContextualExtensionsMenu = function () {
         extensionManager.executeAction(action, extension, $scope.item, function (response) {
           action.running = false;
           $scope.handleActionResponse(action, response);
+
+          // reload extension actions
+          extensionManager.loadExtensionInContextOfItem(extension, $scope.item, null);
         });
       };
 
@@ -36381,6 +36555,18 @@ var ContextualExtensionsMenu = function () {
               }
             }
         }
+      };
+
+      $scope.isActionEnabled = function (action, extension) {
+        if (action.access_type) {
+          var extEncryptedAccess = extensionManager.extensionUsesEncryptedData(extension);
+          if (action.access_type == "decrypted" && extEncryptedAccess) {
+            return false;
+          } else if (action.access_type == "encrypted" && !extEncryptedAccess) {
+            return false;
+          }
+        }
+        return true;
       };
 
       $scope.accessTypeForExtension = function (extension) {
@@ -36416,7 +36602,7 @@ var EditorMenu = function () {
       $scope.formData = {};
       $scope.editorManager = editorManager;
 
-      $scope.selectEditor = function (editor) {
+      $scope.selectEditor = function ($event, editor) {
         editor.conflict_of = null; // clear conflict if applicable
         $scope.callback()(editor);
       };
@@ -36522,6 +36708,7 @@ var GlobalExtensionsMenu = function () {
 
       $scope.submitTheme = function () {
         themeManager.submitTheme($scope.state.themeUrl);
+        $scope.state.themeUrl = "";
       };
 
       $scope.deleteTheme = function (theme) {
@@ -36682,55 +36869,55 @@ var ExtensionManager = function () {
     this.syncManager = syncManager;
 
     modelManager.addItemSyncObserver("extensionManager", "Extension", function (items) {
-      var _iteratorNormalCompletion9 = true;
-      var _didIteratorError9 = false;
-      var _iteratorError9 = undefined;
+      var _iteratorNormalCompletion13 = true;
+      var _didIteratorError13 = false;
+      var _iteratorError13 = undefined;
 
       try {
-        for (var _iterator9 = items[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-          var ext = _step9.value;
+        for (var _iterator13 = items[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+          var ext = _step13.value;
 
 
           ext.encrypted = this.extensionUsesEncryptedData(ext);
 
-          var _iteratorNormalCompletion10 = true;
-          var _didIteratorError10 = false;
-          var _iteratorError10 = undefined;
+          var _iteratorNormalCompletion14 = true;
+          var _didIteratorError14 = false;
+          var _iteratorError14 = undefined;
 
           try {
-            for (var _iterator10 = ext.actions[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-              var action = _step10.value;
+            for (var _iterator14 = ext.actions[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+              var action = _step14.value;
 
               if (_.includes(this.enabledRepeatActionUrls, action.url)) {
                 this.enableRepeatAction(action, ext);
               }
             }
           } catch (err) {
-            _didIteratorError10 = true;
-            _iteratorError10 = err;
+            _didIteratorError14 = true;
+            _iteratorError14 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion10 && _iterator10.return) {
-                _iterator10.return();
+              if (!_iteratorNormalCompletion14 && _iterator14.return) {
+                _iterator14.return();
               }
             } finally {
-              if (_didIteratorError10) {
-                throw _iteratorError10;
+              if (_didIteratorError14) {
+                throw _iteratorError14;
               }
             }
           }
         }
       } catch (err) {
-        _didIteratorError9 = true;
-        _iteratorError9 = err;
+        _didIteratorError13 = true;
+        _iteratorError13 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion9 && _iterator9.return) {
-            _iterator9.return();
+          if (!_iteratorNormalCompletion13 && _iterator13.return) {
+            _iterator13.return();
           }
         } finally {
-          if (_didIteratorError9) {
-            throw _iteratorError9;
+          if (_didIteratorError13) {
+            throw _iteratorError13;
           }
         }
       }
@@ -36747,27 +36934,27 @@ var ExtensionManager = function () {
   }, {
     key: 'actionWithURL',
     value: function actionWithURL(url) {
-      var _iteratorNormalCompletion11 = true;
-      var _didIteratorError11 = false;
-      var _iteratorError11 = undefined;
+      var _iteratorNormalCompletion15 = true;
+      var _didIteratorError15 = false;
+      var _iteratorError15 = undefined;
 
       try {
-        for (var _iterator11 = this.extensions[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-          var extension = _step11.value;
+        for (var _iterator15 = this.extensions[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+          var extension = _step15.value;
 
           return _.find(extension.actions, { url: url });
         }
       } catch (err) {
-        _didIteratorError11 = true;
-        _iteratorError11 = err;
+        _didIteratorError15 = true;
+        _iteratorError15 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion11 && _iterator11.return) {
-            _iterator11.return();
+          if (!_iteratorNormalCompletion15 && _iterator15.return) {
+            _iterator15.return();
           }
         } finally {
-          if (_didIteratorError11) {
-            throw _iteratorError11;
+          if (_didIteratorError15) {
+            throw _iteratorError15;
           }
         }
       }
@@ -36798,13 +36985,13 @@ var ExtensionManager = function () {
   }, {
     key: 'deleteExtension',
     value: function deleteExtension(extension) {
-      var _iteratorNormalCompletion12 = true;
-      var _didIteratorError12 = false;
-      var _iteratorError12 = undefined;
+      var _iteratorNormalCompletion16 = true;
+      var _didIteratorError16 = false;
+      var _iteratorError16 = undefined;
 
       try {
-        for (var _iterator12 = extension.actions[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-          var action = _step12.value;
+        for (var _iterator16 = extension.actions[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+          var action = _step16.value;
 
           _.pull(this.decryptedExtensions, extension);
           if (action.repeat_mode) {
@@ -36814,16 +37001,16 @@ var ExtensionManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError12 = true;
-        _iteratorError12 = err;
+        _didIteratorError16 = true;
+        _iteratorError16 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion12 && _iterator12.return) {
-            _iterator12.return();
+          if (!_iteratorNormalCompletion16 && _iterator16.return) {
+            _iterator16.return();
           }
         } finally {
-          if (_didIteratorError12) {
-            throw _iteratorError12;
+          if (_didIteratorError16) {
+            throw _iteratorError16;
           }
         }
       }
@@ -36843,10 +37030,18 @@ var ExtensionManager = function () {
 
       this.httpManager.getAbsolute(extension.url, { content_type: item.content_type, item_uuid: item.uuid }, function (response) {
         var scopedExtension = new Extension(response);
-        callback(scopedExtension);
+        if (scopedExtension) {
+          _.merge(extension, scopedExtension);
+          extension.actions = scopedExtension.actions;
+        }
+        if (callback) {
+          callback(scopedExtension);
+        }
       }, function (response) {
         console.log("Error loading extension", response);
-        callback(null);
+        if (callback) {
+          callback(null);
+        }
       });
     }
 
@@ -36890,13 +37085,13 @@ var ExtensionManager = function () {
   }, {
     key: 'refreshExtensionsFromServer',
     value: function refreshExtensionsFromServer() {
-      var _iteratorNormalCompletion13 = true;
-      var _didIteratorError13 = false;
-      var _iteratorError13 = undefined;
+      var _iteratorNormalCompletion17 = true;
+      var _didIteratorError17 = false;
+      var _iteratorError17 = undefined;
 
       try {
-        for (var _iterator13 = this.enabledRepeatActionUrls[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-          var url = _step13.value;
+        for (var _iterator17 = this.enabledRepeatActionUrls[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+          var url = _step17.value;
 
           var action = this.actionWithURL(url);
           if (action) {
@@ -36904,43 +37099,43 @@ var ExtensionManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError13 = true;
-        _iteratorError13 = err;
+        _didIteratorError17 = true;
+        _iteratorError17 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion13 && _iterator13.return) {
-            _iterator13.return();
+          if (!_iteratorNormalCompletion17 && _iterator17.return) {
+            _iterator17.return();
           }
         } finally {
-          if (_didIteratorError13) {
-            throw _iteratorError13;
+          if (_didIteratorError17) {
+            throw _iteratorError17;
           }
         }
       }
 
-      var _iteratorNormalCompletion14 = true;
-      var _didIteratorError14 = false;
-      var _iteratorError14 = undefined;
+      var _iteratorNormalCompletion18 = true;
+      var _didIteratorError18 = false;
+      var _iteratorError18 = undefined;
 
       try {
-        for (var _iterator14 = this.extensions[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-          var ext = _step14.value;
+        for (var _iterator18 = this.extensions[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
+          var ext = _step18.value;
 
           this.retrieveExtensionFromServer(ext.url, function (extension) {
             extension.setDirty(true);
           });
         }
       } catch (err) {
-        _didIteratorError14 = true;
-        _iteratorError14 = err;
+        _didIteratorError18 = true;
+        _iteratorError18 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion14 && _iterator14.return) {
-            _iterator14.return();
+          if (!_iteratorNormalCompletion18 && _iterator18.return) {
+            _iterator18.return();
           }
         } finally {
-          if (_didIteratorError14) {
-            throw _iteratorError14;
+          if (_didIteratorError18) {
+            throw _iteratorError18;
           }
         }
       }
@@ -36971,27 +37166,27 @@ var ExtensionManager = function () {
               var items = response.items || [response.item];
               EncryptionHelper.decryptMultipleItems(items, this.authManager.keys());
               items = this.modelManager.mapResponseItemsToLocalModels(items);
-              var _iteratorNormalCompletion15 = true;
-              var _didIteratorError15 = false;
-              var _iteratorError15 = undefined;
+              var _iteratorNormalCompletion19 = true;
+              var _didIteratorError19 = false;
+              var _iteratorError19 = undefined;
 
               try {
-                for (var _iterator15 = items[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-                  var item = _step15.value;
+                for (var _iterator19 = items[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
+                  var item = _step19.value;
 
                   item.setDirty(true);
                 }
               } catch (err) {
-                _didIteratorError15 = true;
-                _iteratorError15 = err;
+                _didIteratorError19 = true;
+                _iteratorError19 = err;
               } finally {
                 try {
-                  if (!_iteratorNormalCompletion15 && _iterator15.return) {
-                    _iterator15.return();
+                  if (!_iteratorNormalCompletion19 && _iterator19.return) {
+                    _iterator19.return();
                   }
                 } finally {
-                  if (_didIteratorError15) {
-                    throw _iteratorError15;
+                  if (_didIteratorError19) {
+                    throw _iteratorError19;
                   }
                 }
               }
@@ -37307,12 +37502,46 @@ var ModelManager = function () {
       // we need to clone this item and give it a new uuid, then delete item with old uuid from db (you can't mofidy uuid's in our indexeddb setup)
       var newItem = this.createItem(item);
       newItem.uuid = Neeto.crypto.generateUUID();
+      newItem.informReferencesOfUUIDChange(item.uuid, newItem.uuid);
+      this.informModelsOfUUIDChangeForItem(newItem, item.uuid, newItem.uuid);
       this.removeItemLocally(item, function () {
         this.addItem(newItem);
         newItem.setDirty(true);
         newItem.markAllReferencesDirty();
         callback();
       }.bind(this));
+    }
+  }, {
+    key: 'informModelsOfUUIDChangeForItem',
+    value: function informModelsOfUUIDChangeForItem(newItem, oldUUID, newUUID) {
+      // some models that only have one-way relationships might be interested to hear that an item has changed its uuid
+      // for example, editors have a one way relationship with notes. When a note changes its UUID, it has no way to inform the editor
+      // to update its relationships
+
+      var _iteratorNormalCompletion20 = true;
+      var _didIteratorError20 = false;
+      var _iteratorError20 = undefined;
+
+      try {
+        for (var _iterator20 = this.items[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
+          var model = _step20.value;
+
+          model.potentialItemOfInterestHasChangedItsUUID(newItem, oldUUID, newUUID);
+        }
+      } catch (err) {
+        _didIteratorError20 = true;
+        _iteratorError20 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion20 && _iterator20.return) {
+            _iterator20.return();
+          }
+        } finally {
+          if (_didIteratorError20) {
+            throw _iteratorError20;
+          }
+        }
+      }
     }
   }, {
     key: 'allItemsMatchingTypes',
@@ -37348,13 +37577,13 @@ var ModelManager = function () {
           processedObjects = [];
 
       // first loop should add and process items
-      var _iteratorNormalCompletion16 = true;
-      var _didIteratorError16 = false;
-      var _iteratorError16 = undefined;
+      var _iteratorNormalCompletion21 = true;
+      var _didIteratorError21 = false;
+      var _iteratorError21 = undefined;
 
       try {
-        for (var _iterator16 = items[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-          var json_obj = _step16.value;
+        for (var _iterator21 = items[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
+          var json_obj = _step21.value;
 
           json_obj = _.omit(json_obj, omitFields || []);
           var item = this.findItem(json_obj["uuid"]);
@@ -37381,16 +37610,16 @@ var ModelManager = function () {
 
         // second loop should process references
       } catch (err) {
-        _didIteratorError16 = true;
-        _iteratorError16 = err;
+        _didIteratorError21 = true;
+        _iteratorError21 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion16 && _iterator16.return) {
-            _iterator16.return();
+          if (!_iteratorNormalCompletion21 && _iterator21.return) {
+            _iterator21.return();
           }
         } finally {
-          if (_didIteratorError16) {
-            throw _iteratorError16;
+          if (_didIteratorError21) {
+            throw _iteratorError21;
           }
         }
       }
@@ -37409,13 +37638,13 @@ var ModelManager = function () {
   }, {
     key: 'notifySyncObserversOfModels',
     value: function notifySyncObserversOfModels(models) {
-      var _iteratorNormalCompletion17 = true;
-      var _didIteratorError17 = false;
-      var _iteratorError17 = undefined;
+      var _iteratorNormalCompletion22 = true;
+      var _didIteratorError22 = false;
+      var _iteratorError22 = undefined;
 
       try {
-        for (var _iterator17 = this.itemSyncObservers[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
-          var observer = _step17.value;
+        for (var _iterator22 = this.itemSyncObservers[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
+          var observer = _step22.value;
 
           var relevantItems = models.filter(function (item) {
             return item.content_type == observer.type;
@@ -37425,16 +37654,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError17 = true;
-        _iteratorError17 = err;
+        _didIteratorError22 = true;
+        _iteratorError22 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion17 && _iterator17.return) {
-            _iterator17.return();
+          if (!_iteratorNormalCompletion22 && _iterator22.return) {
+            _iterator22.return();
           }
         } finally {
-          if (_didIteratorError17) {
-            throw _iteratorError17;
+          if (_didIteratorError22) {
+            throw _iteratorError22;
           }
         }
       }
@@ -37442,13 +37671,13 @@ var ModelManager = function () {
   }, {
     key: 'notifyItemChangeObserversOfModels',
     value: function notifyItemChangeObserversOfModels(models) {
-      var _iteratorNormalCompletion18 = true;
-      var _didIteratorError18 = false;
-      var _iteratorError18 = undefined;
+      var _iteratorNormalCompletion23 = true;
+      var _didIteratorError23 = false;
+      var _iteratorError23 = undefined;
 
       try {
-        for (var _iterator18 = this.itemChangeObservers[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
-          var observer = _step18.value;
+        for (var _iterator23 = this.itemChangeObservers[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
+          var observer = _step23.value;
 
           var relevantItems = models.filter(function (item) {
             return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
@@ -37459,16 +37688,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError18 = true;
-        _iteratorError18 = err;
+        _didIteratorError23 = true;
+        _iteratorError23 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion18 && _iterator18.return) {
-            _iterator18.return();
+          if (!_iteratorNormalCompletion23 && _iterator23.return) {
+            _iterator23.return();
           }
         } finally {
-          if (_didIteratorError18) {
-            throw _iteratorError18;
+          if (_didIteratorError23) {
+            throw _iteratorError23;
           }
         }
       }
@@ -37541,13 +37770,13 @@ var ModelManager = function () {
         return;
       }
 
-      var _iteratorNormalCompletion19 = true;
-      var _didIteratorError19 = false;
-      var _iteratorError19 = undefined;
+      var _iteratorNormalCompletion24 = true;
+      var _didIteratorError24 = false;
+      var _iteratorError24 = undefined;
 
       try {
-        for (var _iterator19 = contentObject.references[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
-          var reference = _step19.value;
+        for (var _iterator24 = contentObject.references[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
+          var reference = _step24.value;
 
           var referencedItem = this.findItem(reference.uuid);
           if (referencedItem) {
@@ -37558,16 +37787,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError19 = true;
-        _iteratorError19 = err;
+        _didIteratorError24 = true;
+        _iteratorError24 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion19 && _iterator19.return) {
-            _iterator19.return();
+          if (!_iteratorNormalCompletion24 && _iterator24.return) {
+            _iterator24.return();
           }
         } finally {
-          if (_didIteratorError19) {
-            throw _iteratorError19;
+          if (_didIteratorError24) {
+            throw _iteratorError24;
           }
         }
       }
@@ -37602,27 +37831,27 @@ var ModelManager = function () {
   }, {
     key: 'clearDirtyItems',
     value: function clearDirtyItems(items) {
-      var _iteratorNormalCompletion20 = true;
-      var _didIteratorError20 = false;
-      var _iteratorError20 = undefined;
+      var _iteratorNormalCompletion25 = true;
+      var _didIteratorError25 = false;
+      var _iteratorError25 = undefined;
 
       try {
-        for (var _iterator20 = items[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
-          var item = _step20.value;
+        for (var _iterator25 = items[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
+          var item = _step25.value;
 
           item.setDirty(false);
         }
       } catch (err) {
-        _didIteratorError20 = true;
-        _iteratorError20 = err;
+        _didIteratorError25 = true;
+        _iteratorError25 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion20 && _iterator20.return) {
-            _iterator20.return();
+          if (!_iteratorNormalCompletion25 && _iterator25.return) {
+            _iterator25.return();
           }
         } finally {
-          if (_didIteratorError20) {
-            throw _iteratorError20;
+          if (_didIteratorError25) {
+            throw _iteratorError25;
           }
         }
       }
@@ -37651,27 +37880,27 @@ var ModelManager = function () {
         return _.includes(this.acceptableContentTypes, item.content_type);
       }.bind(this));
 
-      var _iteratorNormalCompletion21 = true;
-      var _didIteratorError21 = false;
-      var _iteratorError21 = undefined;
+      var _iteratorNormalCompletion26 = true;
+      var _didIteratorError26 = false;
+      var _iteratorError26 = undefined;
 
       try {
-        for (var _iterator21 = relevantItems[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
-          var item = _step21.value;
+        for (var _iterator26 = relevantItems[Symbol.iterator](), _step26; !(_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done); _iteratorNormalCompletion26 = true) {
+          var item = _step26.value;
 
           item.setDirty(true);
         }
       } catch (err) {
-        _didIteratorError21 = true;
-        _iteratorError21 = err;
+        _didIteratorError26 = true;
+        _iteratorError26 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion21 && _iterator21.return) {
-            _iterator21.return();
+          if (!_iteratorNormalCompletion26 && _iterator26.return) {
+            _iterator26.return();
           }
         } finally {
-          if (_didIteratorError21) {
-            throw _iteratorError21;
+          if (_didIteratorError26) {
+            throw _iteratorError26;
           }
         }
       }
@@ -37784,29 +38013,29 @@ var SyncManager = function () {
     value: function syncOffline(items, callback) {
       this.writeItemsToLocalStorage(items, true, function (responseItems) {
         // delete anything needing to be deleted
-        var _iteratorNormalCompletion22 = true;
-        var _didIteratorError22 = false;
-        var _iteratorError22 = undefined;
+        var _iteratorNormalCompletion27 = true;
+        var _didIteratorError27 = false;
+        var _iteratorError27 = undefined;
 
         try {
-          for (var _iterator22 = items[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
-            var item = _step22.value;
+          for (var _iterator27 = items[Symbol.iterator](), _step27; !(_iteratorNormalCompletion27 = (_step27 = _iterator27.next()).done); _iteratorNormalCompletion27 = true) {
+            var item = _step27.value;
 
             if (item.deleted) {
               this.modelManager.removeItemLocally(item);
             }
           }
         } catch (err) {
-          _didIteratorError22 = true;
-          _iteratorError22 = err;
+          _didIteratorError27 = true;
+          _iteratorError27 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion22 && _iterator22.return) {
-              _iterator22.return();
+            if (!_iteratorNormalCompletion27 && _iterator27.return) {
+              _iterator27.return();
             }
           } finally {
-            if (_didIteratorError22) {
-              throw _iteratorError22;
+            if (_didIteratorError27) {
+              throw _iteratorError27;
             }
           }
         }
@@ -37820,27 +38049,27 @@ var SyncManager = function () {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback) {
       var items = this.modelManager.allItems;
-      var _iteratorNormalCompletion23 = true;
-      var _didIteratorError23 = false;
-      var _iteratorError23 = undefined;
+      var _iteratorNormalCompletion28 = true;
+      var _didIteratorError28 = false;
+      var _iteratorError28 = undefined;
 
       try {
-        for (var _iterator23 = items[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
-          var item = _step23.value;
+        for (var _iterator28 = items[Symbol.iterator](), _step28; !(_iteratorNormalCompletion28 = (_step28 = _iterator28.next()).done); _iteratorNormalCompletion28 = true) {
+          var item = _step28.value;
 
           item.setDirty(true);
         }
       } catch (err) {
-        _didIteratorError23 = true;
-        _iteratorError23 = err;
+        _didIteratorError28 = true;
+        _iteratorError28 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion23 && _iterator23.return) {
-            _iterator23.return();
+          if (!_iteratorNormalCompletion28 && _iterator28.return) {
+            _iterator28.return();
           }
         } finally {
-          if (_didIteratorError23) {
-            throw _iteratorError23;
+          if (_didIteratorError28) {
+            throw _iteratorError28;
           }
         }
       }
@@ -37860,27 +38089,27 @@ var SyncManager = function () {
         allCallbacks.push(currentCallback);
       }
       if (allCallbacks.length) {
-        var _iteratorNormalCompletion24 = true;
-        var _didIteratorError24 = false;
-        var _iteratorError24 = undefined;
+        var _iteratorNormalCompletion29 = true;
+        var _didIteratorError29 = false;
+        var _iteratorError29 = undefined;
 
         try {
-          for (var _iterator24 = allCallbacks[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
-            var eachCallback = _step24.value;
+          for (var _iterator29 = allCallbacks[Symbol.iterator](), _step29; !(_iteratorNormalCompletion29 = (_step29 = _iterator29.next()).done); _iteratorNormalCompletion29 = true) {
+            var eachCallback = _step29.value;
 
             eachCallback(response);
           }
         } catch (err) {
-          _didIteratorError24 = true;
-          _iteratorError24 = err;
+          _didIteratorError29 = true;
+          _iteratorError29 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion24 && _iterator24.return) {
-              _iterator24.return();
+            if (!_iteratorNormalCompletion29 && _iterator29.return) {
+              _iterator29.return();
             }
           } finally {
-            if (_didIteratorError24) {
-              throw _iteratorError24;
+            if (_didIteratorError29) {
+              throw _iteratorError29;
             }
           }
         }
@@ -38079,13 +38308,13 @@ var SyncManager = function () {
     key: 'handleSyncConflicts',
     value: function handleSyncConflicts(items) {
       var needsSync = false;
-      var _iteratorNormalCompletion25 = true;
-      var _didIteratorError25 = false;
-      var _iteratorError25 = undefined;
+      var _iteratorNormalCompletion30 = true;
+      var _didIteratorError30 = false;
+      var _iteratorError30 = undefined;
 
       try {
-        for (var _iterator25 = items[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
-          var item = _step25.value;
+        for (var _iterator30 = items[Symbol.iterator](), _step30; !(_iteratorNormalCompletion30 = (_step30 = _iterator30.next()).done); _iteratorNormalCompletion30 = true) {
+          var item = _step30.value;
 
           if (item.conflict_of) {
             var original = this.modelManager.findItem(item.conflict_of);
@@ -38097,16 +38326,16 @@ var SyncManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError25 = true;
-        _iteratorError25 = err;
+        _didIteratorError30 = true;
+        _iteratorError30 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion25 && _iterator25.return) {
-            _iterator25.return();
+          if (!_iteratorNormalCompletion30 && _iterator30.return) {
+            _iterator30.return();
           }
         } finally {
-          if (_didIteratorError25) {
-            throw _iteratorError25;
+          if (_didIteratorError30) {
+            throw _iteratorError30;
           }
         }
       }
@@ -38313,6 +38542,11 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 ;angular.module('app.frontend').run(['$templateCache', function($templateCache) {
   'use strict';
 
+  $templateCache.put('frontend/components/tags-component.html',
+    "Tags Comp\n"
+  );
+
+
   $templateCache.put('frontend/directives/account-data-menu.html',
     "<div class='panel panel-default account-panel panel-right account-data-menu'>\n" +
     "  <div class='panel-body'>\n" +
@@ -38354,52 +38588,52 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "<div class='panel panel-default panel-right account-data-menu'>\n" +
     "  <div class='panel-body large-padding'>\n" +
     "    <div ng-if='!user'>\n" +
-    "      <div ng-if='!formData.confirmPassword'>\n" +
-    "        <p>Enter your account information. You can also register for free using the default server address.</p>\n" +
-    "        <div class='small-v-space'></div>\n" +
-    "        <form class='mt-5'>\n" +
-    "          <input class='form-control' name='server' ng-model='formData.url' placeholder='Server URL' required type='text'>\n" +
-    "          <input autofocus='autofocus' class='form-control' name='email' ng-model='formData.email' placeholder='Email' required type='email'>\n" +
-    "          <input class='form-control' name='password' ng-model='formData.user_password' placeholder='Password' required type='password'>\n" +
-    "          <div class='checkbox' ng-if='localNotesCount() &gt; 0'>\n" +
-    "            <label>\n" +
-    "              <input ng-bind='true' ng-change='mergeLocalChanged()' ng-model='formData.mergeLocal' type='checkbox'>\n" +
-    "                Merge local notes ({{localNotesCount()}} notes)\n" +
-    "              </input>\n" +
-    "            </label>\n" +
-    "          </div>\n" +
-    "          <div ng-if='!formData.status'>\n" +
-    "            <button class='btn dark-button half-button' ng-click='loginSubmitPressed()'>\n" +
+    "      <div class='mb-10'>\n" +
+    "        <div class='step-one' ng-if='!formData.showLogin &amp;&amp; !formData.showRegister'>\n" +
+    "          <h3>To enable encryption and sync, sign in or register (free).</h3>\n" +
+    "          <div class='small-v-space'></div>\n" +
+    "          <div class='button-group mt-5'>\n" +
+    "            <button class='ui-button half-button' ng-click='formData.showLogin = true'>\n" +
     "              <span>Sign In</span>\n" +
     "            </button>\n" +
-    "            <button class='btn dark-button half-button' ng-click='submitRegistrationForm()'>\n" +
+    "            <button class='ui-button half-button' ng-click='formData.showRegister = true'>\n" +
     "              <span>Register</span>\n" +
     "            </button>\n" +
-    "            <br>\n" +
-    "            <div class='block bold center-align' style='font-size: 14px;'>\n" +
-    "              <a class='btn mt-5' ng-click='formData.showResetForm = !formData.showResetForm'>Passwords cannot be forgotten.</a>\n" +
-    "            </div>\n" +
     "          </div>\n" +
-    "        </form>\n" +
-    "      </div>\n" +
-    "      <div ng-if='formData.confirmPassword'>\n" +
-    "        <h3>Confirm your password.</h3>\n" +
-    "        <p class='mt-5'>Note that because your notes are encrypted using your password, Standard Notes does not have a password reset option. You cannot forget your password.</p>\n" +
-    "        <form class='mt-10'>\n" +
-    "          <input class='form-control' name='password' ng-model='formData.pw_confirmation' placeholder='Confirm Password' required type='password'>\n" +
-    "          <button class='btn dark-button btn-block' ng-click='submitPasswordConfirmation()'>\n" +
-    "            <span>Confirm</span>\n" +
-    "          </button>\n" +
-    "        </form>\n" +
-    "      </div>\n" +
-    "      <em class='block center-align mt-10' ng-if='formData.status' style='font-size: 14px;'>{{formData.status}}</em>\n" +
-    "      <div class='gray-bg medium-padding' ng-if='formData.showResetForm'>\n" +
-    "        <p style='font-size: 13px;'>\n" +
-    "          Because notes are locally encrypted using a secret key derived from your password, there's no way to decrypt these notes if you forget your password.\n" +
-    "          For this reason, Standard Notes cannot offer a password reset option. You\n" +
-    "          <span class='bold'>must</span>\n" +
-    "          make sure to store or remember your password.\n" +
-    "        </p>\n" +
+    "          <a class='block mt-10 center-align centered' href='https://standardnotes.org/your-data' target='_blank'>Learn more about Standard Notes accounts.</a>\n" +
+    "        </div>\n" +
+    "        <div class='step-two' ng-if='formData.showLogin || formData.showRegister'>\n" +
+    "          <div class='float-group h20'>\n" +
+    "            <h3 class='pull-left'>{{formData.showLogin ? \"Sign In\" : \"Register (free)\"}}</h3>\n" +
+    "            <a class='pull-right pt-5' ng-click='formData.showLogin = false; formData.showRegister = false;'>Cancel</a>\n" +
+    "          </div>\n" +
+    "          <form class='mt-5'>\n" +
+    "            <input autofocus='autofocus' class='form-control mt-10' name='email' ng-model='formData.email' placeholder='Email' required type='email'>\n" +
+    "            <input class='form-control' name='password' ng-model='formData.user_password' placeholder='Password' required type='password'>\n" +
+    "            <input class='form-control' name='password' ng-if='formData.showRegister' ng-model='formData.password_conf' placeholder='Confirm Password' required type='password'>\n" +
+    "            <a class='block' ng-click='formData.showAdvanced = !formData.showAdvanced'>Advanced Options</a>\n" +
+    "            <div class='advanced-options mt-10' ng-if='formData.showAdvanced'>\n" +
+    "              <div class='float-group'>\n" +
+    "                <label class='pull-left'>Standard File Domain</label>\n" +
+    "                <a class='pull-right' href='https://standardnotes.org/your-data' target='_blank'>ⓘ</a>\n" +
+    "              </div>\n" +
+    "              <input class='form-control mt-5' name='server' ng-model='formData.url' placeholder='Server URL' required type='text'>\n" +
+    "            </div>\n" +
+    "            <div class='checkbox mt-10' ng-if='localNotesCount() &gt; 0'>\n" +
+    "              <p>\n" +
+    "                <input ng-bind='true' ng-change='mergeLocalChanged()' ng-model='formData.mergeLocal' type='checkbox'>\n" +
+    "                  Merge local notes ({{localNotesCount()}} notes)\n" +
+    "                </input>\n" +
+    "              </p>\n" +
+    "            </div>\n" +
+    "            <button class='ui-button block mt-10' ng-click='submitAuthForm()'>{{formData.showLogin ? \"Sign In\" : \"Register\"}}</button>\n" +
+    "          </form>\n" +
+    "        </div>\n" +
+    "        <div class='mt-15' ng-if='formData.showRegister'>\n" +
+    "          <h3>No Password Reset.</h3>\n" +
+    "          <p class='mt-5'>Because your notes are encrypted using your password, Standard Notes does not have a password reset option. You cannot forget your password.</p>\n" +
+    "        </div>\n" +
+    "        <em class='block center-align mt-10' ng-if='formData.status' style='font-size: 14px;'>{{formData.status}}</em>\n" +
     "      </div>\n" +
     "    </div>\n" +
     "    <div ng-if='user'>\n" +
@@ -38437,7 +38671,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "            <form>\n" +
     "              <input class='form-control' ng-model='newPasswordData.newPassword' placeholder='Enter new password' type='text'>\n" +
     "              <input class='form-control' ng-model='newPasswordData.newPasswordConfirmation' placeholder='Confirm new password' type='text'>\n" +
-    "              <button class='btn dark-button btn-block' ng-click='submitPasswordChange()'>Submit</button>\n" +
+    "              <button class='ui-button block' ng-click='submitPasswordChange()'>Submit</button>\n" +
     "            </form>\n" +
     "          </div>\n" +
     "        </div>\n" +
@@ -38463,7 +38697,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "          Decrypted\n" +
     "        </label>\n" +
     "      </div>\n" +
-    "      <a class='block' ng-class=\"{'mt-5' : !user}\" ng-click='downloadDataArchive()'>Download Data Archive</a>\n" +
+    "      <a class='block mt-5' ng-class=\"{'mt-5' : !user}\" ng-click='downloadDataArchive()'>Download Data Archive</a>\n" +
     "      <label class='block mt-5'>\n" +
     "        <input file-change='-&gt;' handler='importFileSelected(files)' style='display: none;' type='file'>\n" +
     "        <div class='fake-link'>Import Data from Archive</div>\n" +
@@ -38479,8 +38713,8 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    <div class='mt-25'>\n" +
     "      <h4>Analytics</h4>\n" +
     "      <p>\n" +
-    "        Help Standard Notes improve by sending anonymous data on general usage. Learn more\n" +
-    "        <a href='https://standardnotes.org/philosophy' target='_blank'>here.</a>\n" +
+    "        Help Standard Notes improve by sending anonymous data on general usage.\n" +
+    "        <a href='https://standardnotes.org/philosophy' target='_blank'>Learn more.</a>\n" +
     "      </p>\n" +
     "      <div class='mt-5'>\n" +
     "        <label>Status:</label>\n" +
@@ -38733,23 +38967,27 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 
 
   $templateCache.put('frontend/directives/contextual-menu.html',
-    "<ul class='dropdown-menu dropdown-menu-left nt-dropdown-menu dark editor-menu'>\n" +
+    "<ul class='dropdown-menu sectioned-menu'>\n" +
     "  <div class='extension' ng-repeat='extension in extensions'>\n" +
-    "    <div class='menu-section-header'>\n" +
+    "    <div class='header' ng-click='extension.hide = !extension.hide'>\n" +
     "      <div class='title'>{{extension.name}}</div>\n" +
     "      <div class='subtitle'>\n" +
-    "        Can access your data\n" +
+    "        Will submit your note\n" +
     "        <strong>{{accessTypeForExtension(extension)}}</strong>\n" +
     "      </div>\n" +
     "      <div class='spinner loading' ng-if='extension.loading'></div>\n" +
+    "      <div ng-if='extension.hide'>…</div>\n" +
     "    </div>\n" +
-    "    <ul>\n" +
-    "      <li class='menu-item' ng-click='executeAction(action, extension)' ng-repeat='action in extension.actionsWithContextForItem(item)'>\n" +
+    "    <ul ng-if='!extension.hide'>\n" +
+    "      <li class='menu-item' ng-class=\"{'faded' : !isActionEnabled(action, extension)}\" ng-click='executeAction(action, extension);' ng-repeat='action in extension.actionsWithContextForItem(item)'>\n" +
     "        <div class='menu-item-title'>{{action.label}}</div>\n" +
     "        <div class='menu-item-subtitle'>{{action.desc}}</div>\n" +
+    "        <div class='small normal' ng-if='!isActionEnabled(action, extension)'>\n" +
+    "          Requires {{action.access_type}} access to this note.\n" +
+    "        </div>\n" +
     "        <div ng-if='action.showNestedActions'>\n" +
     "          <ul class='mt-10'>\n" +
-    "            <li class='menu-item white-bg' ng-click='executeAction(subaction, extension); $event.stopPropagation()' ng-repeat='subaction in action.subactions' style='margin-top: -1px;'>\n" +
+    "            <li class='menu-item white-bg' ng-click='executeAction(subaction, extension);' ng-repeat='subaction in action.subactions' style='margin-top: -1px;'>\n" +
     "              <div class='menu-item-title'>{{subaction.label}}</div>\n" +
     "              <div class='menu-item-subtitle'>{{subaction.desc}}</div>\n" +
     "              <span ng-if='subaction.running'>\n" +
@@ -38858,39 +39096,39 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 
 
   $templateCache.put('frontend/directives/editor-menu.html',
-    "<ul class='dropdown-menu dropdown-menu-left nt-dropdown-menu dark editor-menu'>\n" +
-    "  <div class='menu-section-header'>\n" +
+    "<ul class='dropdown-menu sectioned-menu'>\n" +
+    "  <div class='header'>\n" +
     "    <div class='title'>System Editors</div>\n" +
     "  </div>\n" +
     "  <ul>\n" +
-    "    <li class='menu-item' ng-click='selectEditor(editor)' ng-repeat='editor in editorManager.systemEditors'>\n" +
+    "    <li class='menu-item' ng-click='selectEditor($event, editor)' ng-repeat='editor in editorManager.systemEditors'>\n" +
     "      <span class='pull-left mr-10' ng-if='selectedEditor === editor'>✓</span>\n" +
     "      <div class='menu-item-title pull-left'>{{editor.name}}</div>\n" +
     "    </li>\n" +
     "  </ul>\n" +
     "  <div ng-if='editorManager.externalEditors.length &gt; 0'>\n" +
-    "    <div class='menu-section-header'>\n" +
+    "    <div class='header'>\n" +
     "      <div class='title'>External Editors</div>\n" +
     "      <div class='subtitle'>Can access your current note decrypted.</div>\n" +
     "    </div>\n" +
     "    <ul>\n" +
-    "      <li class='menu-item' ng-click='selectEditor(editor)' ng-repeat='editor in editorManager.externalEditors'>\n" +
-    "        <div class='pull-left' style='width: 60%'>\n" +
+    "      <li class='menu-item' ng-click='selectEditor($event, editor)' ng-repeat='editor in editorManager.externalEditors'>\n" +
+    "        <div class='left-side'>\n" +
     "          <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
     "          <div class='menu-item-title'>{{editor.name}}</div>\n" +
     "          <a class='faded' ng-click='setDefaultEditor(editor); $event.stopPropagation();' ng-if='!editor.default'>Set Default</a>\n" +
-    "          <a class='red' ng-click='removeDefaultEditor(editor); $event.stopPropagation();' ng-if='editor.default'>Remove Default</a>\n" +
+    "          <a class='blue' ng-click='removeDefaultEditor(editor); $event.stopPropagation();' ng-if='editor.default'>Remove Default</a>\n" +
     "          <a class='faded' ng-click='editor.showUrl = !editor.showUrl; $event.stopPropagation();'>Show URL</a>\n" +
-    "          <div class='menu-item-subtitle wrap' ng-if='editor.showUrl'>{{editor.url}}</div>\n" +
+    "          <div class='menu-item-subtitle wrap mt-5' ng-if='editor.showUrl'>{{editor.url}}</div>\n" +
+    "          <span class='inline ml-10' ng-if='selectedEditor === editor'>✓</span>\n" +
     "        </div>\n" +
-    "        <span class='pull-left ml-10' ng-if='selectedEditor === editor'>✓</span>\n" +
-    "        <div class='pull-right'>\n" +
-    "          <button class='white medium inline top' ng-click='deleteEditor(editor); $event.stopPropagation();' style='width: 50px; height: 40px;'>☓</button>\n" +
+    "        <div class='right-side'>\n" +
+    "          <button class='white medium' ng-click='deleteEditor(editor); $event.stopPropagation();' style='width: 50px; height: 40px;'>☓</button>\n" +
     "        </div>\n" +
     "      </li>\n" +
     "    </ul>\n" +
     "  </div>\n" +
-    "  <div class='menu-section-footer mt-10'>\n" +
+    "  <div class='footer mt-10'>\n" +
     "    <input class='form-control' ng-keyup='$event.keyCode == 13 &amp;&amp; submitNewEditorRequest()' ng-model='formData.url' placeholder='Add new editor via URL'>\n" +
     "    <a class='block blue' href='https://standardnotes.org/extensions' target='_blank'>Available Editors</a>\n" +
     "  </div>\n" +
@@ -38949,20 +39187,22 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "  <div class='panel-body'>\n" +
     "    <div class='white-bg medium-padding ext-section' ng-class=\"{'opened': state.showDataExts}\">\n" +
     "      <h1>\n" +
-    "        <a ng-click='state.showDataExts = !state.showDataExts'>Data Extensions</a>\n" +
+    "        <a ng-click='state.showDataExts = !state.showDataExts'>Action Extensions</a>\n" +
     "      </h1>\n" +
-    "      <div ng-if='state.showDataExts'>\n" +
+    "      <p style='margin-top: 3px;'>These extensions perform actions on a specific note. Choose \"Actions\" in the note editor to use installed actions.</p>\n" +
+    "      <div class='mt-10' ng-if='state.showDataExts'>\n" +
     "        <div ng-if='!extensionManager.extensions.length' style='font-size: 15px;'>No extensions installed</div>\n" +
     "        <div ng-if='extensionManager.extensions.length'>\n" +
     "          <section class='gray-bg inline-h mb-10 medium-padding' ng-init='extension.formData = {}' ng-repeat=\"extension in extensionManager.extensions | orderBy: 'name'\">\n" +
-    "            <h3 class='center-align'>{{extension.name}}</h3>\n" +
-    "            <div class='center-align centered mt-10'>\n" +
-    "              <label class='block normal'>Send data:</label>\n" +
-    "              <label class='normal'>\n" +
+    "            <h3>{{extension.name}}</h3>\n" +
+    "            <p ng-if='extension.description'>{{extension.description}}</p>\n" +
+    "            <div class='mt-10'>\n" +
+    "              <label class='block'>Access Type</label>\n" +
+    "              <label class='normal block'>\n" +
     "                <input ng-change='changeExtensionEncryptionFormat(true, extension)' ng-model='extension.encrypted' ng-value='true' type='radio'>\n" +
     "                Encrypted\n" +
     "              </label>\n" +
-    "              <label class='normal'>\n" +
+    "              <label class='normal block'>\n" +
     "                <input ng-change='changeExtensionEncryptionFormat(false, extension)' ng-model='extension.encrypted' ng-value='false' type='radio'>\n" +
     "                Decrypted\n" +
     "              </label>\n" +
@@ -38992,7 +39232,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "                <button class='light mt-10' ng-click='selectedAction(action, extension)' ng-if='!action.running &amp;&amp; !action.repeat_mode'>\n" +
     "                  Perform Action\n" +
     "                </button>\n" +
-    "                <div class='spinner mb-5 centered center-align block' ng-if='action.running'></div>\n" +
+    "                <div class='spinner mb-5 block' ng-if='action.running'></div>\n" +
     "              </div>\n" +
     "              <p class='mb-5 mt-5 small' ng-if='!action.error &amp;&amp; action.lastExecuted &amp;&amp; !action.running'>\n" +
     "                Last run {{action.lastExecuted | appDateTime}}\n" +
@@ -39001,16 +39241,16 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "                Error performing action.\n" +
     "              </label>\n" +
     "            </section>\n" +
-    "            <a class='block center-align mt-10' ng-click='extension.showURL = !extension.showURL'>Show URL</a>\n" +
-    "            <p class='center-align wrap' ng-if='extension.showURL'>{{extension.url}}</p>\n" +
-    "            <a class='block center-align mt-5' ng-click='deleteExtension(extension)'>Remove extension</a>\n" +
+    "            <a class='block mt-5' ng-click='extension.showURL = !extension.showURL'>Show URL</a>\n" +
+    "            <p class='wrap' ng-if='extension.showURL'>{{extension.url}}</p>\n" +
+    "            <a class='block mt-5' ng-click='deleteExtension(extension)'>Remove extension</a>\n" +
     "          </section>\n" +
     "        </div>\n" +
     "        <div class='large-v-space'></div>\n" +
-    "        <a class='block' ng-click='toggleExtensionForm()'>Add new extension</a>\n" +
+    "        <a class='block' ng-click='toggleExtensionForm()'>Add New Extension</a>\n" +
     "        <form class='mt-10 mb-10' ng-if='showNewExtensionForm'>\n" +
     "          <input autofocus='autofocus' class='form-control' name='url' ng-model='newExtensionData.url' placeholder='Extension URL' required type='url'>\n" +
-    "          <button class='btn dark-button btn-block' data-size='s' data-style='expand-right' ng-click='submitNewExtensionForm()' state='buttonState' type='submit'>\n" +
+    "          <button class='ui-button block' data-size='s' data-style='expand-right' ng-click='submitNewExtensionForm()' state='buttonState' type='submit'>\n" +
     "            Add Extension\n" +
     "          </button>\n" +
     "        </form>\n" +
@@ -39091,43 +39331,27 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      <input class='tags-input' ng-blur='ctrl.updateTagsFromTagsString($event, ctrl.tagsString)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur();' ng-model='ctrl.tagsString' placeholder='#tags' type='text'>\n" +
     "    </div>\n" +
     "  </div>\n" +
-    "  <div class='section-menu' ng-if='ctrl.note'>\n" +
-    "    <ul class='nav'>\n" +
-    "      <li class='dropdown pull-left mr-10' click-outside='ctrl.showMenu = false;' is-open='ctrl.showMenu'>\n" +
-    "        <a class='dropdown-toggle' ng-click='ctrl.showMenu = !ctrl.showMenu; ctrl.showExtensions = false;'>\n" +
-    "          Menu\n" +
-    "          <span class='caret'></span>\n" +
-    "          <span class='sr-only'></span>\n" +
-    "        </a>\n" +
-    "        <ul class='dropdown-menu dropdown-menu-left nt-dropdown-menu dark' ng-if='ctrl.showMenu'>\n" +
-    "          <li ng-click='ctrl.selectedMenuItem(); ctrl.toggleFullScreen()'>\n" +
-    "            <div class='text'>Toggle Fullscreen</div>\n" +
-    "          </li>\n" +
-    "          <li ng-click='ctrl.deleteNote()'>\n" +
-    "            <div class='text'>Delete Note</div>\n" +
-    "          </li>\n" +
-    "        </ul>\n" +
-    "      </li>\n" +
-    "      <li class='sep'></li>\n" +
-    "      <li class='dropdown pull-left mr-10' click-outside='ctrl.showEditorMenu = false;' is-open='ctrl.showEditorMenu'>\n" +
-    "        <a class='dropdown-toggle' ng-click='ctrl.showEditorMenu = !ctrl.showEditorMenu; ctrl.showMenu = false;'>\n" +
-    "          Editor\n" +
-    "          <span class='caret'></span>\n" +
-    "          <span class='sr-only'></span>\n" +
-    "        </a>\n" +
-    "        <editor-menu callback='ctrl.selectedEditor' ng-if='ctrl.showEditorMenu' selected-editor='ctrl.editor'></editor-menu>\n" +
-    "      </li>\n" +
-    "      <li class='sep'></li>\n" +
-    "      <li class='dropdown pull-left' click-outside='ctrl.showExtensions = false;' is-open='ctrl.showExtensions' ng-if='ctrl.hasAvailableExtensions()'>\n" +
-    "        <a class='dropdown-toggle' ng-click='ctrl.showExtensions = !ctrl.showExtensions; ctrl.showMenu = false;'>\n" +
-    "          Extensions\n" +
-    "          <span class='caret'></span>\n" +
-    "          <span class='sr-only'></span>\n" +
-    "        </a>\n" +
-    "        <contextual-extensions-menu item='ctrl.note' ng-if='ctrl.showExtensions'></contextual-extensions-menu>\n" +
-    "      </li>\n" +
-    "    </ul>\n" +
-    "  </div>\n" +
+    "  <ul class='section-menu-bar' ng-if='ctrl.note'>\n" +
+    "    <li click-outside='ctrl.showMenu = false;' is-open='ctrl.showMenu' ng-class=\"{'selected' : ctrl.showMenu}\">\n" +
+    "      <label ng-click='ctrl.showMenu = !ctrl.showMenu; ctrl.showExtensions = false; ctrl.showEditorMenu = false;'>Menu</label>\n" +
+    "      <ul class='dropdown-menu' ng-if='ctrl.showMenu'>\n" +
+    "        <li>\n" +
+    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.toggleFullScreen()'>Toggle Fullscreen</label>\n" +
+    "        </li>\n" +
+    "        <li>\n" +
+    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.deleteNote()'>Delete Note</label>\n" +
+    "        </li>\n" +
+    "      </ul>\n" +
+    "    </li>\n" +
+    "    <li click-outside='ctrl.showEditorMenu = false;' is-open='ctrl.showEditorMenu' ng-class=\"{'selected' : ctrl.showEditorMenu}\">\n" +
+    "      <label ng-click='ctrl.showEditorMenu = !ctrl.showEditorMenu; ctrl.showMenu = false; ctrl.showExtensions = false;'>Editor</label>\n" +
+    "      <editor-menu callback='ctrl.selectedEditor' ng-if='ctrl.showEditorMenu' selected-editor='ctrl.editor'></editor-menu>\n" +
+    "    </li>\n" +
+    "    <li click-outside='ctrl.showExtensions = false;' is-open='ctrl.showExtensions' ng-class=\"{'selected' : ctrl.showExtensions}\" ng-if='ctrl.hasAvailableExtensions()'>\n" +
+    "      <label ng-click='ctrl.showExtensions = !ctrl.showExtensions; ctrl.showMenu = false; ctrl.showEditorMenu = false;'>Actions</label>\n" +
+    "      <contextual-extensions-menu item='ctrl.note' ng-if='ctrl.showExtensions'></contextual-extensions-menu>\n" +
+    "    </li>\n" +
+    "  </ul>\n" +
     "  <div class='editor-content' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.noteReady'>\n" +
     "    <iframe frameBorder='0' id='editor-iframe' ng-if='ctrl.editor &amp;&amp; !ctrl.editor.systemEditor' ng-src='{{ctrl.editor.url | trusted}}' style='width: 100%;'></iframe>\n" +
     "    <textarea class='editable' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.editor || ctrl.editor.systemEditor' ng-model='ctrl.note.text'></textarea>\n" +
@@ -39217,36 +39441,30 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "  <div class='content'>\n" +
     "    <div class='section-title-bar' id='notes-title-bar'>\n" +
     "      <div class='title'>{{ctrl.tag.title}} notes</div>\n" +
-    "      <div class='add-button' ng-click='ctrl.createNewNote()'>+</div>\n" +
+    "      <div class='add-button' id='notes-add-button' ng-click='ctrl.createNewNote()'>+</div>\n" +
     "      <br>\n" +
     "      <div class='filter-section'>\n" +
     "        <input class='filter-bar' lowercase='true' ng-change='ctrl.filterTextChanged()' ng-model='ctrl.noteFilter.text' placeholder='Search' select-on-click='true'>\n" +
     "      </div>\n" +
-    "      <div class='section-menu tag-menu-bar'>\n" +
-    "        <ul class='nav nav-pills'>\n" +
-    "          <li class='dropdown'>\n" +
-    "            <a class='dropdown-toggle' ng-click='ctrl.showMenu = !ctrl.showMenu'>\n" +
-    "              Sort\n" +
-    "              <span class='caret'></span>\n" +
-    "              <span class='sr-only'></span>\n" +
-    "            </a>\n" +
-    "            <ul class='dropdown-menu dropdown-menu-left nt-dropdown-menu dark' ng-if='ctrl.showMenu'>\n" +
-    "              <li>\n" +
-    "                <a class='text' ng-click='ctrl.selectedMenuItem(); ctrl.selectedSortByCreated()'>\n" +
-    "                  <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'created_at'\">✓</span>\n" +
-    "                  By date added\n" +
-    "                </a>\n" +
-    "              </li>\n" +
-    "              <li>\n" +
-    "                <a class='text' ng-click='ctrl.selectedMenuItem(); ctrl.selectedSortByUpdated()'>\n" +
-    "                  <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'updated_at'\">✓</span>\n" +
-    "                  By date modified\n" +
-    "                </a>\n" +
-    "              </li>\n" +
-    "            </ul>\n" +
-    "          </li>\n" +
-    "        </ul>\n" +
-    "      </div>\n" +
+    "      <ul class='section-menu-bar' id='tag-menu-bar'>\n" +
+    "        <li ng-class=\"{'selected' : ctrl.showMenu}\">\n" +
+    "          <label ng-click='ctrl.showMenu = !ctrl.showMenu'>Sort</label>\n" +
+    "          <ul class='dropdown-menu' ng-if='ctrl.showMenu'>\n" +
+    "            <li>\n" +
+    "              <label ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByCreated()'>\n" +
+    "                <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'created_at'\">✓</span>\n" +
+    "                By date added\n" +
+    "              </label>\n" +
+    "            </li>\n" +
+    "            <li>\n" +
+    "              <label ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByUpdated()'>\n" +
+    "                <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'updated_at'\">✓</span>\n" +
+    "                By date modified\n" +
+    "              </label>\n" +
+    "            </li>\n" +
+    "          </ul>\n" +
+    "        </li>\n" +
+    "      </ul>\n" +
     "    </div>\n" +
     "    <div class='scrollable'>\n" +
     "      <div can-load='true' class='infinite-scroll' infinite-scroll='ctrl.paginate()' threshold='200'>\n" +
