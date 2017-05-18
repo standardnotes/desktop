@@ -1,3 +1,11 @@
+.selectable {
+  user-select: all;
+}
+
+.clear {
+  clear: both;
+}
+
 .pull-left {
   float: left !important;
 }
@@ -166,7 +174,7 @@
 }
 
 .small {
-  font-size: 10px !important;
+  font-size: 10px;
 }
 
 .medium {
@@ -977,6 +985,7 @@ a.disabled {
   width: 100vw;
   height: 100vh;
   background-color: rgba(128, 128, 128, 0.3);
+  color: black;
 }
 .extension-render-modal .content {
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
@@ -991,6 +1000,78 @@ a.disabled {
   bottom: 0;
   right: 0;
   overflow-y: scroll;
+}
+
+#global-ext-menu {
+  color: black;
+}
+#global-ext-menu .panel-body {
+  padding: 0;
+}
+#global-ext-menu .container {
+  padding: 13px 18px;
+}
+#global-ext-menu .container.no-bottom {
+  padding-bottom: 0;
+}
+#global-ext-menu p {
+  font-size: 14px;
+}
+#global-ext-menu p.small {
+  font-size: 12px;
+}
+#global-ext-menu .link-group a {
+  margin-right: 2px;
+}
+#global-ext-menu .blue-box {
+  background-color: #086dd6;
+  color: white;
+  border-radius: 4px;
+  padding: 16px 20px;
+}
+#global-ext-menu .blue-box button {
+  background-color: white;
+  color: #086dd6;
+  border-radius: 3px;
+  font-weight: bold;
+  padding: 6px 20px;
+  width: 100%;
+}
+#global-ext-menu .blue-box button:hover {
+  text-decoration: underline;
+}
+#global-ext-menu .dashboard-link {
+  padding-top: 12px;
+  font-weight: normal;
+}
+#global-ext-menu .section-margin {
+  margin-top: 20px;
+}
+#global-ext-menu input {
+  border: 1px solid #086dd6;
+  border-radius: 2px;
+}
+#global-ext-menu ul {
+  border-top: 1px solid #e9e9e9;
+  border-bottom: 1px solid #e9e9e9;
+  margin: 0;
+  padding: 0;
+  margin-top: 12px;
+}
+#global-ext-menu ul li {
+  cursor: pointer;
+  background-color: rgba(233, 233, 233, 0.2);
+}
+#global-ext-menu ul li:hover {
+  background-color: rgba(233, 233, 233, 0.4);
+}
+#global-ext-menu ul li:not(:last-child) {
+  border-bottom: 1px solid #e9e9e9;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
 }
 
 ul.section-menu-bar {
@@ -1113,6 +1194,14 @@ ul.section-menu-bar > li.selected {
 }
 .dropdown-menu.sectioned-menu ul li:hover .blue {
   color: white;
+}
+.dropdown-menu.sectioned-menu ul li:hover.nested-hover {
+  color: black;
+  background-color: #e9e9e9;
+}
+.dropdown-menu.sectioned-menu ul li.nested-hover {
+  color: black;
+  background-color: white;
 }
 .dropdown-menu.sectioned-menu ul li .menu-item-title {
   font-weight: bold;

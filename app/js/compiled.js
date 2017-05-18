@@ -33751,6 +33751,15 @@ var BaseCtrl = function BaseCtrl(syncManager, dbManager, analyticsManager) {
 };
 BaseCtrl.$inject = ['syncManager', 'dbManager', 'analyticsManager'];
 
+function getParameterByName(name, url) {
+  name = name.replace(/[\[\]]/g, "\\$&");
+  var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+      results = regex.exec(url);
+  if (!results) return null;
+  if (!results[2]) return '';
+  return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
+
 angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
 ;angular.module('app.frontend').directive("editorSection", ['$timeout', '$sce', function ($timeout, $sce) {
   return {
@@ -34138,6 +34147,10 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     this.offline = authManager.offline();
   };
   this.updateOfflineStatus();
+
+  if (this.offline) {
+    this.showAccountMenu = true;
+  }
 
   this.findErrors = function () {
     this.error = syncManager.syncStatus.error;
@@ -34869,14 +34882,9 @@ var Item = function () {
       return [];
     }
   }, {
-    key: 'isEncrypted',
-    value: function isEncrypted() {
-      return this.encryptionEnabled() && this.content.substring(0, 3) === '001' ? true : false;
-    }
-  }, {
-    key: 'encryptionEnabled',
-    value: function encryptionEnabled() {
-      return this.enc_item_key;
+    key: 'doNotEncrypt',
+    value: function doNotEncrypt() {
+      return false;
     }
   }, {
     key: 'contentObject',
@@ -34910,21 +34918,67 @@ var Item = function () {
 }();
 
 ;
-var Editor = function (_Item) {
-  _inherits(Editor, _Item);
+var SyncAdapter = function (_Item) {
+  _inherits(SyncAdapter, _Item);
+
+  function SyncAdapter(json_obj) {
+    _classCallCheck(this, SyncAdapter);
+
+    return _possibleConstructorReturn(this, (SyncAdapter.__proto__ || Object.getPrototypeOf(SyncAdapter)).call(this, json_obj));
+  }
+
+  _createClass(SyncAdapter, [{
+    key: 'mapContentToLocalProperties',
+    value: function mapContentToLocalProperties(contentObject) {
+      _get(SyncAdapter.prototype.__proto__ || Object.getPrototypeOf(SyncAdapter.prototype), 'mapContentToLocalProperties', this).call(this, contentObject);
+      this.url = contentObject.url;
+    }
+  }, {
+    key: 'structureParams',
+    value: function structureParams() {
+      var params = {
+        url: this.url
+      };
+
+      _.merge(params, _get(SyncAdapter.prototype.__proto__ || Object.getPrototypeOf(SyncAdapter.prototype), 'structureParams', this).call(this));
+      return params;
+    }
+  }, {
+    key: 'toJSON',
+    value: function toJSON() {
+      return { uuid: this.uuid };
+    }
+  }, {
+    key: 'doNotEncrypt',
+    value: function doNotEncrypt() {
+      return true;
+    }
+  }, {
+    key: 'content_type',
+    get: function get() {
+      return "SF|Extension";
+    }
+  }]);
+
+  return SyncAdapter;
+}(Item);
+
+;
+var Editor = function (_Item2) {
+  _inherits(Editor, _Item2);
 
   function Editor(json_obj) {
     _classCallCheck(this, Editor);
 
-    var _this3 = _possibleConstructorReturn(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, json_obj));
+    var _this4 = _possibleConstructorReturn(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, json_obj));
 
-    if (!_this3.notes) {
-      _this3.notes = [];
+    if (!_this4.notes) {
+      _this4.notes = [];
     }
-    if (!_this3.data) {
-      _this3.data = {};
+    if (!_this4.data) {
+      _this4.data = {};
     }
-    return _this3;
+    return _this4;
   }
 
   _createClass(Editor, [{
@@ -35112,25 +35166,25 @@ var Action = function () {
   return Action;
 }();
 
-var Extension = function (_Item2) {
-  _inherits(Extension, _Item2);
+var Extension = function (_Item3) {
+  _inherits(Extension, _Item3);
 
   function Extension(json) {
     _classCallCheck(this, Extension);
 
-    var _this4 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
+    var _this5 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
 
-    _.merge(_this4, json);
+    _.merge(_this5, json);
 
-    _this4.encrypted = true;
-    _this4.content_type = "Extension";
+    _this5.encrypted = true;
+    _this5.content_type = "Extension";
 
     if (json.actions) {
-      _this4.actions = json.actions.map(function (action) {
+      _this5.actions = json.actions.map(function (action) {
         return new Action(action);
       });
     }
-    return _this4;
+    return _this5;
   }
 
   _createClass(Extension, [{
@@ -35196,18 +35250,18 @@ var Extension = function (_Item2) {
 }(Item);
 
 ;
-var Note = function (_Item3) {
-  _inherits(Note, _Item3);
+var Note = function (_Item4) {
+  _inherits(Note, _Item4);
 
   function Note(json_obj) {
     _classCallCheck(this, Note);
 
-    var _this5 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
+    var _this6 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
 
-    if (!_this5.tags) {
-      _this5.tags = [];
+    if (!_this6.tags) {
+      _this6.tags = [];
     }
-    return _this5;
+    return _this6;
   }
 
   _createClass(Note, [{
@@ -35349,18 +35403,18 @@ var Note = function (_Item3) {
 }(Item);
 
 ;
-var Tag = function (_Item4) {
-  _inherits(Tag, _Item4);
+var Tag = function (_Item5) {
+  _inherits(Tag, _Item5);
 
   function Tag(json_obj) {
     _classCallCheck(this, Tag);
 
-    var _this6 = _possibleConstructorReturn(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
+    var _this7 = _possibleConstructorReturn(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
 
-    if (!_this6.notes) {
-      _this6.notes = [];
+    if (!_this7.notes) {
+      _this7.notes = [];
     }
-    return _this6;
+    return _this7;
   }
 
   _createClass(Tag, [{
@@ -35479,8 +35533,8 @@ var Tag = function (_Item4) {
 }(Item);
 
 ;
-var Theme = function (_Item5) {
-  _inherits(Theme, _Item5);
+var Theme = function (_Item6) {
+  _inherits(Theme, _Item6);
 
   function Theme(json_obj) {
     _classCallCheck(this, Theme);
@@ -35565,7 +35619,7 @@ var ItemParams = function () {
 
       var params = { uuid: this.item.uuid, content_type: this.item.content_type, deleted: this.item.deleted, created_at: this.item.created_at };
 
-      if (this.keys) {
+      if (this.keys && !this.item.doNotEncrypt()) {
         EncryptionHelper.encryptItem(itemCopy, this.keys, encryptionVersion);
         params.content = itemCopy.content;
         params.enc_item_key = itemCopy.enc_item_key;
@@ -35603,7 +35657,7 @@ var AnalyticsManager = function () {
 
     var status = localStorage.getItem("analyticsEnabled");
     if (status === null) {
-      this.enabled = true;
+      this.enabled = false;
     } else {
       this.enabled = JSON.parse(status);
     }
@@ -36524,7 +36578,7 @@ var ContextualExtensionsMenu = function () {
         }
       }
 
-      $scope.executeAction = function (action, extension) {
+      $scope.executeAction = function (action, extension, parentAction) {
         if (!$scope.isActionEnabled(action, extension)) {
           alert("This action requires " + action.access_type + " access to this note. You can change this setting in the Extensions menu on the bottom of the app.");
           return;
@@ -36539,7 +36593,13 @@ var ContextualExtensionsMenu = function () {
           $scope.handleActionResponse(action, response);
 
           // reload extension actions
-          extensionManager.loadExtensionInContextOfItem(extension, $scope.item, null);
+          extensionManager.loadExtensionInContextOfItem(extension, $scope.item, function (ext) {
+            // keep nested state
+            if (parentAction) {
+              var matchingAction = _.find(ext.actions, { label: parentAction.label });
+              matchingAction.showNestedActions = true;
+            }
+          });
         });
       };
 
@@ -36606,25 +36666,6 @@ var EditorMenu = function () {
         editor.conflict_of = null; // clear conflict if applicable
         $scope.callback()(editor);
       };
-
-      $scope.deleteEditor = function (editor) {
-        if (confirm("Are you sure you want to delete this editor?")) {
-          editorManager.deleteEditor(editor);
-        }
-      };
-
-      $scope.setDefaultEditor = function (editor) {
-        editorManager.setDefaultEditor(editor);
-      };
-
-      $scope.removeDefaultEditor = function (editor) {
-        editorManager.removeDefaultEditor(editor);
-      };
-
-      $scope.submitNewEditorRequest = function () {
-        editorManager.addNewEditorFromURL($scope.formData.url);
-        $scope.formData = {};
-      };
     }]
   }]);
 
@@ -36646,37 +36687,14 @@ var GlobalExtensionsMenu = function () {
 
   _createClass(GlobalExtensionsMenu, [{
     key: 'controller',
-    value: ['$scope', 'extensionManager', 'syncManager', 'modelManager', 'themeManager', function controller($scope, extensionManager, syncManager, modelManager, themeManager) {
+    value: ['$scope', 'extensionManager', 'syncManager', 'modelManager', 'themeManager', 'editorManager', function controller($scope, extensionManager, syncManager, modelManager, themeManager, editorManager) {
       'ngInject';
+
+      $scope.formData = {};
 
       $scope.extensionManager = extensionManager;
       $scope.themeManager = themeManager;
-      $scope.state = { showDataExts: true, showThemes: true };
-
-      $scope.toggleExtensionForm = function () {
-        $scope.newExtensionData = {};
-        $scope.showNewExtensionForm = !$scope.showNewExtensionForm;
-      };
-
-      $scope.submitNewExtensionForm = function () {
-        if ($scope.newExtensionData.url) {
-          extensionManager.addExtension($scope.newExtensionData.url, function (response) {
-            if (!response) {
-              if ($scope.newExtensionData.url.indexOf("type=sf") != -1) {
-                alert("Unable to register this extension. You are attempting to register a Standard File extension in Standard Notes. You should instead open your Standard File Dashboard and register this extension there.");
-              } else if ($scope.newExtensionData.url.indexOf("name=") != -1) {
-                // user is mistakenly trying to register editor extension, most likely
-                alert("Unable to register this extension. It looks like you may be trying to install an editor extension. To do that, click 'Editor' under the current note's title.");
-              } else {
-                alert("Unable to register this extension. Make sure the link is valid and try again.");
-              }
-            } else {
-              $scope.newExtensionData.url = "";
-              $scope.showNewExtensionForm = false;
-            }
-          });
-        }
-      };
+      $scope.editorManager = editorManager;
 
       $scope.selectedAction = function (action, extension) {
         extensionManager.executeAction(action, extension, null, function (response) {
@@ -36694,7 +36712,7 @@ var GlobalExtensionsMenu = function () {
         extensionManager.changeExtensionEncryptionFormat(encrypted, extension);
       };
 
-      $scope.deleteExtension = function (extension) {
+      $scope.deleteActionExtension = function (extension) {
         if (confirm("Are you sure you want to delete this extension?")) {
           extensionManager.deleteExtension(extension);
         }
@@ -36706,17 +36724,109 @@ var GlobalExtensionsMenu = function () {
         }
       };
 
-      $scope.submitTheme = function () {
-        themeManager.submitTheme($scope.state.themeUrl);
-        $scope.state.themeUrl = "";
-      };
-
       $scope.deleteTheme = function (theme) {
         if (confirm("Are you sure you want to delete this theme?")) {
           themeManager.deactivateTheme(theme);
           modelManager.setItemToBeDeleted(theme);
           syncManager.sync();
         }
+      };
+
+      // Editors
+
+      $scope.deleteEditor = function (editor) {
+        if (confirm("Are you sure you want to delete this editor?")) {
+          editorManager.deleteEditor(editor);
+        }
+      };
+
+      $scope.setDefaultEditor = function (editor) {
+        editorManager.setDefaultEditor(editor);
+      };
+
+      $scope.removeDefaultEditor = function (editor) {
+        editorManager.removeDefaultEditor(editor);
+      };
+
+      // Installation
+
+      $scope.submitInstallLink = function () {
+
+        var fullLink = $scope.formData.installLink;
+        if (!fullLink) {
+          return;
+        }
+
+        var completion = function completion() {
+          $scope.formData.installLink = "";
+          $scope.formData.successfullyInstalled = true;
+        };
+
+        var links = fullLink.split(",");
+        var _iteratorNormalCompletion13 = true;
+        var _didIteratorError13 = false;
+        var _iteratorError13 = undefined;
+
+        try {
+          for (var _iterator13 = links[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+            var link = _step13.value;
+
+            var type = getParameterByName("type", link);
+
+            if (type == "sf") {
+              $scope.handleSyncAdapterLink(link, completion);
+            } else if (type == "editor") {
+              $scope.handleEditorLink(link, completion);
+            } else if (link.indexOf(".css") != -1 || type == "theme") {
+              $scope.handleThemeLink(link, completion);
+            } else {
+              $scope.handleActionLink(link, completion);
+            }
+          }
+        } catch (err) {
+          _didIteratorError13 = true;
+          _iteratorError13 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion13 && _iterator13.return) {
+              _iterator13.return();
+            }
+          } finally {
+            if (_didIteratorError13) {
+              throw _iteratorError13;
+            }
+          }
+        }
+      };
+
+      $scope.handleSyncAdapterLink = function (link, completion) {
+        var ext = new SyncAdapter({ url: link });
+        ext.setDirty(true);
+        modelManager.addItem(ext);
+        syncManager.sync();
+        completion();
+      };
+
+      $scope.handleThemeLink = function (link, completion) {
+        themeManager.submitTheme(link);
+        completion();
+      };
+
+      $scope.handleActionLink = function (link, completion) {
+        if (link) {
+          extensionManager.addExtension(link, function (response) {
+            if (!response) {
+              alert("Unable to register this extension. Make sure the link is valid and try again.");
+            } else {
+              completion();
+            }
+          });
+        }
+      };
+
+      $scope.handleEditorLink = function (link, completion) {
+        editorManager.addNewEditorFromURL(link);
+        completion();
       };
     }]
   }]);
@@ -36795,7 +36905,7 @@ var EditorManager = function () {
   }, {
     key: 'addNewEditorFromURL',
     value: function addNewEditorFromURL(url) {
-      var name = this.getParameterByName("name", url);
+      var name = getParameterByName("name", url);
       var editor = this.modelManager.createItem({
         content_type: this.editorType,
         url: url,
@@ -36811,16 +36921,6 @@ var EditorManager = function () {
     value: function deleteEditor(editor) {
       this.modelManager.setItemToBeDeleted(editor);
       this.syncManager.sync();
-    }
-  }, {
-    key: 'getParameterByName',
-    value: function getParameterByName(name, url) {
-      name = name.replace(/[\[\]]/g, "\\$&");
-      var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-          results = regex.exec(url);
-      if (!results) return null;
-      if (!results[2]) return '';
-      return decodeURIComponent(results[2].replace(/\+/g, " "));
     }
   }, {
     key: 'allEditors',
@@ -36869,55 +36969,55 @@ var ExtensionManager = function () {
     this.syncManager = syncManager;
 
     modelManager.addItemSyncObserver("extensionManager", "Extension", function (items) {
-      var _iteratorNormalCompletion13 = true;
-      var _didIteratorError13 = false;
-      var _iteratorError13 = undefined;
+      var _iteratorNormalCompletion14 = true;
+      var _didIteratorError14 = false;
+      var _iteratorError14 = undefined;
 
       try {
-        for (var _iterator13 = items[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-          var ext = _step13.value;
+        for (var _iterator14 = items[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+          var ext = _step14.value;
 
 
           ext.encrypted = this.extensionUsesEncryptedData(ext);
 
-          var _iteratorNormalCompletion14 = true;
-          var _didIteratorError14 = false;
-          var _iteratorError14 = undefined;
+          var _iteratorNormalCompletion15 = true;
+          var _didIteratorError15 = false;
+          var _iteratorError15 = undefined;
 
           try {
-            for (var _iterator14 = ext.actions[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-              var action = _step14.value;
+            for (var _iterator15 = ext.actions[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+              var action = _step15.value;
 
               if (_.includes(this.enabledRepeatActionUrls, action.url)) {
                 this.enableRepeatAction(action, ext);
               }
             }
           } catch (err) {
-            _didIteratorError14 = true;
-            _iteratorError14 = err;
+            _didIteratorError15 = true;
+            _iteratorError15 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion14 && _iterator14.return) {
-                _iterator14.return();
+              if (!_iteratorNormalCompletion15 && _iterator15.return) {
+                _iterator15.return();
               }
             } finally {
-              if (_didIteratorError14) {
-                throw _iteratorError14;
+              if (_didIteratorError15) {
+                throw _iteratorError15;
               }
             }
           }
         }
       } catch (err) {
-        _didIteratorError13 = true;
-        _iteratorError13 = err;
+        _didIteratorError14 = true;
+        _iteratorError14 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion13 && _iterator13.return) {
-            _iterator13.return();
+          if (!_iteratorNormalCompletion14 && _iterator14.return) {
+            _iterator14.return();
           }
         } finally {
-          if (_didIteratorError13) {
-            throw _iteratorError13;
+          if (_didIteratorError14) {
+            throw _iteratorError14;
           }
         }
       }
@@ -36934,27 +37034,27 @@ var ExtensionManager = function () {
   }, {
     key: 'actionWithURL',
     value: function actionWithURL(url) {
-      var _iteratorNormalCompletion15 = true;
-      var _didIteratorError15 = false;
-      var _iteratorError15 = undefined;
+      var _iteratorNormalCompletion16 = true;
+      var _didIteratorError16 = false;
+      var _iteratorError16 = undefined;
 
       try {
-        for (var _iterator15 = this.extensions[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-          var extension = _step15.value;
+        for (var _iterator16 = this.extensions[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+          var extension = _step16.value;
 
           return _.find(extension.actions, { url: url });
         }
       } catch (err) {
-        _didIteratorError15 = true;
-        _iteratorError15 = err;
+        _didIteratorError16 = true;
+        _iteratorError16 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion15 && _iterator15.return) {
-            _iterator15.return();
+          if (!_iteratorNormalCompletion16 && _iterator16.return) {
+            _iterator16.return();
           }
         } finally {
-          if (_didIteratorError15) {
-            throw _iteratorError15;
+          if (_didIteratorError16) {
+            throw _iteratorError16;
           }
         }
       }
@@ -36985,13 +37085,13 @@ var ExtensionManager = function () {
   }, {
     key: 'deleteExtension',
     value: function deleteExtension(extension) {
-      var _iteratorNormalCompletion16 = true;
-      var _didIteratorError16 = false;
-      var _iteratorError16 = undefined;
+      var _iteratorNormalCompletion17 = true;
+      var _didIteratorError17 = false;
+      var _iteratorError17 = undefined;
 
       try {
-        for (var _iterator16 = extension.actions[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-          var action = _step16.value;
+        for (var _iterator17 = extension.actions[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+          var action = _step17.value;
 
           _.pull(this.decryptedExtensions, extension);
           if (action.repeat_mode) {
@@ -37001,16 +37101,16 @@ var ExtensionManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError16 = true;
-        _iteratorError16 = err;
+        _didIteratorError17 = true;
+        _iteratorError17 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion16 && _iterator16.return) {
-            _iterator16.return();
+          if (!_iteratorNormalCompletion17 && _iterator17.return) {
+            _iterator17.return();
           }
         } finally {
-          if (_didIteratorError16) {
-            throw _iteratorError16;
+          if (_didIteratorError17) {
+            throw _iteratorError17;
           }
         }
       }
@@ -37085,45 +37185,18 @@ var ExtensionManager = function () {
   }, {
     key: 'refreshExtensionsFromServer',
     value: function refreshExtensionsFromServer() {
-      var _iteratorNormalCompletion17 = true;
-      var _didIteratorError17 = false;
-      var _iteratorError17 = undefined;
-
-      try {
-        for (var _iterator17 = this.enabledRepeatActionUrls[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
-          var url = _step17.value;
-
-          var action = this.actionWithURL(url);
-          if (action) {
-            this.disableRepeatAction(action);
-          }
-        }
-      } catch (err) {
-        _didIteratorError17 = true;
-        _iteratorError17 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion17 && _iterator17.return) {
-            _iterator17.return();
-          }
-        } finally {
-          if (_didIteratorError17) {
-            throw _iteratorError17;
-          }
-        }
-      }
-
       var _iteratorNormalCompletion18 = true;
       var _didIteratorError18 = false;
       var _iteratorError18 = undefined;
 
       try {
-        for (var _iterator18 = this.extensions[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
-          var ext = _step18.value;
+        for (var _iterator18 = this.enabledRepeatActionUrls[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
+          var url = _step18.value;
 
-          this.retrieveExtensionFromServer(ext.url, function (extension) {
-            extension.setDirty(true);
-          });
+          var action = this.actionWithURL(url);
+          if (action) {
+            this.disableRepeatAction(action);
+          }
         }
       } catch (err) {
         _didIteratorError18 = true;
@@ -37136,6 +37209,33 @@ var ExtensionManager = function () {
         } finally {
           if (_didIteratorError18) {
             throw _iteratorError18;
+          }
+        }
+      }
+
+      var _iteratorNormalCompletion19 = true;
+      var _didIteratorError19 = false;
+      var _iteratorError19 = undefined;
+
+      try {
+        for (var _iterator19 = this.extensions[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
+          var ext = _step19.value;
+
+          this.retrieveExtensionFromServer(ext.url, function (extension) {
+            extension.setDirty(true);
+          });
+        }
+      } catch (err) {
+        _didIteratorError19 = true;
+        _iteratorError19 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion19 && _iterator19.return) {
+            _iterator19.return();
+          }
+        } finally {
+          if (_didIteratorError19) {
+            throw _iteratorError19;
           }
         }
       }
@@ -37166,27 +37266,27 @@ var ExtensionManager = function () {
               var items = response.items || [response.item];
               EncryptionHelper.decryptMultipleItems(items, this.authManager.keys());
               items = this.modelManager.mapResponseItemsToLocalModels(items);
-              var _iteratorNormalCompletion19 = true;
-              var _didIteratorError19 = false;
-              var _iteratorError19 = undefined;
+              var _iteratorNormalCompletion20 = true;
+              var _didIteratorError20 = false;
+              var _iteratorError20 = undefined;
 
               try {
-                for (var _iterator19 = items[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
-                  var item = _step19.value;
+                for (var _iterator20 = items[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
+                  var item = _step20.value;
 
                   item.setDirty(true);
                 }
               } catch (err) {
-                _didIteratorError19 = true;
-                _iteratorError19 = err;
+                _didIteratorError20 = true;
+                _iteratorError20 = err;
               } finally {
                 try {
-                  if (!_iteratorNormalCompletion19 && _iterator19.return) {
-                    _iterator19.return();
+                  if (!_iteratorNormalCompletion20 && _iterator20.return) {
+                    _iterator20.return();
                   }
                 } finally {
-                  if (_didIteratorError19) {
-                    throw _iteratorError19;
+                  if (_didIteratorError20) {
+                    throw _iteratorError20;
                   }
                 }
               }
@@ -37518,27 +37618,27 @@ var ModelManager = function () {
       // for example, editors have a one way relationship with notes. When a note changes its UUID, it has no way to inform the editor
       // to update its relationships
 
-      var _iteratorNormalCompletion20 = true;
-      var _didIteratorError20 = false;
-      var _iteratorError20 = undefined;
+      var _iteratorNormalCompletion21 = true;
+      var _didIteratorError21 = false;
+      var _iteratorError21 = undefined;
 
       try {
-        for (var _iterator20 = this.items[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
-          var model = _step20.value;
+        for (var _iterator21 = this.items[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
+          var model = _step21.value;
 
           model.potentialItemOfInterestHasChangedItsUUID(newItem, oldUUID, newUUID);
         }
       } catch (err) {
-        _didIteratorError20 = true;
-        _iteratorError20 = err;
+        _didIteratorError21 = true;
+        _iteratorError21 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion20 && _iterator20.return) {
-            _iterator20.return();
+          if (!_iteratorNormalCompletion21 && _iterator21.return) {
+            _iterator21.return();
           }
         } finally {
-          if (_didIteratorError20) {
-            throw _iteratorError20;
+          if (_didIteratorError21) {
+            throw _iteratorError21;
           }
         }
       }
@@ -37577,13 +37677,13 @@ var ModelManager = function () {
           processedObjects = [];
 
       // first loop should add and process items
-      var _iteratorNormalCompletion21 = true;
-      var _didIteratorError21 = false;
-      var _iteratorError21 = undefined;
+      var _iteratorNormalCompletion22 = true;
+      var _didIteratorError22 = false;
+      var _iteratorError22 = undefined;
 
       try {
-        for (var _iterator21 = items[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
-          var json_obj = _step21.value;
+        for (var _iterator22 = items[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
+          var json_obj = _step22.value;
 
           json_obj = _.omit(json_obj, omitFields || []);
           var item = this.findItem(json_obj["uuid"]);
@@ -37610,16 +37710,16 @@ var ModelManager = function () {
 
         // second loop should process references
       } catch (err) {
-        _didIteratorError21 = true;
-        _iteratorError21 = err;
+        _didIteratorError22 = true;
+        _iteratorError22 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion21 && _iterator21.return) {
-            _iterator21.return();
+          if (!_iteratorNormalCompletion22 && _iterator22.return) {
+            _iterator22.return();
           }
         } finally {
-          if (_didIteratorError21) {
-            throw _iteratorError21;
+          if (_didIteratorError22) {
+            throw _iteratorError22;
           }
         }
       }
@@ -37638,51 +37738,17 @@ var ModelManager = function () {
   }, {
     key: 'notifySyncObserversOfModels',
     value: function notifySyncObserversOfModels(models) {
-      var _iteratorNormalCompletion22 = true;
-      var _didIteratorError22 = false;
-      var _iteratorError22 = undefined;
-
-      try {
-        for (var _iterator22 = this.itemSyncObservers[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
-          var observer = _step22.value;
-
-          var relevantItems = models.filter(function (item) {
-            return item.content_type == observer.type;
-          });
-          if (relevantItems.length > 0) {
-            observer.callback(relevantItems);
-          }
-        }
-      } catch (err) {
-        _didIteratorError22 = true;
-        _iteratorError22 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion22 && _iterator22.return) {
-            _iterator22.return();
-          }
-        } finally {
-          if (_didIteratorError22) {
-            throw _iteratorError22;
-          }
-        }
-      }
-    }
-  }, {
-    key: 'notifyItemChangeObserversOfModels',
-    value: function notifyItemChangeObserversOfModels(models) {
       var _iteratorNormalCompletion23 = true;
       var _didIteratorError23 = false;
       var _iteratorError23 = undefined;
 
       try {
-        for (var _iterator23 = this.itemChangeObservers[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
+        for (var _iterator23 = this.itemSyncObservers[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
           var observer = _step23.value;
 
           var relevantItems = models.filter(function (item) {
-            return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
+            return item.content_type == observer.type;
           });
-
           if (relevantItems.length > 0) {
             observer.callback(relevantItems);
           }
@@ -37698,6 +37764,40 @@ var ModelManager = function () {
         } finally {
           if (_didIteratorError23) {
             throw _iteratorError23;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'notifyItemChangeObserversOfModels',
+    value: function notifyItemChangeObserversOfModels(models) {
+      var _iteratorNormalCompletion24 = true;
+      var _didIteratorError24 = false;
+      var _iteratorError24 = undefined;
+
+      try {
+        for (var _iterator24 = this.itemChangeObservers[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
+          var observer = _step24.value;
+
+          var relevantItems = models.filter(function (item) {
+            return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
+          });
+
+          if (relevantItems.length > 0) {
+            observer.callback(relevantItems);
+          }
+        }
+      } catch (err) {
+        _didIteratorError24 = true;
+        _iteratorError24 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion24 && _iterator24.return) {
+            _iterator24.return();
+          }
+        } finally {
+          if (_didIteratorError24) {
+            throw _iteratorError24;
           }
         }
       }
@@ -37770,13 +37870,13 @@ var ModelManager = function () {
         return;
       }
 
-      var _iteratorNormalCompletion24 = true;
-      var _didIteratorError24 = false;
-      var _iteratorError24 = undefined;
+      var _iteratorNormalCompletion25 = true;
+      var _didIteratorError25 = false;
+      var _iteratorError25 = undefined;
 
       try {
-        for (var _iterator24 = contentObject.references[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
-          var reference = _step24.value;
+        for (var _iterator25 = contentObject.references[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
+          var reference = _step25.value;
 
           var referencedItem = this.findItem(reference.uuid);
           if (referencedItem) {
@@ -37787,16 +37887,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError24 = true;
-        _iteratorError24 = err;
+        _didIteratorError25 = true;
+        _iteratorError25 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion24 && _iterator24.return) {
-            _iterator24.return();
+          if (!_iteratorNormalCompletion25 && _iterator25.return) {
+            _iterator25.return();
           }
         } finally {
-          if (_didIteratorError24) {
-            throw _iteratorError24;
+          if (_didIteratorError25) {
+            throw _iteratorError25;
           }
         }
       }
@@ -37831,27 +37931,27 @@ var ModelManager = function () {
   }, {
     key: 'clearDirtyItems',
     value: function clearDirtyItems(items) {
-      var _iteratorNormalCompletion25 = true;
-      var _didIteratorError25 = false;
-      var _iteratorError25 = undefined;
+      var _iteratorNormalCompletion26 = true;
+      var _didIteratorError26 = false;
+      var _iteratorError26 = undefined;
 
       try {
-        for (var _iterator25 = items[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
-          var item = _step25.value;
+        for (var _iterator26 = items[Symbol.iterator](), _step26; !(_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done); _iteratorNormalCompletion26 = true) {
+          var item = _step26.value;
 
           item.setDirty(false);
         }
       } catch (err) {
-        _didIteratorError25 = true;
-        _iteratorError25 = err;
+        _didIteratorError26 = true;
+        _iteratorError26 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion25 && _iterator25.return) {
-            _iterator25.return();
+          if (!_iteratorNormalCompletion26 && _iterator26.return) {
+            _iterator26.return();
           }
         } finally {
-          if (_didIteratorError25) {
-            throw _iteratorError25;
+          if (_didIteratorError26) {
+            throw _iteratorError26;
           }
         }
       }
@@ -37880,27 +37980,27 @@ var ModelManager = function () {
         return _.includes(this.acceptableContentTypes, item.content_type);
       }.bind(this));
 
-      var _iteratorNormalCompletion26 = true;
-      var _didIteratorError26 = false;
-      var _iteratorError26 = undefined;
+      var _iteratorNormalCompletion27 = true;
+      var _didIteratorError27 = false;
+      var _iteratorError27 = undefined;
 
       try {
-        for (var _iterator26 = relevantItems[Symbol.iterator](), _step26; !(_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done); _iteratorNormalCompletion26 = true) {
-          var item = _step26.value;
+        for (var _iterator27 = relevantItems[Symbol.iterator](), _step27; !(_iteratorNormalCompletion27 = (_step27 = _iterator27.next()).done); _iteratorNormalCompletion27 = true) {
+          var item = _step27.value;
 
           item.setDirty(true);
         }
       } catch (err) {
-        _didIteratorError26 = true;
-        _iteratorError26 = err;
+        _didIteratorError27 = true;
+        _iteratorError27 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion26 && _iterator26.return) {
-            _iterator26.return();
+          if (!_iteratorNormalCompletion27 && _iterator27.return) {
+            _iterator27.return();
           }
         } finally {
-          if (_didIteratorError26) {
-            throw _iteratorError26;
+          if (_didIteratorError27) {
+            throw _iteratorError27;
           }
         }
       }
@@ -38013,29 +38113,29 @@ var SyncManager = function () {
     value: function syncOffline(items, callback) {
       this.writeItemsToLocalStorage(items, true, function (responseItems) {
         // delete anything needing to be deleted
-        var _iteratorNormalCompletion27 = true;
-        var _didIteratorError27 = false;
-        var _iteratorError27 = undefined;
+        var _iteratorNormalCompletion28 = true;
+        var _didIteratorError28 = false;
+        var _iteratorError28 = undefined;
 
         try {
-          for (var _iterator27 = items[Symbol.iterator](), _step27; !(_iteratorNormalCompletion27 = (_step27 = _iterator27.next()).done); _iteratorNormalCompletion27 = true) {
-            var item = _step27.value;
+          for (var _iterator28 = items[Symbol.iterator](), _step28; !(_iteratorNormalCompletion28 = (_step28 = _iterator28.next()).done); _iteratorNormalCompletion28 = true) {
+            var item = _step28.value;
 
             if (item.deleted) {
               this.modelManager.removeItemLocally(item);
             }
           }
         } catch (err) {
-          _didIteratorError27 = true;
-          _iteratorError27 = err;
+          _didIteratorError28 = true;
+          _iteratorError28 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion27 && _iterator27.return) {
-              _iterator27.return();
+            if (!_iteratorNormalCompletion28 && _iterator28.return) {
+              _iterator28.return();
             }
           } finally {
-            if (_didIteratorError27) {
-              throw _iteratorError27;
+            if (_didIteratorError28) {
+              throw _iteratorError28;
             }
           }
         }
@@ -38049,27 +38149,27 @@ var SyncManager = function () {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback) {
       var items = this.modelManager.allItems;
-      var _iteratorNormalCompletion28 = true;
-      var _didIteratorError28 = false;
-      var _iteratorError28 = undefined;
+      var _iteratorNormalCompletion29 = true;
+      var _didIteratorError29 = false;
+      var _iteratorError29 = undefined;
 
       try {
-        for (var _iterator28 = items[Symbol.iterator](), _step28; !(_iteratorNormalCompletion28 = (_step28 = _iterator28.next()).done); _iteratorNormalCompletion28 = true) {
-          var item = _step28.value;
+        for (var _iterator29 = items[Symbol.iterator](), _step29; !(_iteratorNormalCompletion29 = (_step29 = _iterator29.next()).done); _iteratorNormalCompletion29 = true) {
+          var item = _step29.value;
 
           item.setDirty(true);
         }
       } catch (err) {
-        _didIteratorError28 = true;
-        _iteratorError28 = err;
+        _didIteratorError29 = true;
+        _iteratorError29 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion28 && _iterator28.return) {
-            _iterator28.return();
+          if (!_iteratorNormalCompletion29 && _iterator29.return) {
+            _iterator29.return();
           }
         } finally {
-          if (_didIteratorError28) {
-            throw _iteratorError28;
+          if (_didIteratorError29) {
+            throw _iteratorError29;
           }
         }
       }
@@ -38089,27 +38189,27 @@ var SyncManager = function () {
         allCallbacks.push(currentCallback);
       }
       if (allCallbacks.length) {
-        var _iteratorNormalCompletion29 = true;
-        var _didIteratorError29 = false;
-        var _iteratorError29 = undefined;
+        var _iteratorNormalCompletion30 = true;
+        var _didIteratorError30 = false;
+        var _iteratorError30 = undefined;
 
         try {
-          for (var _iterator29 = allCallbacks[Symbol.iterator](), _step29; !(_iteratorNormalCompletion29 = (_step29 = _iterator29.next()).done); _iteratorNormalCompletion29 = true) {
-            var eachCallback = _step29.value;
+          for (var _iterator30 = allCallbacks[Symbol.iterator](), _step30; !(_iteratorNormalCompletion30 = (_step30 = _iterator30.next()).done); _iteratorNormalCompletion30 = true) {
+            var eachCallback = _step30.value;
 
             eachCallback(response);
           }
         } catch (err) {
-          _didIteratorError29 = true;
-          _iteratorError29 = err;
+          _didIteratorError30 = true;
+          _iteratorError30 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion29 && _iterator29.return) {
-              _iterator29.return();
+            if (!_iteratorNormalCompletion30 && _iterator30.return) {
+              _iterator30.return();
             }
           } finally {
-            if (_didIteratorError29) {
-              throw _iteratorError29;
+            if (_didIteratorError30) {
+              throw _iteratorError30;
             }
           }
         }
@@ -38308,13 +38408,13 @@ var SyncManager = function () {
     key: 'handleSyncConflicts',
     value: function handleSyncConflicts(items) {
       var needsSync = false;
-      var _iteratorNormalCompletion30 = true;
-      var _didIteratorError30 = false;
-      var _iteratorError30 = undefined;
+      var _iteratorNormalCompletion31 = true;
+      var _didIteratorError31 = false;
+      var _iteratorError31 = undefined;
 
       try {
-        for (var _iterator30 = items[Symbol.iterator](), _step30; !(_iteratorNormalCompletion30 = (_step30 = _iterator30.next()).done); _iteratorNormalCompletion30 = true) {
-          var item = _step30.value;
+        for (var _iterator31 = items[Symbol.iterator](), _step31; !(_iteratorNormalCompletion31 = (_step31 = _iterator31.next()).done); _iteratorNormalCompletion31 = true) {
+          var item = _step31.value;
 
           if (item.conflict_of) {
             var original = this.modelManager.findItem(item.conflict_of);
@@ -38326,16 +38426,16 @@ var SyncManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError30 = true;
-        _iteratorError30 = err;
+        _didIteratorError31 = true;
+        _iteratorError31 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion30 && _iterator30.return) {
-            _iterator30.return();
+          if (!_iteratorNormalCompletion31 && _iterator31.return) {
+            _iterator31.return();
           }
         } finally {
-          if (_didIteratorError30) {
-            throw _iteratorError30;
+          if (_didIteratorError31) {
+            throw _iteratorError31;
           }
         }
       }
@@ -38504,6 +38604,10 @@ var ThemeManager = function () {
   }, {
     key: 'displayNameForThemeFile',
     value: function displayNameForThemeFile(fileName) {
+      var fromParam = getParameterByName("name", fileName);
+      if (fromParam) {
+        return fromParam;
+      }
       var name = fileName.split(".")[0];
       var cleaned = name.split("-").join(" ");
       return this.capitalizeString(cleaned);
@@ -38590,7 +38694,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    <div ng-if='!user'>\n" +
     "      <div class='mb-10'>\n" +
     "        <div class='step-one' ng-if='!formData.showLogin &amp;&amp; !formData.showRegister'>\n" +
-    "          <h3>To enable encryption and sync, sign in or register (free).</h3>\n" +
+    "          <h3>Sign in or register to enable sync and encryption.</h3>\n" +
     "          <div class='small-v-space'></div>\n" +
     "          <div class='button-group mt-5'>\n" +
     "            <button class='ui-button half-button' ng-click='formData.showLogin = true'>\n" +
@@ -38600,7 +38704,6 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "              <span>Register</span>\n" +
     "            </button>\n" +
     "          </div>\n" +
-    "          <a class='block mt-10 center-align centered' href='https://standardnotes.org/your-data' target='_blank'>Learn more about Standard Notes accounts.</a>\n" +
     "        </div>\n" +
     "        <div class='step-two' ng-if='formData.showLogin || formData.showRegister'>\n" +
     "          <div class='float-group h20'>\n" +
@@ -38614,8 +38717,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "            <a class='block' ng-click='formData.showAdvanced = !formData.showAdvanced'>Advanced Options</a>\n" +
     "            <div class='advanced-options mt-10' ng-if='formData.showAdvanced'>\n" +
     "              <div class='float-group'>\n" +
-    "                <label class='pull-left'>Standard File Domain</label>\n" +
-    "                <a class='pull-right' href='https://standardnotes.org/your-data' target='_blank'>ⓘ</a>\n" +
+    "                <label class='pull-left'>Sync Server Domain</label>\n" +
     "              </div>\n" +
     "              <input class='form-control mt-5' name='server' ng-model='formData.url' placeholder='Server URL' required type='text'>\n" +
     "            </div>\n" +
@@ -38645,16 +38747,16 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        <span ng-if='syncStatus.total &gt; 0'>{{syncStatus.current}}/{{syncStatus.total}}</span>\n" +
     "      </div>\n" +
     "      <p class='bold mt-10 red block' ng-if='syncStatus.error'>Error syncing: {{syncStatus.error.message}}</p>\n" +
-    "      <a class='block mt-15' href='{{dashboardURL()}}' target='_blank'>→ Standard File Dashboard</a>\n" +
+    "      <a class='block mt-15' href='{{dashboardURL()}}' target='_blank'>Data Dashboard</a>\n" +
     "      <a class='block mt-5' ng-click='showCredentials = !showCredentials'>Show Credentials</a>\n" +
     "      <section class='gray-bg mt-10 medium-padding' ng-if='showCredentials'>\n" +
     "        <label class='block'>\n" +
     "          Encryption key:\n" +
-    "          <div class='wrap normal mt-1'>{{encryptionKey()}}</div>\n" +
+    "          <div class='wrap normal mt-1 selectable'>{{encryptionKey()}}</div>\n" +
     "        </label>\n" +
     "        <label class='block mt-5 mb-0'>\n" +
     "          Server password:\n" +
-    "          <div class='wrap normal mt-1'>{{serverPassword() ? serverPassword() : 'Not available. Sign out then sign back in to compute.'}}</div>\n" +
+    "          <div class='wrap normal mt-1 selectable'>{{serverPassword() ? serverPassword() : 'Not available. Sign out then sign back in to compute.'}}</div>\n" +
     "        </label>\n" +
     "      </section>\n" +
     "      <a class='block mt-5' ng-click='newPasswordData.changePassword = !newPasswordData.changePassword'>Change Password</a>\n" +
@@ -38987,7 +39089,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        </div>\n" +
     "        <div ng-if='action.showNestedActions'>\n" +
     "          <ul class='mt-10'>\n" +
-    "            <li class='menu-item white-bg' ng-click='executeAction(subaction, extension);' ng-repeat='subaction in action.subactions' style='margin-top: -1px;'>\n" +
+    "            <li class='menu-item white-bg nested-hover' ng-click='executeAction(subaction, extension, action); $event.stopPropagation();' ng-repeat='subaction in action.subactions' style='margin-top: -1px;'>\n" +
     "              <div class='menu-item-title'>{{subaction.label}}</div>\n" +
     "              <div class='menu-item-subtitle'>{{subaction.desc}}</div>\n" +
     "              <span ng-if='subaction.running'>\n" +
@@ -39113,24 +39215,13 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    </div>\n" +
     "    <ul>\n" +
     "      <li class='menu-item' ng-click='selectEditor($event, editor)' ng-repeat='editor in editorManager.externalEditors'>\n" +
-    "        <div class='left-side'>\n" +
-    "          <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
-    "          <div class='menu-item-title'>{{editor.name}}</div>\n" +
-    "          <a class='faded' ng-click='setDefaultEditor(editor); $event.stopPropagation();' ng-if='!editor.default'>Set Default</a>\n" +
-    "          <a class='blue' ng-click='removeDefaultEditor(editor); $event.stopPropagation();' ng-if='editor.default'>Remove Default</a>\n" +
-    "          <a class='faded' ng-click='editor.showUrl = !editor.showUrl; $event.stopPropagation();'>Show URL</a>\n" +
-    "          <div class='menu-item-subtitle wrap mt-5' ng-if='editor.showUrl'>{{editor.url}}</div>\n" +
-    "          <span class='inline ml-10' ng-if='selectedEditor === editor'>✓</span>\n" +
-    "        </div>\n" +
-    "        <div class='right-side'>\n" +
-    "          <button class='white medium' ng-click='deleteEditor(editor); $event.stopPropagation();' style='width: 50px; height: 40px;'>☓</button>\n" +
+    "        <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
+    "        <div class='menu-item-title'>\n" +
+    "          {{editor.name}}\n" +
+    "          <span class='inline blue' ng-if='selectedEditor === editor' style='margin-left: 8px;'>✓</span>\n" +
     "        </div>\n" +
     "      </li>\n" +
     "    </ul>\n" +
-    "  </div>\n" +
-    "  <div class='footer mt-10'>\n" +
-    "    <input class='form-control' ng-keyup='$event.keyCode == 13 &amp;&amp; submitNewEditorRequest()' ng-model='formData.url' placeholder='Add new editor via URL'>\n" +
-    "    <a class='block blue' href='https://standardnotes.org/extensions' target='_blank'>Available Editors</a>\n" +
     "  </div>\n" +
     "</ul>\n"
   );
@@ -39183,99 +39274,147 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 
 
   $templateCache.put('frontend/directives/global-extensions-menu.html',
-    "<div class='panel panel-default account-panel panel-right'>\n" +
+    "<div class='panel panel-default account-panel panel-right' id='global-ext-menu'>\n" +
     "  <div class='panel-body'>\n" +
-    "    <div class='white-bg medium-padding ext-section' ng-class=\"{'opened': state.showDataExts}\">\n" +
-    "      <h1>\n" +
-    "        <a ng-click='state.showDataExts = !state.showDataExts'>Action Extensions</a>\n" +
-    "      </h1>\n" +
-    "      <p style='margin-top: 3px;'>These extensions perform actions on a specific note. Choose \"Actions\" in the note editor to use installed actions.</p>\n" +
-    "      <div class='mt-10' ng-if='state.showDataExts'>\n" +
-    "        <div ng-if='!extensionManager.extensions.length' style='font-size: 15px;'>No extensions installed</div>\n" +
-    "        <div ng-if='extensionManager.extensions.length'>\n" +
-    "          <section class='gray-bg inline-h mb-10 medium-padding' ng-init='extension.formData = {}' ng-repeat=\"extension in extensionManager.extensions | orderBy: 'name'\">\n" +
-    "            <h3>{{extension.name}}</h3>\n" +
-    "            <p ng-if='extension.description'>{{extension.description}}</p>\n" +
-    "            <div class='mt-10'>\n" +
-    "              <label class='block'>Access Type</label>\n" +
-    "              <label class='normal block'>\n" +
-    "                <input ng-change='changeExtensionEncryptionFormat(true, extension)' ng-model='extension.encrypted' ng-value='true' type='radio'>\n" +
-    "                Encrypted\n" +
-    "              </label>\n" +
-    "              <label class='normal block'>\n" +
-    "                <input ng-change='changeExtensionEncryptionFormat(false, extension)' ng-model='extension.encrypted' ng-value='false' type='radio'>\n" +
-    "                Decrypted\n" +
-    "              </label>\n" +
-    "            </div>\n" +
-    "            <div class='small-v-space'></div>\n" +
-    "            <section class='inline-h white-bg medium-padding mb-10 pb-4' ng-repeat='action in extension.actionsInGlobalContext()'>\n" +
-    "              <label class='block'>{{action.label}}</label>\n" +
-    "              <em style='font-style: italic;'>{{action.desc}}</em>\n" +
-    "              <em ng-if=\"action.repeat_mode == 'watch'\">\n" +
-    "                Repeats when a change is made to your items.\n" +
-    "              </em>\n" +
-    "              <em ng-if=\"action.repeat_mode == 'loop'\">\n" +
-    "                Repeats at most once every {{action.repeat_timeout}} seconds\n" +
-    "              </em>\n" +
-    "              <div>\n" +
-    "                <a ng-click='action.showPermissions = !action.showPermissions'>{{action.showPermissions ? \"Hide permissions\" : \"Show permissions\"}}</a>\n" +
-    "                <div ng-if='action.showPermissions'>\n" +
-    "                  {{action.permissionsString()}}\n" +
-    "                  <label class='block normal'>{{action.encryptionModeString()}}</label>\n" +
-    "                </div>\n" +
-    "              </div>\n" +
-    "              <div>\n" +
-    "                <div class='mt-5' ng-if='action.repeat_mode'>\n" +
-    "                  <button class='light' ng-click='extensionManager.disableRepeatAction(action, extension)' ng-if='extensionManager.isRepeatActionEnabled(action)'>Disable</button>\n" +
-    "                  <button class='light' ng-click='extensionManager.enableRepeatAction(action, extension)' ng-if='!extensionManager.isRepeatActionEnabled(action)'>Enable</button>\n" +
-    "                </div>\n" +
-    "                <button class='light mt-10' ng-click='selectedAction(action, extension)' ng-if='!action.running &amp;&amp; !action.repeat_mode'>\n" +
-    "                  Perform Action\n" +
-    "                </button>\n" +
-    "                <div class='spinner mb-5 block' ng-if='action.running'></div>\n" +
-    "              </div>\n" +
-    "              <p class='mb-5 mt-5 small' ng-if='!action.error &amp;&amp; action.lastExecuted &amp;&amp; !action.running'>\n" +
-    "                Last run {{action.lastExecuted | appDateTime}}\n" +
-    "              </p>\n" +
-    "              <label class='red' ng-if='action.error'>\n" +
-    "                Error performing action.\n" +
-    "              </label>\n" +
-    "            </section>\n" +
-    "            <a class='block mt-5' ng-click='extension.showURL = !extension.showURL'>Show URL</a>\n" +
-    "            <p class='wrap' ng-if='extension.showURL'>{{extension.url}}</p>\n" +
-    "            <a class='block mt-5' ng-click='deleteExtension(extension)'>Remove extension</a>\n" +
-    "          </section>\n" +
+    "    <div class='container'>\n" +
+    "      <div class='float-group h20'>\n" +
+    "        <h1 class='blue pull-left'>Extensions</h1>\n" +
+    "        <a class='block pull-right dashboard-link' href='https://dashboard.standardnotes.org' target='_blank'>Open Dashboard</a>\n" +
+    "      </div>\n" +
+    "      <div class='clear' ng-if='!extensionManager.extensions.length &amp;&amp; !themeManager.themes.length &amp;&amp; !editorManager.externalEditors.length'>\n" +
+    "        <p>Customize your experience with editors, themes, and actions.</p>\n" +
+    "        <div class='blue-box mt-10'>\n" +
+    "          <h3>Available as part of the Extended subscription.</h3>\n" +
+    "          <p class='mt-5'>Note history</p>\n" +
+    "          <p class='mt-5'>Automated backups</p>\n" +
+    "          <p class='mt-5'>All editors, themes, and actions</p>\n" +
+    "          <a href='https://standardnotes.org/extensions' target='_blank'>\n" +
+    "            <button class='mt-10'>\n" +
+    "              <h3>Learn More</h3>\n" +
+    "            </button>\n" +
+    "          </a>\n" +
     "        </div>\n" +
-    "        <div class='large-v-space'></div>\n" +
-    "        <a class='block' ng-click='toggleExtensionForm()'>Add New Extension</a>\n" +
-    "        <form class='mt-10 mb-10' ng-if='showNewExtensionForm'>\n" +
-    "          <input autofocus='autofocus' class='form-control' name='url' ng-model='newExtensionData.url' placeholder='Extension URL' required type='url'>\n" +
-    "          <button class='ui-button block' data-size='s' data-style='expand-right' ng-click='submitNewExtensionForm()' state='buttonState' type='submit'>\n" +
-    "            Add Extension\n" +
-    "          </button>\n" +
-    "        </form>\n" +
-    "        <a class='block mt-5' ng-click='reloadExtensionsPressed()' ng-if='extensionManager.extensions.length &gt; 0'>Reload all extensions</a>\n" +
-    "        <a class='block mt-5' href='https://standardnotes.org/extensions' target='_blank'>Available Extensions</a>\n" +
     "      </div>\n" +
     "    </div>\n" +
-    "    <div class='white-bg medium-padding mt-10 ext-section' ng-class=\"{'opened': state.showThemes}\">\n" +
-    "      <h1>\n" +
-    "        <a ng-click='state.showThemes = !state.showThemes'>Themes</a>\n" +
-    "      </h1>\n" +
-    "      <div ng-if='state.showThemes'>\n" +
-    "        <section ng-repeat='theme in themeManager.themes'>\n" +
-    "          <label>{{theme.name}}</label>\n" +
-    "          <p>{{theme.url}}</p>\n" +
-    "          <a ng-click='themeManager.activateTheme(theme)' ng-if='!themeManager.isThemeActive(theme)'>Activate</a>\n" +
-    "          <a ng-click='themeManager.deactivateTheme(theme)' ng-if='themeManager.isThemeActive(theme)'>Deactivate</a>\n" +
-    "          <a class='red ml-2' ng-click='deleteTheme(theme)'>Delete</a>\n" +
-    "        </section>\n" +
-    "        <section>\n" +
-    "          <p class='bold mb-5'>Install New Theme</p>\n" +
-    "          <input autofocus='autofocus' class='form-control' name='url' ng-keyup='$event.keyCode == 13 &amp;&amp; submitTheme();' ng-model='state.themeUrl' placeholder='New Theme URL' required type='url'>\n" +
-    "        </section>\n" +
-    "        <a class='block mt-5' href='https://standardnotes.org/extensions/themes' target='_blank'>Available Themes</a>\n" +
+    "    <div ng-if='themeManager.themes.length &gt; 0'>\n" +
+    "      <div class='container no-bottom section-margin'>\n" +
+    "        <h2>Themes</h2>\n" +
     "      </div>\n" +
+    "      <ul>\n" +
+    "        <li ng-click='theme.showDetails = !theme.showDetails' ng-repeat='theme in themeManager.themes'>\n" +
+    "          <div class='container'>\n" +
+    "            <h3>{{theme.name}}</h3>\n" +
+    "            <a ng-click='themeManager.activateTheme(theme); $event.stopPropagation();' ng-if='!themeManager.isThemeActive(theme)'>Activate</a>\n" +
+    "            <a ng-click='themeManager.deactivateTheme(theme); $event.stopPropagation();' ng-if='themeManager.isThemeActive(theme)'>Deactivate</a>\n" +
+    "            <div ng-if='theme.showDetails'>\n" +
+    "              <div class='link-group'>\n" +
+    "                <a class='red' ng-click='deleteTheme(theme); $event.stopPropagation();'>Delete</a>\n" +
+    "                <a ng-click='theme.showLink = !theme.showLink; $event.stopPropagation();'>Show Link</a>\n" +
+    "                <p class='small selectable wrap' ng-if='theme.showLink'>\n" +
+    "                  {{theme.url}}\n" +
+    "                </p>\n" +
+    "              </div>\n" +
+    "            </div>\n" +
+    "          </div>\n" +
+    "        </li>\n" +
+    "      </ul>\n" +
+    "    </div>\n" +
+    "    <div ng-if='editorManager.externalEditors.length &gt; 0'>\n" +
+    "      <div class='container no-bottom section-margin'>\n" +
+    "        <h2>Editors</h2>\n" +
+    "        <p style='margin-top: 3px;'>Choose \"Editor\" in the note menu to use an editor for a specific note.</p>\n" +
+    "      </div>\n" +
+    "      <ul>\n" +
+    "        <li ng-click='editor.showDetails = !editor.showDetails' ng-repeat='editor in editorManager.externalEditors'>\n" +
+    "          <div class='container'>\n" +
+    "            <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
+    "            <h3>{{editor.name}}</h3>\n" +
+    "            <div class='mt-5' ng-if='editor.showDetails'>\n" +
+    "              <div class='link-group'>\n" +
+    "                <a ng-click='setDefaultEditor(editor); $event.stopPropagation();' ng-if='!editor.default'>Make Default</a>\n" +
+    "                <a class='blue' ng-click='removeDefaultEditor(editor); $event.stopPropagation();' ng-if='editor.default'>Remove as Default</a>\n" +
+    "                <a ng-click='editor.showUrl = !editor.showUrl; $event.stopPropagation();'>Show Link</a>\n" +
+    "                <a class='red' ng-click='deleteEditor(editor); $event.stopPropagation();'>Delete</a>\n" +
+    "              </div>\n" +
+    "              <div class='wrap mt-5 selectable' ng-if='editor.showUrl'>{{editor.url}}</div>\n" +
+    "            </div>\n" +
+    "          </div>\n" +
+    "        </li>\n" +
+    "      </ul>\n" +
+    "    </div>\n" +
+    "    <div ng-if='extensionManager.extensions.length'>\n" +
+    "      <div class='container no-bottom section-margin'>\n" +
+    "        <h2>Actions</h2>\n" +
+    "        <p style='margin-top: 3px;'>Choose \"Actions\" in the note editor to use installed actions.</p>\n" +
+    "      </div>\n" +
+    "      <ul>\n" +
+    "        <li ng-click='extension.showDetails = !extension.showDetails' ng-init='extension.formData = {}' ng-repeat=\"extension in extensionManager.extensions | orderBy: 'name'\">\n" +
+    "          <div class='container'>\n" +
+    "            <h3>{{extension.name}}</h3>\n" +
+    "            <p class='small' ng-if='extension.description'>{{extension.description}}</p>\n" +
+    "            <div ng-if='extension.showDetails'>\n" +
+    "              <div class='mt-10'>\n" +
+    "                <label class='block'>Access Type</label>\n" +
+    "                <label class='normal block'>\n" +
+    "                  <input ng-change='changeExtensionEncryptionFormat(true, extension)' ng-model='extension.encrypted' ng-value='true' type='radio'>\n" +
+    "                  Encrypted\n" +
+    "                </label>\n" +
+    "                <label class='normal block'>\n" +
+    "                  <input ng-change='changeExtensionEncryptionFormat(false, extension)' ng-model='extension.encrypted' ng-value='false' type='radio'>\n" +
+    "                  Decrypted\n" +
+    "                </label>\n" +
+    "              </div>\n" +
+    "              <div class='small-v-space'></div>\n" +
+    "              <ul ng-repeat='action in extension.actionsInGlobalContext()'>\n" +
+    "                <li>\n" +
+    "                  <label class='block'>{{action.label}}</label>\n" +
+    "                  <em style='font-style: italic;'>{{action.desc}}</em>\n" +
+    "                  <em ng-if=\"action.repeat_mode == 'watch'\">\n" +
+    "                    Repeats when a change is made to your items.\n" +
+    "                  </em>\n" +
+    "                  <em ng-if=\"action.repeat_mode == 'loop'\">\n" +
+    "                    Repeats at most once every {{action.repeat_timeout}} seconds\n" +
+    "                  </em>\n" +
+    "                  <div>\n" +
+    "                    <a ng-click='action.showPermissions = !action.showPermissions'>{{action.showPermissions ? \"Hide permissions\" : \"Show permissions\"}}</a>\n" +
+    "                    <div ng-if='action.showPermissions'>\n" +
+    "                      {{action.permissionsString()}}\n" +
+    "                      <label class='block normal'>{{action.encryptionModeString()}}</label>\n" +
+    "                    </div>\n" +
+    "                  </div>\n" +
+    "                  <div>\n" +
+    "                    <div class='mt-5' ng-if='action.repeat_mode'>\n" +
+    "                      <button class='light' ng-click='extensionManager.disableRepeatAction(action, extension); $event.stopPropagation();' ng-if='extensionManager.isRepeatActionEnabled(action)'>Disable</button>\n" +
+    "                      <button class='light' ng-click='extensionManager.enableRepeatAction(action, extension); $event.stopPropagation();' ng-if='!extensionManager.isRepeatActionEnabled(action)'>Enable</button>\n" +
+    "                    </div>\n" +
+    "                    <button class='light mt-10' ng-click='selectedAction(action, extension); $event.stopPropagation();' ng-if='!action.running &amp;&amp; !action.repeat_mode'>\n" +
+    "                      Perform Action\n" +
+    "                    </button>\n" +
+    "                    <div class='spinner mb-5 block' ng-if='action.running'></div>\n" +
+    "                  </div>\n" +
+    "                  <p class='mb-5 mt-5 small' ng-if='!action.error &amp;&amp; action.lastExecuted &amp;&amp; !action.running'>\n" +
+    "                    Last run {{action.lastExecuted | appDateTime}}\n" +
+    "                  </p>\n" +
+    "                  <label class='red' ng-if='action.error'>\n" +
+    "                    Error performing action.\n" +
+    "                  </label>\n" +
+    "                </li>\n" +
+    "              </ul>\n" +
+    "              <a class='block mt-5' ng-click='extension.showURL = !extension.showURL; $event.stopPropagation();'>Show Link</a>\n" +
+    "              <p class='wrap selectable small' ng-if='extension.showURL'>{{extension.url}}</p>\n" +
+    "              <a class='block mt-5' ng-click='deleteActionExtension(extension); $event.stopPropagation();'>Remove extension</a>\n" +
+    "            </div>\n" +
+    "          </div>\n" +
+    "        </li>\n" +
+    "      </ul>\n" +
+    "    </div>\n" +
+    "    <div class='container section-margin'>\n" +
+    "      <h2 class='blue'>Install</h2>\n" +
+    "      <p class='faded'>Enter an install link</p>\n" +
+    "      <form class='mt-10 mb-10'>\n" +
+    "        <input autocomplete='off' autofocus='autofocus' class='form-control' name='url' ng-keyup='$event.keyCode == 13 &amp;&amp; submitInstallLink();' ng-model='formData.installLink' required type='url'>\n" +
+    "      </form>\n" +
+    "      <p class='blue' ng-if='formData.successfullyInstalled'>Successfully installed extension.</p>\n" +
     "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
