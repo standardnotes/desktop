@@ -33725,7 +33725,7 @@ if (!IEOrEdge && window.crypto && window.crypto.subtle) {
   Neeto.crypto = new SNCryptoJS();
 }
 
-angular.module('app.frontend', []);angular.module('app.frontend').config(['$locationProvider', function ($locationProvider) {
+angular.module('app.frontend', []);angular.module('app.frontend').config(function ($locationProvider) {
 
   var runningInElectron = window && window.process && window.process.type && window.process.versions["electron"];
   if (!runningInElectron) {
@@ -33738,9 +33738,9 @@ angular.module('app.frontend', []);angular.module('app.frontend').config(['$loca
   } else {
     $locationProvider.html5Mode(false);
   }
-}]);
+});
 ;
-var BaseCtrl = function BaseCtrl(syncManager, dbManager, analyticsManager) {
+var BaseCtrl = function BaseCtrl($rootScope, $scope, syncManager, dbManager, analyticsManager) {
   _classCallCheck(this, BaseCtrl);
 
   dbManager.openDatabase(null, function () {
@@ -33748,8 +33748,11 @@ var BaseCtrl = function BaseCtrl(syncManager, dbManager, analyticsManager) {
     syncManager.clearSyncToken();
     syncManager.sync();
   });
+
+  $scope.onUpdateAvailable = function (version) {
+    $rootScope.$broadcast('new-update-available', version);
+  };
 };
-BaseCtrl.$inject = ['syncManager', 'dbManager', 'analyticsManager'];
 
 function getParameterByName(name, url) {
   name = name.replace(/[\[\]]/g, "\\$&");
@@ -33761,7 +33764,7 @@ function getParameterByName(name, url) {
 }
 
 angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
-;angular.module('app.frontend').directive("editorSection", ['$timeout', '$sce', function ($timeout, $sce) {
+;angular.module('app.frontend').directive("editorSection", function ($timeout, $sce) {
   return {
     restrict: 'E',
     scope: {
@@ -33798,7 +33801,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', 'editorManager', 'themeManager', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager, themeManager) {
+}).controller('EditorCtrl', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager, themeManager) {
 
   $rootScope.$on("theme-changed", function () {
     this.postThemeToExternalEditor();
@@ -34116,14 +34119,14 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     this.note.dummy = false;
     this.updateTags()(this.note, tags);
   };
-}]);
-;angular.module('app.frontend').directive("header", ['authManager', function (authManager) {
+});
+;angular.module('app.frontend').directive("footer", function (authManager) {
   return {
     restrict: 'E',
     scope: {},
-    templateUrl: 'frontend/header.html',
+    templateUrl: 'frontend/footer.html',
     replace: true,
-    controller: 'HeaderCtrl',
+    controller: 'FooterCtrl',
     controllerAs: 'ctrl',
     bindToController: true,
 
@@ -34139,7 +34142,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}]).controller('HeaderCtrl', ['authManager', 'modelManager', '$timeout', 'dbManager', 'syncManager', function (authManager, modelManager, $timeout, dbManager, syncManager) {
+}).controller('FooterCtrl', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager) {
 
   this.user = authManager.user;
 
@@ -34195,8 +34198,24 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
   this.syncUpdated = function () {
     this.lastSyncDate = new Date();
   };
-}]);
-;angular.module('app.frontend').controller('HomeCtrl', ['$scope', '$location', '$rootScope', '$timeout', 'modelManager', 'syncManager', 'authManager', 'themeManager', function ($scope, $location, $rootScope, $timeout, modelManager, syncManager, authManager, themeManager) {
+
+  $rootScope.$on("new-update-available", function (version) {
+    $timeout(function () {
+      // timeout calls apply() which is needed
+      this.onNewUpdateAvailable();
+    }.bind(this));
+  }.bind(this));
+
+  this.onNewUpdateAvailable = function () {
+    this.newUpdateAvailable = true;
+  };
+
+  this.clickedNewUpdateAnnouncement = function () {
+    this.newUpdateAvailable = false;
+    alert("A new update is ready to install. Updates address performance and security issues, as well as bug fixes and feature enhancements. Simply quit Standard Notes and re-open it for the update to be applied.");
+  };
+});
+;angular.module('app.frontend').controller('HomeCtrl', function ($scope, $location, $rootScope, $timeout, modelManager, syncManager, authManager, themeManager) {
 
   function urlParam(key) {
     return $location.search()[key];
@@ -34484,7 +34503,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       }
     });
   };
-}]);
+});
 ;angular.module('app.frontend').directive("notesSection", function () {
   return {
     scope: {
@@ -34516,7 +34535,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}).controller('NotesCtrl', ['authManager', '$timeout', '$rootScope', 'modelManager', function (authManager, $timeout, $rootScope, modelManager) {
+}).controller('NotesCtrl', function (authManager, $timeout, $rootScope, modelManager) {
 
   this.sortBy = localStorage.getItem("sortBy") || "created_at";
 
@@ -34615,7 +34634,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     this.sortBy = type;
     localStorage.setItem("sortBy", type);
   };
-}]);
+});
 ;angular.module('app.frontend').directive("tagsSection", function () {
   return {
     restrict: 'E',
@@ -34649,7 +34668,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}).controller('TagsCtrl', ['modelManager', '$timeout', function (modelManager, $timeout) {
+}).controller('TagsCtrl', function (modelManager, $timeout) {
 
   var initialLoad = true;
 
@@ -34732,7 +34751,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     var validNotes = Note.filterDummyNotes(tag.notes);
     return validNotes.length;
   };
-}]);
+});
 ;
 var Item = function () {
   function Item(json_obj) {
@@ -35649,7 +35668,6 @@ var ItemParams = function () {
 
 ;
 var AnalyticsManager = function () {
-  AnalyticsManager.$inject = ['authManager'];
   function AnalyticsManager(authManager) {
     _classCallCheck(this, AnalyticsManager);
 
@@ -35717,9 +35735,9 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
     return domain;
   }
 
-  this.$get = ['$rootScope', 'httpManager', 'modelManager', function ($rootScope, httpManager, modelManager) {
+  this.$get = function ($rootScope, httpManager, modelManager) {
     return new AuthManager($rootScope, httpManager, modelManager);
-  }];
+  };
 
   function AuthManager($rootScope, httpManager, modelManager) {
 
@@ -35874,8 +35892,12 @@ var DBManager = function () {
       var request = window.indexedDB.open("standardnotes", 1);
 
       request.onerror = function (event) {
-        alert("Offline database issue: " + event.target.errorCode);
-        console.log("Offline database issue:", event);
+        if (event.target.errorCode) {
+          alert("Offline database issue: " + event.target.errorCode);
+        } else {
+          alert("There was an issue loading your offline database. This usually happens when you have two windows of the app open at the same time. Please close any other app instances and reload the page.");
+        }
+        console.error("Offline database issue:", event);
         if (callback) {
           callback(null);
         }
@@ -36045,7 +36067,7 @@ angular.module('app.frontend').service('dbManager', DBManager);
     }
   };
 }]);
-;angular.module('app.frontend').directive('delayHide', ['$timeout', function ($timeout) {
+;angular.module('app.frontend').directive('delayHide', function ($timeout) {
   return {
     restrict: 'A',
     scope: {
@@ -36088,7 +36110,7 @@ angular.module('app.frontend').service('dbManager', DBManager);
     }
 
   };
-}]);
+});
 ;angular.module('app.frontend').directive('fileChange', function () {
   return {
     restrict: 'A',
@@ -36164,7 +36186,7 @@ var AccountMenu = function () {
 
   _createClass(AccountMenu, [{
     key: 'controller',
-    value: ['$scope', 'authManager', 'modelManager', 'syncManager', 'dbManager', 'analyticsManager', '$timeout', function controller($scope, authManager, modelManager, syncManager, dbManager, analyticsManager, $timeout) {
+    value: function controller($scope, authManager, modelManager, syncManager, dbManager, analyticsManager, $timeout) {
       'ngInject';
 
       $scope.formData = { mergeLocal: true, url: syncManager.serverURL };
@@ -36512,7 +36534,7 @@ var AccountMenu = function () {
         var data = new Blob([JSON.stringify(data, null, 2 /* pretty print */)], { type: 'text/json' });
         return data;
       };
-    }]
+    }
   }]);
 
   return AccountMenu;
@@ -36535,7 +36557,7 @@ var ContextualExtensionsMenu = function () {
 
   _createClass(ContextualExtensionsMenu, [{
     key: 'controller',
-    value: ['$scope', 'modelManager', 'extensionManager', function controller($scope, modelManager, extensionManager) {
+    value: function controller($scope, modelManager, extensionManager) {
       'ngInject';
 
       $scope.renderData = {};
@@ -36632,7 +36654,7 @@ var ContextualExtensionsMenu = function () {
       $scope.accessTypeForExtension = function (extension) {
         return extensionManager.extensionUsesEncryptedData(extension) ? "encrypted" : "decrypted";
       };
-    }]
+    }
   }]);
 
   return ContextualExtensionsMenu;
@@ -36656,7 +36678,7 @@ var EditorMenu = function () {
 
   _createClass(EditorMenu, [{
     key: 'controller',
-    value: ['$scope', 'editorManager', function controller($scope, editorManager) {
+    value: function controller($scope, editorManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -36666,7 +36688,7 @@ var EditorMenu = function () {
         editor.conflict_of = null; // clear conflict if applicable
         $scope.callback()(editor);
       };
-    }]
+    }
   }]);
 
   return EditorMenu;
@@ -36687,7 +36709,7 @@ var GlobalExtensionsMenu = function () {
 
   _createClass(GlobalExtensionsMenu, [{
     key: 'controller',
-    value: ['$scope', 'extensionManager', 'syncManager', 'modelManager', 'themeManager', 'editorManager', function controller($scope, extensionManager, syncManager, modelManager, themeManager, editorManager) {
+    value: function controller($scope, extensionManager, syncManager, modelManager, themeManager, editorManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -36828,7 +36850,7 @@ var GlobalExtensionsMenu = function () {
         editorManager.addNewEditorFromURL(link);
         completion();
       };
-    }]
+    }
   }]);
 
   return GlobalExtensionsMenu;
@@ -36839,7 +36861,6 @@ angular.module('app.frontend').directive('globalExtensionsMenu', function () {
 });
 ;
 var EditorManager = function () {
-  EditorManager.$inject = ['$rootScope', 'modelManager', 'syncManager'];
   function EditorManager($rootScope, modelManager, syncManager) {
     _classCallCheck(this, EditorManager);
 
@@ -36957,7 +36978,6 @@ var EditorManager = function () {
 angular.module('app.frontend').service('editorManager', EditorManager);
 ;
 var ExtensionManager = function () {
-  ExtensionManager.$inject = ['httpManager', 'modelManager', 'authManager', 'syncManager'];
   function ExtensionManager(httpManager, modelManager, authManager, syncManager) {
     _classCallCheck(this, ExtensionManager);
 
@@ -37133,16 +37153,18 @@ var ExtensionManager = function () {
         if (scopedExtension) {
           _.merge(extension, scopedExtension);
           extension.actions = scopedExtension.actions;
+          extension.encrypted = this.extensionUsesEncryptedData(extension);
         }
         if (callback) {
           callback(scopedExtension);
         }
-      }, function (response) {
+      }.bind(this), function (response) {
         console.log("Error loading extension", response);
+        extension.encrypted = this.extensionUsesEncryptedData(extension);
         if (callback) {
           callback(null);
         }
-      });
+      }.bind(this));
     }
 
     /*
@@ -37478,15 +37500,15 @@ var ExtensionManager = function () {
 }();
 
 angular.module('app.frontend').service('extensionManager', ExtensionManager);
-;angular.module('app.frontend').filter('appDate', ['$filter', function ($filter) {
+;angular.module('app.frontend').filter('appDate', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy', 'UTC') : '';
   };
-}]).filter('appDateTime', ['$filter', function ($filter) {
+}).filter('appDateTime', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy h:mm a') : '';
   };
-}]);
+});
 ;angular.module('app.frontend').filter('startFrom', function () {
   return function (input, start) {
     return input.slice(start);
@@ -37499,7 +37521,6 @@ angular.module('app.frontend').service('extensionManager', ExtensionManager);
 }]);
 ;
 var HttpManager = function () {
-  HttpManager.$inject = ['$timeout'];
   function HttpManager($timeout) {
     _classCallCheck(this, HttpManager);
 
@@ -37582,7 +37603,6 @@ var HttpManager = function () {
 angular.module('app.frontend').service('httpManager', HttpManager);
 ;
 var ModelManager = function () {
-  ModelManager.$inject = ['dbManager'];
   function ModelManager(dbManager) {
     _classCallCheck(this, ModelManager);
 
@@ -38072,7 +38092,6 @@ var ModelManager = function () {
 angular.module('app.frontend').service('modelManager', ModelManager);
 ;
 var SyncManager = function () {
-  SyncManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'dbManager', 'httpManager', '$interval'];
   function SyncManager($rootScope, modelManager, authManager, dbManager, httpManager, $interval) {
     _classCallCheck(this, SyncManager);
 
@@ -38525,7 +38544,6 @@ var SyncManager = function () {
 angular.module('app.frontend').service('syncManager', SyncManager);
 ;
 var ThemeManager = function () {
-  ThemeManager.$inject = ['modelManager', 'syncManager', '$rootScope'];
   function ThemeManager(modelManager, syncManager, $rootScope) {
     _classCallCheck(this, ThemeManager);
 
@@ -39355,12 +39373,12 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "            <div ng-if='extension.showDetails'>\n" +
     "              <div class='mt-10'>\n" +
     "                <label class='block'>Access Type</label>\n" +
-    "                <label class='normal block'>\n" +
-    "                  <input ng-change='changeExtensionEncryptionFormat(true, extension)' ng-model='extension.encrypted' ng-value='true' type='radio'>\n" +
+    "                <label class='normal block' ng-click=' $event.stopPropagation();'>\n" +
+    "                  <input ng-change='changeExtensionEncryptionFormat(true, extension);' ng-model='extension.encrypted' ng-value='true' type='radio'>\n" +
     "                  Encrypted\n" +
     "                </label>\n" +
-    "                <label class='normal block'>\n" +
-    "                  <input ng-change='changeExtensionEncryptionFormat(false, extension)' ng-model='extension.encrypted' ng-value='false' type='radio'>\n" +
+    "                <label class='normal block' ng-click=' $event.stopPropagation();'>\n" +
+    "                  <input ng-change='changeExtensionEncryptionFormat(false, extension);' ng-model='extension.encrypted' ng-value='false' type='radio'>\n" +
     "                  Decrypted\n" +
     "                </label>\n" +
     "              </div>\n" +
@@ -39499,6 +39517,44 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
   );
 
 
+  $templateCache.put('frontend/footer.html',
+    "<div id='footer-bar'>\n" +
+    "  <div class='pull-left'>\n" +
+    "    <div class='footer-bar-link' click-outside='ctrl.showAccountMenu = false;' is-open='ctrl.showAccountMenu'>\n" +
+    "      <a ng-class='{red: ctrl.error}' ng-click='ctrl.accountMenuPressed()'>Account</a>\n" +
+    "      <account-menu ng-if='ctrl.showAccountMenu'></account-menu>\n" +
+    "    </div>\n" +
+    "    <div class='footer-bar-link' click-outside='ctrl.showExtensionsMenu = false;' is-open='ctrl.showExtensionsMenu'>\n" +
+    "      <a ng-click='ctrl.toggleExtensions()'>Extensions</a>\n" +
+    "      <global-extensions-menu ng-if='ctrl.showExtensionsMenu'></global-extensions-menu>\n" +
+    "    </div>\n" +
+    "    <div class='footer-bar-link'>\n" +
+    "      <a href='https://standardnotes.org/help' target='_blank'>\n" +
+    "        Help\n" +
+    "      </a>\n" +
+    "    </div>\n" +
+    "  </div>\n" +
+    "  <div class='pull-right'>\n" +
+    "    <div class='footer-bar-link' ng-click='ctrl.clickedNewUpdateAnnouncement()' ng-if='ctrl.newUpdateAvailable'>\n" +
+    "      <span class='blue normal'>New update downloaded. Installs on app restart.</span>\n" +
+    "    </div>\n" +
+    "    <div class='footer-bar-link' style='margin-right: 5px;'>\n" +
+    "      <div ng-if='ctrl.lastSyncDate' style='float: left; font-weight: normal; margin-right: 8px;'>\n" +
+    "        <span ng-if='!ctrl.isRefreshing'>\n" +
+    "          Last refreshed {{ctrl.lastSyncDate | appDateTime}}\n" +
+    "        </span>\n" +
+    "        <span ng-if='ctrl.isRefreshing'>\n" +
+    "          <div class='spinner' style='margin-top: 2px;'></div>\n" +
+    "        </span>\n" +
+    "      </div>\n" +
+    "      <strong ng-if='ctrl.offline'>Offline</strong>\n" +
+    "      <a ng-click='ctrl.refreshData()' ng-if='!ctrl.offline'>Refresh</a>\n" +
+    "    </div>\n" +
+    "  </div>\n" +
+    "</div>\n"
+  );
+
+
   $templateCache.put('frontend/header.html',
     "<div id='footer-bar'>\n" +
     "  <div class='pull-left'>\n" +
@@ -39541,7 +39597,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    <notes-section add-new='notesAddNew' selection-made='notesSelectionMade' tag='selectedTag'></notes-section>\n" +
     "    <editor-section note='selectedNote' remove='deleteNote' save='saveNote' update-tags='updateTagsForNote'></editor-section>\n" +
     "  </div>\n" +
-    "  <header></header>\n" +
+    "  <footer></footer>\n" +
     "</div>\n"
   );
 
