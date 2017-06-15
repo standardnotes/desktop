@@ -33418,13 +33418,14 @@ var EncryptionHelper = function () {
   }, {
     key: 'encryptItem',
     value: function encryptItem(item, keys, version) {
+      var params = {};
       // encrypt item key
       var item_key = Neeto.crypto.generateRandomEncryptionKey();
       if (version === "001") {
         // legacy
-        item.enc_item_key = Neeto.crypto.encryptText(item_key, keys.mk, null);
+        params.enc_item_key = Neeto.crypto.encryptText(item_key, keys.mk, null);
       } else {
-        item.enc_item_key = this._private_encryptString(item_key, keys.encryptionKey, keys.authKey, version);
+        params.enc_item_key = this._private_encryptString(item_key, keys.encryptionKey, keys.authKey, version);
       }
 
       // encrypt content
@@ -33433,10 +33434,11 @@ var EncryptionHelper = function () {
       var ciphertext = this._private_encryptString(JSON.stringify(item.createContentJSONFromProperties()), ek, ak, version);
       if (version === "001") {
         var authHash = Neeto.crypto.hmac256(ciphertext, ak);
-        item.auth_hash = authHash;
+        params.auth_hash = authHash;
       }
 
-      item.content = ciphertext;
+      params.content = ciphertext;
+      return params;
     }
   }, {
     key: 'encryptionComponentsFromString',
@@ -33725,7 +33727,7 @@ if (!IEOrEdge && window.crypto && window.crypto.subtle) {
   Neeto.crypto = new SNCryptoJS();
 }
 
-angular.module('app.frontend', []);angular.module('app.frontend').config(function ($locationProvider) {
+angular.module('app.frontend', []);angular.module('app.frontend').config(['$locationProvider', function ($locationProvider) {
 
   var runningInElectron = window && window.process && window.process.type && window.process.versions["electron"];
   if (!runningInElectron) {
@@ -33738,9 +33740,9 @@ angular.module('app.frontend', []);angular.module('app.frontend').config(functio
   } else {
     $locationProvider.html5Mode(false);
   }
-});
+}]);
 ;
-var BaseCtrl = function BaseCtrl($rootScope, $scope, syncManager, dbManager, analyticsManager) {
+var BaseCtrl = function BaseCtrl($rootScope, $scope, syncManager, dbManager, analyticsManager, componentManager) {
   _classCallCheck(this, BaseCtrl);
 
   dbManager.openDatabase(null, function () {
@@ -33753,6 +33755,7 @@ var BaseCtrl = function BaseCtrl($rootScope, $scope, syncManager, dbManager, ana
     $rootScope.$broadcast('new-update-available', version);
   };
 };
+BaseCtrl.$inject = ['$rootScope', '$scope', 'syncManager', 'dbManager', 'analyticsManager', 'componentManager'];
 
 function getParameterByName(name, url) {
   name = name.replace(/[\[\]]/g, "\\$&");
@@ -33764,7 +33767,7 @@ function getParameterByName(name, url) {
 }
 
 angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
-;angular.module('app.frontend').directive("editorSection", function ($timeout, $sce) {
+;angular.module('app.frontend').directive("editorSection", ['$timeout', '$sce', function ($timeout, $sce) {
   return {
     restrict: 'E',
     scope: {
@@ -33782,7 +33785,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     link: function link(scope, elem, attrs, ctrl) {
       scope.$watch('ctrl.note', function (note, oldNote) {
         if (note) {
-          ctrl.setNote(note, oldNote);
+          ctrl.noteDidChange(note, oldNote);
         }
       });
 
@@ -33801,7 +33804,10 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}).controller('EditorCtrl', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager, themeManager) {
+}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', 'editorManager', 'themeManager', 'componentManager', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager, themeManager, componentManager) {
+
+  this.componentManager = componentManager;
+  this.componentStack = [];
 
   $rootScope.$on("theme-changed", function () {
     this.postThemeToExternalEditor();
@@ -33815,10 +33821,69 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     this.loadTagsString();
   }.bind(this));
 
+  componentManager.registerHandler({ identifier: "editor", areas: ["note-tags", "editor-stack"], activationHandler: function (component) {
+
+      if (!component.active) {
+        return;
+      }
+
+      if (component.area === "note-tags") {
+        this.tagsComponent = component;
+      } else {
+        // stack
+        if (!_.find(this.componentStack, component)) {
+          this.componentStack.push(component);
+        }
+      }
+
+      $timeout(function () {
+        var iframe = componentManager.iframeForComponent(component);
+        if (iframe) {
+          iframe.onload = function () {
+            componentManager.registerComponentWindow(component, iframe.contentWindow);
+          }.bind(this);
+        }
+      }.bind(this));
+    }.bind(this), contextRequestHandler: function (component) {
+      return this.note;
+    }.bind(this), actionHandler: function (component, action, data) {
+      if (action === "set-size") {
+        var setSize = function setSize(element, size) {
+          var widthString = typeof size.width === 'string' ? size.width : data.width + 'px';
+          var heightString = typeof size.height === 'string' ? size.height : data.height + 'px';
+          element.setAttribute("style", 'width:' + widthString + '; height:' + heightString + '; ');
+        };
+
+        if (data.type === "content") {
+          var iframe = componentManager.iframeForComponent(component);
+          var width = data.width;
+          var height = data.height;
+          iframe.width = width;
+          iframe.height = height;
+
+          setSize(iframe, data);
+        } else {
+          if (component.area == "note-tags") {
+            var container = document.getElementById("note-tags-component-container");
+            setSize(container, data);
+          } else {
+            var container = document.getElementById("component-" + component.uuid);
+            setSize(container, data);
+          }
+        }
+      } else if (action === "associate-item") {
+        var tag = modelManager.findItem(data.item.uuid);
+        this.addTag(tag);
+      } else if (action === "deassociate-item") {
+        var tag = modelManager.findItem(data.item.uuid);
+        this.removeTag(tag);
+      }
+    }.bind(this) });
+
   window.addEventListener("message", function (event) {
     if (event.data.status) {
       this.postNoteToExternalEditor();
-    } else {
+    } else if (!event.data.api) {
       // console.log("Received message", event.data);
       var id = event.data.id;
       var text = event.data.text;
@@ -33839,8 +33904,38 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     }
   }.bind(this), false);
 
+  this.noteDidChange = function (note, oldNote) {
+    this.setNote(note, oldNote);
+    var _iteratorNormalCompletion2 = true;
+    var _didIteratorError2 = false;
+    var _iteratorError2 = undefined;
+
+    try {
+      for (var _iterator2 = this.componentStack[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+        var component = _step2.value;
+
+        componentManager.setEventFlowForComponent(component, component.isActiveForItem(this.note));
+      }
+    } catch (err) {
+      _didIteratorError2 = true;
+      _iteratorError2 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion2 && _iterator2.return) {
+          _iterator2.return();
+        }
+      } finally {
+        if (_didIteratorError2) {
+          throw _iteratorError2;
+        }
+      }
+    }
+
+    componentManager.contextItemDidChangeInArea("note-tags");
+    componentManager.contextItemDidChangeInArea("editor-stack");
+  };
+
   this.setNote = function (note, oldNote) {
-    this.noteReady = false;
     var currentEditor = this.editor;
     this.editor = null;
     this.showExtensions = false;
@@ -33854,6 +33949,11 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     }.bind(this);
 
     var editor = this.editorForNote(note);
+    if (editor && !editor.systemEditor) {
+      // setting note to not ready will remove the editor from view in a flash,
+      // so we only want to do this if switching between external editors
+      this.noteReady = false;
+    }
     if (editor) {
       if (currentEditor !== editor) {
         // switch after timeout, so that note data isnt posted to current editor
@@ -33900,29 +34000,29 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
 
   this.editorForNote = function (note) {
     var editors = modelManager.itemsForContentType("SN|Editor");
-    var _iteratorNormalCompletion2 = true;
-    var _didIteratorError2 = false;
-    var _iteratorError2 = undefined;
+    var _iteratorNormalCompletion3 = true;
+    var _didIteratorError3 = false;
+    var _iteratorError3 = undefined;
 
     try {
-      for (var _iterator2 = editors[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-        var editor = _step2.value;
+      for (var _iterator3 = editors[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+        var editor = _step3.value;
 
         if (_.includes(editor.notes, note)) {
           return editor;
         }
       }
     } catch (err) {
-      _didIteratorError2 = true;
-      _iteratorError2 = err;
+      _didIteratorError3 = true;
+      _iteratorError3 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion2 && _iterator2.return) {
-          _iterator2.return();
+        if (!_iteratorNormalCompletion3 && _iterator3.return) {
+          _iterator3.return();
         }
       } finally {
-        if (_didIteratorError2) {
-          throw _iteratorError2;
+        if (_didIteratorError3) {
+          throw _iteratorError3;
         }
       }
     }
@@ -34077,32 +34177,53 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
 
   this.loadTagsString = function () {
     var string = "";
-    var _iteratorNormalCompletion3 = true;
-    var _didIteratorError3 = false;
-    var _iteratorError3 = undefined;
+    var _iteratorNormalCompletion4 = true;
+    var _didIteratorError4 = false;
+    var _iteratorError4 = undefined;
 
     try {
-      for (var _iterator3 = this.note.tags[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-        var tag = _step3.value;
+      for (var _iterator4 = this.note.tags[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+        var tag = _step4.value;
 
         string += "#" + tag.title + " ";
       }
     } catch (err) {
-      _didIteratorError3 = true;
-      _iteratorError3 = err;
+      _didIteratorError4 = true;
+      _iteratorError4 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion3 && _iterator3.return) {
-          _iterator3.return();
+        if (!_iteratorNormalCompletion4 && _iterator4.return) {
+          _iterator4.return();
         }
       } finally {
-        if (_didIteratorError3) {
-          throw _iteratorError3;
+        if (_didIteratorError4) {
+          throw _iteratorError4;
         }
       }
     }
 
     this.tagsString = string;
+  };
+
+  this.addTag = function (tag) {
+    var tags = this.note.tags;
+    var strings = tags.map(function (_tag) {
+      return _tag.title;
+    });
+    strings.push(tag.title);
+    this.updateTags()(this.note, strings);
+    this.loadTagsString();
+  };
+
+  this.removeTag = function (tag) {
+    var tags = this.note.tags;
+    var strings = tags.map(function (_tag) {
+      return _tag.title;
+    }).filter(function (_tag) {
+      return _tag !== tag.title;
+    });
+    this.updateTags()(this.note, strings);
+    this.loadTagsString();
   };
 
   this.updateTagsFromTagsString = function ($event) {
@@ -34119,8 +34240,86 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     this.note.dummy = false;
     this.updateTags()(this.note, tags);
   };
-});
-;angular.module('app.frontend').directive("footer", function (authManager) {
+
+  /* Components */
+
+  var alertKey = "displayed-component-disable-alert";
+
+  this.disableComponent = function (component) {
+    componentManager.disableComponentForItem(component, this.note);
+    componentManager.setEventFlowForComponent(component, false);
+    if (!localStorage.getItem(alertKey)) {
+      alert("This component will be disabled for this note. You can re-enable this component in the 'Menu' of the editor pane.");
+      localStorage.setItem(alertKey, true);
+    }
+  };
+
+  this.hasDisabledComponents = function () {
+    var _iteratorNormalCompletion5 = true;
+    var _didIteratorError5 = false;
+    var _iteratorError5 = undefined;
+
+    try {
+      for (var _iterator5 = this.componentStack[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+        var component = _step5.value;
+
+        if (component.ignoreEvents) {
+          return true;
+        }
+      }
+    } catch (err) {
+      _didIteratorError5 = true;
+      _iteratorError5 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion5 && _iterator5.return) {
+          _iterator5.return();
+        }
+      } finally {
+        if (_didIteratorError5) {
+          throw _iteratorError5;
+        }
+      }
+    }
+
+    return false;
+  };
+
+  this.restoreDisabledComponents = function () {
+    var relevantComponents = this.componentStack.filter(function (component) {
+      return component.ignoreEvents;
+    });
+
+    componentManager.enableComponentsForItem(relevantComponents, this.note);
+
+    var _iteratorNormalCompletion6 = true;
+    var _didIteratorError6 = false;
+    var _iteratorError6 = undefined;
+
+    try {
+      for (var _iterator6 = relevantComponents[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+        var component = _step6.value;
+
+        componentManager.setEventFlowForComponent(component, true);
+        componentManager.contextItemDidChangeInArea("editor-stack");
+      }
+    } catch (err) {
+      _didIteratorError6 = true;
+      _iteratorError6 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion6 && _iterator6.return) {
+          _iterator6.return();
+        }
+      } finally {
+        if (_didIteratorError6) {
+          throw _iteratorError6;
+        }
+      }
+    }
+  };
+}]);
+;angular.module('app.frontend').directive("footer", ['authManager', function (authManager) {
   return {
     restrict: 'E',
     scope: {},
@@ -34142,7 +34341,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}).controller('FooterCtrl', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager) {
+}]).controller('FooterCtrl', ['$rootScope', 'authManager', 'modelManager', '$timeout', 'dbManager', 'syncManager', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager) {
 
   this.user = authManager.user;
 
@@ -34214,8 +34413,8 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     this.newUpdateAvailable = false;
     alert("A new update is ready to install. Updates address performance and security issues, as well as bug fixes and feature enhancements. Simply quit Standard Notes and re-open it for the update to be applied.");
   };
-});
-;angular.module('app.frontend').controller('HomeCtrl', function ($scope, $location, $rootScope, $timeout, modelManager, syncManager, authManager, themeManager) {
+}]);
+;angular.module('app.frontend').controller('HomeCtrl', ['$scope', '$location', '$rootScope', '$timeout', 'modelManager', 'syncManager', 'authManager', 'themeManager', function ($scope, $location, $rootScope, $timeout, modelManager, syncManager, authManager, themeManager) {
 
   function urlParam(key) {
     return $location.search()[key];
@@ -34272,100 +34471,20 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
   */
 
   $scope.updateTagsForNote = function (note, stringTags) {
+    console.log("Updating tags", stringTags);
     var toRemove = [];
-    var _iteratorNormalCompletion4 = true;
-    var _didIteratorError4 = false;
-    var _iteratorError4 = undefined;
-
-    try {
-      for (var _iterator4 = note.tags[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-        var tag = _step4.value;
-
-        if (stringTags.indexOf(tag.title) === -1) {
-          // remove this tag
-          toRemove.push(tag);
-        }
-      }
-    } catch (err) {
-      _didIteratorError4 = true;
-      _iteratorError4 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion4 && _iterator4.return) {
-          _iterator4.return();
-        }
-      } finally {
-        if (_didIteratorError4) {
-          throw _iteratorError4;
-        }
-      }
-    }
-
-    var _iteratorNormalCompletion5 = true;
-    var _didIteratorError5 = false;
-    var _iteratorError5 = undefined;
-
-    try {
-      for (var _iterator5 = toRemove[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-        var tagToRemove = _step5.value;
-
-        note.removeItemAsRelationship(tagToRemove);
-        tagToRemove.removeItemAsRelationship(note);
-        tagToRemove.setDirty(true);
-      }
-    } catch (err) {
-      _didIteratorError5 = true;
-      _iteratorError5 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion5 && _iterator5.return) {
-          _iterator5.return();
-        }
-      } finally {
-        if (_didIteratorError5) {
-          throw _iteratorError5;
-        }
-      }
-    }
-
-    var tags = [];
-    var _iteratorNormalCompletion6 = true;
-    var _didIteratorError6 = false;
-    var _iteratorError6 = undefined;
-
-    try {
-      for (var _iterator6 = stringTags[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-        var tagString = _step6.value;
-
-        var existingRelationship = _.find(note.tags, { title: tagString });
-        if (!existingRelationship) {
-          tags.push(modelManager.findOrCreateTagByTitle(tagString));
-        }
-      }
-    } catch (err) {
-      _didIteratorError6 = true;
-      _iteratorError6 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion6 && _iterator6.return) {
-          _iterator6.return();
-        }
-      } finally {
-        if (_didIteratorError6) {
-          throw _iteratorError6;
-        }
-      }
-    }
-
     var _iteratorNormalCompletion7 = true;
     var _didIteratorError7 = false;
     var _iteratorError7 = undefined;
 
     try {
-      for (var _iterator7 = tags[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+      for (var _iterator7 = note.tags[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
         var tag = _step7.value;
 
-        modelManager.createRelationshipBetweenItems(note, tag);
+        if (stringTags.indexOf(tag.title) === -1) {
+          // remove this tag
+          toRemove.push(tag);
+        }
       }
     } catch (err) {
       _didIteratorError7 = true;
@@ -34378,6 +34497,87 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       } finally {
         if (_didIteratorError7) {
           throw _iteratorError7;
+        }
+      }
+    }
+
+    var _iteratorNormalCompletion8 = true;
+    var _didIteratorError8 = false;
+    var _iteratorError8 = undefined;
+
+    try {
+      for (var _iterator8 = toRemove[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+        var tagToRemove = _step8.value;
+
+        note.removeItemAsRelationship(tagToRemove);
+        tagToRemove.removeItemAsRelationship(note);
+        tagToRemove.setDirty(true);
+      }
+    } catch (err) {
+      _didIteratorError8 = true;
+      _iteratorError8 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion8 && _iterator8.return) {
+          _iterator8.return();
+        }
+      } finally {
+        if (_didIteratorError8) {
+          throw _iteratorError8;
+        }
+      }
+    }
+
+    var tags = [];
+    var _iteratorNormalCompletion9 = true;
+    var _didIteratorError9 = false;
+    var _iteratorError9 = undefined;
+
+    try {
+      for (var _iterator9 = stringTags[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+        var tagString = _step9.value;
+
+        var existingRelationship = _.find(note.tags, { title: tagString });
+        if (!existingRelationship) {
+          tags.push(modelManager.findOrCreateTagByTitle(tagString));
+        }
+      }
+    } catch (err) {
+      _didIteratorError9 = true;
+      _iteratorError9 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion9 && _iterator9.return) {
+          _iterator9.return();
+        }
+      } finally {
+        if (_didIteratorError9) {
+          throw _iteratorError9;
+        }
+      }
+    }
+
+    var _iteratorNormalCompletion10 = true;
+    var _didIteratorError10 = false;
+    var _iteratorError10 = undefined;
+
+    try {
+      for (var _iterator10 = tags[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+        var tag = _step10.value;
+
+        modelManager.createRelationshipBetweenItems(note, tag);
+      }
+    } catch (err) {
+      _didIteratorError10 = true;
+      _iteratorError10 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion10 && _iterator10.return) {
+          _iterator10.return();
+        }
+      } finally {
+        if (_didIteratorError10) {
+          throw _iteratorError10;
         }
       }
     }
@@ -34503,7 +34703,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       }
     });
   };
-});
+}]);
 ;angular.module('app.frontend').directive("notesSection", function () {
   return {
     scope: {
@@ -34535,7 +34735,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}).controller('NotesCtrl', function (authManager, $timeout, $rootScope, modelManager) {
+}).controller('NotesCtrl', ['authManager', '$timeout', '$rootScope', 'modelManager', function (authManager, $timeout, $rootScope, modelManager) {
 
   this.sortBy = localStorage.getItem("sortBy") || "created_at";
 
@@ -34634,7 +34834,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     this.sortBy = type;
     localStorage.setItem("sortBy", type);
   };
-});
+}]);
 ;angular.module('app.frontend').directive("tagsSection", function () {
   return {
     restrict: 'E',
@@ -34668,9 +34868,34 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}).controller('TagsCtrl', function (modelManager, $timeout) {
+}).controller('TagsCtrl', ['$rootScope', 'modelManager', '$timeout', 'componentManager', function ($rootScope, modelManager, $timeout, componentManager) {
 
   var initialLoad = true;
+
+  componentManager.registerHandler({ identifier: "tags", areas: ["tags-list"], activationHandler: function (component) {
+      this.component = component;
+
+      if (component.active) {
+        $timeout(function () {
+          var iframe = document.getElementById("tags-list-iframe");
+          iframe.onload = function () {
+            componentManager.registerComponentWindow(this.component, iframe.contentWindow);
+          }.bind(this);
+        }.bind(this));
+      }
+    }.bind(this), contextRequestHandler: function (component) {
+      return null;
+    }.bind(this), actionHandler: function (component, action, data) {
+
+      if (action === "select-item") {
+        var tag = modelManager.findItem(data.item.uuid);
+        if (tag) {
+          this.selectTag(tag);
+        }
+      } else if (action === "clear-selection") {
+        this.selectTag(this.allTag);
+      }
+    }.bind(this) });
 
   this.setAllTag = function (allTag) {
     this.selectTag(this.allTag);
@@ -34751,7 +34976,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     var validNotes = Note.filterDummyNotes(tag.notes);
     return validNotes.length;
   };
-});
+}]);
 ;
 var Item = function () {
   function Item(json_obj) {
@@ -34814,27 +35039,27 @@ var Item = function () {
   }, {
     key: 'notifyObserversOfChange',
     value: function notifyObserversOfChange() {
-      var _iteratorNormalCompletion8 = true;
-      var _didIteratorError8 = false;
-      var _iteratorError8 = undefined;
+      var _iteratorNormalCompletion11 = true;
+      var _didIteratorError11 = false;
+      var _iteratorError11 = undefined;
 
       try {
-        for (var _iterator8 = this.observers[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-          var observer = _step8.value;
+        for (var _iterator11 = this.observers[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+          var observer = _step11.value;
 
           observer.callback(this);
         }
       } catch (err) {
-        _didIteratorError8 = true;
-        _iteratorError8 = err;
+        _didIteratorError11 = true;
+        _iteratorError11 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion8 && _iterator8.return) {
-            _iterator8.return();
+          if (!_iteratorNormalCompletion11 && _iterator11.return) {
+            _iterator11.return();
           }
         } finally {
-          if (_didIteratorError8) {
-            throw _iteratorError8;
+          if (_didIteratorError11) {
+            throw _iteratorError11;
           }
         }
       }
@@ -34983,21 +35208,95 @@ var SyncAdapter = function (_Item) {
 }(Item);
 
 ;
-var Editor = function (_Item2) {
-  _inherits(Editor, _Item2);
+var Component = function (_Item2) {
+  _inherits(Component, _Item2);
+
+  function Component(json_obj) {
+    _classCallCheck(this, Component);
+
+    var _this4 = _possibleConstructorReturn(this, (Component.__proto__ || Object.getPrototypeOf(Component)).call(this, json_obj));
+
+    if (!_this4.componentData) {
+      _this4.componentData = {};
+    }
+
+    if (!_this4.disassociatedItemIds) {
+      _this4.disassociatedItemIds = [];
+    }
+    return _this4;
+  }
+
+  _createClass(Component, [{
+    key: 'mapContentToLocalProperties',
+    value: function mapContentToLocalProperties(contentObject) {
+      _get(Component.prototype.__proto__ || Object.getPrototypeOf(Component.prototype), 'mapContentToLocalProperties', this).call(this, contentObject);
+      this.url = contentObject.url;
+      this.name = contentObject.name;
+
+      // the location in the view this component is located in. Valid values are currently tags-list, note-tags, and editor-stack`
+      this.area = contentObject.area;
+
+      this.permissions = contentObject.permissions;
+      this.active = contentObject.active;
+
+      // custom data that a component can store in itself
+      this.componentData = contentObject.componentData || {};
+
+      // items that have requested a component to be disabled in its context
+      this.disassociatedItemIds = contentObject.disassociatedItemIds || [];
+    }
+  }, {
+    key: 'structureParams',
+    value: function structureParams() {
+      var params = {
+        url: this.url,
+        name: this.name,
+        area: this.area,
+        permissions: this.permissions,
+        active: this.active,
+        componentData: this.componentData,
+        disassociatedItemIds: this.disassociatedItemIds
+      };
+
+      _.merge(params, _get(Component.prototype.__proto__ || Object.getPrototypeOf(Component.prototype), 'structureParams', this).call(this));
+      return params;
+    }
+  }, {
+    key: 'toJSON',
+    value: function toJSON() {
+      return { uuid: this.uuid };
+    }
+  }, {
+    key: 'isActiveForItem',
+    value: function isActiveForItem(item) {
+      return this.disassociatedItemIds.indexOf(item.uuid) === -1;
+    }
+  }, {
+    key: 'content_type',
+    get: function get() {
+      return "SN|Component";
+    }
+  }]);
+
+  return Component;
+}(Item);
+
+;
+var Editor = function (_Item3) {
+  _inherits(Editor, _Item3);
 
   function Editor(json_obj) {
     _classCallCheck(this, Editor);
 
-    var _this4 = _possibleConstructorReturn(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, json_obj));
+    var _this5 = _possibleConstructorReturn(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, json_obj));
 
-    if (!_this4.notes) {
-      _this4.notes = [];
+    if (!_this5.notes) {
+      _this5.notes = [];
     }
-    if (!_this4.data) {
-      _this4.data = {};
+    if (!_this5.data) {
+      _this5.data = {};
     }
-    return _this4;
+    return _this5;
   }
 
   _createClass(Editor, [{
@@ -35129,13 +35428,13 @@ var Action = function () {
 
       var permission = this.permissions.charAt(0).toUpperCase() + this.permissions.slice(1); // capitalize first letter
       permission += ": ";
-      var _iteratorNormalCompletion9 = true;
-      var _didIteratorError9 = false;
-      var _iteratorError9 = undefined;
+      var _iteratorNormalCompletion12 = true;
+      var _didIteratorError12 = false;
+      var _iteratorError12 = undefined;
 
       try {
-        for (var _iterator9 = this.content_types[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-          var contentType = _step9.value;
+        for (var _iterator12 = this.content_types[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+          var contentType = _step12.value;
 
           if (contentType == "*") {
             permission += "All items";
@@ -35146,16 +35445,16 @@ var Action = function () {
           permission += " ";
         }
       } catch (err) {
-        _didIteratorError9 = true;
-        _iteratorError9 = err;
+        _didIteratorError12 = true;
+        _iteratorError12 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion9 && _iterator9.return) {
-            _iterator9.return();
+          if (!_iteratorNormalCompletion12 && _iterator12.return) {
+            _iterator12.return();
           }
         } finally {
-          if (_didIteratorError9) {
-            throw _iteratorError9;
+          if (_didIteratorError12) {
+            throw _iteratorError12;
           }
         }
       }
@@ -35185,25 +35484,25 @@ var Action = function () {
   return Action;
 }();
 
-var Extension = function (_Item3) {
-  _inherits(Extension, _Item3);
+var Extension = function (_Item4) {
+  _inherits(Extension, _Item4);
 
   function Extension(json) {
     _classCallCheck(this, Extension);
 
-    var _this5 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
+    var _this6 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
 
-    _.merge(_this5, json);
+    _.merge(_this6, json);
 
-    _this5.encrypted = true;
-    _this5.content_type = "Extension";
+    _this6.encrypted = true;
+    _this6.content_type = "Extension";
 
     if (json.actions) {
-      _this5.actions = json.actions.map(function (action) {
+      _this6.actions = json.actions.map(function (action) {
         return new Action(action);
       });
     }
-    return _this5;
+    return _this6;
   }
 
   _createClass(Extension, [{
@@ -35269,18 +35568,18 @@ var Extension = function (_Item3) {
 }(Item);
 
 ;
-var Note = function (_Item4) {
-  _inherits(Note, _Item4);
+var Note = function (_Item5) {
+  _inherits(Note, _Item5);
 
   function Note(json_obj) {
     _classCallCheck(this, Note);
 
-    var _this6 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
+    var _this7 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
 
-    if (!_this6.tags) {
-      _this6.tags = [];
+    if (!_this7.tags) {
+      _this7.tags = [];
     }
-    return _this6;
+    return _this7;
   }
 
   _createClass(Note, [{
@@ -35357,28 +35656,28 @@ var Note = function (_Item4) {
   }, {
     key: 'informReferencesOfUUIDChange',
     value: function informReferencesOfUUIDChange(oldUUID, newUUID) {
-      var _iteratorNormalCompletion10 = true;
-      var _didIteratorError10 = false;
-      var _iteratorError10 = undefined;
+      var _iteratorNormalCompletion13 = true;
+      var _didIteratorError13 = false;
+      var _iteratorError13 = undefined;
 
       try {
-        for (var _iterator10 = this.tags[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-          var tag = _step10.value;
+        for (var _iterator13 = this.tags[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+          var tag = _step13.value;
 
           _.pull(tag.notes, { uuid: oldUUID });
           tag.notes.push(this);
         }
       } catch (err) {
-        _didIteratorError10 = true;
-        _iteratorError10 = err;
+        _didIteratorError13 = true;
+        _iteratorError13 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion10 && _iterator10.return) {
-            _iterator10.return();
+          if (!_iteratorNormalCompletion13 && _iterator13.return) {
+            _iterator13.return();
           }
         } finally {
-          if (_didIteratorError10) {
-            throw _iteratorError10;
+          if (_didIteratorError13) {
+            throw _iteratorError13;
           }
         }
       }
@@ -35422,18 +35721,18 @@ var Note = function (_Item4) {
 }(Item);
 
 ;
-var Tag = function (_Item5) {
-  _inherits(Tag, _Item5);
+var Tag = function (_Item6) {
+  _inherits(Tag, _Item6);
 
   function Tag(json_obj) {
     _classCallCheck(this, Tag);
 
-    var _this7 = _possibleConstructorReturn(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
+    var _this8 = _possibleConstructorReturn(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
 
-    if (!_this7.notes) {
-      _this7.notes = [];
+    if (!_this8.notes) {
+      _this8.notes = [];
     }
-    return _this7;
+    return _this8;
   }
 
   _createClass(Tag, [{
@@ -35510,28 +35809,28 @@ var Tag = function (_Item5) {
   }, {
     key: 'informReferencesOfUUIDChange',
     value: function informReferencesOfUUIDChange(oldUUID, newUUID) {
-      var _iteratorNormalCompletion11 = true;
-      var _didIteratorError11 = false;
-      var _iteratorError11 = undefined;
+      var _iteratorNormalCompletion14 = true;
+      var _didIteratorError14 = false;
+      var _iteratorError14 = undefined;
 
       try {
-        for (var _iterator11 = this.notes[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-          var note = _step11.value;
+        for (var _iterator14 = this.notes[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+          var note = _step14.value;
 
           _.pull(note.tags, { uuid: oldUUID });
           note.tags.push(this);
         }
       } catch (err) {
-        _didIteratorError11 = true;
-        _iteratorError11 = err;
+        _didIteratorError14 = true;
+        _iteratorError14 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion11 && _iterator11.return) {
-            _iterator11.return();
+          if (!_iteratorNormalCompletion14 && _iterator14.return) {
+            _iterator14.return();
           }
         } finally {
-          if (_didIteratorError11) {
-            throw _iteratorError11;
+          if (_didIteratorError14) {
+            throw _iteratorError14;
           }
         }
       }
@@ -35552,8 +35851,8 @@ var Tag = function (_Item5) {
 }(Item);
 
 ;
-var Theme = function (_Item6) {
-  _inherits(Theme, _Item6);
+var Theme = function (_Item7) {
+  _inherits(Theme, _Item7);
 
   function Theme(json_obj) {
     _classCallCheck(this, Theme);
@@ -35625,30 +35924,26 @@ var ItemParams = function () {
   }, {
     key: 'paramsForSync',
     value: function paramsForSync() {
-      return this.__params(null, false);
+      return this.__params();
     }
   }, {
     key: '__params',
     value: function __params() {
       var encryptionVersion = "001";
 
-      var itemCopy = _.cloneDeep(this.item);
-
       console.assert(!this.item.dummy, "Item is dummy, should not have gotten here.", this.item.dummy);
 
       var params = { uuid: this.item.uuid, content_type: this.item.content_type, deleted: this.item.deleted, created_at: this.item.created_at };
 
       if (this.keys && !this.item.doNotEncrypt()) {
-        EncryptionHelper.encryptItem(itemCopy, this.keys, encryptionVersion);
-        params.content = itemCopy.content;
-        params.enc_item_key = itemCopy.enc_item_key;
-        if (encryptionVersion === "001") {
-          params.auth_hash = itemCopy.auth_hash;
-        } else {
+        var encryptedParams = EncryptionHelper.encryptItem(this.item, this.keys, encryptionVersion);
+        _.merge(params, encryptedParams);
+
+        if (encryptionVersion !== "001") {
           params.auth_hash = null;
         }
       } else {
-        params.content = this.forExportFile ? itemCopy.createContentJSONFromProperties() : "000" + Neeto.crypto.base64(JSON.stringify(itemCopy.createContentJSONFromProperties()));
+        params.content = this.forExportFile ? this.item.createContentJSONFromProperties() : "000" + Neeto.crypto.base64(JSON.stringify(this.item.createContentJSONFromProperties()));
         if (!this.forExportFile) {
           params.enc_item_key = null;
           params.auth_hash = null;
@@ -35668,6 +35963,7 @@ var ItemParams = function () {
 
 ;
 var AnalyticsManager = function () {
+  AnalyticsManager.$inject = ['authManager'];
   function AnalyticsManager(authManager) {
     _classCallCheck(this, AnalyticsManager);
 
@@ -35735,9 +36031,9 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
     return domain;
   }
 
-  this.$get = function ($rootScope, httpManager, modelManager, dbManager) {
+  this.$get = ['$rootScope', 'httpManager', 'modelManager', 'dbManager', function ($rootScope, httpManager, modelManager, dbManager) {
     return new AuthManager($rootScope, httpManager, modelManager, dbManager);
-  };
+  }];
 
   function AuthManager($rootScope, httpManager, modelManager, dbManager) {
 
@@ -35888,6 +36184,918 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
     };
   }
 });
+;
+var ComponentManager = function () {
+  ComponentManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'themeManager', '$timeout', '$compile'];
+  function ComponentManager($rootScope, modelManager, syncManager, themeManager, $timeout, $compile) {
+    _classCallCheck(this, ComponentManager);
+
+    this.$compile = $compile;
+    this.$rootScope = $rootScope;
+    this.modelManager = modelManager;
+    this.syncManager = syncManager;
+    this.themeManager = themeManager;
+    this.timeout = $timeout;
+    this.streamObservers = [];
+    this.contextStreamObservers = [];
+    this.activeComponents = [];
+
+    this.permissionDialogs = [];
+
+    this.handlers = [];
+
+    $rootScope.$on("theme-changed", function () {
+      this.postThemeToComponents();
+    }.bind(this));
+
+    window.addEventListener("message", function (event) {
+      if (this.loggingEnabled) {
+        console.log("Web app: received message", event);
+      }
+      this.handleMessage(this.componentForSessionKey(event.data.sessionKey), event.data);
+    }.bind(this), false);
+
+    this.modelManager.addItemSyncObserver("component-manager", "*", function (items) {
+      var _this10 = this;
+
+      var syncedComponents = items.filter(function (item) {
+        return item.content_type === "SN|Component";
+      });
+      var _iteratorNormalCompletion15 = true;
+      var _didIteratorError15 = false;
+      var _iteratorError15 = undefined;
+
+      try {
+        for (var _iterator15 = syncedComponents[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+          var component = _step15.value;
+
+          var activeComponent = _.find(this.activeComponents, { uuid: component.uuid });
+          if (component.active && !activeComponent) {
+            this.activateComponent(component);
+          } else if (!component.active && activeComponent) {
+            this.deactivateComponent(component);
+          }
+        }
+      } catch (err) {
+        _didIteratorError15 = true;
+        _iteratorError15 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion15 && _iterator15.return) {
+            _iterator15.return();
+          }
+        } finally {
+          if (_didIteratorError15) {
+            throw _iteratorError15;
+          }
+        }
+      }
+
+      var _loop = function _loop(observer) {
+        relevantItems = items.filter(function (item) {
+          return observer.contentTypes.indexOf(item.content_type) !== -1;
+        });
+        requiredPermissions = [{
+          name: "stream-items",
+          content_types: observer.contentTypes.sort()
+        }];
+
+
+        _this10.runWithPermissions(observer.component, requiredPermissions, observer.originalMessage.permissions, function () {
+          this.sendItemsInReply(observer.component, relevantItems, observer.originalMessage);
+        }.bind(_this10));
+      };
+
+      var _iteratorNormalCompletion16 = true;
+      var _didIteratorError16 = false;
+      var _iteratorError16 = undefined;
+
+      try {
+        for (var _iterator16 = this.streamObservers[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+          var observer = _step16.value;
+          var relevantItems;
+          var requiredPermissions;
+
+          _loop(observer);
+        }
+      } catch (err) {
+        _didIteratorError16 = true;
+        _iteratorError16 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion16 && _iterator16.return) {
+            _iterator16.return();
+          }
+        } finally {
+          if (_didIteratorError16) {
+            throw _iteratorError16;
+          }
+        }
+      }
+
+      var requiredContextPermissions = [{
+        name: "stream-context-item"
+      }];
+
+      var _loop2 = function _loop2(observer) {
+        _this10.runWithPermissions(observer.component, requiredContextPermissions, observer.originalMessage.permissions, function () {
+          var _iteratorNormalCompletion18 = true;
+          var _didIteratorError18 = false;
+          var _iteratorError18 = undefined;
+
+          try {
+            for (var _iterator18 = this.handlers[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
+              var handler = _step18.value;
+
+              if (handler.areas.includes(observer.component.area) === false) {
+                continue;
+              }
+              var itemInContext = handler.contextRequestHandler(observer.component);
+              if (itemInContext) {
+                var matchingItem = _.find(items, { uuid: itemInContext.uuid });
+                if (matchingItem) {
+                  this.sendContextItemInReply(observer.component, matchingItem, observer.originalMessage);
+                }
+              }
+            }
+          } catch (err) {
+            _didIteratorError18 = true;
+            _iteratorError18 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion18 && _iterator18.return) {
+                _iterator18.return();
+              }
+            } finally {
+              if (_didIteratorError18) {
+                throw _iteratorError18;
+              }
+            }
+          }
+        }.bind(_this10));
+      };
+
+      var _iteratorNormalCompletion17 = true;
+      var _didIteratorError17 = false;
+      var _iteratorError17 = undefined;
+
+      try {
+        for (var _iterator17 = this.contextStreamObservers[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+          var observer = _step17.value;
+
+          _loop2(observer);
+        }
+      } catch (err) {
+        _didIteratorError17 = true;
+        _iteratorError17 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion17 && _iterator17.return) {
+            _iterator17.return();
+          }
+        } finally {
+          if (_didIteratorError17) {
+            throw _iteratorError17;
+          }
+        }
+      }
+    }.bind(this));
+  }
+
+  _createClass(ComponentManager, [{
+    key: 'postThemeToComponents',
+    value: function postThemeToComponents() {
+      var _iteratorNormalCompletion19 = true;
+      var _didIteratorError19 = false;
+      var _iteratorError19 = undefined;
+
+      try {
+        for (var _iterator19 = this.components[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
+          var component = _step19.value;
+
+          if (!component.active || !component.window) {
+            continue;
+          }
+          this.postThemeToComponent(component);
+        }
+      } catch (err) {
+        _didIteratorError19 = true;
+        _iteratorError19 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion19 && _iterator19.return) {
+            _iterator19.return();
+          }
+        } finally {
+          if (_didIteratorError19) {
+            throw _iteratorError19;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'postThemeToComponent',
+    value: function postThemeToComponent(component) {
+      var data = {
+        themes: [this.themeManager.currentTheme ? this.themeManager.currentTheme.url : null]
+      };
+
+      this.sendMessageToComponent(component, { action: "themes", data: data });
+    }
+  }, {
+    key: 'contextItemDidChangeInArea',
+    value: function contextItemDidChangeInArea(area) {
+      var _iteratorNormalCompletion20 = true;
+      var _didIteratorError20 = false;
+      var _iteratorError20 = undefined;
+
+      try {
+        for (var _iterator20 = this.handlers[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
+          var handler = _step20.value;
+
+          if (handler.areas.includes(area) === false) {
+            continue;
+          }
+          var observers = this.contextStreamObservers.filter(function (observer) {
+            return observer.component.area === area;
+          });
+
+          var _iteratorNormalCompletion21 = true;
+          var _didIteratorError21 = false;
+          var _iteratorError21 = undefined;
+
+          try {
+            for (var _iterator21 = observers[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
+              var observer = _step21.value;
+
+              var itemInContext = handler.contextRequestHandler(observer.component);
+              this.sendContextItemInReply(observer.component, itemInContext, observer.originalMessage);
+            }
+          } catch (err) {
+            _didIteratorError21 = true;
+            _iteratorError21 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion21 && _iterator21.return) {
+                _iterator21.return();
+              }
+            } finally {
+              if (_didIteratorError21) {
+                throw _iteratorError21;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        _didIteratorError20 = true;
+        _iteratorError20 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion20 && _iterator20.return) {
+            _iterator20.return();
+          }
+        } finally {
+          if (_didIteratorError20) {
+            throw _iteratorError20;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'jsonForItem',
+    value: function jsonForItem(item) {
+      var params = { uuid: item.uuid, content_type: item.content_type, created_at: item.created_at, updated_at: item.updated_at, deleted: item.deleted };
+      params.content = item.createContentJSONFromProperties();
+      return params;
+    }
+  }, {
+    key: 'sendItemsInReply',
+    value: function sendItemsInReply(component, items, message) {
+      var response = { items: {} };
+      var mapped = items.map(function (item) {
+        return this.jsonForItem(item);
+      }.bind(this));
+
+      response.items = mapped;
+      this.replyToMessage(component, message, response);
+    }
+  }, {
+    key: 'sendContextItemInReply',
+    value: function sendContextItemInReply(component, item, originalMessage) {
+      var response = { item: this.jsonForItem(item) };
+      this.replyToMessage(component, originalMessage, response);
+    }
+  }, {
+    key: 'componentsForStack',
+    value: function componentsForStack(stack) {
+      return this.components.filter(function (component) {
+        return component.area === stack;
+      });
+    }
+  }, {
+    key: 'componentForSessionKey',
+    value: function componentForSessionKey(key) {
+      return _.find(this.components, { sessionKey: key });
+    }
+  }, {
+    key: 'handleMessage',
+    value: function handleMessage(component, message) {
+      var _this11 = this;
+
+      if (!component) {
+        if (this.loggingEnabled) {
+          console.log("Component not defined, returning");
+        }
+        return;
+      }
+
+      /**
+      Possible Messages:
+      set-size
+      stream-items
+      stream-context-item
+      save-items
+      select-item
+      associate-item
+      deassociate-item
+      clear-selection
+      create-item
+      delete-items
+      set-component-data
+      */
+
+      if (message.action === "stream-items") {
+        this.handleStreamItemsMessage(component, message);
+      } else if (message.action === "stream-context-item") {
+        this.handleStreamContextItemMessage(component, message);
+      } else if (message.action === "set-component-data") {
+        component.componentData = message.data.componentData;
+        component.setDirty(true);
+        this.syncManager.sync();
+      } else if (message.action === "delete-items") {
+        var items = message.data.items;
+        var noun = items.length == 1 ? "item" : "items";
+        if (confirm('Are you sure you want to delete ' + items.length + ' ' + noun + '?')) {
+          var _iteratorNormalCompletion22 = true;
+          var _didIteratorError22 = false;
+          var _iteratorError22 = undefined;
+
+          try {
+            for (var _iterator22 = items[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
+              var item = _step22.value;
+
+              var model = this.modelManager.findItem(item.uuid);
+              this.modelManager.setItemToBeDeleted(model);
+            }
+          } catch (err) {
+            _didIteratorError22 = true;
+            _iteratorError22 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion22 && _iterator22.return) {
+                _iterator22.return();
+              }
+            } finally {
+              if (_didIteratorError22) {
+                throw _iteratorError22;
+              }
+            }
+          }
+
+          this.syncManager.sync();
+        }
+      } else if (message.action === "create-item") {
+        var item = this.modelManager.createItem(message.data.item);
+        this.modelManager.addItem(item);
+        item.setDirty(true);
+        this.syncManager.sync();
+        this.replyToMessage(component, message, { item: this.jsonForItem(item) });
+      } else if (message.action === "save-items") {
+        var responseItems = message.data.items;
+        var localItems = this.modelManager.mapResponseItemsToLocalModels(responseItems);
+
+        var _iteratorNormalCompletion23 = true;
+        var _didIteratorError23 = false;
+        var _iteratorError23 = undefined;
+
+        try {
+          for (var _iterator23 = localItems[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
+            var item = _step23.value;
+
+            var responseItem = _.find(responseItems, { uuid: item.uuid });
+            _.merge(item.content, responseItem.content);
+            item.setDirty(true);
+          }
+        } catch (err) {
+          _didIteratorError23 = true;
+          _iteratorError23 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion23 && _iterator23.return) {
+              _iterator23.return();
+            }
+          } finally {
+            if (_didIteratorError23) {
+              throw _iteratorError23;
+            }
+          }
+        }
+
+        this.syncManager.sync();
+      }
+
+      var _loop3 = function _loop3(handler) {
+        if (handler.areas.includes(component.area)) {
+          _this11.timeout(function () {
+            handler.actionHandler(component, message.action, message.data);
+          });
+        }
+      };
+
+      var _iteratorNormalCompletion24 = true;
+      var _didIteratorError24 = false;
+      var _iteratorError24 = undefined;
+
+      try {
+        for (var _iterator24 = this.handlers[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
+          var handler = _step24.value;
+
+          _loop3(handler);
+        }
+      } catch (err) {
+        _didIteratorError24 = true;
+        _iteratorError24 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion24 && _iterator24.return) {
+            _iterator24.return();
+          }
+        } finally {
+          if (_didIteratorError24) {
+            throw _iteratorError24;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'handleStreamItemsMessage',
+    value: function handleStreamItemsMessage(component, message) {
+      var requiredPermissions = [{
+        name: "stream-items",
+        content_types: message.data.content_types.sort()
+      }];
+
+      this.runWithPermissions(component, requiredPermissions, message.permissions, function () {
+        if (!_.find(this.streamObservers, { identifier: component.url })) {
+          // for pushing laster as changes come in
+          this.streamObservers.push({
+            identifier: component.url,
+            component: component,
+            originalMessage: message,
+            contentTypes: message.data.content_types
+          });
+        }
+
+        // push immediately now
+        var items = [];
+        var _iteratorNormalCompletion25 = true;
+        var _didIteratorError25 = false;
+        var _iteratorError25 = undefined;
+
+        try {
+          for (var _iterator25 = message.data.content_types[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
+            var contentType = _step25.value;
+
+            items = items.concat(this.modelManager.itemsForContentType(contentType));
+          }
+        } catch (err) {
+          _didIteratorError25 = true;
+          _iteratorError25 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion25 && _iterator25.return) {
+              _iterator25.return();
+            }
+          } finally {
+            if (_didIteratorError25) {
+              throw _iteratorError25;
+            }
+          }
+        }
+
+        this.sendItemsInReply(component, items, message);
+      }.bind(this));
+    }
+  }, {
+    key: 'handleStreamContextItemMessage',
+    value: function handleStreamContextItemMessage(component, message) {
+
+      var requiredPermissions = [{
+        name: "stream-context-item"
+      }];
+
+      this.runWithPermissions(component, requiredPermissions, message.permissions, function () {
+        if (!_.find(this.contextStreamObservers, { identifier: component.url })) {
+          // for pushing laster as changes come in
+          this.contextStreamObservers.push({
+            identifier: component.url,
+            component: component,
+            originalMessage: message
+          });
+        }
+
+        // push immediately now
+        var _iteratorNormalCompletion26 = true;
+        var _didIteratorError26 = false;
+        var _iteratorError26 = undefined;
+
+        try {
+          for (var _iterator26 = this.handlers[Symbol.iterator](), _step26; !(_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done); _iteratorNormalCompletion26 = true) {
+            var handler = _step26.value;
+
+            if (handler.areas.includes(component.area) === false) {
+              continue;
+            }
+            var itemInContext = handler.contextRequestHandler(component);
+            this.sendContextItemInReply(component, itemInContext, message);
+          }
+        } catch (err) {
+          _didIteratorError26 = true;
+          _iteratorError26 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion26 && _iterator26.return) {
+              _iterator26.return();
+            }
+          } finally {
+            if (_didIteratorError26) {
+              throw _iteratorError26;
+            }
+          }
+        }
+      }.bind(this));
+    }
+  }, {
+    key: 'runWithPermissions',
+    value: function runWithPermissions(component, requiredPermissions, requestedPermissions, runFunction) {
+
+      var acquiredPermissions = component.permissions;
+
+      var requestedMatchesRequired = true;
+
+      var _iteratorNormalCompletion27 = true;
+      var _didIteratorError27 = false;
+      var _iteratorError27 = undefined;
+
+      try {
+        for (var _iterator27 = requiredPermissions[Symbol.iterator](), _step27; !(_iteratorNormalCompletion27 = (_step27 = _iterator27.next()).done); _iteratorNormalCompletion27 = true) {
+          var required = _step27.value;
+
+          var matching = _.find(requestedPermissions, required);
+          if (!matching) {
+            requestedMatchesRequired = false;
+            break;
+          }
+        }
+      } catch (err) {
+        _didIteratorError27 = true;
+        _iteratorError27 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion27 && _iterator27.return) {
+            _iterator27.return();
+          }
+        } finally {
+          if (_didIteratorError27) {
+            throw _iteratorError27;
+          }
+        }
+      }
+
+      if (!requestedMatchesRequired) {
+        // Error with Component permissions request
+        console.error("You are requesting permissions", requestedPermissions, "when you need to be requesting", requiredPermissions, ". Component:", component);
+        return;
+      }
+
+      if (!component.permissions) {
+        component.permissions = [];
+      }
+
+      var acquiredMatchesRequested = angular.toJson(component.permissions.sort()) === angular.toJson(requestedPermissions.sort());
+
+      if (!acquiredMatchesRequested) {
+        this.promptForPermissions(component, requestedPermissions, function (approved) {
+          if (approved) {
+            runFunction();
+          }
+        });
+      } else {
+        runFunction();
+      }
+    }
+  }, {
+    key: 'promptForPermissions',
+    value: function promptForPermissions(component, requestedPermissions, callback) {
+      // since these calls are asyncronous, multiple dialogs may be requested at the same time. We only want to present one and trigger all callbacks based on one modal result
+      var existingDialog = _.find(this.permissionDialogs, { component: component });
+
+      component.trusted = component.url.startsWith("https://standardnotes.org") || component.url.startsWith("https://extensions.standardnotes.org");
+      var scope = this.$rootScope.$new(true);
+      scope.component = component;
+      scope.permissions = requestedPermissions;
+      scope.actionBlock = callback;
+
+      scope.callback = function (approved) {
+        if (approved) {
+          component.permissions = requestedPermissions;
+          component.setDirty(true);
+          this.syncManager.sync();
+        }
+
+        var _iteratorNormalCompletion28 = true;
+        var _didIteratorError28 = false;
+        var _iteratorError28 = undefined;
+
+        try {
+          for (var _iterator28 = this.permissionDialogs[Symbol.iterator](), _step28; !(_iteratorNormalCompletion28 = (_step28 = _iterator28.next()).done); _iteratorNormalCompletion28 = true) {
+            var existing = _step28.value;
+
+            if (existing.component === component && existing.actionBlock) {
+              existing.actionBlock(approved);
+            }
+          }
+        } catch (err) {
+          _didIteratorError28 = true;
+          _iteratorError28 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion28 && _iterator28.return) {
+              _iterator28.return();
+            }
+          } finally {
+            if (_didIteratorError28) {
+              throw _iteratorError28;
+            }
+          }
+        }
+
+        this.permissionDialogs = this.permissionDialogs.filter(function (dialog) {
+          return dialog.component !== component;
+        });
+      }.bind(this);
+
+      this.permissionDialogs.push(scope);
+
+      if (!existingDialog) {
+        var el = this.$compile("<permissions-modal component='component' permissions='permissions' callback='callback' class='permissions-modal'></permissions-modal>")(scope);
+        angular.element(document.body).append(el);
+      } else {
+        console.log("Existing dialog, not presenting.");
+      }
+    }
+  }, {
+    key: 'replyToMessage',
+    value: function replyToMessage(component, originalMessage, replyData) {
+      var reply = {
+        action: "reply",
+        original: originalMessage,
+        data: replyData
+      };
+
+      this.sendMessageToComponent(component, reply);
+    }
+  }, {
+    key: 'sendMessageToComponent',
+    value: function sendMessageToComponent(component, message) {
+      if (component.ignoreEvents && message.action !== "component-registered") {
+        if (this.loggingEnabled) {
+          console.log("Component disabled for current item, not sending any messages.");
+        }
+        return;
+      }
+      component.window.postMessage(message, "*");
+    }
+  }, {
+    key: 'installComponent',
+    value: function installComponent(url) {
+      var name = getParameterByName("name", url);
+      var area = getParameterByName("area", url);
+      var component = this.modelManager.createItem({
+        content_type: "SN|Component",
+        url: url,
+        name: name,
+        area: area
+      });
+
+      this.modelManager.addItem(component);
+      component.setDirty(true);
+      this.syncManager.sync();
+    }
+  }, {
+    key: 'activateComponent',
+    value: function activateComponent(component) {
+      var didChange = component.active != true;
+
+      component.active = true;
+      var _iteratorNormalCompletion29 = true;
+      var _didIteratorError29 = false;
+      var _iteratorError29 = undefined;
+
+      try {
+        for (var _iterator29 = this.handlers[Symbol.iterator](), _step29; !(_iteratorNormalCompletion29 = (_step29 = _iterator29.next()).done); _iteratorNormalCompletion29 = true) {
+          var handler = _step29.value;
+
+          if (handler.areas.includes(component.area)) {
+            handler.activationHandler(component);
+          }
+        }
+      } catch (err) {
+        _didIteratorError29 = true;
+        _iteratorError29 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion29 && _iterator29.return) {
+            _iterator29.return();
+          }
+        } finally {
+          if (_didIteratorError29) {
+            throw _iteratorError29;
+          }
+        }
+      }
+
+      if (didChange) {
+        component.setDirty(true);
+        this.syncManager.sync();
+      }
+
+      this.activeComponents.push(component);
+    }
+  }, {
+    key: 'registerHandler',
+    value: function registerHandler(handler) {
+      this.handlers.push(handler);
+    }
+
+    // Called by other views when the iframe is ready
+
+  }, {
+    key: 'registerComponentWindow',
+    value: function registerComponentWindow(component, componentWindow) {
+      component.window = componentWindow;
+      component.sessionKey = Neeto.crypto.generateUUID();
+      this.sendMessageToComponent(component, { action: "component-registered", sessionKey: component.sessionKey, componentData: component.componentData });
+      this.postThemeToComponent(component);
+    }
+  }, {
+    key: 'deactivateComponent',
+    value: function deactivateComponent(component) {
+      var didChange = component.active != false;
+      component.active = false;
+      component.sessionKey = null;
+
+      var _iteratorNormalCompletion30 = true;
+      var _didIteratorError30 = false;
+      var _iteratorError30 = undefined;
+
+      try {
+        for (var _iterator30 = this.handlers[Symbol.iterator](), _step30; !(_iteratorNormalCompletion30 = (_step30 = _iterator30.next()).done); _iteratorNormalCompletion30 = true) {
+          var handler = _step30.value;
+
+          if (handler.areas.includes(component.area)) {
+            handler.activationHandler(component);
+          }
+        }
+      } catch (err) {
+        _didIteratorError30 = true;
+        _iteratorError30 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion30 && _iterator30.return) {
+            _iterator30.return();
+          }
+        } finally {
+          if (_didIteratorError30) {
+            throw _iteratorError30;
+          }
+        }
+      }
+
+      if (didChange) {
+        component.setDirty(true);
+        this.syncManager.sync();
+      }
+
+      _.pull(this.activeComponents, component);
+
+      this.streamObservers = this.streamObservers.filter(function (o) {
+        return o.component !== component;
+      });
+
+      this.contextStreamObservers = this.contextStreamObservers.filter(function (o) {
+        return o.component !== component;
+      });
+    }
+  }, {
+    key: 'deleteComponent',
+    value: function deleteComponent(component) {
+      this.modelManager.setItemToBeDeleted(component);
+      this.syncManager.sync();
+    }
+  }, {
+    key: 'isComponentActive',
+    value: function isComponentActive(component) {
+      return component.active;
+    }
+  }, {
+    key: 'disableComponentForItem',
+    value: function disableComponentForItem(component, item) {
+      if (component.disassociatedItemIds.indexOf(item.uuid) !== -1) {
+        return;
+      }
+      component.disassociatedItemIds.push(item.uuid);
+      component.setDirty(true);
+      this.syncManager.sync();
+    }
+  }, {
+    key: 'enableComponentsForItem',
+    value: function enableComponentsForItem(components, item) {
+      var _iteratorNormalCompletion31 = true;
+      var _didIteratorError31 = false;
+      var _iteratorError31 = undefined;
+
+      try {
+        for (var _iterator31 = components[Symbol.iterator](), _step31; !(_iteratorNormalCompletion31 = (_step31 = _iterator31.next()).done); _iteratorNormalCompletion31 = true) {
+          var component = _step31.value;
+
+          _.pull(component.disassociatedItemIds, item.uuid);
+          component.setDirty(true);
+        }
+      } catch (err) {
+        _didIteratorError31 = true;
+        _iteratorError31 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion31 && _iterator31.return) {
+            _iterator31.return();
+          }
+        } finally {
+          if (_didIteratorError31) {
+            throw _iteratorError31;
+          }
+        }
+      }
+
+      this.syncManager.sync();
+    }
+  }, {
+    key: 'setEventFlowForComponent',
+    value: function setEventFlowForComponent(component, on) {
+      component.ignoreEvents = !on;
+    }
+  }, {
+    key: 'iframeForComponent',
+    value: function iframeForComponent(component) {
+      var _iteratorNormalCompletion32 = true;
+      var _didIteratorError32 = false;
+      var _iteratorError32 = undefined;
+
+      try {
+        for (var _iterator32 = document.getElementsByTagName("iframe")[Symbol.iterator](), _step32; !(_iteratorNormalCompletion32 = (_step32 = _iterator32.next()).done); _iteratorNormalCompletion32 = true) {
+          var frame = _step32.value;
+
+          var componentId = frame.dataset.componentId;
+          if (componentId === component.uuid) {
+            return frame;
+          }
+        }
+      } catch (err) {
+        _didIteratorError32 = true;
+        _iteratorError32 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion32 && _iterator32.return) {
+            _iterator32.return();
+          }
+        } finally {
+          if (_didIteratorError32) {
+            throw _iteratorError32;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'components',
+    get: function get() {
+      return this.modelManager.itemsForContentType("SN|Component");
+    }
+  }]);
+
+  return ComponentManager;
+}();
+
+angular.module('app.frontend').service('componentManager', ComponentManager);
 ;
 var DBManager = function () {
   function DBManager() {
@@ -36083,7 +37291,7 @@ angular.module('app.frontend').service('dbManager', DBManager);
     }
   };
 }]);
-;angular.module('app.frontend').directive('delayHide', function ($timeout) {
+;angular.module('app.frontend').directive('delayHide', ['$timeout', function ($timeout) {
   return {
     restrict: 'A',
     scope: {
@@ -36126,7 +37334,7 @@ angular.module('app.frontend').service('dbManager', DBManager);
     }
 
   };
-});
+}]);
 ;angular.module('app.frontend').directive('fileChange', function () {
   return {
     restrict: 'A',
@@ -36177,6 +37385,83 @@ angular.module('app.frontend').service('dbManager', DBManager);
     }
   };
 });
+;
+var PermissionsModal = function () {
+  function PermissionsModal() {
+    _classCallCheck(this, PermissionsModal);
+
+    this.restrict = "E";
+    this.templateUrl = "frontend/directives/permissions-modal.html";
+    this.scope = {
+      show: "=",
+      component: "=",
+      permissions: "=",
+      callback: "="
+    };
+  }
+
+  _createClass(PermissionsModal, [{
+    key: 'link',
+    value: function link($scope, el, attrs) {
+
+      $scope.dismiss = function () {
+        el.remove();
+      };
+
+      $scope.accept = function () {
+        $scope.callback(true);
+        $scope.dismiss();
+      };
+
+      $scope.deny = function () {
+        $scope.callback(false);
+        $scope.dismiss();
+      };
+
+      $scope.formattedPermissions = $scope.permissions.map(function (permission) {
+        if (permission.name === "stream-items") {
+          var title = "Access to ";
+          var types = permission.content_types.map(function (type) {
+            return (type + "s").toLowerCase();
+          });
+          var typesString = "";
+          var separator = ", ";
+
+          for (var i = 0; i < types.length; i++) {
+            var type = types[i];
+            if (i == 0) {
+              // first element
+              typesString = typesString + type;
+            } else if (i == types.length - 1) {
+              // last element
+              if (types.length > 2) {
+                typesString += separator + "and " + typesString;
+              } else if (types.length == 2) {
+                typesString = typesString + " and " + type;
+              }
+            } else {
+              typesString += separator + type;
+            }
+          }
+
+          return title + typesString;
+        } else if (permission.name === "stream-context-item") {
+          var mapping = {
+            "editor-stack": "working note",
+            "note-tags": "working note"
+          };
+          return "Access to " + mapping[$scope.component.area];
+        }
+      });
+    }
+  }]);
+
+  return PermissionsModal;
+}();
+
+angular.module('app.frontend').directive('permissionsModal', function () {
+  return new PermissionsModal();
+});
 ;angular.module('app.frontend').directive('selectOnClick', ['$window', function ($window) {
   return {
     restrict: 'A',
@@ -36202,7 +37487,7 @@ var AccountMenu = function () {
 
   _createClass(AccountMenu, [{
     key: 'controller',
-    value: function controller($scope, authManager, modelManager, syncManager, dbManager, analyticsManager, $timeout) {
+    value: ['$scope', 'authManager', 'modelManager', 'syncManager', 'dbManager', 'analyticsManager', '$timeout', function controller($scope, authManager, modelManager, syncManager, dbManager, analyticsManager, $timeout) {
       'ngInject';
 
       $scope.formData = { mergeLocal: true, url: syncManager.serverURL };
@@ -36550,7 +37835,7 @@ var AccountMenu = function () {
         var data = new Blob([JSON.stringify(data, null, 2 /* pretty print */)], { type: 'text/json' });
         return data;
       };
-    }
+    }]
   }]);
 
   return AccountMenu;
@@ -36573,7 +37858,7 @@ var ContextualExtensionsMenu = function () {
 
   _createClass(ContextualExtensionsMenu, [{
     key: 'controller',
-    value: function controller($scope, modelManager, extensionManager) {
+    value: ['$scope', 'modelManager', 'extensionManager', function controller($scope, modelManager, extensionManager) {
       'ngInject';
 
       $scope.renderData = {};
@@ -36584,34 +37869,34 @@ var ContextualExtensionsMenu = function () {
         return ext;
       });
 
-      var _loop = function _loop(ext) {
+      var _loop4 = function _loop4(ext) {
         ext.loading = true;
         extensionManager.loadExtensionInContextOfItem(ext, $scope.item, function (scopedExtension) {
           ext.loading = false;
         });
       };
 
-      var _iteratorNormalCompletion12 = true;
-      var _didIteratorError12 = false;
-      var _iteratorError12 = undefined;
+      var _iteratorNormalCompletion33 = true;
+      var _didIteratorError33 = false;
+      var _iteratorError33 = undefined;
 
       try {
-        for (var _iterator12 = $scope.extensions[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-          var ext = _step12.value;
+        for (var _iterator33 = $scope.extensions[Symbol.iterator](), _step33; !(_iteratorNormalCompletion33 = (_step33 = _iterator33.next()).done); _iteratorNormalCompletion33 = true) {
+          var ext = _step33.value;
 
-          _loop(ext);
+          _loop4(ext);
         }
       } catch (err) {
-        _didIteratorError12 = true;
-        _iteratorError12 = err;
+        _didIteratorError33 = true;
+        _iteratorError33 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion12 && _iterator12.return) {
-            _iterator12.return();
+          if (!_iteratorNormalCompletion33 && _iterator33.return) {
+            _iterator33.return();
           }
         } finally {
-          if (_didIteratorError12) {
-            throw _iteratorError12;
+          if (_didIteratorError33) {
+            throw _iteratorError33;
           }
         }
       }
@@ -36670,7 +37955,7 @@ var ContextualExtensionsMenu = function () {
       $scope.accessTypeForExtension = function (extension) {
         return extensionManager.extensionUsesEncryptedData(extension) ? "encrypted" : "decrypted";
       };
-    }
+    }]
   }]);
 
   return ContextualExtensionsMenu;
@@ -36694,7 +37979,7 @@ var EditorMenu = function () {
 
   _createClass(EditorMenu, [{
     key: 'controller',
-    value: function controller($scope, editorManager) {
+    value: ['$scope', 'editorManager', function controller($scope, editorManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -36704,7 +37989,7 @@ var EditorMenu = function () {
         editor.conflict_of = null; // clear conflict if applicable
         $scope.callback()(editor);
       };
-    }
+    }]
   }]);
 
   return EditorMenu;
@@ -36725,7 +38010,7 @@ var GlobalExtensionsMenu = function () {
 
   _createClass(GlobalExtensionsMenu, [{
     key: 'controller',
-    value: function controller($scope, extensionManager, syncManager, modelManager, themeManager, editorManager) {
+    value: ['$scope', 'extensionManager', 'syncManager', 'modelManager', 'themeManager', 'editorManager', 'componentManager', function controller($scope, extensionManager, syncManager, modelManager, themeManager, editorManager, componentManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -36733,6 +38018,7 @@ var GlobalExtensionsMenu = function () {
       $scope.extensionManager = extensionManager;
       $scope.themeManager = themeManager;
       $scope.editorManager = editorManager;
+      $scope.componentManager = componentManager;
 
       $scope.selectedAction = function (action, extension) {
         extensionManager.executeAction(action, extension, null, function (response) {
@@ -36786,6 +38072,20 @@ var GlobalExtensionsMenu = function () {
         editorManager.removeDefaultEditor(editor);
       };
 
+      // Components
+
+      $scope.revokePermissions = function (component) {
+        component.permissions = [];
+        component.setDirty(true);
+        syncManager.sync();
+      };
+
+      $scope.deleteComponent = function (component) {
+        if (confirm("Are you sure you want to delete this component?")) {
+          componentManager.deleteComponent(component);
+        }
+      };
+
       // Installation
 
       $scope.submitInstallLink = function () {
@@ -36801,13 +38101,13 @@ var GlobalExtensionsMenu = function () {
         };
 
         var links = fullLink.split(",");
-        var _iteratorNormalCompletion13 = true;
-        var _didIteratorError13 = false;
-        var _iteratorError13 = undefined;
+        var _iteratorNormalCompletion34 = true;
+        var _didIteratorError34 = false;
+        var _iteratorError34 = undefined;
 
         try {
-          for (var _iterator13 = links[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-            var link = _step13.value;
+          for (var _iterator34 = links[Symbol.iterator](), _step34; !(_iteratorNormalCompletion34 = (_step34 = _iterator34.next()).done); _iteratorNormalCompletion34 = true) {
+            var link = _step34.value;
 
             var type = getParameterByName("type", link);
 
@@ -36817,21 +38117,23 @@ var GlobalExtensionsMenu = function () {
               $scope.handleEditorLink(link, completion);
             } else if (link.indexOf(".css") != -1 || type == "theme") {
               $scope.handleThemeLink(link, completion);
+            } else if (type == "component") {
+              $scope.handleComponentLink(link, completion);
             } else {
               $scope.handleActionLink(link, completion);
             }
           }
         } catch (err) {
-          _didIteratorError13 = true;
-          _iteratorError13 = err;
+          _didIteratorError34 = true;
+          _iteratorError34 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion13 && _iterator13.return) {
-              _iterator13.return();
+            if (!_iteratorNormalCompletion34 && _iterator34.return) {
+              _iterator34.return();
             }
           } finally {
-            if (_didIteratorError13) {
-              throw _iteratorError13;
+            if (_didIteratorError34) {
+              throw _iteratorError34;
             }
           }
         }
@@ -36847,6 +38149,11 @@ var GlobalExtensionsMenu = function () {
 
       $scope.handleThemeLink = function (link, completion) {
         themeManager.submitTheme(link);
+        completion();
+      };
+
+      $scope.handleComponentLink = function (link, completion) {
+        componentManager.installComponent(link);
         completion();
       };
 
@@ -36866,7 +38173,7 @@ var GlobalExtensionsMenu = function () {
         editorManager.addNewEditorFromURL(link);
         completion();
       };
-    }
+    }]
   }]);
 
   return GlobalExtensionsMenu;
@@ -36877,6 +38184,7 @@ angular.module('app.frontend').directive('globalExtensionsMenu', function () {
 });
 ;
 var EditorManager = function () {
+  EditorManager.$inject = ['$rootScope', 'modelManager', 'syncManager'];
   function EditorManager($rootScope, modelManager, syncManager) {
     _classCallCheck(this, EditorManager);
 
@@ -36994,6 +38302,7 @@ var EditorManager = function () {
 angular.module('app.frontend').service('editorManager', EditorManager);
 ;
 var ExtensionManager = function () {
+  ExtensionManager.$inject = ['httpManager', 'modelManager', 'authManager', 'syncManager'];
   function ExtensionManager(httpManager, modelManager, authManager, syncManager) {
     _classCallCheck(this, ExtensionManager);
 
@@ -37005,55 +38314,55 @@ var ExtensionManager = function () {
     this.syncManager = syncManager;
 
     modelManager.addItemSyncObserver("extensionManager", "Extension", function (items) {
-      var _iteratorNormalCompletion14 = true;
-      var _didIteratorError14 = false;
-      var _iteratorError14 = undefined;
+      var _iteratorNormalCompletion35 = true;
+      var _didIteratorError35 = false;
+      var _iteratorError35 = undefined;
 
       try {
-        for (var _iterator14 = items[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-          var ext = _step14.value;
+        for (var _iterator35 = items[Symbol.iterator](), _step35; !(_iteratorNormalCompletion35 = (_step35 = _iterator35.next()).done); _iteratorNormalCompletion35 = true) {
+          var ext = _step35.value;
 
 
           ext.encrypted = this.extensionUsesEncryptedData(ext);
 
-          var _iteratorNormalCompletion15 = true;
-          var _didIteratorError15 = false;
-          var _iteratorError15 = undefined;
+          var _iteratorNormalCompletion36 = true;
+          var _didIteratorError36 = false;
+          var _iteratorError36 = undefined;
 
           try {
-            for (var _iterator15 = ext.actions[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-              var action = _step15.value;
+            for (var _iterator36 = ext.actions[Symbol.iterator](), _step36; !(_iteratorNormalCompletion36 = (_step36 = _iterator36.next()).done); _iteratorNormalCompletion36 = true) {
+              var action = _step36.value;
 
               if (_.includes(this.enabledRepeatActionUrls, action.url)) {
                 this.enableRepeatAction(action, ext);
               }
             }
           } catch (err) {
-            _didIteratorError15 = true;
-            _iteratorError15 = err;
+            _didIteratorError36 = true;
+            _iteratorError36 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion15 && _iterator15.return) {
-                _iterator15.return();
+              if (!_iteratorNormalCompletion36 && _iterator36.return) {
+                _iterator36.return();
               }
             } finally {
-              if (_didIteratorError15) {
-                throw _iteratorError15;
+              if (_didIteratorError36) {
+                throw _iteratorError36;
               }
             }
           }
         }
       } catch (err) {
-        _didIteratorError14 = true;
-        _iteratorError14 = err;
+        _didIteratorError35 = true;
+        _iteratorError35 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion14 && _iterator14.return) {
-            _iterator14.return();
+          if (!_iteratorNormalCompletion35 && _iterator35.return) {
+            _iterator35.return();
           }
         } finally {
-          if (_didIteratorError14) {
-            throw _iteratorError14;
+          if (_didIteratorError35) {
+            throw _iteratorError35;
           }
         }
       }
@@ -37070,27 +38379,27 @@ var ExtensionManager = function () {
   }, {
     key: 'actionWithURL',
     value: function actionWithURL(url) {
-      var _iteratorNormalCompletion16 = true;
-      var _didIteratorError16 = false;
-      var _iteratorError16 = undefined;
+      var _iteratorNormalCompletion37 = true;
+      var _didIteratorError37 = false;
+      var _iteratorError37 = undefined;
 
       try {
-        for (var _iterator16 = this.extensions[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-          var extension = _step16.value;
+        for (var _iterator37 = this.extensions[Symbol.iterator](), _step37; !(_iteratorNormalCompletion37 = (_step37 = _iterator37.next()).done); _iteratorNormalCompletion37 = true) {
+          var extension = _step37.value;
 
           return _.find(extension.actions, { url: url });
         }
       } catch (err) {
-        _didIteratorError16 = true;
-        _iteratorError16 = err;
+        _didIteratorError37 = true;
+        _iteratorError37 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion16 && _iterator16.return) {
-            _iterator16.return();
+          if (!_iteratorNormalCompletion37 && _iterator37.return) {
+            _iterator37.return();
           }
         } finally {
-          if (_didIteratorError16) {
-            throw _iteratorError16;
+          if (_didIteratorError37) {
+            throw _iteratorError37;
           }
         }
       }
@@ -37121,13 +38430,13 @@ var ExtensionManager = function () {
   }, {
     key: 'deleteExtension',
     value: function deleteExtension(extension) {
-      var _iteratorNormalCompletion17 = true;
-      var _didIteratorError17 = false;
-      var _iteratorError17 = undefined;
+      var _iteratorNormalCompletion38 = true;
+      var _didIteratorError38 = false;
+      var _iteratorError38 = undefined;
 
       try {
-        for (var _iterator17 = extension.actions[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
-          var action = _step17.value;
+        for (var _iterator38 = extension.actions[Symbol.iterator](), _step38; !(_iteratorNormalCompletion38 = (_step38 = _iterator38.next()).done); _iteratorNormalCompletion38 = true) {
+          var action = _step38.value;
 
           _.pull(this.decryptedExtensions, extension);
           if (action.repeat_mode) {
@@ -37137,16 +38446,16 @@ var ExtensionManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError17 = true;
-        _iteratorError17 = err;
+        _didIteratorError38 = true;
+        _iteratorError38 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion17 && _iterator17.return) {
-            _iterator17.return();
+          if (!_iteratorNormalCompletion38 && _iterator38.return) {
+            _iterator38.return();
           }
         } finally {
-          if (_didIteratorError17) {
-            throw _iteratorError17;
+          if (_didIteratorError38) {
+            throw _iteratorError38;
           }
         }
       }
@@ -37223,13 +38532,13 @@ var ExtensionManager = function () {
   }, {
     key: 'refreshExtensionsFromServer',
     value: function refreshExtensionsFromServer() {
-      var _iteratorNormalCompletion18 = true;
-      var _didIteratorError18 = false;
-      var _iteratorError18 = undefined;
+      var _iteratorNormalCompletion39 = true;
+      var _didIteratorError39 = false;
+      var _iteratorError39 = undefined;
 
       try {
-        for (var _iterator18 = this.enabledRepeatActionUrls[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
-          var url = _step18.value;
+        for (var _iterator39 = this.enabledRepeatActionUrls[Symbol.iterator](), _step39; !(_iteratorNormalCompletion39 = (_step39 = _iterator39.next()).done); _iteratorNormalCompletion39 = true) {
+          var url = _step39.value;
 
           var action = this.actionWithURL(url);
           if (action) {
@@ -37237,43 +38546,43 @@ var ExtensionManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError18 = true;
-        _iteratorError18 = err;
+        _didIteratorError39 = true;
+        _iteratorError39 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion18 && _iterator18.return) {
-            _iterator18.return();
+          if (!_iteratorNormalCompletion39 && _iterator39.return) {
+            _iterator39.return();
           }
         } finally {
-          if (_didIteratorError18) {
-            throw _iteratorError18;
+          if (_didIteratorError39) {
+            throw _iteratorError39;
           }
         }
       }
 
-      var _iteratorNormalCompletion19 = true;
-      var _didIteratorError19 = false;
-      var _iteratorError19 = undefined;
+      var _iteratorNormalCompletion40 = true;
+      var _didIteratorError40 = false;
+      var _iteratorError40 = undefined;
 
       try {
-        for (var _iterator19 = this.extensions[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
-          var ext = _step19.value;
+        for (var _iterator40 = this.extensions[Symbol.iterator](), _step40; !(_iteratorNormalCompletion40 = (_step40 = _iterator40.next()).done); _iteratorNormalCompletion40 = true) {
+          var ext = _step40.value;
 
           this.retrieveExtensionFromServer(ext.url, function (extension) {
             extension.setDirty(true);
           });
         }
       } catch (err) {
-        _didIteratorError19 = true;
-        _iteratorError19 = err;
+        _didIteratorError40 = true;
+        _iteratorError40 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion19 && _iterator19.return) {
-            _iterator19.return();
+          if (!_iteratorNormalCompletion40 && _iterator40.return) {
+            _iterator40.return();
           }
         } finally {
-          if (_didIteratorError19) {
-            throw _iteratorError19;
+          if (_didIteratorError40) {
+            throw _iteratorError40;
           }
         }
       }
@@ -37304,27 +38613,27 @@ var ExtensionManager = function () {
               var items = response.items || [response.item];
               EncryptionHelper.decryptMultipleItems(items, this.authManager.keys());
               items = this.modelManager.mapResponseItemsToLocalModels(items);
-              var _iteratorNormalCompletion20 = true;
-              var _didIteratorError20 = false;
-              var _iteratorError20 = undefined;
+              var _iteratorNormalCompletion41 = true;
+              var _didIteratorError41 = false;
+              var _iteratorError41 = undefined;
 
               try {
-                for (var _iterator20 = items[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
-                  var item = _step20.value;
+                for (var _iterator41 = items[Symbol.iterator](), _step41; !(_iteratorNormalCompletion41 = (_step41 = _iterator41.next()).done); _iteratorNormalCompletion41 = true) {
+                  var item = _step41.value;
 
                   item.setDirty(true);
                 }
               } catch (err) {
-                _didIteratorError20 = true;
-                _iteratorError20 = err;
+                _didIteratorError41 = true;
+                _iteratorError41 = err;
               } finally {
                 try {
-                  if (!_iteratorNormalCompletion20 && _iterator20.return) {
-                    _iterator20.return();
+                  if (!_iteratorNormalCompletion41 && _iterator41.return) {
+                    _iterator41.return();
                   }
                 } finally {
-                  if (_didIteratorError20) {
-                    throw _iteratorError20;
+                  if (_didIteratorError41) {
+                    throw _iteratorError41;
                   }
                 }
               }
@@ -37516,15 +38825,15 @@ var ExtensionManager = function () {
 }();
 
 angular.module('app.frontend').service('extensionManager', ExtensionManager);
-;angular.module('app.frontend').filter('appDate', function ($filter) {
+;angular.module('app.frontend').filter('appDate', ['$filter', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy', 'UTC') : '';
   };
-}).filter('appDateTime', function ($filter) {
+}]).filter('appDateTime', ['$filter', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy h:mm a') : '';
   };
-});
+}]);
 ;angular.module('app.frontend').filter('startFrom', function () {
   return function (input, start) {
     return input.slice(start);
@@ -37537,6 +38846,7 @@ angular.module('app.frontend').service('extensionManager', ExtensionManager);
 }]);
 ;
 var HttpManager = function () {
+  HttpManager.$inject = ['$timeout'];
   function HttpManager($timeout) {
     _classCallCheck(this, HttpManager);
 
@@ -37619,6 +38929,7 @@ var HttpManager = function () {
 angular.module('app.frontend').service('httpManager', HttpManager);
 ;
 var ModelManager = function () {
+  ModelManager.$inject = ['dbManager'];
   function ModelManager(dbManager) {
     _classCallCheck(this, ModelManager);
 
@@ -37629,7 +38940,7 @@ var ModelManager = function () {
     this.itemChangeObservers = [];
     this.items = [];
     this._extensions = [];
-    this.acceptableContentTypes = ["Note", "Tag", "Extension", "SN|Editor", "SN|Theme"];
+    this.acceptableContentTypes = ["Note", "Tag", "Extension", "SN|Editor", "SN|Theme", "SN|Component"];
   }
 
   _createClass(ModelManager, [{
@@ -37654,27 +38965,27 @@ var ModelManager = function () {
       // for example, editors have a one way relationship with notes. When a note changes its UUID, it has no way to inform the editor
       // to update its relationships
 
-      var _iteratorNormalCompletion21 = true;
-      var _didIteratorError21 = false;
-      var _iteratorError21 = undefined;
+      var _iteratorNormalCompletion42 = true;
+      var _didIteratorError42 = false;
+      var _iteratorError42 = undefined;
 
       try {
-        for (var _iterator21 = this.items[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
-          var model = _step21.value;
+        for (var _iterator42 = this.items[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
+          var model = _step42.value;
 
           model.potentialItemOfInterestHasChangedItsUUID(newItem, oldUUID, newUUID);
         }
       } catch (err) {
-        _didIteratorError21 = true;
-        _iteratorError21 = err;
+        _didIteratorError42 = true;
+        _iteratorError42 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion21 && _iterator21.return) {
-            _iterator21.return();
+          if (!_iteratorNormalCompletion42 && _iterator42.return) {
+            _iterator42.return();
           }
         } finally {
-          if (_didIteratorError21) {
-            throw _iteratorError21;
+          if (_didIteratorError42) {
+            throw _iteratorError42;
           }
         }
       }
@@ -37710,52 +39021,58 @@ var ModelManager = function () {
     key: 'mapResponseItemsToLocalModelsOmittingFields',
     value: function mapResponseItemsToLocalModelsOmittingFields(items, omitFields) {
       var models = [],
-          processedObjects = [];
+          processedObjects = [],
+          allModels = [];
 
       // first loop should add and process items
-      var _iteratorNormalCompletion22 = true;
-      var _didIteratorError22 = false;
-      var _iteratorError22 = undefined;
+      var _iteratorNormalCompletion43 = true;
+      var _didIteratorError43 = false;
+      var _iteratorError43 = undefined;
 
       try {
-        for (var _iterator22 = items[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
-          var json_obj = _step22.value;
+        for (var _iterator43 = items[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
+          var json_obj = _step43.value;
 
           json_obj = _.omit(json_obj, omitFields || []);
           var item = this.findItem(json_obj["uuid"]);
+
+          _.omit(json_obj, omitFields);
+
+          if (item) {
+            item.updateFromJSON(json_obj);
+          }
+
           if (json_obj["deleted"] == true || !_.includes(this.acceptableContentTypes, json_obj["content_type"])) {
             if (item) {
+              allModels.push(item);
               this.removeItemLocally(item);
             }
             continue;
           }
 
-          _.omit(json_obj, omitFields);
-
           if (!item) {
             item = this.createItem(json_obj);
-          } else {
-            item.updateFromJSON(json_obj);
           }
 
           this.addItem(item);
 
+          allModels.push(item);
           models.push(item);
           processedObjects.push(json_obj);
         }
 
         // second loop should process references
       } catch (err) {
-        _didIteratorError22 = true;
-        _iteratorError22 = err;
+        _didIteratorError43 = true;
+        _iteratorError43 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion22 && _iterator22.return) {
-            _iterator22.return();
+          if (!_iteratorNormalCompletion43 && _iterator43.return) {
+            _iterator43.return();
           }
         } finally {
-          if (_didIteratorError22) {
-            throw _iteratorError22;
+          if (_didIteratorError43) {
+            throw _iteratorError43;
           }
         }
       }
@@ -37767,39 +39084,39 @@ var ModelManager = function () {
         }
       }
 
-      this.notifySyncObserversOfModels(models);
+      this.notifySyncObserversOfModels(allModels);
 
       return models;
     }
   }, {
     key: 'notifySyncObserversOfModels',
     value: function notifySyncObserversOfModels(models) {
-      var _iteratorNormalCompletion23 = true;
-      var _didIteratorError23 = false;
-      var _iteratorError23 = undefined;
+      var _iteratorNormalCompletion44 = true;
+      var _didIteratorError44 = false;
+      var _iteratorError44 = undefined;
 
       try {
-        for (var _iterator23 = this.itemSyncObservers[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
-          var observer = _step23.value;
+        for (var _iterator44 = this.itemSyncObservers[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
+          var observer = _step44.value;
 
           var relevantItems = models.filter(function (item) {
-            return item.content_type == observer.type;
+            return item.content_type == observer.type || observer.type == "*";
           });
           if (relevantItems.length > 0) {
             observer.callback(relevantItems);
           }
         }
       } catch (err) {
-        _didIteratorError23 = true;
-        _iteratorError23 = err;
+        _didIteratorError44 = true;
+        _iteratorError44 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion23 && _iterator23.return) {
-            _iterator23.return();
+          if (!_iteratorNormalCompletion44 && _iterator44.return) {
+            _iterator44.return();
           }
         } finally {
-          if (_didIteratorError23) {
-            throw _iteratorError23;
+          if (_didIteratorError44) {
+            throw _iteratorError44;
           }
         }
       }
@@ -37807,13 +39124,13 @@ var ModelManager = function () {
   }, {
     key: 'notifyItemChangeObserversOfModels',
     value: function notifyItemChangeObserversOfModels(models) {
-      var _iteratorNormalCompletion24 = true;
-      var _didIteratorError24 = false;
-      var _iteratorError24 = undefined;
+      var _iteratorNormalCompletion45 = true;
+      var _didIteratorError45 = false;
+      var _iteratorError45 = undefined;
 
       try {
-        for (var _iterator24 = this.itemChangeObservers[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
-          var observer = _step24.value;
+        for (var _iterator45 = this.itemChangeObservers[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
+          var observer = _step45.value;
 
           var relevantItems = models.filter(function (item) {
             return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
@@ -37824,16 +39141,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError24 = true;
-        _iteratorError24 = err;
+        _didIteratorError45 = true;
+        _iteratorError45 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion24 && _iterator24.return) {
-            _iterator24.return();
+          if (!_iteratorNormalCompletion45 && _iterator45.return) {
+            _iterator45.return();
           }
         } finally {
-          if (_didIteratorError24) {
-            throw _iteratorError24;
+          if (_didIteratorError45) {
+            throw _iteratorError45;
           }
         }
       }
@@ -37852,6 +39169,8 @@ var ModelManager = function () {
         item = new Editor(json_obj);
       } else if (json_obj.content_type == "SN|Theme") {
         item = new Theme(json_obj);
+      } else if (json_obj.content_type == "SN|Component") {
+        item = new Component(json_obj);
       } else {
         item = new Item(json_obj);
       }
@@ -37906,13 +39225,13 @@ var ModelManager = function () {
         return;
       }
 
-      var _iteratorNormalCompletion25 = true;
-      var _didIteratorError25 = false;
-      var _iteratorError25 = undefined;
+      var _iteratorNormalCompletion46 = true;
+      var _didIteratorError46 = false;
+      var _iteratorError46 = undefined;
 
       try {
-        for (var _iterator25 = contentObject.references[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
-          var reference = _step25.value;
+        for (var _iterator46 = contentObject.references[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
+          var reference = _step46.value;
 
           var referencedItem = this.findItem(reference.uuid);
           if (referencedItem) {
@@ -37923,16 +39242,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError25 = true;
-        _iteratorError25 = err;
+        _didIteratorError46 = true;
+        _iteratorError46 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion25 && _iterator25.return) {
-            _iterator25.return();
+          if (!_iteratorNormalCompletion46 && _iterator46.return) {
+            _iterator46.return();
           }
         } finally {
-          if (_didIteratorError25) {
-            throw _iteratorError25;
+          if (_didIteratorError46) {
+            throw _iteratorError46;
           }
         }
       }
@@ -37967,27 +39286,27 @@ var ModelManager = function () {
   }, {
     key: 'clearDirtyItems',
     value: function clearDirtyItems(items) {
-      var _iteratorNormalCompletion26 = true;
-      var _didIteratorError26 = false;
-      var _iteratorError26 = undefined;
+      var _iteratorNormalCompletion47 = true;
+      var _didIteratorError47 = false;
+      var _iteratorError47 = undefined;
 
       try {
-        for (var _iterator26 = items[Symbol.iterator](), _step26; !(_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done); _iteratorNormalCompletion26 = true) {
-          var item = _step26.value;
+        for (var _iterator47 = items[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
+          var item = _step47.value;
 
           item.setDirty(false);
         }
       } catch (err) {
-        _didIteratorError26 = true;
-        _iteratorError26 = err;
+        _didIteratorError47 = true;
+        _iteratorError47 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion26 && _iterator26.return) {
-            _iterator26.return();
+          if (!_iteratorNormalCompletion47 && _iterator47.return) {
+            _iterator47.return();
           }
         } finally {
-          if (_didIteratorError26) {
-            throw _iteratorError26;
+          if (_didIteratorError47) {
+            throw _iteratorError47;
           }
         }
       }
@@ -38016,27 +39335,27 @@ var ModelManager = function () {
         return _.includes(this.acceptableContentTypes, item.content_type);
       }.bind(this));
 
-      var _iteratorNormalCompletion27 = true;
-      var _didIteratorError27 = false;
-      var _iteratorError27 = undefined;
+      var _iteratorNormalCompletion48 = true;
+      var _didIteratorError48 = false;
+      var _iteratorError48 = undefined;
 
       try {
-        for (var _iterator27 = relevantItems[Symbol.iterator](), _step27; !(_iteratorNormalCompletion27 = (_step27 = _iterator27.next()).done); _iteratorNormalCompletion27 = true) {
-          var item = _step27.value;
+        for (var _iterator48 = relevantItems[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
+          var item = _step48.value;
 
           item.setDirty(true);
         }
       } catch (err) {
-        _didIteratorError27 = true;
-        _iteratorError27 = err;
+        _didIteratorError48 = true;
+        _iteratorError48 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion27 && _iterator27.return) {
-            _iterator27.return();
+          if (!_iteratorNormalCompletion48 && _iterator48.return) {
+            _iterator48.return();
           }
         } finally {
-          if (_didIteratorError27) {
-            throw _iteratorError27;
+          if (_didIteratorError48) {
+            throw _iteratorError48;
           }
         }
       }
@@ -38108,6 +39427,7 @@ var ModelManager = function () {
 angular.module('app.frontend').service('modelManager', ModelManager);
 ;
 var SyncManager = function () {
+  SyncManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'dbManager', 'httpManager', '$interval'];
   function SyncManager($rootScope, modelManager, authManager, dbManager, httpManager, $interval) {
     _classCallCheck(this, SyncManager);
 
@@ -38148,29 +39468,29 @@ var SyncManager = function () {
     value: function syncOffline(items, callback) {
       this.writeItemsToLocalStorage(items, true, function (responseItems) {
         // delete anything needing to be deleted
-        var _iteratorNormalCompletion28 = true;
-        var _didIteratorError28 = false;
-        var _iteratorError28 = undefined;
+        var _iteratorNormalCompletion49 = true;
+        var _didIteratorError49 = false;
+        var _iteratorError49 = undefined;
 
         try {
-          for (var _iterator28 = items[Symbol.iterator](), _step28; !(_iteratorNormalCompletion28 = (_step28 = _iterator28.next()).done); _iteratorNormalCompletion28 = true) {
-            var item = _step28.value;
+          for (var _iterator49 = items[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
+            var item = _step49.value;
 
             if (item.deleted) {
               this.modelManager.removeItemLocally(item);
             }
           }
         } catch (err) {
-          _didIteratorError28 = true;
-          _iteratorError28 = err;
+          _didIteratorError49 = true;
+          _iteratorError49 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion28 && _iterator28.return) {
-              _iterator28.return();
+            if (!_iteratorNormalCompletion49 && _iterator49.return) {
+              _iterator49.return();
             }
           } finally {
-            if (_didIteratorError28) {
-              throw _iteratorError28;
+            if (_didIteratorError49) {
+              throw _iteratorError49;
             }
           }
         }
@@ -38184,27 +39504,27 @@ var SyncManager = function () {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback) {
       var items = this.modelManager.allItems;
-      var _iteratorNormalCompletion29 = true;
-      var _didIteratorError29 = false;
-      var _iteratorError29 = undefined;
+      var _iteratorNormalCompletion50 = true;
+      var _didIteratorError50 = false;
+      var _iteratorError50 = undefined;
 
       try {
-        for (var _iterator29 = items[Symbol.iterator](), _step29; !(_iteratorNormalCompletion29 = (_step29 = _iterator29.next()).done); _iteratorNormalCompletion29 = true) {
-          var item = _step29.value;
+        for (var _iterator50 = items[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
+          var item = _step50.value;
 
           item.setDirty(true);
         }
       } catch (err) {
-        _didIteratorError29 = true;
-        _iteratorError29 = err;
+        _didIteratorError50 = true;
+        _iteratorError50 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion29 && _iterator29.return) {
-            _iterator29.return();
+          if (!_iteratorNormalCompletion50 && _iterator50.return) {
+            _iterator50.return();
           }
         } finally {
-          if (_didIteratorError29) {
-            throw _iteratorError29;
+          if (_didIteratorError50) {
+            throw _iteratorError50;
           }
         }
       }
@@ -38224,27 +39544,27 @@ var SyncManager = function () {
         allCallbacks.push(currentCallback);
       }
       if (allCallbacks.length) {
-        var _iteratorNormalCompletion30 = true;
-        var _didIteratorError30 = false;
-        var _iteratorError30 = undefined;
+        var _iteratorNormalCompletion51 = true;
+        var _didIteratorError51 = false;
+        var _iteratorError51 = undefined;
 
         try {
-          for (var _iterator30 = allCallbacks[Symbol.iterator](), _step30; !(_iteratorNormalCompletion30 = (_step30 = _iterator30.next()).done); _iteratorNormalCompletion30 = true) {
-            var eachCallback = _step30.value;
+          for (var _iterator51 = allCallbacks[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
+            var eachCallback = _step51.value;
 
             eachCallback(response);
           }
         } catch (err) {
-          _didIteratorError30 = true;
-          _iteratorError30 = err;
+          _didIteratorError51 = true;
+          _iteratorError51 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion30 && _iterator30.return) {
-              _iterator30.return();
+            if (!_iteratorNormalCompletion51 && _iterator51.return) {
+              _iterator51.return();
             }
           } finally {
-            if (_didIteratorError30) {
-              throw _iteratorError30;
+            if (_didIteratorError51) {
+              throw _iteratorError51;
             }
           }
         }
@@ -38443,13 +39763,13 @@ var SyncManager = function () {
     key: 'handleSyncConflicts',
     value: function handleSyncConflicts(items) {
       var needsSync = false;
-      var _iteratorNormalCompletion31 = true;
-      var _didIteratorError31 = false;
-      var _iteratorError31 = undefined;
+      var _iteratorNormalCompletion52 = true;
+      var _didIteratorError52 = false;
+      var _iteratorError52 = undefined;
 
       try {
-        for (var _iterator31 = items[Symbol.iterator](), _step31; !(_iteratorNormalCompletion31 = (_step31 = _iterator31.next()).done); _iteratorNormalCompletion31 = true) {
-          var item = _step31.value;
+        for (var _iterator52 = items[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
+          var item = _step52.value;
 
           if (item.conflict_of) {
             var original = this.modelManager.findItem(item.conflict_of);
@@ -38461,16 +39781,16 @@ var SyncManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError31 = true;
-        _iteratorError31 = err;
+        _didIteratorError52 = true;
+        _iteratorError52 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion31 && _iterator31.return) {
-            _iterator31.return();
+          if (!_iteratorNormalCompletion52 && _iterator52.return) {
+            _iterator52.return();
           }
         } finally {
-          if (_didIteratorError31) {
-            throw _iteratorError31;
+          if (_didIteratorError52) {
+            throw _iteratorError52;
           }
         }
       }
@@ -38560,6 +39880,7 @@ var SyncManager = function () {
 angular.module('app.frontend').service('syncManager', SyncManager);
 ;
 var ThemeManager = function () {
+  ThemeManager.$inject = ['modelManager', 'syncManager', '$rootScope'];
   function ThemeManager(modelManager, syncManager, $rootScope) {
     _classCallCheck(this, ThemeManager);
 
@@ -38805,8 +40126,8 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "          <a ng-click='newPasswordData.changePassword = false; newPasswordData.showForm = false'>Cancel</a>\n" +
     "          <div class='mt-10' ng-if='newPasswordData.showForm'>\n" +
     "            <form>\n" +
-    "              <input class='form-control' ng-model='newPasswordData.newPassword' placeholder='Enter new password' type='text'>\n" +
-    "              <input class='form-control' ng-model='newPasswordData.newPasswordConfirmation' placeholder='Confirm new password' type='text'>\n" +
+    "              <input class='form-control' ng-model='newPasswordData.newPassword' placeholder='Enter new password' type='password'>\n" +
+    "              <input class='form-control' ng-model='newPasswordData.newPasswordConfirmation' placeholder='Confirm new password' type='password'>\n" +
     "              <button class='ui-button block' ng-click='submitPasswordChange()'>Submit</button>\n" +
     "            </form>\n" +
     "          </div>\n" +
@@ -38840,7 +40161,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      </label>\n" +
     "      <div ng-if='importData.requestPassword'>\n" +
     "        Enter the account password associated with the import file.\n" +
-    "        <input ng-model='importData.password' type='text'>\n" +
+    "        <input ng-model='importData.password' type='password'>\n" +
     "        <button ng-click='submitImportPassword()'>Decrypt & Import</button>\n" +
     "      </div>\n" +
     "      <p class='mt-5' ng-if='user'>Notes are downloaded in the Standard File format, which allows you to re-import back into this app easily. To download as plain text files, choose \"Decrypted\".</p>\n" +
@@ -39442,6 +40763,30 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        </li>\n" +
     "      </ul>\n" +
     "    </div>\n" +
+    "    <div ng-if='componentManager.components.length &gt; 0'>\n" +
+    "      <div class='container no-bottom section-margin'>\n" +
+    "        <h2>Components</h2>\n" +
+    "      </div>\n" +
+    "      <ul>\n" +
+    "        <li ng-click='component.showDetails = !component.showDetails' ng-repeat='component in componentManager.components'>\n" +
+    "          <div class='container'>\n" +
+    "            <h3>{{component.name}}</h3>\n" +
+    "            <a ng-click='componentManager.activateComponent(component); $event.stopPropagation();' ng-if='!componentManager.isComponentActive(component)'>Activate</a>\n" +
+    "            <a ng-click='componentManager.deactivateComponent(component); $event.stopPropagation();' ng-if='componentManager.isComponentActive(component)'>Deactivate</a>\n" +
+    "            <div ng-if='component.showDetails'>\n" +
+    "              <div class='link-group'>\n" +
+    "                <a class='red' ng-click='deleteComponent(component); $event.stopPropagation();'>Delete</a>\n" +
+    "                <a ng-click='component.showLink = !component.showLink; $event.stopPropagation();'>Show Link</a>\n" +
+    "                <a ng-click='revokePermissions(component); $event.stopPropagation();' ng-if='component.permissions.length'>Revoke Permissions</a>\n" +
+    "                <p class='small selectable wrap' ng-if='component.showLink'>\n" +
+    "                  {{component.url}}\n" +
+    "                </p>\n" +
+    "              </div>\n" +
+    "            </div>\n" +
+    "          </div>\n" +
+    "        </li>\n" +
+    "      </ul>\n" +
+    "    </div>\n" +
     "    <div class='container section-margin'>\n" +
     "      <h2 class='blue'>Install</h2>\n" +
     "      <p class='faded'>Enter an install link</p>\n" +
@@ -39493,6 +40838,34 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
   );
 
 
+  $templateCache.put('frontend/directives/permissions-modal.html',
+    "<div class='background' ng-click='dismiss()'></div>\n" +
+    "<div class='content'>\n" +
+    "  <h3>The following extension has requested these permissions:</h3>\n" +
+    "  <h4>Extension</h4>\n" +
+    "  <p>Name: {{component.name}}</p>\n" +
+    "  <p class='wrap'>URL: {{component.url}}</p>\n" +
+    "  <h4>Permissions</h4>\n" +
+    "  <div class='permission' ng-repeat='permission in formattedPermissions'>\n" +
+    "    <p>{{permission}}</p>\n" +
+    "  </div>\n" +
+    "  <h4>Status</h4>\n" +
+    "  <p class='status' ng-class=\"{'trusted' : component.trusted}\">{{component.trusted ? 'Trusted' : 'Untrusted'}}</p>\n" +
+    "  <div class='learn-more'>\n" +
+    "    <h4>Details</h4>\n" +
+    "    <p>\n" +
+    "      Extensions use an offline messaging system to communicate. With <i>Trusted</i> extensions, data is never sent remotely without your consent. Learn more about extension permissions at\n" +
+    "      <a href='https://standardnotes.org/permissions' target='_blank'>https://standardnotes.org/permissions.</a>\n" +
+    "    </p>\n" +
+    "  </div>\n" +
+    "  <div class='buttons'>\n" +
+    "    <button class='standard white' ng-click='deny()'>Deny</button>\n" +
+    "    <button class='standard blue' ng-click='accept()'>Accept</button>\n" +
+    "  </div>\n" +
+    "</div>\n"
+  );
+
+
   $templateCache.put('frontend/editor.html',
     "<div class='section editor' ng-class=\"{'fullscreen' : ctrl.fullscreen}\">\n" +
     "  <div class='section-title-bar' id='editor-title-bar' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.note'>\n" +
@@ -39501,7 +40874,10 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    </div>\n" +
     "    <div id='save-status' ng-bind-html='ctrl.noteStatus' ng-class=\"{'red bold': ctrl.saveError, 'orange bold': ctrl.syncTakingTooLong}\"></div>\n" +
     "    <div class='editor-tags'>\n" +
-    "      <input class='tags-input' ng-blur='ctrl.updateTagsFromTagsString($event, ctrl.tagsString)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur();' ng-model='ctrl.tagsString' placeholder='#tags' type='text'>\n" +
+    "      <div id='note-tags-component-container' ng-if='ctrl.tagsComponent &amp;&amp; ctrl.tagsComponent.active'>\n" +
+    "        <iframe data-component-id='{{ctrl.tagsComponent.uuid}}' frameBorder='0' id='note-tags-iframe' ng-src='{{ctrl.tagsComponent.url | trusted}}' sandbox='allow-scripts'></iframe>\n" +
+    "      </div>\n" +
+    "      <input class='tags-input' ng-blur='ctrl.updateTagsFromTagsString($event, ctrl.tagsString)' ng-if='!(ctrl.tagsComponent &amp;&amp; ctrl.tagsComponent.active)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur();' ng-model='ctrl.tagsString' placeholder='#tags' type='text'>\n" +
     "    </div>\n" +
     "  </div>\n" +
     "  <ul class='section-menu-bar' ng-if='ctrl.note'>\n" +
@@ -39513,6 +40889,9 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        </li>\n" +
     "        <li>\n" +
     "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.deleteNote()'>Delete Note</label>\n" +
+    "        </li>\n" +
+    "        <li ng-if='ctrl.hasDisabledComponents()'>\n" +
+    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.restoreDisabledComponents()'>Restore Disabled Components</label>\n" +
     "        </li>\n" +
     "      </ul>\n" +
     "    </li>\n" +
@@ -39526,8 +40905,16 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    </li>\n" +
     "  </ul>\n" +
     "  <div class='editor-content' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.noteReady'>\n" +
-    "    <iframe frameBorder='0' id='editor-iframe' ng-if='ctrl.editor &amp;&amp; !ctrl.editor.systemEditor' ng-src='{{ctrl.editor.url | trusted}}' style='width: 100%;'></iframe>\n" +
+    "    <iframe frameBorder='0' id='editor-iframe' ng-if='ctrl.editor &amp;&amp; !ctrl.editor.systemEditor' ng-src='{{ctrl.editor.url | trusted}}' sandbox='allow-scripts' style='width: 100%;'>\n" +
+    "      Loading\n" +
+    "    </iframe>\n" +
     "    <textarea class='editable' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.editor || ctrl.editor.systemEditor' ng-model='ctrl.note.text'></textarea>\n" +
+    "  </div>\n" +
+    "  <div id='editor-pane-component-stack'>\n" +
+    "    <div class='component component-stack-border' id=\"{{'component-' + component.uuid}}\" ng-if='component.active' ng-mouseleave='component.showExit = false' ng-mouseover='component.showExit = true' ng-repeat='component in ctrl.componentStack' ng-show='!component.ignoreEvents'>\n" +
+    "      <div class='exit-button body-text-color' ng-click='ctrl.disableComponent(component)' ng-if='component.showExit'>×</div>\n" +
+    "      <iframe data-component-id='{{component.uuid}}' frameBorder='0' id='note-tags-iframe' ng-src='{{component.url | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-modals'></iframe>\n" +
+    "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
   );
@@ -39572,7 +40959,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 
 
   $templateCache.put('frontend/header.html',
-    "<div id='footer-bar'>\n" +
+    "<div class='footer-bar'>\n" +
     "  <div class='pull-left'>\n" +
     "    <div class='footer-bar-link' click-outside='ctrl.showAccountMenu = false;' is-open='ctrl.showAccountMenu'>\n" +
     "      <a ng-class='{red: ctrl.error}' ng-click='ctrl.accountMenuPressed()'>Account</a>\n" +
@@ -39583,7 +40970,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      <global-extensions-menu ng-if='ctrl.showExtensionsMenu'></global-extensions-menu>\n" +
     "    </div>\n" +
     "    <div class='footer-bar-link'>\n" +
-    "      <a href='https://standardnotes.org/help' target='_blank'>\n" +
+    "      <a href='https://standardnotes.org' target='_blank'>\n" +
     "        Help\n" +
     "      </a>\n" +
     "    </div>\n" +
@@ -39697,12 +41084,12 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 
 
   $templateCache.put('frontend/tags.html',
-    "<div class='section tags'>\n" +
-    "  <div class='content' id='tags-content'>\n" +
+    "<div class='section tags' id='tags-column'>\n" +
+    "  <iframe frameBorder='0' id='tags-list-iframe' ng-if='ctrl.component &amp;&amp; ctrl.component.active' ng-src='{{ctrl.component.url | trusted}}' sandbox='allow-scripts' style='width: 100%; height: 100%;'></iframe>\n" +
+    "  <div class='content' id='tags-content' ng-if='!(ctrl.component &amp;&amp; ctrl.component.active)'>\n" +
     "    <div class='section-title-bar' id='tags-title-bar'>\n" +
     "      <div class='title'>Tags</div>\n" +
     "      <div class='add-button' id='tag-add-button' ng-click='ctrl.clickedAddNewTag()'>+</div>\n" +
-    "      {{ctrl.test}}\n" +
     "    </div>\n" +
     "    <div class='scrollable'>\n" +
     "      <div class='tag' ng-class=\"{'selected' : ctrl.selectedTag == ctrl.allTag}\" ng-click='ctrl.selectTag(ctrl.allTag)' ng-if='ctrl.allTag'>\n" +
