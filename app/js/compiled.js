@@ -40905,7 +40905,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    </li>\n" +
     "  </ul>\n" +
     "  <div class='editor-content' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.noteReady'>\n" +
-    "    <iframe frameBorder='0' id='editor-iframe' ng-if='ctrl.editor &amp;&amp; !ctrl.editor.systemEditor' ng-src='{{ctrl.editor.url | trusted}}' sandbox='allow-scripts' style='width: 100%;'>\n" +
+    "    <iframe frameBorder='0' id='editor-iframe' ng-if='ctrl.editor &amp;&amp; !ctrl.editor.systemEditor' ng-src='{{ctrl.editor.url | trusted}}' style='width: 100%;'>\n" +
     "      Loading\n" +
     "    </iframe>\n" +
     "    <textarea class='editable' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.editor || ctrl.editor.systemEditor' ng-model='ctrl.note.text'></textarea>\n" +
