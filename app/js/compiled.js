@@ -33280,32 +33280,23 @@ var SNCrypto = function () {
       return result;
     }
   }, {
-    key: 'generateKeysFromMasterKey',
-    value: function generateKeysFromMasterKey(mk) {
-      var encryptionKey = Neeto.crypto.hmac256(mk, CryptoJS.enc.Utf8.parse("e").toString(CryptoJS.enc.Hex));
-      var authKey = Neeto.crypto.hmac256(mk, CryptoJS.enc.Utf8.parse("a").toString(CryptoJS.enc.Hex));
-      return { encryptionKey: encryptionKey, authKey: authKey };
-    }
-  }, {
     key: 'computeEncryptionKeysForUser',
     value: function computeEncryptionKeysForUser() {
       var _ref2 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
           password = _ref2.password,
           pw_salt = _ref2.pw_salt,
-          pw_func = _ref2.pw_func,
-          pw_alg = _ref2.pw_alg,
-          pw_cost = _ref2.pw_cost,
-          pw_key_size = _ref2.pw_key_size;
+          pw_cost = _ref2.pw_cost;
 
       var callback = arguments[1];
 
-      this.generateSymmetricKeyPair({ password: password, pw_salt: pw_salt,
-        pw_func: pw_func, pw_alg: pw_alg, pw_cost: pw_cost, pw_key_size: pw_key_size }, function (keys) {
-        var pw = keys[0];
-        var mk = keys[1];
-
-        callback(_.merge({ pw: pw, mk: mk }, this.generateKeysFromMasterKey(mk)));
+      this.generateSymmetricKeyPair({ password: password, pw_salt: pw_salt, pw_cost: pw_cost }, function (keys) {
+        callback({ pw: keys[0], mk: keys[1], ak: keys[2] });
       }.bind(this));
+    }
+  }, {
+    key: 'calculateVerificationTag',
+    value: function calculateVerificationTag(cost, salt, ak) {
+      return Neeto.crypto.hmac256([cost, salt].join(":"), ak);
     }
   }, {
     key: 'generateInitialEncryptionKeysForUser',
@@ -33316,20 +33307,13 @@ var SNCrypto = function () {
 
       var callback = arguments[1];
 
-      var defaults = this.defaultPasswordGenerationParams();
-      var pw_func = defaults.pw_func,
-          pw_alg = defaults.pw_alg,
-          pw_key_size = defaults.pw_key_size,
-          pw_cost = defaults.pw_cost;
-
+      var pw_cost = this.defaultPasswordGenerationCost();
       var pw_nonce = this.generateRandomKey(512);
-      var pw_salt = this.sha1(email + "SN" + pw_nonce);
-      _.merge(defaults, { pw_salt: pw_salt, pw_nonce: pw_nonce });
-      this.generateSymmetricKeyPair(_.merge({ email: email, password: password, pw_salt: pw_salt }, defaults), function (keys) {
-        var pw = keys[0];
-        var mk = keys[1];
-
-        callback(_.merge({ pw: pw, mk: mk }, this.generateKeysFromMasterKey(mk)), defaults);
+      var pw_salt = this.sha1([email, pw_nonce].join(":"));
+      this.generateSymmetricKeyPair({ email: email, password: password, pw_salt: pw_salt, pw_cost: pw_cost }, function (keys) {
+        var ak = keys[2];
+        var pw_auth = this.calculateVerificationTag(pw_cost, pw_salt, ak);
+        callback({ pw: keys[0], mk: keys[1], ak: ak }, { pw_auth: pw_auth, pw_salt: pw_salt, pw_cost: pw_cost });
       }.bind(this));
     }
   }]);
@@ -33357,34 +33341,23 @@ var SNCryptoJS = function (_SNCrypto) {
       var _ref4 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
           password = _ref4.password,
           pw_salt = _ref4.pw_salt,
-          pw_func = _ref4.pw_func,
-          pw_alg = _ref4.pw_alg,
-          pw_cost = _ref4.pw_cost,
-          pw_key_size = _ref4.pw_key_size;
+          pw_cost = _ref4.pw_cost;
 
       var callback = arguments[1];
 
-      var algMapping = {
-        "sha256": CryptoJS.algo.SHA256,
-        "sha512": CryptoJS.algo.SHA512
-      };
-      var fnMapping = {
-        "pbkdf2": CryptoJS.PBKDF2
-      };
-
-      var alg = algMapping[pw_alg];
-      var kdf = fnMapping[pw_func];
-      var output = kdf(password, pw_salt, { keySize: pw_key_size / 32, hasher: alg, iterations: pw_cost }).toString();
+      var output = CryptoJS.PBKDF2(password, pw_salt, { keySize: 768 / 32, hasher: CryptoJS.algo.SHA512, iterations: pw_cost }).toString();
 
       var outputLength = output.length;
-      var firstHalf = output.slice(0, outputLength / 2);
-      var secondHalf = output.slice(outputLength / 2, outputLength);
-      callback([firstHalf, secondHalf]);
+      var splitLength = outputLength / 3;
+      var firstThird = output.slice(0, splitLength);
+      var secondThird = output.slice(splitLength, splitLength * 2);
+      var thirdThird = output.slice(splitLength * 2, splitLength * 3);
+      callback([firstThird, secondThird, thirdThird]);
     }
   }, {
-    key: 'defaultPasswordGenerationParams',
-    value: function defaultPasswordGenerationParams() {
-      return { pw_func: "pbkdf2", pw_alg: "sha512", pw_key_size: 512, pw_cost: 3000 };
+    key: 'defaultPasswordGenerationCost',
+    value: function defaultPasswordGenerationCost() {
+      return 3000;
     }
   }]);
 
@@ -33400,7 +33373,7 @@ var EncryptionHelper = function () {
 
   _createClass(EncryptionHelper, null, [{
     key: '_private_encryptString',
-    value: function _private_encryptString(string, encryptionKey, authKey, version) {
+    value: function _private_encryptString(string, encryptionKey, authKey, uuid, version) {
       var fullCiphertext, contentCiphertext;
       if (version === "001") {
         contentCiphertext = Neeto.crypto.encryptText(string, encryptionKey, null);
@@ -33408,9 +33381,9 @@ var EncryptionHelper = function () {
       } else {
         var iv = Neeto.crypto.generateRandomKey(128);
         contentCiphertext = Neeto.crypto.encryptText(string, encryptionKey, iv);
-        var ciphertextToAuth = [version, iv, contentCiphertext].join(":");
+        var ciphertextToAuth = [version, uuid, iv, contentCiphertext].join(":");
         var authHash = Neeto.crypto.hmac256(ciphertextToAuth, authKey);
-        fullCiphertext = [version, authHash, iv, contentCiphertext].join(":");
+        fullCiphertext = [version, authHash, uuid, iv, contentCiphertext].join(":");
       }
 
       return fullCiphertext;
@@ -33425,13 +33398,13 @@ var EncryptionHelper = function () {
         // legacy
         params.enc_item_key = Neeto.crypto.encryptText(item_key, keys.mk, null);
       } else {
-        params.enc_item_key = this._private_encryptString(item_key, keys.encryptionKey, keys.authKey, version);
+        params.enc_item_key = this._private_encryptString(item_key, keys.mk, keys.ak, item.uuid, version);
       }
 
       // encrypt content
       var ek = Neeto.crypto.firstHalfOfKey(item_key);
       var ak = Neeto.crypto.secondHalfOfKey(item_key);
-      var ciphertext = this._private_encryptString(JSON.stringify(item.createContentJSONFromProperties()), ek, ak, version);
+      var ciphertext = this._private_encryptString(JSON.stringify(item.createContentJSONFromProperties()), ek, ak, item.uuid, version);
       if (version === "001") {
         var authHash = Neeto.crypto.hmac256(ciphertext, ak);
         params.auth_hash = authHash;
@@ -33442,7 +33415,7 @@ var EncryptionHelper = function () {
     }
   }, {
     key: 'encryptionComponentsFromString',
-    value: function encryptionComponentsFromString(string, baseKey, encryptionKey, authKey) {
+    value: function encryptionComponentsFromString(string, encryptionKey, authKey) {
       var encryptionVersion = string.substring(0, 3);
       if (encryptionVersion === "001") {
         return {
@@ -33451,7 +33424,7 @@ var EncryptionHelper = function () {
           ciphertextToAuth: string,
           iv: null,
           authHash: null,
-          encryptionKey: baseKey,
+          encryptionKey: encryptionKey,
           authKey: authKey
         };
       } else {
@@ -33459,9 +33432,10 @@ var EncryptionHelper = function () {
         return {
           encryptionVersion: components[0],
           authHash: components[1],
-          iv: components[2],
-          contentCiphertext: components[3],
-          ciphertextToAuth: [components[0], components[2], components[3]].join(":"),
+          uuid: components[2],
+          iv: components[3],
+          contentCiphertext: components[4],
+          ciphertextToAuth: [components[0], components[2], components[3], components[4]].join(":"),
           encryptionKey: encryptionKey,
           authKey: authKey
         };
@@ -33478,21 +33452,41 @@ var EncryptionHelper = function () {
         encryptedItemKey = "001" + encryptedItemKey;
         requiresAuth = false;
       }
-      var keyParams = this.encryptionComponentsFromString(encryptedItemKey, keys.mk, keys.encryptionKey, keys.authKey);
+      var keyParams = this.encryptionComponentsFromString(encryptedItemKey, keys.mk, keys.ak);
+
+      // return if uuid in auth hash does not match item uuid. Signs of tampering.
+      if (keyParams.uuid && keyParams.uuid !== item.uuid) {
+        item.errorDecrypting = true;
+        return;
+      }
+
       var item_key = Neeto.crypto.decryptText(keyParams, requiresAuth);
 
       if (!item_key) {
+        item.errorDecrypting = true;
         return;
       }
 
       // decrypt content
       var ek = Neeto.crypto.firstHalfOfKey(item_key);
       var ak = Neeto.crypto.secondHalfOfKey(item_key);
-      var itemParams = this.encryptionComponentsFromString(item.content, ek, ek, ak);
+      var itemParams = this.encryptionComponentsFromString(item.content, ek, ak);
+
+      // return if uuid in auth hash does not match item uuid. Signs of tampering.
+      if (itemParams.uuid && itemParams.uuid !== item.uuid) {
+        item.errorDecrypting = true;
+        return;
+      }
+
       if (!itemParams.authHash) {
+        // legacy 001
         itemParams.authHash = item.auth_hash;
       }
+
       var content = Neeto.crypto.decryptText(itemParams, true);
+      if (!content) {
+        item.errorDecrypting = true;
+      }
       item.content = content;
     }
   }, {
@@ -33521,6 +33515,7 @@ var EncryptionHelper = function () {
                 item.content = Neeto.crypto.base64Decode(item.content.substring(3, item.content.length));
               }
             } catch (e) {
+              item.errorDecrypting = true;
               if (throws) {
                 throw e;
               }
@@ -33561,14 +33556,14 @@ var SNCryptoWeb = function (_SNCrypto2) {
   }
 
   _createClass(SNCryptoWeb, [{
-    key: 'defaultPasswordGenerationParams',
+    key: 'defaultPasswordGenerationCost',
 
 
     /**
     Overrides
     */
-    value: function defaultPasswordGenerationParams() {
-      return { pw_func: "pbkdf2", pw_alg: "sha512", pw_key_size: 512, pw_cost: 5000 };
+    value: function defaultPasswordGenerationCost() {
+      return 10000;
     }
 
     /** Generates two deterministic keys based on one input */
@@ -33579,18 +33574,17 @@ var SNCryptoWeb = function (_SNCrypto2) {
       var _ref5 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
           password = _ref5.password,
           pw_salt = _ref5.pw_salt,
-          pw_func = _ref5.pw_func,
-          pw_alg = _ref5.pw_alg,
-          pw_cost = _ref5.pw_cost,
-          pw_key_size = _ref5.pw_key_size;
+          pw_cost = _ref5.pw_cost;
 
       var callback = arguments[1];
 
-      this.stretchPassword({ password: password, pw_func: pw_func, pw_alg: pw_alg, pw_salt: pw_salt, pw_cost: pw_cost, pw_key_size: pw_key_size }, function (output) {
+      this.stretchPassword({ password: password, pw_salt: pw_salt, pw_cost: pw_cost }, function (output) {
         var outputLength = output.length;
-        var firstHalf = output.slice(0, outputLength / 2);
-        var secondHalf = output.slice(outputLength / 2, outputLength);
-        callback([firstHalf, secondHalf]);
+        var splitLength = outputLength / 3;
+        var firstThird = output.slice(0, splitLength);
+        var secondThird = output.slice(splitLength, splitLength * 2);
+        var thirdThird = output.slice(splitLength * 2, splitLength * 3);
+        callback([firstThird, secondThird, thirdThird]);
       });
     }
 
@@ -33604,15 +33598,12 @@ var SNCryptoWeb = function (_SNCrypto2) {
       var _ref6 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
           password = _ref6.password,
           pw_salt = _ref6.pw_salt,
-          pw_cost = _ref6.pw_cost,
-          pw_func = _ref6.pw_func,
-          pw_alg = _ref6.pw_alg,
-          pw_key_size = _ref6.pw_key_size;
+          pw_cost = _ref6.pw_cost;
 
       var callback = arguments[1];
 
 
-      this.webCryptoImportKey(password, pw_func, function (key) {
+      this.webCryptoImportKey(password, function (key) {
 
         if (!key) {
           console.log("Key is null, unable to continue");
@@ -33620,7 +33611,7 @@ var SNCryptoWeb = function (_SNCrypto2) {
           return;
         }
 
-        this.webCryptoDeriveBits({ key: key, pw_func: pw_func, pw_alg: pw_alg, pw_salt: pw_salt, pw_cost: pw_cost, pw_key_size: pw_key_size }, function (key) {
+        this.webCryptoDeriveBits({ key: key, pw_salt: pw_salt, pw_cost: pw_cost }, function (key) {
           if (!key) {
             callback(null);
             return;
@@ -33632,8 +33623,8 @@ var SNCryptoWeb = function (_SNCrypto2) {
     }
   }, {
     key: 'webCryptoImportKey',
-    value: function webCryptoImportKey(input, pw_func, callback) {
-      subtleCrypto.importKey("raw", this.stringToArrayBuffer(input), { name: pw_func.toUpperCase() }, false, ["deriveBits"]).then(function (key) {
+    value: function webCryptoImportKey(input, callback) {
+      subtleCrypto.importKey("raw", this.stringToArrayBuffer(input), { name: "PBKDF2" }, false, ["deriveBits"]).then(function (key) {
         callback(key);
       }).catch(function (err) {
         console.error(err);
@@ -33645,25 +33636,17 @@ var SNCryptoWeb = function (_SNCrypto2) {
     value: function webCryptoDeriveBits() {
       var _ref7 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
           key = _ref7.key,
-          pw_func = _ref7.pw_func,
-          pw_alg = _ref7.pw_alg,
           pw_salt = _ref7.pw_salt,
-          pw_cost = _ref7.pw_cost,
-          pw_key_size = _ref7.pw_key_size;
+          pw_cost = _ref7.pw_cost;
 
       var callback = arguments[1];
 
-      var algMapping = {
-        "sha256": "SHA-256",
-        "sha512": "SHA-512"
-      };
-      var alg = algMapping[pw_alg];
       subtleCrypto.deriveBits({
-        "name": pw_func.toUpperCase(),
+        "name": "PBKDF2",
         salt: this.stringToArrayBuffer(pw_salt),
         iterations: pw_cost,
-        hash: { name: alg }
-      }, key, pw_key_size).then(function (bits) {
+        hash: { name: "SHA-512" }
+      }, key, 768).then(function (bits) {
         var key = this.arrayBufferToHexString(new Uint8Array(bits));
         callback(key);
       }.bind(this)).catch(function (err) {
@@ -35895,11 +35878,12 @@ var Theme = function (_Item7) {
 
 ;
 var ItemParams = function () {
-  function ItemParams(item, keys) {
+  function ItemParams(item, keys, version) {
     _classCallCheck(this, ItemParams);
 
     this.item = item;
     this.keys = keys;
+    this.version = version;
   }
 
   _createClass(ItemParams, [{
@@ -35917,7 +35901,7 @@ var ItemParams = function () {
   }, {
     key: 'paramsForLocalStorage',
     value: function paramsForLocalStorage() {
-      this.additionalFields = ["updated_at", "dirty"];
+      this.additionalFields = ["updated_at", "dirty", "errorDecrypting"];
       this.forExportFile = true;
       return this.__params();
     }
@@ -35929,17 +35913,15 @@ var ItemParams = function () {
   }, {
     key: '__params',
     value: function __params() {
-      var encryptionVersion = "001";
 
       console.assert(!this.item.dummy, "Item is dummy, should not have gotten here.", this.item.dummy);
 
       var params = { uuid: this.item.uuid, content_type: this.item.content_type, deleted: this.item.deleted, created_at: this.item.created_at };
-
       if (this.keys && !this.item.doNotEncrypt()) {
-        var encryptedParams = EncryptionHelper.encryptItem(this.item, this.keys, encryptionVersion);
+        var encryptedParams = EncryptionHelper.encryptItem(this.item, this.keys, this.version);
         _.merge(params, encryptedParams);
 
-        if (encryptionVersion !== "001") {
+        if (this.version !== "001") {
           params.auth_hash = null;
         }
       } else {
@@ -36031,11 +36013,11 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
     return domain;
   }
 
-  this.$get = ['$rootScope', 'httpManager', 'modelManager', 'dbManager', function ($rootScope, httpManager, modelManager, dbManager) {
-    return new AuthManager($rootScope, httpManager, modelManager, dbManager);
+  this.$get = ['$rootScope', '$timeout', 'httpManager', 'modelManager', 'dbManager', function ($rootScope, $timeout, httpManager, modelManager, dbManager) {
+    return new AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager);
   }];
 
-  function AuthManager($rootScope, httpManager, modelManager, dbManager) {
+  function AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager) {
 
     var userData = localStorage.getItem("user");
     if (userData) {
@@ -36069,15 +36051,17 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
       if (!mk) {
         return null;
       }
-      var keys = { mk: mk };
-      if (!localStorage.getItem("encryptionKey")) {
-        _.merge(keys, Neeto.crypto.generateKeysFromMasterKey(keys.mk));
-        localStorage.setItem("encryptionKey", keys.encryptionKey);
-        localStorage.setItem("authKey", keys.authKey);
-      } else {
-        _.merge(keys, { encryptionKey: localStorage.getItem("encryptionKey"), authKey: localStorage.getItem("authKey") });
-      }
+      var keys = { mk: mk, ak: localStorage.getItem("ak") };
       return keys;
+    };
+
+    this.encryptionVersion = function () {
+      var keys = this.keys();
+      if (keys && keys.ak) {
+        return "002";
+      } else {
+        return "001";
+      }
     };
 
     this.getAuthParamsForEmail = function (url, email, callback) {
@@ -36104,7 +36088,7 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
 
     this.login = function (url, email, password, callback) {
       this.getAuthParamsForEmail(url, email, function (authParams) {
-        if (!authParams) {
+        if (!authParams.pw_cost) {
           callback({ error: { message: "Unable to get authentication parameters." } });
           return;
         }
@@ -36117,11 +36101,39 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
         }
 
         Neeto.crypto.computeEncryptionKeysForUser(_.merge({ password: password }, authParams), function (keys) {
+
+          var uploadVTagOnCompletion = false;
+          var localVTag = Neeto.crypto.calculateVerificationTag(authParams.pw_cost, authParams.pw_salt, keys.ak);
+
+          if (authParams.pw_auth) {
+            // verify auth params
+            if (localVTag !== authParams.pw_auth) {
+              alert("Invalid server verification tag; aborting login. Learn more at standardnotes.org/verification.");
+              $timeout(function () {
+                callback({ error: true, didDisplayAlert: true });
+              });
+              return;
+            } else {
+              console.log("Verification tag success.");
+            }
+          } else {
+            // either user has not uploaded pw_auth, or server is attempting to bypass authentication
+            if (confirm("Unable to locate verification tag for server. If this is your first time seeing this message and your account was created before July 2017, press OK to upload verification tag. If your account was created after July 2017, or if you've already seen this message, press cancel to abort login. Learn more at standardnotes.org/verification.")) {
+              // upload verification tag on completion
+              uploadVTagOnCompletion = true;
+            } else {
+              return;
+            }
+          }
+
           var requestUrl = url + "/auth/sign_in";
           var params = { password: keys.pw, email: email };
           httpManager.postAbsolute(requestUrl, params, function (response) {
-            this.handleAuthResponse(response, email, url, authParams, keys.mk, keys.pw);
+            this.handleAuthResponse(response, email, url, authParams, keys);
             callback(response);
+            if (uploadVTagOnCompletion) {
+              this.uploadVerificationTag(localVTag, authParams);
+            }
           }.bind(this), function (response) {
             console.error("Error logging in", response);
             callback(response);
@@ -36130,19 +36142,37 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
       }.bind(this));
     };
 
-    this.handleAuthResponse = function (response, email, url, authParams, mk, pw) {
+    this.uploadVerificationTag = function (tag, authParams) {
+      var requestUrl = localStorage.getItem("server") + "/auth/update";
+      var params = { pw_auth: tag };
+
+      httpManager.postAbsolute(requestUrl, params, function (response) {
+        _.merge(authParams, params);
+        localStorage.setItem("auth_params", JSON.stringify(authParams));
+        alert("Your verification tag was successfully uploaded.");
+      }.bind(this), function (response) {
+        alert("There was an error uploading your verification tag.");
+      });
+    };
+
+    this.handleAuthResponse = function (response, email, url, authParams, keys) {
       try {
         if (url) {
           localStorage.setItem("server", url);
         }
         localStorage.setItem("user", JSON.stringify(response.user));
-        localStorage.setItem("auth_params", JSON.stringify(_.omit(authParams, ["pw_nonce"])));
-        localStorage.setItem("mk", mk);
-        localStorage.setItem("pw", pw);
+        localStorage.setItem("auth_params", JSON.stringify(authParams));
         localStorage.setItem("jwt", response.token);
+        this.saveKeys(keys);
       } catch (e) {
         dbManager.displayOfflineAlert();
       }
+    };
+
+    this.saveKeys = function (keys) {
+      localStorage.setItem("pw", keys.pw);
+      localStorage.setItem("mk", keys.mk);
+      localStorage.setItem("ak", keys.ak);
     };
 
     this.register = function (url, email, password, callback) {
@@ -36151,7 +36181,7 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
         var params = _.merge({ password: keys.pw, email: email }, authParams);
 
         httpManager.postAbsolute(requestUrl, params, function (response) {
-          this.handleAuthResponse(response, email, url, authParams, keys.mk, keys.pw);
+          this.handleAuthResponse(response, email, url, authParams, keys);
           callback(response);
         }.bind(this), function (response) {
           console.error("Registration error", response);
@@ -36166,7 +36196,7 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
         var params = _.merge({ new_password: keys.pw }, authParams);
 
         httpManager.postAbsolute(requestUrl, params, function (response) {
-          this.handleAuthResponse(response, email, null, authParams, keys.mk, keys.pw);
+          this.handleAuthResponse(response, email, null, authParams, keys);
           callback(response);
         }.bind(this), function (response) {
           var error = response;
@@ -37385,83 +37415,6 @@ angular.module('app.frontend').service('dbManager', DBManager);
     }
   };
 });
-;
-var PermissionsModal = function () {
-  function PermissionsModal() {
-    _classCallCheck(this, PermissionsModal);
-
-    this.restrict = "E";
-    this.templateUrl = "frontend/directives/permissions-modal.html";
-    this.scope = {
-      show: "=",
-      component: "=",
-      permissions: "=",
-      callback: "="
-    };
-  }
-
-  _createClass(PermissionsModal, [{
-    key: 'link',
-    value: function link($scope, el, attrs) {
-
-      $scope.dismiss = function () {
-        el.remove();
-      };
-
-      $scope.accept = function () {
-        $scope.callback(true);
-        $scope.dismiss();
-      };
-
-      $scope.deny = function () {
-        $scope.callback(false);
-        $scope.dismiss();
-      };
-
-      $scope.formattedPermissions = $scope.permissions.map(function (permission) {
-        if (permission.name === "stream-items") {
-          var title = "Access to ";
-          var types = permission.content_types.map(function (type) {
-            return (type + "s").toLowerCase();
-          });
-          var typesString = "";
-          var separator = ", ";
-
-          for (var i = 0; i < types.length; i++) {
-            var type = types[i];
-            if (i == 0) {
-              // first element
-              typesString = typesString + type;
-            } else if (i == types.length - 1) {
-              // last element
-              if (types.length > 2) {
-                typesString += separator + "and " + typesString;
-              } else if (types.length == 2) {
-                typesString = typesString + " and " + type;
-              }
-            } else {
-              typesString += separator + type;
-            }
-          }
-
-          return title + typesString;
-        } else if (permission.name === "stream-context-item") {
-          var mapping = {
-            "editor-stack": "working note",
-            "note-tags": "working note"
-          };
-          return "Access to " + mapping[$scope.component.area];
-        }
-      });
-    }
-  }]);
-
-  return PermissionsModal;
-}();
-
-angular.module('app.frontend').directive('permissionsModal', function () {
-  return new PermissionsModal();
-});
 ;angular.module('app.frontend').directive('selectOnClick', ['$window', function ($window) {
   return {
     restrict: 'A',
@@ -37499,6 +37452,10 @@ var AccountMenu = function () {
 
       $scope.encryptionKey = function () {
         return authManager.keys().mk;
+      };
+
+      $scope.authKey = function () {
+        return authManager.keys().ak;
       };
 
       $scope.serverPassword = function () {
@@ -37821,7 +37778,7 @@ var AccountMenu = function () {
 
       $scope.itemsData = function (keys) {
         var items = _.map(modelManager.allItems, function (item) {
-          var itemParams = new ItemParams(item, keys);
+          var itemParams = new ItemParams(item, keys, authManager.encryptionVersion());
           return itemParams.paramsForExportFile();
         }.bind(this));
 
@@ -37834,6 +37791,64 @@ var AccountMenu = function () {
 
         var data = new Blob([JSON.stringify(data, null, 2 /* pretty print */)], { type: 'text/json' });
         return data;
+      };
+
+      // Advanced
+
+      $scope.reencryptPressed = function () {
+        if (!confirm("Are you sure you want to re-encrypt and sync all your items? This is useful when updates are made to our encryption specification. You should have been instructed to come here from our website.")) {
+          return;
+        }
+
+        if (!confirm("It is highly recommended that you download a backup of your data before proceeding. Press cancel to go back. Note that this procedure can take some time, depending on the number of items you have. Do not close the app during process.")) {
+          return;
+        }
+
+        modelManager.setAllItemsDirty();
+        syncManager.sync(function (response) {
+          if (response.error) {
+            alert("There was an error re-encrypting your items. You should try syncing again. If all else fails, you should restore your notes from backup.");
+            return;
+          }
+
+          $timeout(function () {
+            alert("Your items have been successfully re-encrypted and synced. You must sign out of all other signed in applications (mobile, desktop, web) and sign in again, or else you may corrupt your data.");
+            $scope.newPasswordData = {};
+          }, 1000);
+        });
+      };
+
+      // 002 Update
+
+      $scope.securityUpdateAvailable = function () {
+        // whether user needs to upload pw_auth
+        return !authManager.getAuthParams().pw_auth;
+      };
+
+      $scope.clickedSecurityUpdate = function () {
+        if (!$scope.securityUpdateData) {
+          $scope.securityUpdateData = {};
+        }
+        $scope.securityUpdateData.showForm = true;
+      };
+
+      $scope.submitSecurityUpdateForm = function () {
+        $scope.securityUpdateData.processing = true;
+        var authParams = authManager.getAuthParams();
+
+        Neeto.crypto.computeEncryptionKeysForUser(_.merge({ password: $scope.securityUpdateData.password }, authParams), function (keys) {
+          if (keys.mk !== authManager.keys().mk) {
+            alert("Invalid password. Please try again.");
+            $timeout(function () {
+              $scope.securityUpdateData.processing = false;
+            });
+            return;
+          }
+
+          var tag = Neeto.crypto.calculateVerificationTag(authParams.pw_cost, authParams.pw_salt, keys.ak);
+          authManager.uploadVerificationTag(tag, authParams);
+          authManager.saveKeys(keys);
+        });
       };
     }]
   }]);
@@ -38181,6 +38196,83 @@ var GlobalExtensionsMenu = function () {
 
 angular.module('app.frontend').directive('globalExtensionsMenu', function () {
   return new GlobalExtensionsMenu();
+});
+;
+var PermissionsModal = function () {
+  function PermissionsModal() {
+    _classCallCheck(this, PermissionsModal);
+
+    this.restrict = "E";
+    this.templateUrl = "frontend/directives/permissions-modal.html";
+    this.scope = {
+      show: "=",
+      component: "=",
+      permissions: "=",
+      callback: "="
+    };
+  }
+
+  _createClass(PermissionsModal, [{
+    key: 'link',
+    value: function link($scope, el, attrs) {
+
+      $scope.dismiss = function () {
+        el.remove();
+      };
+
+      $scope.accept = function () {
+        $scope.callback(true);
+        $scope.dismiss();
+      };
+
+      $scope.deny = function () {
+        $scope.callback(false);
+        $scope.dismiss();
+      };
+
+      $scope.formattedPermissions = $scope.permissions.map(function (permission) {
+        if (permission.name === "stream-items") {
+          var title = "Access to ";
+          var types = permission.content_types.map(function (type) {
+            return (type + "s").toLowerCase();
+          });
+          var typesString = "";
+          var separator = ", ";
+
+          for (var i = 0; i < types.length; i++) {
+            var type = types[i];
+            if (i == 0) {
+              // first element
+              typesString = typesString + type;
+            } else if (i == types.length - 1) {
+              // last element
+              if (types.length > 2) {
+                typesString += separator + "and " + typesString;
+              } else if (types.length == 2) {
+                typesString = typesString + " and " + type;
+              }
+            } else {
+              typesString += separator + type;
+            }
+          }
+
+          return title + typesString;
+        } else if (permission.name === "stream-context-item") {
+          var mapping = {
+            "editor-stack": "working note",
+            "note-tags": "working note"
+          };
+          return "Access to " + mapping[$scope.component.area];
+        }
+      });
+    }
+  }]);
+
+  return PermissionsModal;
+}();
+
+angular.module('app.frontend').directive('permissionsModal', function () {
+  return new PermissionsModal();
 });
 ;
 var EditorManager = function () {
@@ -38790,7 +38882,7 @@ var ExtensionManager = function () {
       if (!this.extensionUsesEncryptedData(extension)) {
         keys = null;
       }
-      var itemParams = new ItemParams(item, keys);
+      var itemParams = new ItemParams(item, keys, this.authManager.encryptionVersion());
       return itemParams.paramsForExtension();
     }
   }, {
@@ -38868,6 +38960,11 @@ var HttpManager = function () {
       this.httpRequest("post", url, params, onsuccess, onerror);
     }
   }, {
+    key: 'patchAbsolute',
+    value: function patchAbsolute(url, params, onsuccess, onerror) {
+      this.httpRequest("patch", url, params, onsuccess, onerror);
+    }
+  }, {
     key: 'getAbsolute',
     value: function getAbsolute(url, params, onsuccess, onerror) {
       this.httpRequest("get", url, params, onsuccess, onerror);
@@ -38908,7 +39005,7 @@ var HttpManager = function () {
       this.setAuthHeadersForRequest(xmlhttp);
       xmlhttp.setRequestHeader('Content-type', 'application/json');
 
-      if (verb == "post") {
+      if (verb == "post" || verb == "patch") {
         xmlhttp.send(JSON.stringify(params));
       } else {
         xmlhttp.send();
@@ -39444,7 +39541,7 @@ var SyncManager = function () {
     key: 'writeItemsToLocalStorage',
     value: function writeItemsToLocalStorage(items, offlineOnly, callback) {
       var params = items.map(function (item) {
-        var itemParams = new ItemParams(item, null);
+        var itemParams = new ItemParams(item, null, this.authManager.encryptionVersion());
         itemParams = itemParams.paramsForLocalStorage();
         if (offlineOnly) {
           delete itemParams.dirty;
@@ -39643,7 +39740,7 @@ var SyncManager = function () {
       var params = {};
       params.limit = 150;
       params.items = _.map(subItems, function (item) {
-        var itemParams = new ItemParams(item, this.authManager.keys());
+        var itemParams = new ItemParams(item, this.authManager.keys(), this.authManager.encryptionVersion());
         itemParams.additionalFields = options.additionalFields;
         return itemParams.paramsForSync();
       }.bind(this));
@@ -40001,48 +40098,6 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 ;angular.module('app.frontend').run(['$templateCache', function($templateCache) {
   'use strict';
 
-  $templateCache.put('frontend/components/tags-component.html',
-    "Tags Comp\n"
-  );
-
-
-  $templateCache.put('frontend/directives/account-data-menu.html',
-    "<div class='panel panel-default account-panel panel-right account-data-menu'>\n" +
-    "  <div class='panel-body'>\n" +
-    "    <section class='gray-bg medium-padding' ng-init='showSN = true'>\n" +
-    "      <account-new-account-section></account-new-account-section>\n" +
-    "    </section>\n" +
-    "    <section class='gray-bg medium-padding'>\n" +
-    "      <account-sync-section></account-sync-section>\n" +
-    "    </section>\n" +
-    "    <section class='gray-bg medium-padding'>\n" +
-    "      <account-export-section></account-export-section>\n" +
-    "    </section>\n" +
-    "    <section class='gray-bg medium-padding'>\n" +
-    "      <account-keys-section></account-keys-section>\n" +
-    "    </section>\n" +
-    "    <h4>\n" +
-    "      <a ng-click='destroyLocalData()'>Destroy all local data</a>\n" +
-    "    </h4>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/account-keys-section.html',
-    "<section class='white-bg' ng-repeat='key in keys track by key.name'>\n" +
-    "  <label>{{key.name}}</label>\n" +
-    "  <p class='wrap'>{{key.key}}</p>\n" +
-    "</section>\n" +
-    "<a ng-click='newKeyData.showForm = !newKeyData.showForm'>Add New Key</a>\n" +
-    "<form ng-if='newKeyData.showForm'>\n" +
-    "  <input ng-model='newKeyData.name' placeholder='Name your key'>\n" +
-    "  <input ng-model='newKeyData.key' placeholder='Key'>\n" +
-    "  <button class='light' ng-click='submitNewKeyForm()'>Add Key</button>\n" +
-    "</form>\n"
-  );
-
-
   $templateCache.put('frontend/directives/account-menu.html',
     "<div class='panel panel-default panel-right account-data-menu'>\n" +
     "  <div class='panel-body large-padding'>\n" +
@@ -40102,18 +40157,6 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        <span ng-if='syncStatus.total &gt; 0'>{{syncStatus.current}}/{{syncStatus.total}}</span>\n" +
     "      </div>\n" +
     "      <p class='bold mt-10 red block' ng-if='syncStatus.error'>Error syncing: {{syncStatus.error.message}}</p>\n" +
-    "      <a class='block mt-15' href='{{dashboardURL()}}' target='_blank'>Data Dashboard</a>\n" +
-    "      <a class='block mt-5' ng-click='showCredentials = !showCredentials'>Show Credentials</a>\n" +
-    "      <section class='gray-bg mt-10 medium-padding' ng-if='showCredentials'>\n" +
-    "        <label class='block'>\n" +
-    "          Encryption key:\n" +
-    "          <div class='wrap normal mt-1 selectable'>{{encryptionKey()}}</div>\n" +
-    "        </label>\n" +
-    "        <label class='block mt-5 mb-0'>\n" +
-    "          Server password:\n" +
-    "          <div class='wrap normal mt-1 selectable'>{{serverPassword() ? serverPassword() : 'Not available. Sign out then sign back in to compute.'}}</div>\n" +
-    "        </label>\n" +
-    "      </section>\n" +
     "      <a class='block mt-5' ng-click='newPasswordData.changePassword = !newPasswordData.changePassword'>Change Password</a>\n" +
     "      <section class='gray-bg mt-10 medium-padding' ng-if='newPasswordData.changePassword'>\n" +
     "        <p class='bold'>Change Password (Beta)</p>\n" +
@@ -40134,6 +40177,46 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        </div>\n" +
     "        <p class='italic mt-10' ng-if='newPasswordData.status'>{{newPasswordData.status}}</p>\n" +
     "      </section>\n" +
+    "      <a class='block mt-5' ng-click='showAdvanced = !showAdvanced'>Advanced</a>\n" +
+    "      <div ng-if='showAdvanced'>\n" +
+    "        <a class='block mt-15' href='{{dashboardURL()}}' target='_blank'>Data Dashboard</a>\n" +
+    "        <a class='block mt-5' ng-click='reencryptPressed()'>Re-encrypt All Items</a>\n" +
+    "        <a class='block mt-5' ng-click='showCredentials = !showCredentials'>Show Credentials</a>\n" +
+    "        <section class='gray-bg mt-10 medium-padding' ng-if='showCredentials'>\n" +
+    "          <label class='block'>\n" +
+    "            Encryption key:\n" +
+    "            <div class='wrap normal mt-1 selectable'>{{encryptionKey()}}</div>\n" +
+    "          </label>\n" +
+    "          <label class='block mt-5 mb-0'>\n" +
+    "            Server password:\n" +
+    "            <div class='wrap normal mt-1 selectable'>{{serverPassword() ? serverPassword() : 'Not available. Sign out then sign back in to compute.'}}</div>\n" +
+    "          </label>\n" +
+    "          <label class='block mt-5 mb-0'>\n" +
+    "            Authentication key:\n" +
+    "            <div class='wrap normal mt-1 selectable'>{{authKey() ? authKey() : 'Not available. Sign out then sign back in to compute.'}}</div>\n" +
+    "          </label>\n" +
+    "        </section>\n" +
+    "      </div>\n" +
+    "      <div ng-if='securityUpdateAvailable()'>\n" +
+    "        <a class='block mt-5' ng-click='clickedSecurityUpdate()'>Security Update Available</a>\n" +
+    "        <section class='gray-bg mt-10 medium-padding' ng-if='securityUpdateData.showForm'>\n" +
+    "          <p>\n" +
+    "            A new security feature is available that adds an additional level of verification to your sign-ins.\n" +
+    "            This feature assures that when you login, the server cannot tamper or modify your authentication parameters.\n" +
+    "            <a href='https://standardnotes.org/verification' target='_blank'>Learn more.</a>\n" +
+    "          </p>\n" +
+    "          <div class='mt-10' ng-if='!securityUpdateData.processing'>\n" +
+    "            <p class='bold'>Enter your password to update:</p>\n" +
+    "            <form class='mt-5'>\n" +
+    "              <input class='form-control' ng-model='securityUpdateData.password' placeholder='Enter password' type='password'>\n" +
+    "              <button class='ui-button block' ng-click='submitSecurityUpdateForm()'>Update</button>\n" +
+    "            </form>\n" +
+    "          </div>\n" +
+    "          <div class='mt-5' ng-if='securityUpdateData.processing'>\n" +
+    "            <p class='blue'>Processing...</p>\n" +
+    "          </div>\n" +
+    "        </section>\n" +
+    "      </div>\n" +
     "      <div class='medium-v-space'></div>\n" +
     "      <h4>Local Encryption</h4>\n" +
     "      <p>Notes are encrypted locally before being sent to the server. Neither the server owner nor an intrusive entity can decrypt your locally encrypted notes.</p>\n" +
@@ -40160,9 +40243,9 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        <div class='fake-link'>Import Data from Archive</div>\n" +
     "      </label>\n" +
     "      <div ng-if='importData.requestPassword'>\n" +
-    "        Enter the account password associated with the import file.\n" +
-    "        <input ng-model='importData.password' type='password'>\n" +
-    "        <button ng-click='submitImportPassword()'>Decrypt & Import</button>\n" +
+    "        <p>Enter the account password associated with the import file.</p>\n" +
+    "        <input class='form-control mt-5' ng-model='importData.password' type='password'>\n" +
+    "        <button class='standard ui-button block blue mt-5' ng-click='submitImportPassword()'>Decrypt & Import</button>\n" +
     "      </div>\n" +
     "      <p class='mt-5' ng-if='user'>Notes are downloaded in the Standard File format, which allows you to re-import back into this app easily. To download as plain text files, choose \"Decrypted\".</p>\n" +
     "    </div>\n" +
@@ -40181,244 +40264,6 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    </div>\n" +
     "    <a class='block mt-25 red' ng-click='destroyLocalData()'>{{ user ? \"Sign out and clear local data\" : \"Clear all local data\" }}</a>\n" +
     "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/account-menu/account-export-section.html',
-    "<h3 ng-click='showSection = !showSection'>\n" +
-    "  <a>Import or export data</a>\n" +
-    "</h3>\n" +
-    "<div ng-if='showSection'>\n" +
-    "  <div class='options' style='font-size: 12px; margin-top: 4px;'>\n" +
-    "    <label ng-if='user'>\n" +
-    "      <input ng-change=\"archiveFormData.encryption_type = 'mk'\" ng-model='archiveFormData.encryption_type' ng-value=\"'mk'\" type='radio'>\n" +
-    "      Encrypted with Standard File key\n" +
-    "    </label>\n" +
-    "    <label>\n" +
-    "      <input ng-change=\"archiveFormData.encryption_type = 'ek'\" ng-model='archiveFormData.encryption_type' ng-value=\"'ek'\" type='radio'>\n" +
-    "      {{user ? 'Encrypted with custom key' : 'Encrypted' }}\n" +
-    "    </label>\n" +
-    "    <div ng-if=\"!user || (user &amp;&amp; archiveFormData.encryption_type == 'ek')\">\n" +
-    "      <input ng-model='archiveFormData.ek' placeholder='Encryption key'>\n" +
-    "    </div>\n" +
-    "    <label>\n" +
-    "      <input ng-change=\"archiveFormData.encryption_type = 'none'\" ng-model='archiveFormData.encryption_type' ng-value=\"'none'\" type='radio'>\n" +
-    "      Decrypted\n" +
-    "    </label>\n" +
-    "  </div>\n" +
-    "  <a ng-click='downloadDataArchive()'>Download Data Archive</a>\n" +
-    "  <div ng-if='!importData.loading'>\n" +
-    "    <label id='import-archive'>\n" +
-    "      <input file-change='-&gt;' handler='importFileSelected(files)' style='display: none;' type='file'>\n" +
-    "      <a class='disabled'>\n" +
-    "        <span>\n" +
-    "          Import Data from Archive\n" +
-    "        </span>\n" +
-    "      </a>\n" +
-    "    </label>\n" +
-    "    <div ng-if='importData.requestPassword'>\n" +
-    "      Enter the account password associated with the import file.\n" +
-    "      <input ng-model='importData.password' type='text'>\n" +
-    "      <button ng-click='submitImportPassword()'>Decrypt & Import</button>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "  <div class='spinner' ng-if='importData.loading'></div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/account-menu/account-keys-section.html',
-    "<h3 ng-click='showSection = !showSection'>\n" +
-    "  <a>Manage keys</a>\n" +
-    "</h3>\n" +
-    "<div ng-if='showSection'>\n" +
-    "  <h4>Encryption Keys</h4>\n" +
-    "  <div ng-if='showSection'>\n" +
-    "    <p>Keys are used to encrypt and decrypt your data.</p>\n" +
-    "    <div class='mt-10'>\n" +
-    "      <section class='white-bg' ng-repeat='key in keys track by key.name'>\n" +
-    "        <label>{{key.name}}</label>\n" +
-    "        <p class='wrap'>{{key.key}}</p>\n" +
-    "      </section>\n" +
-    "      <a class='block mt-10' ng-click='newKeyData.showForm = !newKeyData.showForm'>Add New Key</a>\n" +
-    "      <form ng-if='newKeyData.showForm'>\n" +
-    "        <input ng-model='newKeyData.name' placeholder='Name your key'>\n" +
-    "        <input ng-model='newKeyData.key' placeholder='Key'>\n" +
-    "        <button class='light' ng-click='submitNewKeyForm()'>Add Key</button>\n" +
-    "      </form>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/account-menu/account-new-account-section.html',
-    "<h3 ng-click='showForm = !showForm'>\n" +
-    "  <a>Add a sync account</a>\n" +
-    "</h3>\n" +
-    "<div ng-if='showForm'>\n" +
-    "  <p>Enter your <a href=\"https://standardnotes.org\" target=\"_blank\">Standard File</a> account information.</p>\n" +
-    "  <div class='small-v-space'></div>\n" +
-    "  <form class='account-form' name='loginForm'>\n" +
-    "    <input class='form-control' name='server' ng-model='formData.url' placeholder='Server URL' required type='text'>\n" +
-    "    <input autofocus='autofocus' class='form-control' name='email' ng-model='formData.email' placeholder='Email' required type='email'>\n" +
-    "    <input class='form-control' name='password' ng-model='formData.user_password' placeholder='Password' required type='password'>\n" +
-    "    <div ng-if='!formData.status'>\n" +
-    "      <button class='btn dark-button half-button' data-size='s' data-style='expand-right' ng-click='loginSubmitPressed()' state='buttonState'>\n" +
-    "        <span>Sign In</span>\n" +
-    "      </button>\n" +
-    "      <button class='btn dark-button half-button' data-size='s' data-style='expand-right' ng-click='submitRegistrationForm()' state='buttonState'>\n" +
-    "        <span>Register</span>\n" +
-    "      </button>\n" +
-    "      <br>\n" +
-    "      <div class='block' style='margin-top: 10px; font-size: 14px; font-weight: bold; text-align: center;'>\n" +
-    "        <a class='btn' ng-click='showResetForm = !showResetForm'>Passwords cannot be forgotten.</a>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
-    "  </form>\n" +
-    "  <div ng-if='!formData.status'>\n" +
-    "    <label class='center-align block faded'>— OR —</label>\n" +
-    "    <a class='block center-align medium-text' ng-click='formData.showAddLinkForm = true' ng-if='!formData.showAddLinkForm'>Add sync using secret link</a>\n" +
-    "    <form ng-if='formData.showAddLinkForm'>\n" +
-    "      <input autofocus='autofocus' class='form-control' name='url' ng-model='formData.secretUrl' placeholder='Secret URL' required type='url'>\n" +
-    "      <button class='btn dark-button btn-block' ng-click='submitExternalSyncURL()'>\n" +
-    "        Add Sync Account\n" +
-    "      </button>\n" +
-    "      <a class='block center-align mt-5' ng-click='formData.showAddLinkForm = false'>Cancel</a>\n" +
-    "    </form>\n" +
-    "  </div>\n" +
-    "  <em class='block center-align mt-10' ng-if='formData.status' style='font-size: 14px;'>{{formData.status}}</em>\n" +
-    "  <div ng-if='showResetForm'>\n" +
-    "    <p style='font-size: 13px; text-align: center;'>\n" +
-    "      Because notes are locally encrypted using a secret key derived from your password, there's no way to decrypt these notes if you forget your password.\n" +
-    "      For this reason, Standard Notes cannot offer a password reset option. You <strong>must</strong> make sure to store or remember your password.\n" +
-    "    </p>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/account-menu/account-sync-section.html',
-    "<h3 ng-click='showSection = !showSection'>\n" +
-    "  <a>Your sync accounts ({{syncProviders.length}})</a>\n" +
-    "</h3>\n" +
-    "<div ng-if='showSection || syncManager.syncProviders.length &gt; 0'>\n" +
-    "  <div class='small-v-space'></div>\n" +
-    "  <section class='white-bg medium-padding' ng-repeat='provider in syncProviders'>\n" +
-    "    <label>{{!provider.enabled ? 'Not enabled' : (provider.primary ? 'Main' : 'Secondary')}}</label>\n" +
-    "    <em ng-if='provider.keyName'>Using key: {{provider.keyName}}</em>\n" +
-    "    <p>{{provider.url}}</p>\n" +
-    "    <section class='inline-h'>\n" +
-    "      <div ng-if='!provider.keyName || provider.showKeyForm'>\n" +
-    "        <p>\n" +
-    "          <strong>Choose encryption key:</strong>\n" +
-    "        </p>\n" +
-    "        <select ng-model='provider.formData.keyName'>\n" +
-    "          <option ng-repeat='key in keys' ng-selected='{{key.name == provider.formData.keyName}}' value='{{key.name}}'>\n" +
-    "            {{key.name}}\n" +
-    "          </option>\n" +
-    "        </select>\n" +
-    "        <button ng-click='saveKey(provider)'>Set</button>\n" +
-    "      </div>\n" +
-    "      <button class='light' ng-click='enableSyncProvider(provider, true)' ng-if='!provider.enabled || !provider.primary'>Set as Main</button>\n" +
-    "      <button class='light' ng-click='enableSyncProvider(provider, false)' ng-if='syncProviders.length &gt; 1 &amp;&amp; !provider.secondary &amp;&amp; (!provider.primary || !provider.enabled)'>Add as Secondary</button>\n" +
-    "      <button class='light' ng-click='changeEncryptionKey(provider)' ng-if='provider.keyName'>Change Encryption Key</button>\n" +
-    "      <button class='light' ng-click='removeSyncProvider(provider)'>Remove Account</button>\n" +
-    "      <div class='mt-15' ng-if='provider.error'>\n" +
-    "        <strong class='red'>Error syncing: {{provider.error.message}}</strong>\n" +
-    "      </div>\n" +
-    "      <div class='mt-15' delay-hide='true' delay='1000' show='provider.syncOpInProgress' style='height: 15px;'>\n" +
-    "        <div class='spinner' style='float: left; margin-top: 3px; margin-left: 2px;'></div>\n" +
-    "        <strong style='float: left; margin-left: 7px;'>Syncing:</strong>\n" +
-    "        &nbsp; {{provider.syncStatus.statusString}}\n" +
-    "      </div>\n" +
-    "    </section>\n" +
-    "  </section>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/account-sync-section.html',
-    "<section class='white-bg' ng-repeat='provider in syncProviders'>\n" +
-    "  <label>{{!provider.enabled ? 'Not enabled' : (provider.primary ? 'Main' : 'Secondary')}}</label>\n" +
-    "  <em ng-if='provider.keyName'>Using key: {{provider.keyName}}</em>\n" +
-    "  <p>{{provider.url}}</p>\n" +
-    "  <section class='inline-h'>\n" +
-    "    <div ng-if='!provider.keyName || provider.showKeyForm'>\n" +
-    "      <p>\n" +
-    "        <strong>Choose encryption key:</strong>\n" +
-    "      </p>\n" +
-    "      <select ng-model='provider.formData.keyName'>\n" +
-    "        <option ng-repeat='key in keys' ng-selected='{{key.name == provider.formData.keyName}}' value='{{key.name}}'>\n" +
-    "          {{key.name}}\n" +
-    "        </option>\n" +
-    "      </select>\n" +
-    "      <button ng-click='saveKey(provider)'>Set</button>\n" +
-    "    </div>\n" +
-    "    <div ng-if='!provider.enabled'>\n" +
-    "      <button class='light' ng-click='enableSyncProvider(provider, true)'>Set as Main</button>\n" +
-    "      <button class='light' ng-click='enableSyncProvider(provider, false)' ng-if='syncProviders.length &gt; 1'>Add as Secondary</button>\n" +
-    "    </div>\n" +
-    "    <button class='light' ng-click='changeEncryptionKey(provider)' ng-if='provider.keyName'>Change Encryption Key</button>\n" +
-    "    <button class='light' ng-click='removeSyncProvider(provider)'>Remove Provider</button>\n" +
-    "    <div delay-hide='true' delay='1000' show='provider.syncOpInProgress' style='height: 30px;'>\n" +
-    "      <strong style='float: left;'>Syncing: {{provider.syncStatus.statusString}}</strong>\n" +
-    "      <div class='spinner' style='float: right'></div>\n" +
-    "    </div>\n" +
-    "  </section>\n" +
-    "</section>\n" +
-    "<a ng-click='newSyncData.showAddSyncForm = !newSyncData.showAddSyncForm'>Add external sync with Secret URL</a>\n" +
-    "<form ng-if='newSyncData.showAddSyncForm'>\n" +
-    "  <input autofocus='autofocus' class='form-control' name='url' ng-model='newSyncData.url' placeholder='Secret URL' required type='url'>\n" +
-    "  <button class='btn dark-button btn-block' ng-click='submitExternalSyncURL()'>\n" +
-    "    Add External Sync\n" +
-    "  </button>\n" +
-    "</form>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/account-vendor-account-section.html',
-    "<h3>Add a sync account</h3>\n" +
-    "<p>Enter your <a href=\"https://standardnotes.org\" target=\"_blank\">Standard File</a> account information.</p>\n" +
-    "<div class='small-v-space'></div>\n" +
-    "<form class='account-form' name='loginForm'>\n" +
-    "  <input class='form-control' name='server' ng-model='formData.url' placeholder='Server URL' required type='text'>\n" +
-    "  <input autofocus='autofocus' class='form-control' name='email' ng-model='formData.email' placeholder='Email' required type='email'>\n" +
-    "  <input class='form-control' name='password' ng-model='formData.user_password' placeholder='Password' required type='password'>\n" +
-    "  <div class='checkbox' ng-if='localNotesCount() &gt; 0'>\n" +
-    "    <label>\n" +
-    "      <input ng-bind='true' ng-change='mergeLocalChanged()' ng-model='formData.mergeLocal' type='checkbox'>\n" +
-    "        Merge local notes ({{localNotesCount()}} notes)\n" +
-    "      </input>\n" +
-    "    </label>\n" +
-    "  </div>\n" +
-    "  <button class='btn dark-button half-button' data-size='s' data-style='expand-right' ng-click='loginSubmitPressed()' state='buttonState'>\n" +
-    "    <span>Sign In</span>\n" +
-    "  </button>\n" +
-    "  <button class='btn dark-button half-button' data-size='s' data-style='expand-right' ng-click='submitRegistrationForm()' state='buttonState'>\n" +
-    "    <span>Register</span>\n" +
-    "  </button>\n" +
-    "  <br>\n" +
-    "  <div class='block' style='margin-top: 10px; font-size: 14px; font-weight: bold; text-align: center;'>\n" +
-    "    <a class='btn' ng-click='showResetForm = !showResetForm'>Passwords cannot be forgotten.</a>\n" +
-    "  </div>\n" +
-    "  <em ng-if='formData.status' style='font-size: 14px;'>{{formData.status}}</em>\n" +
-    "</form>\n" +
-    "<label class='center-align block faded'>— OR —</label>\n" +
-    "<a class='block center-align medium-text' ng-click='formData.showAddLinkForm = true' ng-if='!formData.showAddLinkForm'>Add Sync Using Secret Link</a>\n" +
-    "<form ng-if='formData.showAddLinkForm'>\n" +
-    "  <input autofocus='autofocus' class='form-control' name='url' ng-model='formData.url' placeholder='Secret URL' required type='url'>\n" +
-    "  <button class='btn dark-button btn-block' ng-click='submitExternalSyncURL()'>\n" +
-    "    Add Sync Account\n" +
-    "  </button>\n" +
-    "  <a class='block center-align mt-5' ng-click='formData.showAddLinkForm = false'>Cancel</a>\n" +
-    "</form>\n" +
-    "<div ng-if='showResetForm'>\n" +
-    "  <p style='font-size: 13px; text-align: center;'>\n" +
-    "    Because notes are locally encrypted using a secret key derived from your password, there's no way to decrypt these notes if you forget your password.\n" +
-    "    For this reason, Standard Notes cannot offer a password reset option. You <strong>must</strong> make sure to store or remember your password.\n" +
-    "  </p>\n" +
     "</div>\n"
   );
 
@@ -40469,89 +40314,6 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
   );
 
 
-  $templateCache.put('frontend/directives/data-menu.html',
-    "<div class='panel panel-default account-panel panel-right'>\n" +
-    "  <div class='panel-body'>\n" +
-    "    <div class='account-items'>\n" +
-    "      <div class='account-item registration-login' ng-if='!user'>\n" +
-    "        <div class='account-item'>\n" +
-    "          <div class='meta-container'>\n" +
-    "            <div class='title'>Sign in or Register</div>\n" +
-    "            <div class='desc'>Enter your <a href=\"https://standardfile.org\" target=\"_blank\">Standard File</a> information.</div>\n" +
-    "          </div>\n" +
-    "          <div class='action-container'>\n" +
-    "            <form class='account-form' name='loginForm'>\n" +
-    "              <div class='form-tag has-feedback'>\n" +
-    "                <input class='form-control' name='server' ng-model='serverData.url' placeholder='Server URL' required type='text'>\n" +
-    "              </div>\n" +
-    "              <div class='form-tag has-feedback'>\n" +
-    "                <input autofocus='autofocus' class='form-control login-input' name='email' ng-model='formData.email' placeholder='Email' required type='email'>\n" +
-    "              </div>\n" +
-    "              <div class='form-tag has-feedback'>\n" +
-    "                <input class='form-control login-input' name='password' ng-model='formData.user_password' placeholder='Password' required type='password'>\n" +
-    "              </div>\n" +
-    "              <div class='checkbox' ng-if='localNotesCount() &gt; 0'>\n" +
-    "                <label>\n" +
-    "                  <input ng-bind='true' ng-change='mergeLocalChanged()' ng-model='formData.mergeLocal' type='checkbox'>\n" +
-    "                    Merge local notes ({{localNotesCount()}} notes)\n" +
-    "                  </input>\n" +
-    "                </label>\n" +
-    "              </div>\n" +
-    "              <button class='btn dark-button half-button' data-size='s' data-style='expand-right' ng-click='loginSubmitPressed()' state='buttonState'>\n" +
-    "                <span>Sign In</span>\n" +
-    "              </button>\n" +
-    "              <button class='btn dark-button half-button' data-size='s' data-style='expand-right' ng-click='submitRegistrationForm()' state='buttonState'>\n" +
-    "                <span>Register</span>\n" +
-    "              </button>\n" +
-    "              <br>\n" +
-    "              <div class='login-forgot' style='padding-top: 4px;'>\n" +
-    "                <a class='btn btn-link' ng-click='showResetForm = !showResetForm'>Passwords cannot be forgotten.</a>\n" +
-    "              </div>\n" +
-    "              <div class='panel-status-text' ng-if='formData.status' style='font-size: 14px;'>{{formData.status}}</div>\n" +
-    "            </form>\n" +
-    "            <div ng-if='showResetForm'>\n" +
-    "              <p style='font-size: 13px; text-align: center;'>\n" +
-    "                Because notes are locally encrypted using a secret key derived from your password, there's no way to decrypt these notes if you forget your password.\n" +
-    "                For this reason, Standard Notes cannot offer a password reset option. You <strong>must</strong> make sure to store or remember your password.\n" +
-    "              </p>\n" +
-    "            </div>\n" +
-    "          </div>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "      <div class='account-item'>\n" +
-    "        <a ng-click='showAddSyncForm = !showAddSyncForm'>Add external sync with Secret URL</a>\n" +
-    "        <form class='sync-form' ng-if='showAddSyncForm' ng-init='newSyncData = {}'>\n" +
-    "          <div class='form-tag has-feedback'>\n" +
-    "            <input autofocus='autofocus' class='form-control' name='url' ng-model='newSyncData.url' placeholder='Secret URL' required type='url'>\n" +
-    "          </div>\n" +
-    "          <button class='btn dark-button btn-block' ng-click='submitExternalSyncURL()'>\n" +
-    "            Add External Sync\n" +
-    "          </button>\n" +
-    "        </form>\n" +
-    "      </div>\n" +
-    "      <div class='account-item' ng-if='user'>\n" +
-    "        <div class='email'>{{user.email}}</div>\n" +
-    "        <div class='server'>{{serverData.url}}</div>\n" +
-    "        <div class='links' ng-if='user'>\n" +
-    "          <div class='link-item'>\n" +
-    "            <a ng-click='signOutPressed()'>Sign Out</a>\n" +
-    "          </div>\n" +
-    "        </div>\n" +
-    "        <div class='meta-container'>\n" +
-    "          <div class='title'>Local Encryption</div>\n" +
-    "          <div class='desc'>Notes are encrypted locally before being sent to the server. Neither the server owner nor an intrusive entity can decrypt your locally encrypted notes.</div>\n" +
-    "        </div>\n" +
-    "        <div class='action-container'>\n" +
-    "          <span class='status-title'>Status:</span>\n" +
-    "          {{encryptionStatusForNotes()}}\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
   $templateCache.put('frontend/directives/editor-menu.html',
     "<ul class='dropdown-menu sectioned-menu'>\n" +
     "  <div class='header'>\n" +
@@ -40579,52 +40341,6 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    </ul>\n" +
     "  </div>\n" +
     "</ul>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/extensions-intro-modal.html',
-    "<section>\n" +
-    "  <div class='modal ext-intro-modal'>\n" +
-    "    <div class='content'>\n" +
-    "      <h1 class='normal'>Get Started with Extensions</h1>\n" +
-    "      <div class='text-container'>\n" +
-    "        <p>Standard Notes starts simple and can be customized with extensions that make the experience yours.</p>\n" +
-    "      </div>\n" +
-    "      <div class='ext-sections mt-50'>\n" +
-    "        <div class='ext-section'>\n" +
-    "          <div class='title'>Editors</div>\n" +
-    "          <div class='items'>\n" +
-    "            <div class='item'>Advanced Markdown</div>\n" +
-    "            <div class='item'>Code Editor</div>\n" +
-    "            <div class='item'>Minimal Markdown</div>\n" +
-    "          </div>\n" +
-    "        </div>\n" +
-    "        <div class='ext-section'>\n" +
-    "          <div class='title'>Sync Plugins</div>\n" +
-    "          <div class='items'>\n" +
-    "            <div class='item'>Dropbox</div>\n" +
-    "            <div class='item'>Google Drive</div>\n" +
-    "            <div class='item'>Version History</div>\n" +
-    "          </div>\n" +
-    "        </div>\n" +
-    "        <div class='ext-section'>\n" +
-    "          <div class='title'>Themes</div>\n" +
-    "          <div class='items'>\n" +
-    "            <div class='item'>Midnight</div>\n" +
-    "            <div class='item'>+ community themes</div>\n" +
-    "          </div>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "      <div class='text-container'>\n" +
-    "        <p class='mt-50'>Visit the Extensions portal to get started.</p>\n" +
-    "        <div class='link-group'>\n" +
-    "          <a class='bold blue' href='https://standardnotes.org/extensions' target='_blank'>Extensions Portal</a>\n" +
-    "          <a class='blue pointer' ng-click='close()'>Maybe Later</a>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "</section>\n"
   );
 
 
@@ -40800,45 +40516,35 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
   );
 
 
-  $templateCache.put('frontend/directives/import-export-menu.html',
-    "<div class='options' style='font-size: 12px; margin-top: 4px;'>\n" +
-    "  <label ng-if='user'>\n" +
-    "    <input ng-change=\"archiveFormData.encryption_type = 'mk'\" ng-model='archiveFormData.encryption_type' ng-value=\"'mk'\" type='radio'>\n" +
-    "    Encrypted with Standard File key\n" +
-    "  </label>\n" +
-    "  <label>\n" +
-    "    <input ng-change=\"archiveFormData.encryption_type = 'ek'\" ng-model='archiveFormData.encryption_type' ng-value=\"'ek'\" type='radio'>\n" +
-    "    {{user ? 'Encrypted with custom key' : 'Encrypted' }}\n" +
-    "  </label>\n" +
-    "  <div ng-if=\"!user || (user &amp;&amp; archiveFormData.encryption_type == 'ek')\">\n" +
-    "    <input ng-model='archiveFormData.ek' placeholder='Encryption key'>\n" +
+  $templateCache.put('frontend/directives/permissions-modal.html',
+    "<div class='background' ng-click='dismiss()'></div>\n" +
+    "<div class='content'>\n" +
+    "  <h3>The following extension has requested these permissions:</h3>\n" +
+    "  <h4>Extension</h4>\n" +
+    "  <p>Name: {{component.name}}</p>\n" +
+    "  <p class='wrap'>URL: {{component.url}}</p>\n" +
+    "  <h4>Permissions</h4>\n" +
+    "  <div class='permission' ng-repeat='permission in formattedPermissions'>\n" +
+    "    <p>{{permission}}</p>\n" +
     "  </div>\n" +
-    "  <label>\n" +
-    "    <input ng-change=\"archiveFormData.encryption_type = 'none'\" ng-model='archiveFormData.encryption_type' ng-value=\"'none'\" type='radio'>\n" +
-    "    Decrypted\n" +
-    "  </label>\n" +
-    "</div>\n" +
-    "<a ng-click='downloadDataArchive()'>Download Data Archive</a>\n" +
-    "<div ng-if='!importData.loading'>\n" +
-    "  <label id='import-archive'>\n" +
-    "    <input file-change='-&gt;' handler='importFileSelected(files)' style='display: none;' type='file'>\n" +
-    "    <a class='disabled'>\n" +
-    "      <span>\n" +
-    "        Import Data from Archive\n" +
-    "      </span>\n" +
-    "    </a>\n" +
-    "  </label>\n" +
-    "  <div ng-if='importData.requestPassword'>\n" +
-    "    Enter the account password associated with the import file.\n" +
-    "    <input ng-model='importData.password' type='text'>\n" +
-    "    <button ng-click='submitImportPassword()'>Decrypt & Import</button>\n" +
+    "  <h4>Status</h4>\n" +
+    "  <p class='status' ng-class=\"{'trusted' : component.trusted}\">{{component.trusted ? 'Trusted' : 'Untrusted'}}</p>\n" +
+    "  <div class='learn-more'>\n" +
+    "    <h4>Details</h4>\n" +
+    "    <p>\n" +
+    "      Extensions use an offline messaging system to communicate. With <i>Trusted</i> extensions, data is never sent remotely without your consent. Learn more about extension permissions at\n" +
+    "      <a href='https://standardnotes.org/permissions' target='_blank'>https://standardnotes.org/permissions.</a>\n" +
+    "    </p>\n" +
     "  </div>\n" +
-    "</div>\n" +
-    "<div class='spinner' ng-if='importData.loading'></div>\n"
+    "  <div class='buttons'>\n" +
+    "    <button class='standard white' ng-click='deny()'>Deny</button>\n" +
+    "    <button class='standard blue' ng-click='accept()'>Accept</button>\n" +
+    "  </div>\n" +
+    "</div>\n"
   );
 
 
-  $templateCache.put('frontend/directives/permissions-modal.html',
+  $templateCache.put('frontend/directives/security-update-modal.html',
     "<div class='background' ng-click='dismiss()'></div>\n" +
     "<div class='content'>\n" +
     "  <h3>The following extension has requested these permissions:</h3>\n" +
@@ -40868,7 +40574,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 
   $templateCache.put('frontend/editor.html',
     "<div class='section editor' ng-class=\"{'fullscreen' : ctrl.fullscreen}\">\n" +
-    "  <div class='section-title-bar' id='editor-title-bar' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.note'>\n" +
+    "  <div class='section-title-bar' id='editor-title-bar' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.note &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
     "    <div class='title'>\n" +
     "      <input class='input' id='note-title-editor' ng-change='ctrl.nameChanged()' ng-focus='ctrl.onNameFocus()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTitle($event)' ng-model='ctrl.note.title' select-on-click='true'>\n" +
     "    </div>\n" +
@@ -40904,12 +40610,15 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      <contextual-extensions-menu item='ctrl.note' ng-if='ctrl.showExtensions'></contextual-extensions-menu>\n" +
     "    </li>\n" +
     "  </ul>\n" +
-    "  <div class='editor-content' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.noteReady'>\n" +
+    "  <div class='editor-content' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.noteReady &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
     "    <iframe frameBorder='0' id='editor-iframe' ng-if='ctrl.editor &amp;&amp; !ctrl.editor.systemEditor' ng-src='{{ctrl.editor.url | trusted}}' style='width: 100%;'>\n" +
     "      Loading\n" +
     "    </iframe>\n" +
     "    <textarea class='editable' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.editor || ctrl.editor.systemEditor' ng-model='ctrl.note.text'></textarea>\n" +
     "  </div>\n" +
+    "  <section class='section' ng-if='ctrl.note.errorDecrypting'>\n" +
+    "    <p class='medium-padding' style='padding-top: 0 !important;'>There was an error decrypting this item. Ensure you are running the latest version of this app, then sign out and sign back in to try again.</p>\n" +
+    "  </section>\n" +
     "  <div id='editor-pane-component-stack'>\n" +
     "    <div class='component component-stack-border' id=\"{{'component-' + component.uuid}}\" ng-if='component.active' ng-mouseleave='component.showExit = false' ng-mouseover='component.showExit = true' ng-repeat='component in ctrl.componentStack' ng-show='!component.ignoreEvents'>\n" +
     "      <div class='exit-button body-text-color' ng-click='ctrl.disableComponent(component)' ng-if='component.showExit'>×</div>\n" +
@@ -40958,41 +40667,6 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
   );
 
 
-  $templateCache.put('frontend/header.html',
-    "<div class='footer-bar'>\n" +
-    "  <div class='pull-left'>\n" +
-    "    <div class='footer-bar-link' click-outside='ctrl.showAccountMenu = false;' is-open='ctrl.showAccountMenu'>\n" +
-    "      <a ng-class='{red: ctrl.error}' ng-click='ctrl.accountMenuPressed()'>Account</a>\n" +
-    "      <account-menu ng-if='ctrl.showAccountMenu'></account-menu>\n" +
-    "    </div>\n" +
-    "    <div class='footer-bar-link' click-outside='ctrl.showExtensionsMenu = false;' is-open='ctrl.showExtensionsMenu'>\n" +
-    "      <a ng-click='ctrl.toggleExtensions()'>Extensions</a>\n" +
-    "      <global-extensions-menu ng-if='ctrl.showExtensionsMenu'></global-extensions-menu>\n" +
-    "    </div>\n" +
-    "    <div class='footer-bar-link'>\n" +
-    "      <a href='https://standardnotes.org' target='_blank'>\n" +
-    "        Help\n" +
-    "      </a>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "  <div class='pull-right'>\n" +
-    "    <div class='footer-bar-link' style='margin-right: 5px;'>\n" +
-    "      <div ng-if='ctrl.lastSyncDate' style='float: left; font-weight: normal; margin-right: 8px;'>\n" +
-    "        <span ng-if='!ctrl.isRefreshing'>\n" +
-    "          Last refreshed {{ctrl.lastSyncDate | appDateTime}}\n" +
-    "        </span>\n" +
-    "        <span ng-if='ctrl.isRefreshing'>\n" +
-    "          <div class='spinner' style='margin-top: 2px;'></div>\n" +
-    "        </span>\n" +
-    "      </div>\n" +
-    "      <strong ng-if='ctrl.offline'>Offline</strong>\n" +
-    "      <a ng-click='ctrl.refreshData()' ng-if='!ctrl.offline'>Refresh</a>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
   $templateCache.put('frontend/home.html',
     "<div class='main-ui-view'>\n" +
     "  <div class='app'>\n" +
@@ -41002,35 +40676,6 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "  </div>\n" +
     "  <footer></footer>\n" +
     "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/layouts/about.html',
-    "<div class='about animated fadeIn'>\n" +
-    "  <div class='title'>About</div>\n" +
-    "  <div class='summary'>Namewhale helps you find a unique name for your startup. Using an intelligent, seed-based algorithm, names are generated based on the sound, style, and feel of the seed words you chose.</div>\n" +
-    "  <div class='links'>\n" +
-    "    <a href='https://itunes.apple.com/us/app/namewhale/id1028881375?ls=1&amp;mt=8' target='_blank'>Namewhale on the AppStore</a>\n" +
-    "    <a href='https://twitter.com/namewhale' target='_blank'>@namewhale</a>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/layouts/footer.html',
-    "<footer class='footer' ng-class='footerClass'>\n" +
-    "  <div class='container'>\n" +
-    "    <div class='row'>\n" +
-    "      <div class='footer-about-section'></div>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "</footer>\n"
-  );
-
-
-  $templateCache.put('frontend/modals/username.html',
-    "<strong>Choose a public username for all your shared note tags.</strong>\n" +
-    "<input ng-keyup='$event.keyCode == 13 &amp;&amp; saveUsername($event)' ng-model='formData.username' style='margin-top: 10px; padding-left: 8px;' type='text'>\n"
   );
 
 
@@ -41068,6 +40713,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      <div can-load='true' class='infinite-scroll' infinite-scroll='ctrl.paginate()' threshold='200'>\n" +
     "        <div class='note' ng-class=\"{'selected' : ctrl.selectedNote == note}\" ng-click='ctrl.selectNote(note)' ng-repeat='note in (ctrl.sortedNotes = (ctrl.tag.notes | filter: ctrl.filterNotes | orderBy: ctrl.sortBy:true | limitTo:ctrl.notesToDisplay))'>\n" +
     "          <strong class='red medium' ng-if='note.conflict_of'>Conflicted copy</strong>\n" +
+    "          <strong class='red medium' ng-if='note.errorDecrypting'>Error decrypting</strong>\n" +
     "          <div class='name' ng-if='note.title'>\n" +
     "            {{note.title}}\n" +
     "          </div>\n" +
