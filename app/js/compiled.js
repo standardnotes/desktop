@@ -36108,7 +36108,7 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
           if (authParams.pw_auth) {
             // verify auth params
             if (localVTag !== authParams.pw_auth) {
-              alert("Invalid server verification tag; aborting login. Learn more at standardnotes.org/verification.");
+              alert("Invalid server verification tag; aborting login. This is most likely caused by an incorrect password. Learn more at standardnotes.org/verification.");
               $timeout(function () {
                 callback({ error: true, didDisplayAlert: true });
               });
@@ -36206,7 +36206,7 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
           console.error("Change pw error", response);
           callback({ error: error });
         });
-      });
+      }.bind(this));
     };
 
     this.staticifyObject = function (object) {
@@ -40517,34 +40517,6 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 
 
   $templateCache.put('frontend/directives/permissions-modal.html',
-    "<div class='background' ng-click='dismiss()'></div>\n" +
-    "<div class='content'>\n" +
-    "  <h3>The following extension has requested these permissions:</h3>\n" +
-    "  <h4>Extension</h4>\n" +
-    "  <p>Name: {{component.name}}</p>\n" +
-    "  <p class='wrap'>URL: {{component.url}}</p>\n" +
-    "  <h4>Permissions</h4>\n" +
-    "  <div class='permission' ng-repeat='permission in formattedPermissions'>\n" +
-    "    <p>{{permission}}</p>\n" +
-    "  </div>\n" +
-    "  <h4>Status</h4>\n" +
-    "  <p class='status' ng-class=\"{'trusted' : component.trusted}\">{{component.trusted ? 'Trusted' : 'Untrusted'}}</p>\n" +
-    "  <div class='learn-more'>\n" +
-    "    <h4>Details</h4>\n" +
-    "    <p>\n" +
-    "      Extensions use an offline messaging system to communicate. With <i>Trusted</i> extensions, data is never sent remotely without your consent. Learn more about extension permissions at\n" +
-    "      <a href='https://standardnotes.org/permissions' target='_blank'>https://standardnotes.org/permissions.</a>\n" +
-    "    </p>\n" +
-    "  </div>\n" +
-    "  <div class='buttons'>\n" +
-    "    <button class='standard white' ng-click='deny()'>Deny</button>\n" +
-    "    <button class='standard blue' ng-click='accept()'>Accept</button>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/security-update-modal.html',
     "<div class='background' ng-click='dismiss()'></div>\n" +
     "<div class='content'>\n" +
     "  <h3>The following extension has requested these permissions:</h3>\n" +
