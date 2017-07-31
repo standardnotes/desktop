@@ -33444,6 +33444,15 @@ var EncryptionHelper = function () {
   }, {
     key: 'decryptItem',
     value: function decryptItem(item, keys) {
+
+      if ((item.content.startsWith("001") || item.content.startsWith("002")) && item.enc_item_key) {
+        // is encrypted, continue to below
+      } else {
+        // is base64 encoded
+        item.content = Neeto.crypto.base64Decode(item.content.substring(3, item.content.length));
+        return;
+      }
+
       // decrypt encrypted key
       var encryptedItemKey = item.enc_item_key;
       var requiresAuth = true;
@@ -33507,19 +33516,13 @@ var EncryptionHelper = function () {
           var isString = typeof item.content === 'string' || item.content instanceof String;
           if (isString) {
             try {
-              if ((item.content.startsWith("001") || item.content.startsWith("002")) && item.enc_item_key) {
-                // is encrypted
-                this.decryptItem(item, keys);
-              } else {
-                // is base64 encoded
-                item.content = Neeto.crypto.base64Decode(item.content.substring(3, item.content.length));
-              }
+              this.decryptItem(item, keys);
             } catch (e) {
               item.errorDecrypting = true;
               if (throws) {
                 throw e;
               }
-              console.log("Error decrypting item", item, e);
+              console.error("Error decrypting item", item, e);
               continue;
             }
           }
@@ -33747,6 +33750,15 @@ function getParameterByName(name, url) {
   if (!results) return null;
   if (!results[2]) return '';
   return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
+
+function parametersFromURL(url) {
+  url = url.split("?").slice(-1)[0];
+  var obj = {};
+  url.replace(/([^=&]+)=([^&]*)/g, function (m, key, value) {
+    obj[decodeURIComponent(key)] = decodeURIComponent(value);
+  });
+  return obj;
 }
 
 angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
@@ -34454,7 +34466,6 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
   */
 
   $scope.updateTagsForNote = function (note, stringTags) {
-    console.log("Updating tags", stringTags);
     var toRemove = [];
     var _iteratorNormalCompletion7 = true;
     var _didIteratorError7 = false;
@@ -35163,10 +35174,7 @@ var SyncAdapter = function (_Item) {
   }, {
     key: 'structureParams',
     value: function structureParams() {
-      var params = {
-        url: this.url
-      };
-
+      var params = this.content || {};
       _.merge(params, _get(SyncAdapter.prototype.__proto__ || Object.getPrototypeOf(SyncAdapter.prototype), 'structureParams', this).call(this));
       return params;
     }
@@ -37672,7 +37680,7 @@ var AccountMenu = function () {
         if (data.auth_params) {
           Neeto.crypto.computeEncryptionKeysForUser(_.merge({ password: password }, data.auth_params), function (keys) {
             try {
-              EncryptionHelper.decryptMultipleItems(data.items, keys, true);
+              EncryptionHelper.decryptMultipleItems(data.items, keys, false); /* throws = false as we don't want to interrupt all decryption if just one fails */
               // delete items enc_item_key since the user's actually key will do the encrypting once its passed off
               data.items.forEach(function (item) {
                 item.enc_item_key = null;
@@ -38155,8 +38163,11 @@ var GlobalExtensionsMenu = function () {
       };
 
       $scope.handleSyncAdapterLink = function (link, completion) {
-        var ext = new SyncAdapter({ url: link });
+        var params = parametersFromURL(link);
+        params["url"] = link;
+        var ext = new SyncAdapter({ content: params });
         ext.setDirty(true);
+
         modelManager.addItem(ext);
         syncManager.sync();
         completion();
@@ -39821,6 +39832,13 @@ var SyncManager = function () {
       }
     }
   }, {
+    key: 'handleItemsResponse',
+    value: function handleItemsResponse(responseItems, omitFields) {
+      EncryptionHelper.decryptMultipleItems(responseItems, this.authManager.keys());
+      var items = this.modelManager.mapResponseItemsToLocalModelsOmittingFields(responseItems, omitFields);
+      return items;
+    }
+  }, {
     key: 'handleUnsavedItemsResponse',
     value: function handleUnsavedItemsResponse(unsaved) {
       if (unsaved.length == 0) {
@@ -39834,11 +39852,25 @@ var SyncManager = function () {
         if (i < unsaved.length) {
           var mapping = unsaved[i];
           var itemResponse = mapping.item;
+          EncryptionHelper.decryptMultipleItems([itemResponse], this.authManager.keys());
           var item = this.modelManager.findItem(itemResponse.uuid);
+          if (!item) {
+            // could be deleted
+            return;
+          }
           var error = mapping.error;
           if (error.tag == "uuid_conflict") {
             // uuid conflicts can occur if a user attempts to import an old data archive with uuids from the old account into a new account
             this.modelManager.alternateUUIDForItem(item, handleNext);
+          } else if (error.tag === "sync_conflict") {
+            // create a new item with the same contents of this item if the contents differ
+            itemResponse.uuid = null; // we want a new uuid for the new item
+            var dup = this.modelManager.createItem(itemResponse);
+            if (!itemResponse.deleted && JSON.stringify(item.structureParams()) !== JSON.stringify(dup.structureParams())) {
+              this.modelManager.addItem(dup);
+              dup.conflict_of = item.uuid;
+              dup.setDirty(true);
+            }
           }
           ++i;
         } else {
@@ -39847,56 +39879,6 @@ var SyncManager = function () {
       }.bind(this);
 
       handleNext();
-    }
-  }, {
-    key: 'handleItemsResponse',
-    value: function handleItemsResponse(responseItems, omitFields) {
-      EncryptionHelper.decryptMultipleItems(responseItems, this.authManager.keys());
-      var items = this.modelManager.mapResponseItemsToLocalModelsOmittingFields(responseItems, omitFields);
-      this.handleSyncConflicts(items);
-      return items;
-    }
-  }, {
-    key: 'handleSyncConflicts',
-    value: function handleSyncConflicts(items) {
-      var needsSync = false;
-      var _iteratorNormalCompletion52 = true;
-      var _didIteratorError52 = false;
-      var _iteratorError52 = undefined;
-
-      try {
-        for (var _iterator52 = items[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
-          var item = _step52.value;
-
-          if (item.conflict_of) {
-            var original = this.modelManager.findItem(item.conflict_of);
-            // check if item contents are equal. If so, automatically delete conflict
-            if (JSON.stringify(item.structureParams()) === JSON.stringify(original.structureParams())) {
-              this.modelManager.setItemToBeDeleted(item);
-              needsSync = true;
-            }
-          }
-        }
-      } catch (err) {
-        _didIteratorError52 = true;
-        _iteratorError52 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion52 && _iterator52.return) {
-            _iterator52.return();
-          }
-        } finally {
-          if (_didIteratorError52) {
-            throw _iteratorError52;
-          }
-        }
-      }
-
-      if (needsSync) {
-        setTimeout(function () {
-          this.sync();
-        }.bind(this), 100);
-      }
     }
   }, {
     key: 'clearSyncToken',
@@ -40517,6 +40499,34 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 
 
   $templateCache.put('frontend/directives/permissions-modal.html',
+    "<div class='background' ng-click='dismiss()'></div>\n" +
+    "<div class='content'>\n" +
+    "  <h3>The following extension has requested these permissions:</h3>\n" +
+    "  <h4>Extension</h4>\n" +
+    "  <p>Name: {{component.name}}</p>\n" +
+    "  <p class='wrap'>URL: {{component.url}}</p>\n" +
+    "  <h4>Permissions</h4>\n" +
+    "  <div class='permission' ng-repeat='permission in formattedPermissions'>\n" +
+    "    <p>{{permission}}</p>\n" +
+    "  </div>\n" +
+    "  <h4>Status</h4>\n" +
+    "  <p class='status' ng-class=\"{'trusted' : component.trusted}\">{{component.trusted ? 'Trusted' : 'Untrusted'}}</p>\n" +
+    "  <div class='learn-more'>\n" +
+    "    <h4>Details</h4>\n" +
+    "    <p>\n" +
+    "      Extensions use an offline messaging system to communicate. With <i>Trusted</i> extensions, data is never sent remotely without your consent. Learn more about extension permissions at\n" +
+    "      <a href='https://standardnotes.org/permissions' target='_blank'>https://standardnotes.org/permissions.</a>\n" +
+    "    </p>\n" +
+    "  </div>\n" +
+    "  <div class='buttons'>\n" +
+    "    <button class='standard white' ng-click='deny()'>Deny</button>\n" +
+    "    <button class='standard blue' ng-click='accept()'>Accept</button>\n" +
+    "  </div>\n" +
+    "</div>\n"
+  );
+
+
+  $templateCache.put('frontend/directives/security-update-modal.html',
     "<div class='background' ng-click='dismiss()'></div>\n" +
     "<div class='content'>\n" +
     "  <h3>The following extension has requested these permissions:</h3>\n" +
