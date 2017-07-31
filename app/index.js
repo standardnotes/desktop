@@ -38,8 +38,8 @@ function createWindow () {
 
   // Load the previous state with fallback to defaults
   let winState = windowStateKeeper({
-    defaultWidth: 900,
-    defaultHeight: 600
+    defaultWidth: 1100,
+    defaultHeight: 800
   })
 
   // Create the window using the state information
