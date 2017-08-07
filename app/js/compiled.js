@@ -33267,11 +33267,6 @@ var SNCrypto = function () {
       return CryptoJS.SHA256(text).toString();
     }
   }, {
-    key: 'sha1',
-    value: function sha1(text) {
-      return CryptoJS.SHA1(text).toString();
-    }
-  }, {
     key: 'hmac256',
     value: function hmac256(message, key) {
       var keyData = CryptoJS.enc.Hex.parse(key);
@@ -33294,11 +33289,6 @@ var SNCrypto = function () {
       }.bind(this));
     }
   }, {
-    key: 'calculateVerificationTag',
-    value: function calculateVerificationTag(cost, salt, ak) {
-      return Neeto.crypto.hmac256([cost, salt].join(":"), ak);
-    }
-  }, {
     key: 'generateInitialEncryptionKeysForUser',
     value: function generateInitialEncryptionKeysForUser() {
       var _ref3 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
@@ -33309,11 +33299,9 @@ var SNCrypto = function () {
 
       var pw_cost = this.defaultPasswordGenerationCost();
       var pw_nonce = this.generateRandomKey(512);
-      var pw_salt = this.sha1([email, pw_nonce].join(":"));
+      var pw_salt = this.sha256([email, pw_nonce].join(":"));
       this.generateSymmetricKeyPair({ email: email, password: password, pw_salt: pw_salt, pw_cost: pw_cost }, function (keys) {
-        var ak = keys[2];
-        var pw_auth = this.calculateVerificationTag(pw_cost, pw_salt, ak);
-        callback({ pw: keys[0], mk: keys[1], ak: ak }, { pw_auth: pw_auth, pw_salt: pw_salt, pw_cost: pw_cost });
+        callback({ pw: keys[0], mk: keys[1], ak: keys[2] }, { pw_salt: pw_salt, pw_cost: pw_cost, version: "002" });
       }.bind(this));
     }
   }]);
@@ -33566,7 +33554,7 @@ var SNCryptoWeb = function (_SNCrypto2) {
     Overrides
     */
     value: function defaultPasswordGenerationCost() {
-      return 10000;
+      return 101000;
     }
 
     /** Generates two deterministic keys based on one input */
@@ -36051,7 +36039,10 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
     };
 
     this.getAuthParams = function () {
-      return JSON.parse(localStorage.getItem("auth_params"));
+      if (!this._authParams) {
+        this._authParams = JSON.parse(localStorage.getItem("auth_params"));
+      }
+      return this._authParams;
     };
 
     this.keys = function () {
@@ -36063,13 +36054,29 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
       return keys;
     };
 
-    this.encryptionVersion = function () {
+    this.protocolVersion = function () {
+      var version = this.getAuthParams().version;
+      if (version) {
+        return version;
+      }
+
       var keys = this.keys();
       if (keys && keys.ak) {
         return "002";
       } else {
         return "001";
       }
+    };
+
+    this.costMinimumForVersion = function (version) {
+      // all current versions have a min of 3000
+      // future versions will increase this
+      return 3000;
+    };
+
+    this.isProtocolVersionSupported = function (version) {
+      var supportedVersions = ["001", "002"];
+      return supportedVersions.includes(version);
     };
 
     this.getAuthParamsForEmail = function (url, email, callback) {
@@ -36096,8 +36103,15 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
 
     this.login = function (url, email, password, callback) {
       this.getAuthParamsForEmail(url, email, function (authParams) {
-        if (!authParams.pw_cost) {
-          callback({ error: { message: "Unable to get authentication parameters." } });
+
+        if (!authParams || !authParams.pw_cost) {
+          callback({ error: { message: "Invalid email or password." } });
+          return;
+        }
+
+        if (!this.isProtocolVersionSupported(authParams.version)) {
+          alert("The protocol version associated with your account is outdated and no longer supported by this application. Please visit standardnotes.org/help/security-update for more information.");
+          callback({ didDisplayAlert: true });
           return;
         }
 
@@ -36108,59 +36122,26 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
           return;
         }
 
+        var minimum = this.costMinimumForVersion(authParams.version);
+        if (authParams.pw_cost < minimum) {
+          alert("Unable to login due to insecure password parameters. Please visit standardnotes.org/help/password-upgrade for more information.");
+          callback({ didDisplayAlert: true });
+          return;
+        }
+
         Neeto.crypto.computeEncryptionKeysForUser(_.merge({ password: password }, authParams), function (keys) {
-
-          var uploadVTagOnCompletion = false;
-          var localVTag = Neeto.crypto.calculateVerificationTag(authParams.pw_cost, authParams.pw_salt, keys.ak);
-
-          if (authParams.pw_auth) {
-            // verify auth params
-            if (localVTag !== authParams.pw_auth) {
-              alert("Invalid server verification tag; aborting login. This is most likely caused by an incorrect password. Learn more at standardnotes.org/verification.");
-              $timeout(function () {
-                callback({ error: true, didDisplayAlert: true });
-              });
-              return;
-            } else {
-              console.log("Verification tag success.");
-            }
-          } else {
-            // either user has not uploaded pw_auth, or server is attempting to bypass authentication
-            if (confirm("Unable to locate verification tag for server. If this is your first time seeing this message and your account was created before July 2017, press OK to upload verification tag. If your account was created after July 2017, or if you've already seen this message, press cancel to abort login. Learn more at standardnotes.org/verification.")) {
-              // upload verification tag on completion
-              uploadVTagOnCompletion = true;
-            } else {
-              return;
-            }
-          }
 
           var requestUrl = url + "/auth/sign_in";
           var params = { password: keys.pw, email: email };
           httpManager.postAbsolute(requestUrl, params, function (response) {
             this.handleAuthResponse(response, email, url, authParams, keys);
             callback(response);
-            if (uploadVTagOnCompletion) {
-              this.uploadVerificationTag(localVTag, authParams);
-            }
           }.bind(this), function (response) {
             console.error("Error logging in", response);
             callback(response);
           });
         }.bind(this));
       }.bind(this));
-    };
-
-    this.uploadVerificationTag = function (tag, authParams) {
-      var requestUrl = localStorage.getItem("server") + "/auth/update";
-      var params = { pw_auth: tag };
-
-      httpManager.postAbsolute(requestUrl, params, function (response) {
-        _.merge(authParams, params);
-        localStorage.setItem("auth_params", JSON.stringify(authParams));
-        alert("Your verification tag was successfully uploaded.");
-      }.bind(this), function (response) {
-        alert("There was an error uploading your verification tag.");
-      });
     };
 
     this.handleAuthResponse = function (response, email, url, authParams, keys) {
@@ -36219,6 +36200,10 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
 
     this.staticifyObject = function (object) {
       return JSON.parse(JSON.stringify(object));
+    };
+
+    this.signOut = function () {
+      this._authParams = null;
     };
   }
 });
@@ -37607,6 +37592,7 @@ var AccountMenu = function () {
           return;
         }
 
+        authManager.signOut();
         syncManager.destroyLocalData(function () {
           window.location.reload();
         });
@@ -37786,7 +37772,7 @@ var AccountMenu = function () {
 
       $scope.itemsData = function (keys) {
         var items = _.map(modelManager.allItems, function (item) {
-          var itemParams = new ItemParams(item, keys, authManager.encryptionVersion());
+          var itemParams = new ItemParams(item, keys, authManager.protocolVersion());
           return itemParams.paramsForExportFile();
         }.bind(this));
 
@@ -37829,8 +37815,8 @@ var AccountMenu = function () {
       // 002 Update
 
       $scope.securityUpdateAvailable = function () {
-        // whether user needs to upload pw_auth
-        return !authManager.getAuthParams().pw_auth;
+        var keys = authManager.keys();
+        return keys && !keys.ak;
       };
 
       $scope.clickedSecurityUpdate = function () {
@@ -37853,8 +37839,6 @@ var AccountMenu = function () {
             return;
           }
 
-          var tag = Neeto.crypto.calculateVerificationTag(authParams.pw_cost, authParams.pw_salt, keys.ak);
-          authManager.uploadVerificationTag(tag, authParams);
           authManager.saveKeys(keys);
         });
       };
@@ -38893,7 +38877,7 @@ var ExtensionManager = function () {
       if (!this.extensionUsesEncryptedData(extension)) {
         keys = null;
       }
-      var itemParams = new ItemParams(item, keys, this.authManager.encryptionVersion());
+      var itemParams = new ItemParams(item, keys, this.authManager.protocolVersion());
       return itemParams.paramsForExtension();
     }
   }, {
@@ -39552,7 +39536,7 @@ var SyncManager = function () {
     key: 'writeItemsToLocalStorage',
     value: function writeItemsToLocalStorage(items, offlineOnly, callback) {
       var params = items.map(function (item) {
-        var itemParams = new ItemParams(item, null, this.authManager.encryptionVersion());
+        var itemParams = new ItemParams(item, null, this.authManager.protocolVersion());
         itemParams = itemParams.paramsForLocalStorage();
         if (offlineOnly) {
           delete itemParams.dirty;
@@ -39751,7 +39735,7 @@ var SyncManager = function () {
       var params = {};
       params.limit = 150;
       params.items = _.map(subItems, function (item) {
-        var itemParams = new ItemParams(item, this.authManager.keys(), this.authManager.encryptionVersion());
+        var itemParams = new ItemParams(item, this.authManager.keys(), this.authManager.protocolVersion());
         itemParams.additionalFields = options.additionalFields;
         return itemParams.paramsForSync();
       }.bind(this));
@@ -40183,9 +40167,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        <a class='block mt-5' ng-click='clickedSecurityUpdate()'>Security Update Available</a>\n" +
     "        <section class='gray-bg mt-10 medium-padding' ng-if='securityUpdateData.showForm'>\n" +
     "          <p>\n" +
-    "            A new security feature is available that adds an additional level of verification to your sign-ins.\n" +
-    "            This feature assures that when you login, the server cannot tamper or modify your authentication parameters.\n" +
-    "            <a href='https://standardnotes.org/verification' target='_blank'>Learn more.</a>\n" +
+    "            <a href='https://standardnotes.org/help/security-update' target='_blank'>Learn more.</a>\n" +
     "          </p>\n" +
     "          <div class='mt-10' ng-if='!securityUpdateData.processing'>\n" +
     "            <p class='bold'>Enter your password to update:</p>\n" +
