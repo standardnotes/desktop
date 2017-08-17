@@ -90,8 +90,10 @@ function createWindow () {
 
   // handle link clicks
   win.webContents.on('new-window', function(e, url) {
-    e.preventDefault();
-    shell.openExternal(url);
+    if(!url.includes("file://")) {
+      e.preventDefault();
+      shell.openExternal(url);
+    }
   });
 
   // handle link clicks (this event is fired instead of
