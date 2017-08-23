@@ -1,6 +1,6 @@
 {
   "name": "standard-notes",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "main": "./app/index.js",
   "devDependencies": {
     "electron": "1.6.11",
