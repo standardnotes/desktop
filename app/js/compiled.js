@@ -33855,8 +33855,10 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
           }
         }
       } else if (action === "associate-item") {
-        var tag = modelManager.findItem(data.item.uuid);
-        this.addTag(tag);
+        if (data.item.content_type == "Tag") {
+          var tag = modelManager.findItem(data.item.uuid);
+          this.addTag(tag);
+        }
       } else if (action === "deassociate-item") {
         var tag = modelManager.findItem(data.item.uuid);
         this.removeTag(tag);
@@ -34073,7 +34075,6 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     var note = this.note;
     note.dummy = false;
     this.save()(note, function (success) {
-      this.syncTakingTooLong = false;
       if (success) {
         if (statusTimeout) $timeout.cancel(statusTimeout);
         statusTimeout = $timeout(function () {
@@ -34082,12 +34083,14 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
             status += " (offline)";
           }
           this.saveError = false;
+          this.syncTakingTooLong = false;
           this.noteStatus = $sce.trustAsHtml(status);
         }.bind(this), 200);
       } else {
         if (statusTimeout) $timeout.cancel(statusTimeout);
         statusTimeout = $timeout(function () {
           this.saveError = true;
+          this.syncTakingTooLong = false;
           this.noteStatus = $sce.trustAsHtml("Error syncing<br>(changes saved offline)");
         }.bind(this), 200);
       }
@@ -34720,6 +34723,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
 }).controller('NotesCtrl', ['authManager', '$timeout', '$rootScope', 'modelManager', function (authManager, $timeout, $rootScope, modelManager) {
 
   this.sortBy = localStorage.getItem("sortBy") || "created_at";
+  this.sortDescending = this.sortBy != "title";
 
   $rootScope.$on("editorFocused", function () {
     this.showMenu = false;
@@ -34806,10 +34810,17 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
 
   this.selectedSortByCreated = function () {
     this.setSortBy("created_at");
+    this.sortDescending = true;
   };
 
   this.selectedSortByUpdated = function () {
     this.setSortBy("updated_at");
+    this.sortDescending = true;
+  };
+
+  this.selectedSortByTitle = function () {
+    this.setSortBy("title");
+    this.sortDescending = false;
   };
 
   this.setSortBy = function (type) {
@@ -36223,6 +36234,8 @@ var ComponentManager = function () {
     this.contextStreamObservers = [];
     this.activeComponents = [];
 
+    // this.loggingEnabled = true;
+
     this.permissionDialogs = [];
 
     this.handlers = [];
@@ -36590,6 +36603,7 @@ var ComponentManager = function () {
       } else if (message.action === "create-item") {
         var item = this.modelManager.createItem(message.data.item);
         this.modelManager.addItem(item);
+        this.modelManager.resolveReferencesForItem(item);
         item.setDirty(true);
         this.syncManager.sync();
         this.replyToMessage(component, message, { item: this.jsonForItem(item) });
@@ -37152,6 +37166,9 @@ var DBManager = function () {
 
       request.onsuccess = function (event) {
         var db = event.target.result;
+        db.onversionchange = function (event) {
+          db.close();
+        };
         db.onerror = function (errorEvent) {
           console.log("Database error: " + errorEvent.target.errorCode);
         };
@@ -37161,13 +37178,11 @@ var DBManager = function () {
       };
 
       request.onupgradeneeded = function (event) {
-        console.log("Upgrade needed", event);
         var db = event.target.result;
-        if (db.version === 1) {
-          if (onUgradeNeeded) {
-            onUgradeNeeded();
-          }
-        }
+
+        db.onversionchange = function (event) {
+          db.close();
+        };
 
         // Create an objectStore for this database
         var objectStore = db.createObjectStore("items", { keyPath: "uuid" });
@@ -37175,6 +37190,11 @@ var DBManager = function () {
         objectStore.createIndex("uuid", "uuid", { unique: true });
         objectStore.transaction.oncomplete = function (event) {
           // Ready to store values in the newly created objectStore.
+          if (db.version === 1) {
+            if (onUgradeNeeded) {
+              onUgradeNeeded();
+            }
+          }
         };
       };
     }
@@ -37261,13 +37281,22 @@ var DBManager = function () {
   }, {
     key: 'clearAllItems',
     value: function clearAllItems(callback) {
-      this.openDatabase(function (db) {
-        var request = db.transaction("items", "readwrite").objectStore("items").clear();
-        request.onsuccess = function (event) {
-          console.log("Successfully cleared items");
-          callback();
-        };
-      }, null);
+      var deleteRequest = window.indexedDB.deleteDatabase("standardnotes");
+
+      deleteRequest.onerror = function (event) {
+        console.log("Error deleting database.");
+        callback();
+      };
+
+      deleteRequest.onsuccess = function (event) {
+        console.log("Database deleted successfully");
+        callback();
+      };
+
+      deleteRequest.onblocked = function (event) {
+        console.error("Delete request blocked");
+        alert("Your browser is blocking Standard Notes from deleting the local database. Make sure there are no other open windows of this app and try again. If the issue persists, please manually delete app data to sign out.");
+      };
     }
   }]);
 
@@ -37582,7 +37611,9 @@ var AccountMenu = function () {
           });
         } else {
           dbManager.clearAllItems(function () {
-            block();
+            $timeout(function () {
+              block();
+            });
           });
         }
       };
@@ -37647,8 +37678,8 @@ var AccountMenu = function () {
       };
 
       $scope.encryptionStatusForNotes = function () {
-        var allNotes = modelManager.filteredNotes;
-        return allNotes.length + "/" + allNotes.length + " notes encrypted";
+        var items = modelManager.allItemsMatchingTypes(["Note", "Tag"]);
+        return items.length + "/" + items.length + " notes and tags encrypted";
       };
 
       $scope.importJSONData = function (data, password, callback) {
@@ -39519,8 +39550,8 @@ var ModelManager = function () {
 angular.module('app.frontend').service('modelManager', ModelManager);
 ;
 var SyncManager = function () {
-  SyncManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'dbManager', 'httpManager', '$interval'];
-  function SyncManager($rootScope, modelManager, authManager, dbManager, httpManager, $interval) {
+  SyncManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'dbManager', 'httpManager', '$interval', '$timeout'];
+  function SyncManager($rootScope, modelManager, authManager, dbManager, httpManager, $interval, $timeout) {
     _classCallCheck(this, SyncManager);
 
     this.$rootScope = $rootScope;
@@ -39529,6 +39560,7 @@ var SyncManager = function () {
     this.authManager = authManager;
     this.dbManager = dbManager;
     this.$interval = $interval;
+    this.$timeout = $timeout;
     this.syncStatus = {};
   }
 
@@ -39872,12 +39904,14 @@ var SyncManager = function () {
   }, {
     key: 'destroyLocalData',
     value: function destroyLocalData(callback) {
+      localStorage.clear();
       this.dbManager.clearAllItems(function () {
-        localStorage.clear();
         if (callback) {
-          callback();
+          this.$timeout(function () {
+            callback();
+          });
         }
-      });
+      }.bind(this));
     }
   }, {
     key: 'serverURL',
@@ -40508,9 +40542,37 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
   );
 
 
+  $templateCache.put('frontend/directives/security-update-modal.html',
+    "<div class='background' ng-click='dismiss()'></div>\n" +
+    "<div class='content'>\n" +
+    "  <h3>The following extension has requested these permissions:</h3>\n" +
+    "  <h4>Extension</h4>\n" +
+    "  <p>Name: {{component.name}}</p>\n" +
+    "  <p class='wrap'>URL: {{component.url}}</p>\n" +
+    "  <h4>Permissions</h4>\n" +
+    "  <div class='permission' ng-repeat='permission in formattedPermissions'>\n" +
+    "    <p>{{permission}}</p>\n" +
+    "  </div>\n" +
+    "  <h4>Status</h4>\n" +
+    "  <p class='status' ng-class=\"{'trusted' : component.trusted}\">{{component.trusted ? 'Trusted' : 'Untrusted'}}</p>\n" +
+    "  <div class='learn-more'>\n" +
+    "    <h4>Details</h4>\n" +
+    "    <p>\n" +
+    "      Extensions use an offline messaging system to communicate. With <i>Trusted</i> extensions, data is never sent remotely without your consent. Learn more about extension permissions at\n" +
+    "      <a href='https://standardnotes.org/permissions' target='_blank'>https://standardnotes.org/permissions.</a>\n" +
+    "    </p>\n" +
+    "  </div>\n" +
+    "  <div class='buttons'>\n" +
+    "    <button class='standard white' ng-click='deny()'>Deny</button>\n" +
+    "    <button class='standard blue' ng-click='accept()'>Accept</button>\n" +
+    "  </div>\n" +
+    "</div>\n"
+  );
+
+
   $templateCache.put('frontend/editor.html',
     "<div class='section editor' ng-class=\"{'fullscreen' : ctrl.fullscreen}\">\n" +
-    "  <div class='section-title-bar' id='editor-title-bar' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.note &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
+    "  <div class='section-title-bar' id='editor-title-bar' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-show='ctrl.note &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
     "    <div class='title'>\n" +
     "      <input class='input' id='note-title-editor' ng-change='ctrl.nameChanged()' ng-focus='ctrl.onNameFocus()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTitle($event)' ng-model='ctrl.note.title' select-on-click='true'>\n" +
     "    </div>\n" +
@@ -40641,13 +40703,19 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "                By date modified\n" +
     "              </label>\n" +
     "            </li>\n" +
+    "            <li>\n" +
+    "              <label ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByTitle()'>\n" +
+    "                <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'title'\">✓</span>\n" +
+    "                By title\n" +
+    "              </label>\n" +
+    "            </li>\n" +
     "          </ul>\n" +
     "        </li>\n" +
     "      </ul>\n" +
     "    </div>\n" +
     "    <div class='scrollable'>\n" +
     "      <div can-load='true' class='infinite-scroll' infinite-scroll='ctrl.paginate()' threshold='200'>\n" +
-    "        <div class='note' ng-class=\"{'selected' : ctrl.selectedNote == note}\" ng-click='ctrl.selectNote(note)' ng-repeat='note in (ctrl.sortedNotes = (ctrl.tag.notes | filter: ctrl.filterNotes | orderBy: ctrl.sortBy:true | limitTo:ctrl.notesToDisplay))'>\n" +
+    "        <div class='note' ng-class=\"{'selected' : ctrl.selectedNote == note}\" ng-click='ctrl.selectNote(note)' ng-repeat='note in (ctrl.sortedNotes = (ctrl.tag.notes | filter: ctrl.filterNotes | orderBy: ctrl.sortBy:ctrl.sortDescending | limitTo:ctrl.notesToDisplay))'>\n" +
     "          <strong class='red medium' ng-if='note.conflict_of'>Conflicted copy</strong>\n" +
     "          <strong class='red medium' ng-if='note.errorDecrypting'>Error decrypting</strong>\n" +
     "          <div class='name' ng-if='note.title'>\n" +

@@ -235,6 +235,14 @@ function loadMenu() {
           click () { shell.openExternal('mailto:hello@standardnotes.org') }
         },
         {
+          label: 'Clear Cache and Reload',
+          click () {
+            win.webContents.session.clearCache(function(){
+              win.reload();
+            });
+           }
+        },
+        {
           label: 'Version: ' + app.getVersion(),
           click () { shell.openExternal('https://github.com/standardnotes/desktop/releases') }
         }
