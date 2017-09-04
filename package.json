@@ -19,7 +19,7 @@
     "release": "build -mwl --x64 --ia32",
     "distwin": "build -w --x64 --ia32",
     "distmac": "build -m",
-    "start": "electron . --enable-logging",
+    "start": "electron . --enable-logging --icon _icon/icon.png",
     "postinstall": "electron-builder install-app-deps"
   }
 }

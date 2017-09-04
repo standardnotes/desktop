@@ -50,7 +50,6 @@ function createWindow () {
     'height': winState.height,
     'minWidth': 600,
     'minHeight': 400,
-    'icon': __dirname + 'icon.png',
     show: false
   })
 
