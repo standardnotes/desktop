@@ -34304,6 +34304,46 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       }
     }
   };
+
+  this.onSystemEditorLoad = function () {
+    if (this.loadedTabListener) {
+      return;
+    }
+    this.loadedTabListener = true;
+    /**
+     * Insert 4 spaces when a tab key is pressed,
+     * only used when inside of the text editor.
+     * If the shift key is pressed first, this event is
+     * not fired.
+    */
+    var parent = this;
+    var handleTab = function handleTab(event) {
+      if (!event.shiftKey && event.which == 9) {
+        event.preventDefault();
+        var start = this.selectionStart;
+        var end = this.selectionEnd;
+        var spaces = "    ";
+
+        // Insert 4 spaces
+        this.value = this.value.substring(0, start) + spaces + this.value.substring(end);
+
+        // Place cursor 4 spaces away from where
+        // the tab key was pressed
+        this.selectionStart = this.selectionEnd = start + 4;
+
+        parent.note.text = this.value;
+        parent.changesMade();
+      }
+    };
+
+    var element = document.getElementById("note-text-editor");
+    element.addEventListener('keydown', handleTab);
+
+    angular.element(element).on('$destroy', function () {
+      window.removeEventListener('keydown', handleTab);
+      this.loadedTabListener = false;
+    }.bind(this));
+  };
 }]);
 ;angular.module('app.frontend').directive("footer", ['authManager', function (authManager) {
   return {
@@ -34791,7 +34831,14 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     if (filterText.length == 0) {
       note.visible = true;
     } else {
-      note.visible = note.safeTitle().toLowerCase().includes(filterText) || note.safeText().toLowerCase().includes(filterText);
+      var words = filterText.split(" ");
+      var matchesTitle = words.every(function (word) {
+        return note.safeTitle().toLowerCase().indexOf(word) >= 0;
+      });
+      var matchesBody = words.every(function (word) {
+        return note.safeText().toLowerCase().indexOf(word) >= 0;
+      });
+      note.visible = matchesTitle || matchesBody;
     }
     return note.visible;
   }.bind(this);
@@ -36208,6 +36255,47 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
         });
       }.bind(this));
     };
+
+    this.updateAuthParams = function (authParams, callback) {
+      var requestUrl = localStorage.getItem("server") + "/auth/update";
+      var params = authParams;
+      httpManager.postAbsolute(requestUrl, params, function (response) {
+        localStorage.setItem("auth_params", JSON.stringify(authParams));
+        if (callback) {
+          callback(response);
+        }
+      }.bind(this), function (response) {
+        var error = response;
+        console.error("Update error:", response);
+        if (callback) {
+          callback({ error: error });
+        }
+      });
+    };
+
+    this.checkForSecurityUpdate = function () {
+      if (this.offline()) {
+        return;
+      }
+
+      if (this.protocolVersion() === "001") {
+        if (this.keys().ak) {
+          // upgrade to 002
+          var authParams = this.getAuthParams();
+          authParams.version = "002";
+          this.updateAuthParams(authParams, function (response) {
+            if (!response.error) {
+              // let rest of UI load first
+              $timeout(function () {
+                alert("Your encryption version has been updated. To take full advantage of this update, please resync all your items by clicking Account -> Advanced -> Re-encrypt All Items.");
+              }, 750);
+            }
+          });
+        }
+      }
+    };
+
+    this.checkForSecurityUpdate();
 
     this.staticifyObject = function (object) {
       return JSON.parse(JSON.stringify(object));
@@ -40612,7 +40700,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    <iframe frameBorder='0' id='editor-iframe' ng-if='ctrl.editor &amp;&amp; !ctrl.editor.systemEditor' ng-src='{{ctrl.editor.url | trusted}}' style='width: 100%;'>\n" +
     "      Loading\n" +
     "    </iframe>\n" +
-    "    <textarea class='editable' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.editor || ctrl.editor.systemEditor' ng-model='ctrl.note.text'></textarea>\n" +
+    "    <textarea class='editable' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.editor || ctrl.editor.systemEditor' ng-model='ctrl.note.text'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
     "  </div>\n" +
     "  <section class='section' ng-if='ctrl.note.errorDecrypting'>\n" +
     "    <p class='medium-padding' style='padding-top: 0 !important;'>There was an error decrypting this item. Ensure you are running the latest version of this app, then sign out and sign back in to try again.</p>\n" +
@@ -40686,6 +40774,8 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      <br>\n" +
     "      <div class='filter-section'>\n" +
     "        <input class='filter-bar' lowercase='true' ng-change='ctrl.filterTextChanged()' ng-model='ctrl.noteFilter.text' placeholder='Search' select-on-click='true'>\n" +
+    "          <div id='search-clear-button' ng-click=\"ctrl.noteFilter.text = ''; ctrl.filterTextChanged()\" ng-if='ctrl.noteFilter.text'>✕</div>\n" +
+    "        </input>\n" +
     "      </div>\n" +
     "      <ul class='section-menu-bar' id='tag-menu-bar'>\n" +
     "        <li ng-class=\"{'selected' : ctrl.showMenu}\">\n" +

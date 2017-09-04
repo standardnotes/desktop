@@ -810,6 +810,7 @@ a.disabled {
   clear: left;
   height: 32px;
   margin-top: 20px;
+  position: relative;
 }
 .notes .filter-section .filter-bar {
   background-color: #e9e9e9;
@@ -822,6 +823,25 @@ a.disabled {
   line-height: 35px;
   border: none;
   width: 100%;
+  position: relative;
+}
+.notes .filter-section #search-clear-button {
+  border-radius: 50%;
+  width: 17px;
+  height: 17px;
+  color: white;
+  cursor: default;
+  background-color: gray;
+  font-size: 10px;
+  line-height: 17px;
+  text-align: center;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  transition: background-color 0.15s linear;
+}
+.notes .filter-section #search-clear-button:hover {
+  background-color: #086dd6;
 }
 .notes .scrollable {
   height: calc(100vh - (130px + 25px));
