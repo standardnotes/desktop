@@ -1,5 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html ng-app="app.frontend" ng-controller="BaseCtrl">
+<html ng-app="app.frontend">
   <head>
     <meta charset="utf-8"/>
     <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
@@ -17,7 +17,7 @@
         delete window.module;
 
         ipcRenderer.on('update-available', function (event, message) {
-          var controllerElement = document.querySelector('html');
+          var controllerElement = document.querySelector('#home');
           var controllerScope = angular.element(controllerElement).scope();
           controllerScope.onUpdateAvailable(message);
         });

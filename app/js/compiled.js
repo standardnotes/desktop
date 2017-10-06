@@ -33300,7 +33300,7 @@ var SNCrypto = function () {
       var pw_cost = this.defaultPasswordGenerationCost();
       var pw_nonce = this.generateRandomKey(512);
       var pw_salt = this.sha256([email, pw_nonce].join(":"));
-      this.generateSymmetricKeyPair({ email: email, password: password, pw_salt: pw_salt, pw_cost: pw_cost }, function (keys) {
+      this.generateSymmetricKeyPair({ password: password, pw_salt: pw_salt, pw_cost: pw_cost }, function (keys) {
         callback({ pw: keys[0], mk: keys[1], ak: keys[2] }, { pw_salt: pw_salt, pw_cost: pw_cost, version: "002" });
       }.bind(this));
     }
@@ -33378,7 +33378,9 @@ var EncryptionHelper = function () {
     }
   }, {
     key: 'encryptItem',
-    value: function encryptItem(item, keys, version) {
+    value: function encryptItem(item, keys) {
+      var version = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "002";
+
       var params = {};
       // encrypt item key
       var item_key = Neeto.crypto.generateRandomEncryptionKey();
@@ -33437,7 +33439,9 @@ var EncryptionHelper = function () {
         // is encrypted, continue to below
       } else {
         // is base64 encoded
-        item.content = Neeto.crypto.base64Decode(item.content.substring(3, item.content.length));
+        try {
+          item.content = Neeto.crypto.base64Decode(item.content.substring(3, item.content.length));
+        } catch (e) {}
         return;
       }
 
@@ -33701,35 +33705,7 @@ if (!IEOrEdge && window.crypto && window.crypto.subtle) {
   Neeto.crypto = new SNCryptoJS();
 }
 
-angular.module('app.frontend', []);angular.module('app.frontend').config(['$locationProvider', function ($locationProvider) {
-
-  var runningInElectron = window && window.process && window.process.type && window.process.versions["electron"];
-  if (!runningInElectron) {
-    if (window.history && window.history.pushState) {
-      $locationProvider.html5Mode({
-        enabled: true,
-        requireBase: false
-      });
-    }
-  } else {
-    $locationProvider.html5Mode(false);
-  }
-}]);
-;
-var BaseCtrl = function BaseCtrl($rootScope, $scope, syncManager, dbManager, analyticsManager, componentManager) {
-  _classCallCheck(this, BaseCtrl);
-
-  dbManager.openDatabase(null, function () {
-    // new database, delete syncToken so that items can be refetched entirely from server
-    syncManager.clearSyncToken();
-    syncManager.sync();
-  });
-
-  $scope.onUpdateAvailable = function (version) {
-    $rootScope.$broadcast('new-update-available', version);
-  };
-};
-BaseCtrl.$inject = ['$rootScope', '$scope', 'syncManager', 'dbManager', 'analyticsManager', 'componentManager'];
+angular.module('app.frontend', []);
 
 function getParameterByName(name, url) {
   name = name.replace(/[\[\]]/g, "\\$&");
@@ -33749,8 +33725,23 @@ function parametersFromURL(url) {
   return obj;
 }
 
-angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
-;angular.module('app.frontend').directive("editorSection", ['$timeout', '$sce', function ($timeout, $sce) {
+function isDesktopApplication() {
+  return window && window.process && window.process.type && window.process.versions["electron"];
+}
+;angular.module('app.frontend').config(function ($locationProvider) {
+
+  if (!isDesktopApplication()) {
+    if (window.history && window.history.pushState) {
+      $locationProvider.html5Mode({
+        enabled: true,
+        requireBase: false
+      });
+    }
+  } else {
+    $locationProvider.html5Mode(false);
+  }
+});
+;angular.module('app.frontend').directive("editorSection", function ($timeout, $sce) {
   return {
     restrict: 'E',
     scope: {
@@ -33787,7 +33778,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', 'editorManager', 'themeManager', 'componentManager', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager, themeManager, componentManager) {
+}).controller('EditorCtrl', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager, themeManager, componentManager, storageManager) {
 
   this.componentManager = componentManager;
   this.componentStack = [];
@@ -33798,6 +33789,10 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
 
   $rootScope.$on("sync:taking-too-long", function () {
     this.syncTakingTooLong = true;
+  }.bind(this));
+
+  $rootScope.$on("sync:completed", function () {
+    this.syncTakingTooLong = false;
   }.bind(this));
 
   $rootScope.$on("tag-changed", function () {
@@ -34154,12 +34149,27 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     }
   };
 
+  this.togglePin = function () {
+    this.note.setAppDataItem("pinned", !this.note.pinned);
+    this.note.setDirty(true);
+    this.changesMade();
+  };
+
+  this.toggleArchiveNote = function () {
+    this.note.setAppDataItem("archived", !this.note.archived);
+    this.note.setDirty(true);
+    this.changesMade();
+    $rootScope.$broadcast("noteArchived");
+  };
+
   this.clickedEditNote = function () {
     this.editorMode = 'edit';
     this.focusEditor(100);
   };
 
-  /* Tags */
+  /*
+  Tags
+  */
 
   this.loadTagsString = function () {
     var string = "";
@@ -34227,16 +34237,18 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     this.updateTags()(this.note, tags);
   };
 
-  /* Components */
+  /*
+  Components
+  */
 
   var alertKey = "displayed-component-disable-alert";
 
   this.disableComponent = function (component) {
     componentManager.disableComponentForItem(component, this.note);
     componentManager.setEventFlowForComponent(component, false);
-    if (!localStorage.getItem(alertKey)) {
+    if (!storageManager.getItem(alertKey)) {
       alert("This component will be disabled for this note. You can re-enable this component in the 'Menu' of the editor pane.");
-      localStorage.setItem(alertKey, true);
+      storageManager.setItem(alertKey, true);
     }
   };
 
@@ -34305,6 +34317,10 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     }
   };
 
+  /*
+  Editor Customization
+  */
+
   this.onSystemEditorLoad = function () {
     if (this.loadedTabListener) {
       return;
@@ -34344,8 +34360,8 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       this.loadedTabListener = false;
     }.bind(this));
   };
-}]);
-;angular.module('app.frontend').directive("footer", ['authManager', function (authManager) {
+});
+;angular.module('app.frontend').directive("footer", function (authManager) {
   return {
     restrict: 'E',
     scope: {},
@@ -34367,7 +34383,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}]).controller('FooterCtrl', ['$rootScope', 'authManager', 'modelManager', '$timeout', 'dbManager', 'syncManager', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager) {
+}).controller('FooterCtrl', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager) {
 
   this.user = authManager.user;
 
@@ -34376,7 +34392,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
   };
   this.updateOfflineStatus();
 
-  if (this.offline) {
+  if (this.offline && !passcodeManager.hasPasscode()) {
     this.showAccountMenu = true;
   }
 
@@ -34384,6 +34400,10 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     this.error = syncManager.syncStatus.error;
   };
   this.findErrors();
+
+  this.onAuthSuccess = function () {
+    this.showAccountMenu = false;
+  }.bind(this);
 
   this.accountMenuPressed = function () {
     this.serverData = {};
@@ -34404,6 +34424,14 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     this.showIOMenu = !this.showIOMenu;
     this.showExtensionsMenu = false;
     this.showAccountMenu = false;
+  };
+
+  this.hasPasscode = function () {
+    return passcodeManager.hasPasscode();
+  };
+
+  this.lockApp = function () {
+    $rootScope.lockApplication();
   };
 
   this.refreshData = function () {
@@ -34439,58 +34467,87 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     this.newUpdateAvailable = false;
     alert("A new update is ready to install. Updates address performance and security issues, as well as bug fixes and feature enhancements. Simply quit Standard Notes and re-open it for the update to be applied.");
   };
-}]);
-;angular.module('app.frontend').controller('HomeCtrl', ['$scope', '$location', '$rootScope', '$timeout', 'modelManager', 'syncManager', 'authManager', 'themeManager', function ($scope, $location, $rootScope, $timeout, modelManager, syncManager, authManager, themeManager) {
+});
+;angular.module('app.frontend').controller('HomeCtrl', function ($scope, $location, $rootScope, $timeout, modelManager, dbManager, syncManager, authManager, themeManager, passcodeManager, storageManager) {
 
-  function urlParam(key) {
-    return $location.search()[key];
+  storageManager.initialize(passcodeManager.hasPasscode(), authManager.isEphemeralSession());
+
+  $scope.onUpdateAvailable = function (version) {
+    $rootScope.$broadcast('new-update-available', version);
+  };
+
+  $rootScope.lockApplication = function () {
+    // Render first to show lock screen immediately, then refresh
+    $scope.needsUnlock = true;
+    // Reloading wipes current objects from memory
+    setTimeout(function () {
+      window.location.reload();
+    }, 100);
+  };
+
+  function load() {
+    // pass keys to storageManager to decrypt storage
+    storageManager.setKeys(passcodeManager.keys());
+
+    openDatabase();
+    // Retrieve local data and begin sycing timer
+    initiateSync();
+    // Configure "All" psuedo-tag
+    loadAllTag();
+    // Configure "Archived" psuedo-tag
+    loadArchivedTag();
   }
 
-  function autoSignInFromParams() {
-    var server = urlParam("server");
-    var email = urlParam("email");
-    var pw = urlParam("pw");
-
-    if (!authManager.offline()) {
-      // check if current account
-      if (syncManager.serverURL === server && authManager.user.email === email) {
-        // already signed in, return
-        return;
-      } else {
-        // sign out
-        syncManager.destroyLocalData(function () {
-          window.location.reload();
-        });
-      }
-    } else {
-      authManager.login(server, email, pw, function (response) {
-        window.location.reload();
-      });
-    }
+  if (passcodeManager.isLocked()) {
+    $scope.needsUnlock = true;
+  } else {
+    load();
   }
 
-  if (urlParam("server")) {
-    autoSignInFromParams();
+  $scope.onSuccessfulUnlock = function () {
+    $timeout(function () {
+      $scope.needsUnlock = false;
+      load();
+    });
+  };
+
+  function openDatabase() {
+    dbManager.setLocked(false);
+    dbManager.openDatabase(null, function () {
+      // new database, delete syncToken so that items can be refetched entirely from server
+      syncManager.clearSyncToken();
+      syncManager.sync();
+    });
   }
 
-  syncManager.loadLocalItems(function (items) {
-    $scope.allTag.didLoad = true;
-    themeManager.activateInitialTheme();
-    $scope.$apply();
+  function initiateSync() {
+    authManager.loadInitialData();
+    syncManager.loadLocalItems(function (items) {
+      $scope.allTag.didLoad = true;
+      themeManager.activateInitialTheme();
+      $scope.$apply();
 
-    syncManager.sync(null);
-    // refresh every 30s
-    setInterval(function () {
       syncManager.sync(null);
-    }, 30000);
-  });
+      // refresh every 30s
+      setInterval(function () {
+        syncManager.sync(null);
+      }, 30000);
+    });
+  }
 
-  var allTag = new Tag({ all: true });
-  allTag.needsLoad = true;
-  $scope.allTag = allTag;
-  $scope.allTag.title = "All";
-  $scope.tags = modelManager.tags;
-  $scope.allTag.notes = modelManager.notes;
+  function loadAllTag() {
+    var allTag = new Tag({ all: true, title: "All" });
+    allTag.needsLoad = true;
+    $scope.allTag = allTag;
+    $scope.tags = modelManager.tags;
+    $scope.allTag.notes = modelManager.notes;
+  }
+
+  function loadArchivedTag() {
+    var archiveTag = new Tag({ archiveTag: true, title: "Archived" });
+    $scope.archiveTag = archiveTag;
+    $scope.archiveTag.notes = modelManager.notes;
+  }
 
   /*
   Editor Callbacks
@@ -34661,7 +34718,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
   $scope.notesAddNew = function (note) {
     modelManager.addItem(note);
 
-    if (!$scope.selectedTag.all) {
+    if (!$scope.selectedTag.all && !$scope.selectedTag.archiveTag) {
       modelManager.createRelationshipBetweenItems($scope.selectedTag, note);
     }
   };
@@ -34728,7 +34785,78 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       }
     });
   };
-}]);
+
+  // Handle Auto Sign In From URL
+
+  function urlParam(key) {
+    return $location.search()[key];
+  }
+
+  function autoSignInFromParams() {
+    var server = urlParam("server");
+    var email = urlParam("email");
+    var pw = urlParam("pw");
+
+    if (!authManager.offline()) {
+      // check if current account
+      if (syncManager.serverURL === server && authManager.user.email === email) {
+        // already signed in, return
+        return;
+      } else {
+        // sign out
+        syncManager.destroyLocalData(function () {
+          window.location.reload();
+        });
+      }
+    } else {
+      authManager.login(server, email, pw, false, function (response) {
+        window.location.reload();
+      });
+    }
+  }
+
+  if (urlParam("server")) {
+    autoSignInFromParams();
+  }
+});
+;
+var LockScreen = function () {
+  function LockScreen() {
+    _classCallCheck(this, LockScreen);
+
+    this.restrict = "E";
+    this.templateUrl = "frontend/lock-screen.html";
+    this.scope = {
+      onSuccess: "&"
+    };
+  }
+
+  _createClass(LockScreen, [{
+    key: 'controller',
+    value: function controller($scope, passcodeManager) {
+      'ngInject';
+
+      $scope.formData = {};
+
+      $scope.submitPasscodeForm = function () {
+        passcodeManager.unlock($scope.formData.passcode, function (success) {
+          if (!success) {
+            alert("Invalid passcode. Please try again.");
+            return;
+          }
+
+          $scope.onSuccess()();
+        });
+      };
+    }
+  }]);
+
+  return LockScreen;
+}();
+
+angular.module('app.frontend').directive('lockScreen', function () {
+  return new LockScreen();
+});
 ;angular.module('app.frontend').directive("notesSection", function () {
   return {
     scope: {
@@ -34760,9 +34888,9 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}).controller('NotesCtrl', ['authManager', '$timeout', '$rootScope', 'modelManager', function (authManager, $timeout, $rootScope, modelManager) {
+}).controller('NotesCtrl', function (authManager, $timeout, $rootScope, modelManager, storageManager) {
 
-  this.sortBy = localStorage.getItem("sortBy") || "created_at";
+  this.sortBy = storageManager.getItem("sortBy") || "created_at";
   this.sortDescending = this.sortBy != "title";
 
   $rootScope.$on("editorFocused", function () {
@@ -34773,9 +34901,24 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     this.selectFirstNote(false);
   }.bind(this));
 
+  $rootScope.$on("noteArchived", function () {
+    this.selectFirstNote(false);
+  }.bind(this));
+
   this.notesToDisplay = 20;
   this.paginate = function () {
     this.notesToDisplay += 20;
+  };
+
+  this.sortByTitle = function () {
+    var base = "Sort |";
+    if (this.sortBy == "created_at") {
+      return base + " Date added";
+    } else if (this.sortBy == "updated_at") {
+      return base + " Date modifed";
+    } else if (this.sortBy == "title") {
+      return base + " Title";
+    }
   };
 
   this.tagDidChange = function (tag, oldTag) {
@@ -34827,6 +34970,14 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
   this.noteFilter = { text: '' };
 
   this.filterNotes = function (note) {
+    if (this.tag.archiveTag) {
+      return note.archived;
+    }
+
+    if (note.archived) {
+      return false;
+    }
+
     var filterText = this.noteFilter.text.toLowerCase();
     if (filterText.length == 0) {
       note.visible = true;
@@ -34872,9 +35023,9 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
 
   this.setSortBy = function (type) {
     this.sortBy = type;
-    localStorage.setItem("sortBy", type);
+    storageManager.setItem("sortBy", type);
   };
-}]);
+});
 ;angular.module('app.frontend').directive("tagsSection", function () {
   return {
     restrict: 'E',
@@ -34885,6 +35036,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       save: "&",
       tags: "=",
       allTag: "=",
+      archiveTag: "=",
       updateNoteTag: "&",
       removeTag: "&"
     },
@@ -34908,7 +35060,7 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
       });
     }
   };
-}).controller('TagsCtrl', ['$rootScope', 'modelManager', '$timeout', 'componentManager', function ($rootScope, modelManager, $timeout, componentManager) {
+}).controller('TagsCtrl', function ($rootScope, modelManager, $timeout, componentManager) {
 
   var initialLoad = true;
 
@@ -35016,14 +35168,18 @@ angular.module('app.frontend').controller('BaseCtrl', BaseCtrl);
     var validNotes = Note.filterDummyNotes(tag.notes);
     return validNotes.length;
   };
-}]);
-;
+});
+;var AppDomain = "org.standardnotes.sn";
+var dateFormatter;
+
 var Item = function () {
-  function Item(json_obj) {
+  function Item() {
+    var json_obj = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
     _classCallCheck(this, Item);
 
+    this.appData = {};
     this.updateFromJSON(json_obj);
-
     this.observers = [];
 
     if (!this.uuid) {
@@ -35106,7 +35262,12 @@ var Item = function () {
     }
   }, {
     key: 'mapContentToLocalProperties',
-    value: function mapContentToLocalProperties(contentObj) {}
+    value: function mapContentToLocalProperties(contentObj) {
+      this.appData = contentObj.appData;
+      if (!this.appData) {
+        this.appData = {};
+      }
+    }
   }, {
     key: 'createContentJSONFromProperties',
     value: function createContentJSONFromProperties() {
@@ -35120,7 +35281,10 @@ var Item = function () {
   }, {
     key: 'structureParams',
     value: function structureParams() {
-      return { references: this.referenceParams() };
+      return {
+        references: this.referenceParams(),
+        appData: this.appData
+      };
     }
   }, {
     key: 'addItemAsRelationship',
@@ -35142,8 +35306,8 @@ var Item = function () {
       this.setDirty(true);
     }
   }, {
-    key: 'locallyClearAllReferences',
-    value: function locallyClearAllReferences() {}
+    key: 'removeReferencesNotPresentIn',
+    value: function removeReferencesNotPresentIn(references) {}
   }, {
     key: 'mergeMetadataFromItem',
     value: function mergeMetadataFromItem(item) {
@@ -35170,6 +35334,70 @@ var Item = function () {
     value: function doNotEncrypt() {
       return false;
     }
+
+    /*
+    App Data
+    */
+
+  }, {
+    key: 'setAppDataItem',
+    value: function setAppDataItem(key, value) {
+      var data = this.appData[AppDomain];
+      if (!data) {
+        data = {};
+      }
+      data[key] = value;
+      this.appData[AppDomain] = data;
+    }
+  }, {
+    key: 'getAppDataItem',
+    value: function getAppDataItem(key) {
+      var data = this.appData[AppDomain];
+      if (data) {
+        return data[key];
+      } else {
+        return null;
+      }
+    }
+  }, {
+    key: 'createdAtString',
+
+
+    /*
+    Dates
+    */
+
+    value: function createdAtString() {
+      return this.dateToLocalizedString(this.created_at);
+    }
+  }, {
+    key: 'updatedAtString',
+    value: function updatedAtString() {
+      return this.dateToLocalizedString(this.updated_at);
+    }
+  }, {
+    key: 'dateToLocalizedString',
+    value: function dateToLocalizedString(date) {
+      if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
+        if (!dateFormatter) {
+          var locale = navigator.languages && navigator.languages.length ? navigator.languages[0] : navigator.language;
+          dateFormatter = new Intl.DateTimeFormat(locale, {
+            year: 'numeric',
+            month: 'short',
+            day: '2-digit',
+            weekday: 'long',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        }
+        return dateFormatter.format(date);
+      } else {
+        // IE < 11, Safari <= 9.0.
+        // In English, this generates the string most similar to
+        // the toLocaleDateString() result above.
+        return date.toDateString() + ' ' + date.toLocaleTimeString();
+      }
+    }
   }, {
     key: 'contentObject',
     get: function get() {
@@ -35185,9 +35413,19 @@ var Item = function () {
       try {
         return JSON.parse(this.content);
       } catch (e) {
-        console.log("Error parsing json", e);
+        console.log("Error parsing json", e, this);
         return {};
       }
+    }
+  }, {
+    key: 'pinned',
+    get: function get() {
+      return this.getAppDataItem("pinned");
+    }
+  }, {
+    key: 'archived',
+    get: function get() {
+      return this.getAppDataItem("archived");
     }
   }], [{
     key: 'sortItemsByDate',
@@ -35394,10 +35632,18 @@ var Editor = function (_Item3) {
       this.notes = [];
     }
   }, {
-    key: 'locallyClearAllReferences',
-    value: function locallyClearAllReferences() {
-      _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'locallyClearAllReferences', this).call(this);
-      this.notes = [];
+    key: 'removeReferencesNotPresentIn',
+    value: function removeReferencesNotPresentIn(references) {
+      _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'removeReferencesNotPresentIn', this).call(this, references);
+
+      var uuids = references.map(function (ref) {
+        return ref.uuid;
+      });
+      this.notes.forEach(function (note) {
+        if (!uuids.includes(note.uuid)) {
+          _.pull(this.notes, note);
+        }
+      }.bind(this));
     }
   }, {
     key: 'potentialItemOfInterestHasChangedItsUUID',
@@ -35674,13 +35920,19 @@ var Note = function (_Item5) {
       this.tags = [];
     }
   }, {
-    key: 'locallyClearAllReferences',
-    value: function locallyClearAllReferences() {
-      _get(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'locallyClearAllReferences', this).call(this);
-      this.tags.forEach(function (tag) {
-        _.pull(tag.notes, this);
+    key: 'removeReferencesNotPresentIn',
+    value: function removeReferencesNotPresentIn(references) {
+      _get(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'removeReferencesNotPresentIn', this).call(this, references);
+
+      var uuids = references.map(function (ref) {
+        return ref.uuid;
+      });
+      this.tags.slice().forEach(function (tag) {
+        if (!uuids.includes(tag.uuid)) {
+          _.pull(tag.notes, this);
+          _.pull(this.tags, tag);
+        }
       }.bind(this));
-      this.tags = [];
     }
   }, {
     key: 'isBeingRemovedLocally',
@@ -35738,6 +35990,11 @@ var Note = function (_Item5) {
     key: 'toJSON',
     value: function toJSON() {
       return { uuid: this.uuid };
+    }
+  }, {
+    key: 'tagsString',
+    value: function tagsString() {
+      return Tag.arrayToDisplayString(this.tags);
     }
   }, {
     key: 'content_type',
@@ -35826,14 +36083,17 @@ var Tag = function (_Item6) {
       this.notes = [];
     }
   }, {
-    key: 'locallyClearAllReferences',
-    value: function locallyClearAllReferences() {
-      _get(Tag.prototype.__proto__ || Object.getPrototypeOf(Tag.prototype), 'locallyClearAllReferences', this).call(this);
-      this.notes.forEach(function (note) {
-        _.pull(note.tags, this);
+    key: 'removeReferencesNotPresentIn',
+    value: function removeReferencesNotPresentIn(references) {
+      var uuids = references.map(function (ref) {
+        return ref.uuid;
+      });
+      this.notes.slice().forEach(function (note) {
+        if (!uuids.includes(note.uuid)) {
+          _.pull(note.tags, this);
+          _.pull(this.notes, note);
+        }
       }.bind(this));
-
-      this.notes = [];
     }
   }, {
     key: 'isBeingRemovedLocally',
@@ -35881,6 +36141,17 @@ var Tag = function (_Item6) {
     key: 'content_type',
     get: function get() {
       return "Tag";
+    }
+  }], [{
+    key: 'arrayToDisplayString',
+    value: function arrayToDisplayString(tags, includeComma) {
+      return tags.map(function (tag, i) {
+        var text = "#" + tag.title;
+        if (i != tags.length - 1) {
+          text += includeComma ? ", " : " ";
+        }
+        return text;
+      }).join(" ");
     }
   }]);
 
@@ -35931,13 +36202,54 @@ var Theme = function (_Item7) {
 }(Item);
 
 ;
+var EncryptedStorage = function (_Item8) {
+  _inherits(EncryptedStorage, _Item8);
+
+  function EncryptedStorage(json_obj) {
+    _classCallCheck(this, EncryptedStorage);
+
+    return _possibleConstructorReturn(this, (EncryptedStorage.__proto__ || Object.getPrototypeOf(EncryptedStorage)).call(this, json_obj));
+  }
+
+  _createClass(EncryptedStorage, [{
+    key: 'mapContentToLocalProperties',
+    value: function mapContentToLocalProperties(contentObject) {
+      _get(EncryptedStorage.prototype.__proto__ || Object.getPrototypeOf(EncryptedStorage.prototype), 'mapContentToLocalProperties', this).call(this, contentObject);
+      this.storage = contentObject.storage;
+    }
+  }, {
+    key: 'structureParams',
+    value: function structureParams() {
+      var params = {
+        storage: this.storage
+      };
+
+      _.merge(params, _get(EncryptedStorage.prototype.__proto__ || Object.getPrototypeOf(EncryptedStorage.prototype), 'structureParams', this).call(this));
+      return params;
+    }
+  }, {
+    key: 'toJSON',
+    value: function toJSON() {
+      return { uuid: this.uuid };
+    }
+  }, {
+    key: 'content_type',
+    get: function get() {
+      return "SN|EncryptedStorage";
+    }
+  }]);
+
+  return EncryptedStorage;
+}(Item);
+
+;
 var ItemParams = function () {
   function ItemParams(item, keys, version) {
     _classCallCheck(this, ItemParams);
 
     this.item = item;
     this.keys = keys;
-    this.version = version;
+    this.version = version || "002";
   }
 
   _createClass(ItemParams, [{
@@ -35997,68 +36309,6 @@ var ItemParams = function () {
   return ItemParams;
 }();
 
-;
-var AnalyticsManager = function () {
-  AnalyticsManager.$inject = ['authManager'];
-  function AnalyticsManager(authManager) {
-    _classCallCheck(this, AnalyticsManager);
-
-    this.authManager = authManager;
-
-    var status = localStorage.getItem("analyticsEnabled");
-    if (status === null) {
-      this.enabled = false;
-    } else {
-      this.enabled = JSON.parse(status);
-    }
-
-    if (this.enabled === true) {
-      this.initialize();
-    }
-  }
-
-  _createClass(AnalyticsManager, [{
-    key: 'setStatus',
-    value: function setStatus(enabled) {
-      this.enabled = enabled;
-      localStorage.setItem("analyticsEnabled", JSON.stringify(enabled));
-
-      window.location.reload();
-    }
-  }, {
-    key: 'toggleStatus',
-    value: function toggleStatus() {
-      this.setStatus(!this.enabled);
-    }
-  }, {
-    key: 'initialize',
-    value: function initialize() {
-      // load analytics
-      window._paq = window._paq || [];
-
-      (function () {
-        var u = "https://piwik.standardnotes.org/";
-        window._paq.push(['setTrackerUrl', u + 'piwik.php']);
-        window._paq.push(['setSiteId', '2']);
-        var d = document,
-            g = d.createElement('script'),
-            s = d.getElementsByTagName('script')[0];
-        g.type = 'text/javascript';g.id = "piwik", g.async = true;g.defer = true;g.src = u + 'piwik.js';s.parentNode.insertBefore(g, s);
-      })();
-
-      var analyticsId = this.authManager.getUserAnalyticsId();
-      if (analyticsId) {
-        window._paq.push(['setUserId', analyticsId]);
-      }
-      window._paq.push(['trackPageView', "AppInterface"]);
-      window._paq.push(['enableLinkTracking']);
-    }
-  }]);
-
-  return AnalyticsManager;
-}();
-
-angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
 ;angular.module('app.frontend').provider('authManager', function () {
 
   function domainName() {
@@ -36067,49 +36317,62 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
     return domain;
   }
 
-  this.$get = ['$rootScope', '$timeout', 'httpManager', 'modelManager', 'dbManager', function ($rootScope, $timeout, httpManager, modelManager, dbManager) {
-    return new AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager);
-  }];
+  this.$get = function ($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
+    return new AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager);
+  };
 
-  function AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager) {
+  function AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
 
-    var userData = localStorage.getItem("user");
-    if (userData) {
-      this.user = JSON.parse(userData);
-    } else {
-      // legacy, check for uuid
-      var idData = localStorage.getItem("uuid");
-      if (idData) {
-        this.user = { uuid: idData };
+    this.loadInitialData = function () {
+      var userData = storageManager.getItem("user");
+      if (userData) {
+        this.user = JSON.parse(userData);
+      } else {
+        // legacy, check for uuid
+        var idData = storageManager.getItem("uuid");
+        if (idData) {
+          this.user = { uuid: idData };
+        }
       }
-    }
-
-    this.getUserAnalyticsId = function () {
-      if (!this.user || !this.user.uuid) {
-        return null;
-      }
-      // anonymize user id irreversably
-      return Neeto.crypto.hmac256(this.user.uuid, Neeto.crypto.sha256(localStorage.getItem("pw")));
     };
 
     this.offline = function () {
       return !this.user;
     };
 
+    this.isEphemeralSession = function () {
+      if (this.ephemeral == null || this.ephemeral == undefined) {
+        this.ephemeral = JSON.parse(storageManager.getItem("ephemeral", StorageManager.Fixed));
+      }
+      return this.ephemeral;
+    };
+
+    this.setEphemeral = function (ephemeral) {
+      this.ephemeral = ephemeral;
+      if (ephemeral) {
+        storageManager.setModelStorageMode(StorageManager.Ephemeral);
+        storageManager.setItemsMode(storageManager.hasPasscode() ? StorageManager.FixedEncrypted : StorageManager.Ephemeral);
+      } else {
+        storageManager.setItem("ephemeral", JSON.stringify(false), StorageManager.Fixed);
+      }
+    };
+
     this.getAuthParams = function () {
       if (!this._authParams) {
-        this._authParams = JSON.parse(localStorage.getItem("auth_params"));
+        this._authParams = JSON.parse(storageManager.getItem("auth_params"));
       }
       return this._authParams;
     };
 
     this.keys = function () {
-      var mk = localStorage.getItem("mk");
-      if (!mk) {
-        return null;
+      if (!this._keys) {
+        var mk = storageManager.getItem("mk");
+        if (!mk) {
+          return null;
+        }
+        this._keys = { mk: mk, ak: storageManager.getItem("ak") };
       }
-      var keys = { mk: mk, ak: localStorage.getItem("ak") };
-      return keys;
+      return this._keys;
     };
 
     this.protocolVersion = function () {
@@ -36159,7 +36422,7 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
       }
     };
 
-    this.login = function (url, email, password, callback) {
+    this.login = function (url, email, password, ephemeral, callback) {
       this.getAuthParamsForEmail(url, email, function (authParams) {
 
         if (!authParams || !authParams.pw_cost) {
@@ -36192,7 +36455,11 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
           var requestUrl = url + "/auth/sign_in";
           var params = { password: keys.pw, email: email };
           httpManager.postAbsolute(requestUrl, params, function (response) {
+            this.setEphemeral(ephemeral);
+
             this.handleAuthResponse(response, email, url, authParams, keys);
+            storageManager.setModelStorageMode(ephemeral ? StorageManager.Ephemeral : StorageManager.Fixed);
+
             callback(response);
           }.bind(this), function (response) {
             console.error("Error logging in", response);
@@ -36205,11 +36472,16 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
     this.handleAuthResponse = function (response, email, url, authParams, keys) {
       try {
         if (url) {
-          localStorage.setItem("server", url);
+          storageManager.setItem("server", url);
         }
-        localStorage.setItem("user", JSON.stringify(response.user));
-        localStorage.setItem("auth_params", JSON.stringify(authParams));
-        localStorage.setItem("jwt", response.token);
+
+        this.user = response.user;
+        storageManager.setItem("user", JSON.stringify(response.user));
+
+        this._authParams = authParams;
+        storageManager.setItem("auth_params", JSON.stringify(authParams));
+
+        storageManager.setItem("jwt", response.token);
         this.saveKeys(keys);
       } catch (e) {
         dbManager.displayOfflineAlert();
@@ -36217,18 +36489,24 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
     };
 
     this.saveKeys = function (keys) {
-      localStorage.setItem("pw", keys.pw);
-      localStorage.setItem("mk", keys.mk);
-      localStorage.setItem("ak", keys.ak);
+      this._keys = keys;
+      storageManager.setItem("pw", keys.pw);
+      storageManager.setItem("mk", keys.mk);
+      storageManager.setItem("ak", keys.ak);
     };
 
-    this.register = function (url, email, password, callback) {
+    this.register = function (url, email, password, ephemeral, callback) {
       Neeto.crypto.generateInitialEncryptionKeysForUser({ password: password, email: email }, function (keys, authParams) {
         var requestUrl = url + "/auth";
         var params = _.merge({ password: keys.pw, email: email }, authParams);
 
         httpManager.postAbsolute(requestUrl, params, function (response) {
+          this.setEphemeral(ephemeral);
+
           this.handleAuthResponse(response, email, url, authParams, keys);
+
+          storageManager.setModelStorageMode(ephemeral ? StorageManager.Ephemeral : StorageManager.Fixed);
+
           callback(response);
         }.bind(this), function (response) {
           console.error("Registration error", response);
@@ -36239,7 +36517,7 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
 
     this.changePassword = function (email, new_password, callback) {
       Neeto.crypto.generateInitialEncryptionKeysForUser({ password: new_password, email: email }, function (keys, authParams) {
-        var requestUrl = localStorage.getItem("server") + "/auth/change_pw";
+        var requestUrl = storageManager.getItem("server") + "/auth/change_pw";
         var params = _.merge({ new_password: keys.pw }, authParams);
 
         httpManager.postAbsolute(requestUrl, params, function (response) {
@@ -36257,10 +36535,10 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
     };
 
     this.updateAuthParams = function (authParams, callback) {
-      var requestUrl = localStorage.getItem("server") + "/auth/update";
+      var requestUrl = storageManager.getItem("server") + "/auth/update";
       var params = authParams;
       httpManager.postAbsolute(requestUrl, params, function (response) {
-        localStorage.setItem("auth_params", JSON.stringify(authParams));
+        storageManager.setItem("auth_params", JSON.stringify(authParams));
         if (callback) {
           callback(response);
         }
@@ -36302,13 +36580,14 @@ angular.module('app.frontend').service('analyticsManager', AnalyticsManager);
     };
 
     this.signOut = function () {
+      this._keys = null;
+      this.user = null;
       this._authParams = null;
     };
   }
 });
 ;
 var ComponentManager = function () {
-  ComponentManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'themeManager', '$timeout', '$compile'];
   function ComponentManager($rootScope, modelManager, syncManager, themeManager, $timeout, $compile) {
     _classCallCheck(this, ComponentManager);
 
@@ -36340,7 +36619,7 @@ var ComponentManager = function () {
     }.bind(this), false);
 
     this.modelManager.addItemSyncObserver("component-manager", "*", function (items) {
-      var _this10 = this;
+      var _this11 = this;
 
       var syncedComponents = items.filter(function (item) {
         return item.content_type === "SN|Component";
@@ -36385,9 +36664,9 @@ var ComponentManager = function () {
         }];
 
 
-        _this10.runWithPermissions(observer.component, requiredPermissions, observer.originalMessage.permissions, function () {
+        _this11.runWithPermissions(observer.component, requiredPermissions, observer.originalMessage.permissions, function () {
           this.sendItemsInReply(observer.component, relevantItems, observer.originalMessage);
-        }.bind(_this10));
+        }.bind(_this11));
       };
 
       var _iteratorNormalCompletion16 = true;
@@ -36422,7 +36701,7 @@ var ComponentManager = function () {
       }];
 
       var _loop2 = function _loop2(observer) {
-        _this10.runWithPermissions(observer.component, requiredContextPermissions, observer.originalMessage.permissions, function () {
+        _this11.runWithPermissions(observer.component, requiredContextPermissions, observer.originalMessage.permissions, function () {
           var _iteratorNormalCompletion18 = true;
           var _didIteratorError18 = false;
           var _iteratorError18 = undefined;
@@ -36456,7 +36735,7 @@ var ComponentManager = function () {
               }
             }
           }
-        }.bind(_this10));
+        }.bind(_this11));
       };
 
       var _iteratorNormalCompletion17 = true;
@@ -36624,7 +36903,7 @@ var ComponentManager = function () {
   }, {
     key: 'handleMessage',
     value: function handleMessage(component, message) {
-      var _this11 = this;
+      var _this12 = this;
 
       if (!component) {
         if (this.loggingEnabled) {
@@ -36731,7 +37010,7 @@ var ComponentManager = function () {
 
       var _loop3 = function _loop3(handler) {
         if (handler.areas.includes(component.area)) {
-          _this11.timeout(function () {
+          _this12.timeout(function () {
             handler.actionHandler(component, message.action, message.data);
           });
         }
@@ -37225,6 +37504,8 @@ angular.module('app.frontend').service('componentManager', ComponentManager);
 var DBManager = function () {
   function DBManager() {
     _classCallCheck(this, DBManager);
+
+    this.locked = true;
   }
 
   _createClass(DBManager, [{
@@ -37236,8 +37517,17 @@ var DBManager = function () {
       alert(message);
     }
   }, {
+    key: 'setLocked',
+    value: function setLocked(locked) {
+      this.locked = locked;
+    }
+  }, {
     key: 'openDatabase',
     value: function openDatabase(callback, onUgradeNeeded) {
+      if (this.locked) {
+        return;
+      }
+
       var request = window.indexedDB.open("standardnotes", 1);
 
       request.onerror = function (event) {
@@ -37287,8 +37577,8 @@ var DBManager = function () {
       };
     }
   }, {
-    key: 'getAllItems',
-    value: function getAllItems(callback) {
+    key: 'getAllModels',
+    value: function getAllModels(callback) {
       this.openDatabase(function (db) {
         var objectStore = db.transaction("items").objectStore("items");
         var items = [];
@@ -37304,13 +37594,13 @@ var DBManager = function () {
       }, null);
     }
   }, {
-    key: 'saveItem',
-    value: function saveItem(item) {
-      this.saveItems([item]);
+    key: 'saveModel',
+    value: function saveModel(item) {
+      this.saveModels([item]);
     }
   }, {
-    key: 'saveItems',
-    value: function saveItems(items, callback) {
+    key: 'saveModels',
+    value: function saveModels(items, callback) {
 
       if (items.length == 0) {
         if (callback) {
@@ -37345,8 +37635,8 @@ var DBManager = function () {
       }, null);
     }
   }, {
-    key: 'deleteItem',
-    value: function deleteItem(item, callback) {
+    key: 'deleteModel',
+    value: function deleteModel(item, callback) {
       this.openDatabase(function (db) {
         var request = db.transaction("items", "readwrite").objectStore("items").delete(item.uuid);
         request.onsuccess = function (event) {
@@ -37357,28 +37647,18 @@ var DBManager = function () {
       }, null);
     }
   }, {
-    key: 'getItemByUUID',
-    value: function getItemByUUID(uuid, callback) {
-      this.openDatabase(function (db) {
-        var request = db.transaction("items", "readonly").objectStore("items").get(uuid);
-        request.onsuccess = function (event) {
-          callback(event.result);
-        };
-      }, null);
-    }
-  }, {
-    key: 'clearAllItems',
-    value: function clearAllItems(callback) {
+    key: 'clearAllModels',
+    value: function clearAllModels(callback) {
       var deleteRequest = window.indexedDB.deleteDatabase("standardnotes");
 
       deleteRequest.onerror = function (event) {
         console.log("Error deleting database.");
-        callback();
+        callback && callback();
       };
 
       deleteRequest.onsuccess = function (event) {
         console.log("Database deleted successfully");
-        callback();
+        callback && callback();
       };
 
       deleteRequest.onblocked = function (event) {
@@ -37431,7 +37711,7 @@ angular.module('app.frontend').service('dbManager', DBManager);
     }
   };
 }]);
-;angular.module('app.frontend').directive('delayHide', ['$timeout', function ($timeout) {
+;angular.module('app.frontend').directive('delayHide', function ($timeout) {
   return {
     restrict: 'A',
     scope: {
@@ -37474,7 +37754,7 @@ angular.module('app.frontend').service('dbManager', DBManager);
     }
 
   };
-}]);
+});
 ;angular.module('app.frontend').directive('fileChange', function () {
   return {
     restrict: 'A',
@@ -37545,20 +37825,21 @@ var AccountMenu = function () {
 
     this.restrict = "E";
     this.templateUrl = "frontend/directives/account-menu.html";
-    this.scope = {};
+    this.scope = {
+      "onSuccessfulAuth": "&"
+    };
   }
 
   _createClass(AccountMenu, [{
     key: 'controller',
-    value: ['$scope', 'authManager', 'modelManager', 'syncManager', 'dbManager', 'analyticsManager', '$timeout', function controller($scope, authManager, modelManager, syncManager, dbManager, analyticsManager, $timeout) {
+    value: function controller($scope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
       'ngInject';
 
-      $scope.formData = { mergeLocal: true, url: syncManager.serverURL };
+      $scope.formData = { mergeLocal: true, url: syncManager.serverURL, ephemeral: false };
       $scope.user = authManager.user;
       $scope.server = syncManager.serverURL;
 
       $scope.syncStatus = syncManager.syncStatus;
-      $scope.analyticsManager = analyticsManager;
 
       $scope.encryptionKey = function () {
         return authManager.keys().mk;
@@ -37573,7 +37854,7 @@ var AccountMenu = function () {
       };
 
       $scope.dashboardURL = function () {
-        return $scope.server + '/dashboard/?server=' + $scope.server + '&id=' + encodeURIComponent($scope.user.email) + '&pw=' + $scope.serverPassword();
+        return $scope.server + '/dashboard/#server=' + $scope.server + '&id=' + encodeURIComponent($scope.user.email) + '&pw=' + $scope.serverPassword();
       };
 
       $scope.newPasswordData = {};
@@ -37639,7 +37920,7 @@ var AccountMenu = function () {
       $scope.login = function () {
         $scope.formData.status = "Generating Login Keys...";
         $timeout(function () {
-          authManager.login($scope.formData.url, $scope.formData.email, $scope.formData.user_password, function (response) {
+          authManager.login($scope.formData.url, $scope.formData.email, $scope.formData.user_password, $scope.formData.ephemeral, function (response) {
             if (!response || response.error) {
               $scope.formData.status = null;
               var error = response ? response.error : { message: "An unknown error occured." };
@@ -37664,7 +37945,7 @@ var AccountMenu = function () {
         $scope.formData.status = "Generating Account Keys...";
 
         $timeout(function () {
-          authManager.register($scope.formData.url, $scope.formData.email, $scope.formData.user_password, function (response) {
+          authManager.register($scope.formData.url, $scope.formData.email, $scope.formData.user_password, $scope.formData.ephemeral, function (response) {
             if (!response || response.error) {
               $scope.formData.status = null;
               var error = response ? response.error : { message: "An unknown error occured." };
@@ -37674,10 +37955,6 @@ var AccountMenu = function () {
             }
           });
         });
-      };
-
-      $scope.localNotesCount = function () {
-        return modelManager.filteredNotes.length;
       };
 
       $scope.mergeLocalChanged = function () {
@@ -37690,18 +37967,20 @@ var AccountMenu = function () {
 
       $scope.onAuthSuccess = function () {
         var block = function block() {
-          window.location.reload();
+          $timeout(function () {
+            $scope.onSuccessfulAuth()();
+            syncManager.sync();
+          });
         };
 
         if ($scope.formData.mergeLocal) {
           syncManager.markAllItemsDirtyAndSaveOffline(function () {
             block();
-          });
+          }, true);
         } else {
-          dbManager.clearAllItems(function () {
-            $timeout(function () {
-              block();
-            });
+          modelManager.resetLocalMemory();
+          storageManager.clearAllModels(function () {
+            block();
           });
         }
       };
@@ -37763,11 +38042,6 @@ var AccountMenu = function () {
         };
 
         reader.readAsText(file);
-      };
-
-      $scope.encryptionStatusForNotes = function () {
-        var items = modelManager.allItemsMatchingTypes(["Note", "Tag"]);
-        return items.length + "/" + items.length + " notes and tags encrypted";
       };
 
       $scope.importJSONData = function (data, password, callback) {
@@ -37961,7 +38235,105 @@ var AccountMenu = function () {
           authManager.saveKeys(keys);
         });
       };
-    }]
+
+      /*
+      Encryption Status
+      */
+
+      $scope.notesAndTagsCount = function () {
+        var items = modelManager.allItemsMatchingTypes(["Note", "Tag"]);
+        return items.length;
+      };
+
+      $scope.encryptionStatusForNotes = function () {
+        var length = $scope.notesAndTagsCount();
+        return length + "/" + length + " notes and tags encrypted";
+      };
+
+      $scope.encryptionEnabled = function () {
+        return passcodeManager.hasPasscode() || !authManager.offline();
+      };
+
+      $scope.encryptionSource = function () {
+        if (!authManager.offline()) {
+          return "Account keys";
+        } else if (passcodeManager.hasPasscode()) {
+          return "Local Passcode";
+        } else {
+          return null;
+        }
+      };
+
+      $scope.encryptionStatusString = function () {
+        if (!authManager.offline()) {
+          return "End-to-end encryption is enabled. Your data is encrypted before being synced to your private account.";
+        } else if (passcodeManager.hasPasscode()) {
+          return "Encryption is enabled. Your data is encrypted using your passcode before being stored on disk.";
+        } else {
+          return "Encryption is not enabled. Sign in, register, or add a passcode lock to enable encryption.";
+        }
+      };
+
+      /*
+      Passcode Lock
+      */
+
+      $scope.passcodeOptionAvailable = function () {
+        // If you're signed in with an ephemeral session, passcode lock is unavailable
+        return authManager.offline() || !authManager.isEphemeralSession();
+      };
+
+      $scope.hasPasscode = function () {
+        return passcodeManager.hasPasscode();
+      };
+
+      $scope.addPasscodeClicked = function () {
+        $scope.formData.showPasscodeForm = true;
+      };
+
+      $scope.submitPasscodeForm = function () {
+        var passcode = $scope.formData.passcode;
+        if (passcode !== $scope.formData.confirmPasscode) {
+          alert("The two passcodes you entered do not match. Please try again.");
+          return;
+        }
+
+        passcodeManager.setPasscode(passcode, function () {
+          $timeout(function () {
+            $scope.formData.showPasscodeForm = false;
+            var offline = authManager.offline();
+
+            var message = "You've succesfully set an app passcode.";
+            if (offline) {
+              message += " Your items will now be encrypted using this passcode.";
+            }
+            alert(message);
+
+            if (offline) {
+              syncManager.markAllItemsDirtyAndSaveOffline();
+            }
+          });
+        });
+      };
+
+      $scope.removePasscodePressed = function () {
+        var signedIn = !authManager.offline();
+        var message = "Are you sure you want to remove your local passcode?";
+        if (!signedIn) {
+          message += " This will remove encryption from your local data.";
+        }
+        if (confirm(message)) {
+          passcodeManager.clearPasscode();
+          if (authManager.offline()) {
+            syncManager.markAllItemsDirtyAndSaveOffline();
+          }
+        }
+      };
+
+      $scope.isDesktopApplication = function () {
+        return isDesktopApplication();
+      };
+    }
   }]);
 
   return AccountMenu;
@@ -37984,7 +38356,7 @@ var ContextualExtensionsMenu = function () {
 
   _createClass(ContextualExtensionsMenu, [{
     key: 'controller',
-    value: ['$scope', 'modelManager', 'extensionManager', function controller($scope, modelManager, extensionManager) {
+    value: function controller($scope, modelManager, extensionManager) {
       'ngInject';
 
       $scope.renderData = {};
@@ -38081,7 +38453,7 @@ var ContextualExtensionsMenu = function () {
       $scope.accessTypeForExtension = function (extension) {
         return extensionManager.extensionUsesEncryptedData(extension) ? "encrypted" : "decrypted";
       };
-    }]
+    }
   }]);
 
   return ContextualExtensionsMenu;
@@ -38105,7 +38477,7 @@ var EditorMenu = function () {
 
   _createClass(EditorMenu, [{
     key: 'controller',
-    value: ['$scope', 'editorManager', function controller($scope, editorManager) {
+    value: function controller($scope, editorManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -38115,7 +38487,7 @@ var EditorMenu = function () {
         editor.conflict_of = null; // clear conflict if applicable
         $scope.callback()(editor);
       };
-    }]
+    }
   }]);
 
   return EditorMenu;
@@ -38136,7 +38508,7 @@ var GlobalExtensionsMenu = function () {
 
   _createClass(GlobalExtensionsMenu, [{
     key: 'controller',
-    value: ['$scope', 'extensionManager', 'syncManager', 'modelManager', 'themeManager', 'editorManager', 'componentManager', function controller($scope, extensionManager, syncManager, modelManager, themeManager, editorManager, componentManager) {
+    value: function controller($scope, extensionManager, syncManager, modelManager, themeManager, editorManager, componentManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -38145,6 +38517,8 @@ var GlobalExtensionsMenu = function () {
       $scope.themeManager = themeManager;
       $scope.editorManager = editorManager;
       $scope.componentManager = componentManager;
+
+      $scope.serverExtensions = modelManager.itemsForContentType("SF|Extension");
 
       $scope.selectedAction = function (action, extension) {
         extensionManager.executeAction(action, extension, null, function (response) {
@@ -38179,6 +38553,35 @@ var GlobalExtensionsMenu = function () {
           themeManager.deactivateTheme(theme);
           modelManager.setItemToBeDeleted(theme);
           syncManager.sync();
+        }
+      };
+
+      // Server extensions
+
+      $scope.deleteServerExt = function (ext) {
+        if (confirm("Are you sure you want to delete and disable this extension?")) {
+          _.remove($scope.serverExtensions, { uuid: ext.uuid });
+          modelManager.setItemToBeDeleted(ext);
+          syncManager.sync();
+        }
+      };
+
+      $scope.nameForServerExtension = function (ext) {
+        var url = ext.url;
+        if (url.includes("gdrive")) {
+          return "Google Drive Sync";
+        } else if (url.includes("file_attacher")) {
+          return "File Attacher";
+        } else if (url.includes("onedrive")) {
+          return "OneDrive Sync";
+        } else if (url.includes("backup.email_archive")) {
+          return "Daily Email Backups";
+        } else if (url.includes("dropbox")) {
+          return "Dropbox Sync";
+        } else if (url.includes("revisions")) {
+          return "Revision History";
+        } else {
+          return null;
         }
       };
 
@@ -38273,6 +38676,7 @@ var GlobalExtensionsMenu = function () {
 
         modelManager.addItem(ext);
         syncManager.sync();
+        $scope.serverExtensions.push(ext);
         completion();
       };
 
@@ -38302,7 +38706,7 @@ var GlobalExtensionsMenu = function () {
         editorManager.addNewEditorFromURL(link);
         completion();
       };
-    }]
+    }
   }]);
 
   return GlobalExtensionsMenu;
@@ -38390,7 +38794,6 @@ angular.module('app.frontend').directive('permissionsModal', function () {
 });
 ;
 var EditorManager = function () {
-  EditorManager.$inject = ['$rootScope', 'modelManager', 'syncManager'];
   function EditorManager($rootScope, modelManager, syncManager) {
     _classCallCheck(this, EditorManager);
 
@@ -38508,16 +38911,16 @@ var EditorManager = function () {
 angular.module('app.frontend').service('editorManager', EditorManager);
 ;
 var ExtensionManager = function () {
-  ExtensionManager.$inject = ['httpManager', 'modelManager', 'authManager', 'syncManager'];
-  function ExtensionManager(httpManager, modelManager, authManager, syncManager) {
+  function ExtensionManager(httpManager, modelManager, authManager, syncManager, storageManager) {
     _classCallCheck(this, ExtensionManager);
 
     this.httpManager = httpManager;
     this.modelManager = modelManager;
     this.authManager = authManager;
-    this.enabledRepeatActionUrls = JSON.parse(localStorage.getItem("enabledRepeatActionUrls")) || [];
-    this.decryptedExtensions = JSON.parse(localStorage.getItem("decryptedExtensions")) || [];
+    this.enabledRepeatActionUrls = JSON.parse(storageManager.getItem("enabledRepeatActionUrls")) || [];
+    this.decryptedExtensions = JSON.parse(storageManager.getItem("decryptedExtensions")) || [];
     this.syncManager = syncManager;
+    this.storageManager = storageManager;
 
     modelManager.addItemSyncObserver("extensionManager", "Extension", function (items) {
       var _iteratorNormalCompletion35 = true;
@@ -38624,7 +39027,7 @@ var ExtensionManager = function () {
         this.decryptedExtensions.push(extension.url);
       }
 
-      localStorage.setItem("decryptedExtensions", JSON.stringify(this.decryptedExtensions));
+      this.storageManager.setItem("decryptedExtensions", JSON.stringify(this.decryptedExtensions));
 
       extension.encrypted = this.extensionUsesEncryptedData(extension);
     }
@@ -38914,7 +39317,7 @@ var ExtensionManager = function () {
     key: 'disableRepeatAction',
     value: function disableRepeatAction(action, extension) {
       _.pull(this.enabledRepeatActionUrls, action.url);
-      localStorage.setItem("enabledRepeatActionUrls", JSON.stringify(this.enabledRepeatActionUrls));
+      this.storageManager.setItem("enabledRepeatActionUrls", JSON.stringify(this.enabledRepeatActionUrls));
       this.modelManager.removeItemChangeObserver(action.url);
 
       console.assert(this.isRepeatActionEnabled(action) == false);
@@ -38924,7 +39327,7 @@ var ExtensionManager = function () {
     value: function enableRepeatAction(action, extension) {
       if (!_.find(this.enabledRepeatActionUrls, action.url)) {
         this.enabledRepeatActionUrls.push(action.url);
-        localStorage.setItem("enabledRepeatActionUrls", JSON.stringify(this.enabledRepeatActionUrls));
+        this.storageManager.setItem("enabledRepeatActionUrls", JSON.stringify(this.enabledRepeatActionUrls));
       }
 
       if (action.repeat_mode) {
@@ -39031,15 +39434,65 @@ var ExtensionManager = function () {
 }();
 
 angular.module('app.frontend').service('extensionManager', ExtensionManager);
-;angular.module('app.frontend').filter('appDate', ['$filter', function ($filter) {
+;angular.module('app.frontend').filter('appDate', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy', 'UTC') : '';
   };
-}]).filter('appDateTime', ['$filter', function ($filter) {
+}).filter('appDateTime', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy h:mm a') : '';
   };
-}]);
+});
+;angular.module('app.frontend').filter('sortBy', function ($filter) {
+  return function (items, sortBy) {
+    var sortValueFn = function sortValueFn(a, b) {
+      var pinCheck = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+      if (!pinCheck) {
+        if (a.pinned && b.pinned) {
+          return sortValueFn(a, b, true);
+        }
+        if (a.pinned) {
+          return -1;
+        }
+        if (b.pinned) {
+          return 1;
+        }
+      }
+
+      var aValue = a[sortBy] || "";
+      var bValue = b[sortBy] || "";
+
+      var vector = 1;
+      if (sortBy == "title") {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+
+        if (aValue.length == 0 && bValue.length == 0) {
+          return 0;
+        } else if (aValue.length == 0 && bValue.length != 0) {
+          return 1;
+        } else if (aValue.length != 0 && bValue.length == 0) {
+          return -1;
+        } else {
+          vector = -1;
+        }
+      }
+
+      if (aValue > bValue) {
+        return -1 * vector;
+      } else if (aValue < bValue) {
+        return 1 * vector;
+      }
+      return 0;
+    };
+
+    items = items || [];
+    return items.sort(function (a, b) {
+      return sortValueFn(a, b);
+    });
+  };
+});
 ;angular.module('app.frontend').filter('startFrom', function () {
   return function (input, start) {
     return input.slice(start);
@@ -39052,20 +39505,20 @@ angular.module('app.frontend').service('extensionManager', ExtensionManager);
 }]);
 ;
 var HttpManager = function () {
-  HttpManager.$inject = ['$timeout'];
-  function HttpManager($timeout) {
+  function HttpManager($timeout, storageManager) {
     _classCallCheck(this, HttpManager);
 
     // calling callbacks in a $timeout allows angular UI to update
     this.$timeout = $timeout;
+    this.storageManager = storageManager;
   }
 
   _createClass(HttpManager, [{
     key: 'setAuthHeadersForRequest',
     value: function setAuthHeadersForRequest(request) {
-      var token = localStorage.getItem("jwt");
+      var token = this.storageManager.getItem("jwt");
       if (token) {
-        request.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem("jwt"));
+        request.setRequestHeader('Authorization', 'Bearer ' + token);
       }
     }
   }, {
@@ -39140,28 +39593,40 @@ var HttpManager = function () {
 angular.module('app.frontend').service('httpManager', HttpManager);
 ;
 var ModelManager = function () {
-  ModelManager.$inject = ['dbManager'];
-  function ModelManager(dbManager) {
+  function ModelManager(storageManager) {
     _classCallCheck(this, ModelManager);
 
-    this.dbManager = dbManager;
+    this.storageManager = storageManager;
     this.notes = [];
     this.tags = [];
     this.itemSyncObservers = [];
     this.itemChangeObservers = [];
     this.items = [];
     this._extensions = [];
-    this.acceptableContentTypes = ["Note", "Tag", "Extension", "SN|Editor", "SN|Theme", "SN|Component"];
+    this.acceptableContentTypes = ["Note", "Tag", "Extension", "SN|Editor", "SN|Theme", "SN|Component", "SF|Extension"];
   }
 
   _createClass(ModelManager, [{
+    key: 'resetLocalMemory',
+    value: function resetLocalMemory() {
+      this.notes.length = 0;
+      this.tags.length = 0;
+      this.items.length = 0;
+      this._extensions.length = 0;
+    }
+  }, {
     key: 'alternateUUIDForItem',
     value: function alternateUUIDForItem(item, callback) {
       // we need to clone this item and give it a new uuid, then delete item with old uuid from db (you can't mofidy uuid's in our indexeddb setup)
       var newItem = this.createItem(item);
+
       newItem.uuid = Neeto.crypto.generateUUID();
+
+      // Update uuids of relationships
       newItem.informReferencesOfUUIDChange(item.uuid, newItem.uuid);
+
       this.informModelsOfUUIDChangeForItem(newItem, item.uuid, newItem.uuid);
+
       this.removeItemLocally(item, function () {
         this.addItem(newItem);
         newItem.setDirty(true);
@@ -39206,6 +39671,13 @@ var ModelManager = function () {
     value: function allItemsMatchingTypes(contentTypes) {
       return this.items.filter(function (item) {
         return (_.includes(contentTypes, item.content_type) || _.includes(contentTypes, "*")) && !item.dummy;
+      });
+    }
+  }, {
+    key: 'itemsForContentType',
+    value: function itemsForContentType(contentType) {
+      return this.items.filter(function (item) {
+        return item.content_type == contentType;
       });
     }
   }, {
@@ -39382,6 +39854,8 @@ var ModelManager = function () {
         item = new Theme(json_obj);
       } else if (json_obj.content_type == "SN|Component") {
         item = new Component(json_obj);
+      } else if (json_obj.content_type == "SF|Extension") {
+        item = new SyncAdapter(json_obj);
       } else {
         item = new Item(json_obj);
       }
@@ -39395,8 +39869,6 @@ var ModelManager = function () {
   }, {
     key: 'addItems',
     value: function addItems(items) {
-      this.items = _.uniq(this.items.concat(items));
-
       items.forEach(function (item) {
         if (item.content_type == "Tag") {
           if (!_.find(this.tags, { uuid: item.uuid })) {
@@ -39413,6 +39885,10 @@ var ModelManager = function () {
             this._extensions.unshift(item);
           }
         }
+
+        if (!_.find(this.items, { uuid: item.uuid })) {
+          this.items.push(item);
+        }
       }.bind(this));
     }
   }, {
@@ -39421,17 +39897,15 @@ var ModelManager = function () {
       this.addItems([item]);
     }
   }, {
-    key: 'itemsForContentType',
-    value: function itemsForContentType(contentType) {
-      return this.items.filter(function (item) {
-        return item.content_type == contentType;
-      });
-    }
-  }, {
     key: 'resolveReferencesForItem',
     value: function resolveReferencesForItem(item) {
-      item.locallyClearAllReferences();
+
       var contentObject = item.contentObject;
+
+      // If another client removes an item's references, this client won't pick up the removal unless
+      // we remove everything not present in the current list of references
+      item.removeReferencesNotPresentIn(contentObject.references || []);
+
       if (!contentObject.references) {
         return;
       }
@@ -39449,7 +39923,7 @@ var ModelManager = function () {
             item.addItemAsRelationship(referencedItem);
             referencedItem.addItemAsRelationship(item);
           } else {
-            // console.log("Unable to find item:", reference.uuid);
+            // console.log("Unable to find reference:", reference.uuid, "for item:", item);
           }
         }
       } catch (err) {
@@ -39586,7 +40060,7 @@ var ModelManager = function () {
         _.pull(this._extensions, item);
       }
 
-      this.dbManager.deleteItem(item, callback);
+      this.storageManager.deleteModel(item, callback);
     }
 
     /*
@@ -39636,10 +40110,369 @@ var ModelManager = function () {
 }();
 
 angular.module('app.frontend').service('modelManager', ModelManager);
+;angular.module('app.frontend').provider('passcodeManager', function () {
+
+  this.$get = function ($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
+    return new PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager);
+  };
+
+  function PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
+
+    this._hasPasscode = storageManager.getItem("offlineParams", StorageManager.Fixed) != null;
+    this._locked = this._hasPasscode;
+
+    this.isLocked = function () {
+      return this._locked;
+    };
+
+    this.hasPasscode = function () {
+      return this._hasPasscode;
+    };
+
+    this.keys = function () {
+      return this._keys;
+    };
+
+    this.unlock = function (passcode, callback) {
+      var params = JSON.parse(storageManager.getItem("offlineParams", StorageManager.Fixed));
+      Neeto.crypto.computeEncryptionKeysForUser(_.merge({ password: passcode }, params), function (keys) {
+        if (keys.pw !== params.hash) {
+          callback(false);
+          return;
+        }
+
+        this._keys = keys;
+        this.decryptLocalStorage(keys);
+        this._locked = false;
+        callback(true);
+      }.bind(this));
+    };
+
+    this.setPasscode = function (passcode, callback) {
+      var cost = Neeto.crypto.defaultPasswordGenerationCost();
+      var salt = Neeto.crypto.generateRandomKey(512);
+      var defaultParams = { pw_cost: cost, pw_salt: salt };
+
+      Neeto.crypto.computeEncryptionKeysForUser(_.merge({ password: passcode }, defaultParams), function (keys) {
+        defaultParams.hash = keys.pw;
+        this._keys = keys;
+        this._hasPasscode = true;
+
+        // Encrypting will initially clear localStorage
+        this.encryptLocalStorage(keys);
+
+        // After it's cleared, it's safe to write to it
+        storageManager.setItem("offlineParams", JSON.stringify(defaultParams), StorageManager.Fixed);
+        callback(true);
+      }.bind(this));
+    };
+
+    this.clearPasscode = function () {
+      storageManager.setItemsMode(authManager.isEphemeralSession() ? StorageManager.Ephemeral : StorageManager.Fixed); // Transfer from Ephemeral
+      storageManager.removeItem("offlineParams", StorageManager.Fixed);
+      this._keys = null;
+      this._hasPasscode = false;
+    };
+
+    this.encryptLocalStorage = function (keys) {
+      storageManager.setKeys(keys);
+      // Switch to Ephemeral storage, wiping Fixed storage
+      storageManager.setItemsMode(authManager.isEphemeralSession() ? StorageManager.Ephemeral : StorageManager.FixedEncrypted);
+    };
+
+    this.decryptLocalStorage = function (keys) {
+      storageManager.setKeys(keys);
+      storageManager.decryptStorage();
+    };
+  }
+});
+;
+var MemoryStorage = function () {
+  function MemoryStorage() {
+    _classCallCheck(this, MemoryStorage);
+
+    this.memory = {};
+  }
+
+  _createClass(MemoryStorage, [{
+    key: 'getItem',
+    value: function getItem(key) {
+      return this.memory[key] || null;
+    }
+  }, {
+    key: 'setItem',
+    value: function setItem(key, value) {
+      this.memory[key] = value;
+    }
+  }, {
+    key: 'removeItem',
+    value: function removeItem(key) {
+      delete this.memory[key];
+    }
+  }, {
+    key: 'clear',
+    value: function clear() {
+      this.memory = {};
+    }
+  }, {
+    key: 'keys',
+    value: function keys() {
+      return Object.keys(this.memory);
+    }
+  }, {
+    key: 'key',
+    value: function key(index) {
+      return Object.keys(this.memory)[index];
+    }
+  }, {
+    key: 'length',
+    get: function get() {
+      return Object.keys(this.memory).length;
+    }
+  }]);
+
+  return MemoryStorage;
+}();
+
+var StorageManager = function () {
+  function StorageManager(dbManager) {
+    _classCallCheck(this, StorageManager);
+
+    this.dbManager = dbManager;
+  }
+
+  _createClass(StorageManager, [{
+    key: 'initialize',
+    value: function initialize(hasPasscode, ephemeral) {
+      if (hasPasscode) {
+        // We don't want to save anything in fixed storage except for actual item data (in IndexedDB)
+        this.storage = this.memoryStorage;
+        console.log("Using MemoryStorage Because Has Passcode");
+      } else if (ephemeral) {
+        // We don't want to save anything in fixed storage as well as IndexedDB
+        this.storage = this.memoryStorage;
+        console.log("Using MemoryStorage Because Ephemeral Login");
+      } else {
+        console.log("Using LocalStorage");
+        this.storage = localStorage;
+      }
+
+      this.modelStorageMode = ephemeral ? StorageManager.Ephemeral : StorageManager.Fixed;
+      console.log("Initial Model Storage Mode", this.modelStorageMode);
+    }
+  }, {
+    key: 'setItemsMode',
+    value: function setItemsMode(mode) {
+      var newStorage = this.getVault(mode);
+      if (newStorage !== this.storage) {
+        // transfer storages
+        var length = this.storage.length;
+        for (var i = 0; i < length; i++) {
+          var key = this.storage.key(i);
+          newStorage.setItem(key, this.storage.getItem(key));
+        }
+
+        this.storage.clear();
+        this.storage = newStorage;
+
+        if (mode == StorageManager.FixedEncrypted) {
+          this.writeEncryptedStorageToDisk();
+        } else if (mode == StorageManager.Fixed) {
+          // Remove encrypted storage
+          this.removeItem("encryptedStorage", StorageManager.Fixed);
+        }
+      }
+    }
+  }, {
+    key: 'getVault',
+    value: function getVault(vaultKey) {
+      if (vaultKey) {
+        return this.storageForVault(vaultKey);
+      } else {
+        return this.storage;
+      }
+    }
+  }, {
+    key: 'storageForVault',
+    value: function storageForVault(vault) {
+      if (vault == StorageManager.Ephemeral || vault == StorageManager.FixedEncrypted) {
+        return this.memoryStorage;
+      } else {
+        return localStorage;
+      }
+    }
+  }, {
+    key: 'setItem',
+    value: function setItem(key, value, vault) {
+      var storage = this.getVault(vault);
+      storage.setItem(key, value);
+
+      if (vault === StorageManager.FixedEncrypted) {
+        this.writeEncryptedStorageToDisk();
+      }
+    }
+  }, {
+    key: 'getItem',
+    value: function getItem(key, vault) {
+      var storage = this.getVault(vault);
+      return storage.getItem(key);
+    }
+  }, {
+    key: 'removeItem',
+    value: function removeItem(key, vault) {
+      var storage = this.getVault(vault);
+      storage.removeItem(key);
+    }
+  }, {
+    key: 'clear',
+    value: function clear() {
+      this.memoryStorage.clear();
+      localStorage.clear();
+    }
+  }, {
+    key: 'storageAsHash',
+    value: function storageAsHash() {
+      var hash = {};
+      var length = this.storage.length;
+      for (var i = 0; i < length; i++) {
+        var key = this.storage.key(i);
+        hash[key] = this.storage.getItem(key);
+      }
+      return hash;
+    }
+  }, {
+    key: 'setKeys',
+    value: function setKeys(keys) {
+      this.encryptedStorageKeys = keys;
+    }
+  }, {
+    key: 'writeEncryptedStorageToDisk',
+    value: function writeEncryptedStorageToDisk() {
+      var encryptedStorage = new EncryptedStorage();
+      // Copy over totality of current storage
+      encryptedStorage.storage = this.storageAsHash();
+      // Save new encrypted storage in Fixed storage
+      var params = new ItemParams(encryptedStorage, this.encryptedStorageKeys);
+      this.setItem("encryptedStorage", JSON.stringify(params.paramsForSync()), StorageManager.Fixed);
+    }
+  }, {
+    key: 'decryptStorage',
+    value: function decryptStorage() {
+      var stored = JSON.parse(this.getItem("encryptedStorage", StorageManager.Fixed));
+      EncryptionHelper.decryptItem(stored, this.encryptedStorageKeys);
+      var encryptedStorage = new EncryptedStorage(stored);
+
+      var _iteratorNormalCompletion49 = true;
+      var _didIteratorError49 = false;
+      var _iteratorError49 = undefined;
+
+      try {
+        for (var _iterator49 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
+          var key = _step49.value;
+
+          this.setItem(key, encryptedStorage.storage[key]);
+        }
+      } catch (err) {
+        _didIteratorError49 = true;
+        _iteratorError49 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion49 && _iterator49.return) {
+            _iterator49.return();
+          }
+        } finally {
+          if (_didIteratorError49) {
+            throw _iteratorError49;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'hasPasscode',
+    value: function hasPasscode() {
+      return this.getItem("encryptedStorage", StorageManager.Fixed) !== null;
+    }
+
+    /*
+    Model Storage
+     If using ephemeral storage, we don't need to write it to anything as references will be held already by controllers
+    and the global modelManager service.
+    */
+
+  }, {
+    key: 'setModelStorageMode',
+    value: function setModelStorageMode(mode) {
+      if (mode == this.modelStorageMode) {
+        return;
+      }
+
+      if (mode == StorageManager.Ephemeral) {
+        // Clear IndexedDB
+        this.dbManager.clearAllModels(null);
+      } else {
+        // Fixed
+      }
+
+      this.modelStorageMode = mode;
+    }
+  }, {
+    key: 'getAllModels',
+    value: function getAllModels(callback) {
+      if (this.modelStorageMode == StorageManager.Fixed) {
+        this.dbManager.getAllModels(callback);
+      } else {
+        callback && callback();
+      }
+    }
+  }, {
+    key: 'saveModel',
+    value: function saveModel(item) {
+      this.saveModels([item]);
+    }
+  }, {
+    key: 'saveModels',
+    value: function saveModels(items, callback) {
+      if (this.modelStorageMode == StorageManager.Fixed) {
+        this.dbManager.saveModels(items, callback);
+      } else {
+        callback && callback();
+      }
+    }
+  }, {
+    key: 'deleteModel',
+    value: function deleteModel(item, callback) {
+      if (this.modelStorageMode == StorageManager.Fixed) {
+        this.dbManager.deleteModel(item, callback);
+      } else {
+        callback && callback();
+      }
+    }
+  }, {
+    key: 'clearAllModels',
+    value: function clearAllModels(callback) {
+      this.dbManager.clearAllModels(callback);
+    }
+  }, {
+    key: 'memoryStorage',
+    get: function get() {
+      if (!this._memoryStorage) {
+        this._memoryStorage = new MemoryStorage();
+      }
+      return this._memoryStorage;
+    }
+  }]);
+
+  return StorageManager;
+}();
+
+StorageManager.FixedEncrypted = "FixedEncrypted"; // encrypted memoryStorage + localStorage persistence
+StorageManager.Ephemeral = "Ephemeral"; // memoryStorage
+StorageManager.Fixed = "Fixed"; // localStorage
+
+angular.module('app.frontend').service('storageManager', StorageManager);
 ;
 var SyncManager = function () {
-  SyncManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'dbManager', 'httpManager', '$interval', '$timeout'];
-  function SyncManager($rootScope, modelManager, authManager, dbManager, httpManager, $interval, $timeout) {
+  function SyncManager($rootScope, modelManager, authManager, dbManager, httpManager, $interval, $timeout, storageManager, passcodeManager) {
     _classCallCheck(this, SyncManager);
 
     this.$rootScope = $rootScope;
@@ -39649,14 +40482,23 @@ var SyncManager = function () {
     this.dbManager = dbManager;
     this.$interval = $interval;
     this.$timeout = $timeout;
+    this.storageManager = storageManager;
+    this.passcodeManager = passcodeManager;
     this.syncStatus = {};
   }
 
   _createClass(SyncManager, [{
     key: 'writeItemsToLocalStorage',
     value: function writeItemsToLocalStorage(items, offlineOnly, callback) {
+      if (items.length == 0) {
+        callback && callback();
+        return;
+      }
+      // Use null to use the latest protocol version if offline
+      var version = this.authManager.offline() ? null : this.authManager.protocolVersion();
+      var keys = this.authManager.offline() ? this.passcodeManager.keys() : this.authManager.keys();
       var params = items.map(function (item) {
-        var itemParams = new ItemParams(item, null, this.authManager.protocolVersion());
+        var itemParams = new ItemParams(item, keys, version);
         itemParams = itemParams.paramsForLocalStorage();
         if (offlineOnly) {
           delete itemParams.dirty;
@@ -39664,13 +40506,13 @@ var SyncManager = function () {
         return itemParams;
       }.bind(this));
 
-      this.dbManager.saveItems(params, callback);
+      this.storageManager.saveModels(params, callback);
     }
   }, {
     key: 'loadLocalItems',
     value: function loadLocalItems(callback) {
-      var params = this.dbManager.getAllItems(function (items) {
-        var items = this.handleItemsResponse(items, null, null);
+      var params = this.storageManager.getAllModels(function (items) {
+        var items = this.handleItemsResponse(items, null);
         Item.sortItemsByDate(items);
         callback(items);
       }.bind(this));
@@ -39680,29 +40522,29 @@ var SyncManager = function () {
     value: function syncOffline(items, callback) {
       this.writeItemsToLocalStorage(items, true, function (responseItems) {
         // delete anything needing to be deleted
-        var _iteratorNormalCompletion49 = true;
-        var _didIteratorError49 = false;
-        var _iteratorError49 = undefined;
+        var _iteratorNormalCompletion50 = true;
+        var _didIteratorError50 = false;
+        var _iteratorError50 = undefined;
 
         try {
-          for (var _iterator49 = items[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
-            var item = _step49.value;
+          for (var _iterator50 = items[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
+            var item = _step50.value;
 
             if (item.deleted) {
               this.modelManager.removeItemLocally(item);
             }
           }
         } catch (err) {
-          _didIteratorError49 = true;
-          _iteratorError49 = err;
+          _didIteratorError50 = true;
+          _iteratorError50 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion49 && _iterator49.return) {
-              _iterator49.return();
+            if (!_iteratorNormalCompletion50 && _iterator50.return) {
+              _iterator50.return();
             }
           } finally {
-            if (_didIteratorError49) {
-              throw _iteratorError49;
+            if (_didIteratorError50) {
+              throw _iteratorError50;
             }
           }
         }
@@ -39712,59 +40554,30 @@ var SyncManager = function () {
         }
       }.bind(this));
     }
+
+    /*
+      In the case of signing in and merging local data, we alternative UUIDs
+      to avoid overwriting data a user may retrieve that has the same UUID.
+      Alternating here forces us to to create duplicates of the items instead.
+     */
+
   }, {
     key: 'markAllItemsDirtyAndSaveOffline',
-    value: function markAllItemsDirtyAndSaveOffline(callback) {
-      var items = this.modelManager.allItems;
-      var _iteratorNormalCompletion50 = true;
-      var _didIteratorError50 = false;
-      var _iteratorError50 = undefined;
+    value: function markAllItemsDirtyAndSaveOffline(callback, alternateUUIDs) {
+      var _this13 = this;
 
-      try {
-        for (var _iterator50 = items[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
-          var item = _step50.value;
+      var originalItems = this.modelManager.allItems;
 
-          item.setDirty(true);
-        }
-      } catch (err) {
-        _didIteratorError50 = true;
-        _iteratorError50 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion50 && _iterator50.return) {
-            _iterator50.return();
-          }
-        } finally {
-          if (_didIteratorError50) {
-            throw _iteratorError50;
-          }
-        }
-      }
-
-      this.writeItemsToLocalStorage(items, false, callback);
-    }
-  }, {
-    key: 'clearQueuedCallbacks',
-    value: function clearQueuedCallbacks() {
-      this._queuedCallbacks = [];
-    }
-  }, {
-    key: 'callQueuedCallbacksAndCurrent',
-    value: function callQueuedCallbacksAndCurrent(currentCallback, response) {
-      var allCallbacks = this.queuedCallbacks;
-      if (currentCallback) {
-        allCallbacks.push(currentCallback);
-      }
-      if (allCallbacks.length) {
+      var block = function block(items) {
         var _iteratorNormalCompletion51 = true;
         var _didIteratorError51 = false;
         var _iteratorError51 = undefined;
 
         try {
-          for (var _iterator51 = allCallbacks[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
-            var eachCallback = _step51.value;
+          for (var _iterator51 = items[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
+            var item = _step51.value;
 
-            eachCallback(response);
+            item.setDirty(true);
           }
         } catch (err) {
           _didIteratorError51 = true;
@@ -39781,6 +40594,67 @@ var SyncManager = function () {
           }
         }
 
+        _this13.writeItemsToLocalStorage(items, false, callback);
+      };
+
+      if (alternateUUIDs) {
+        var index = 0;
+
+        var alternateNextItem = function alternateNextItem() {
+          if (index >= originalItems.length) {
+            // We don't use originalItems as altnerating UUID will have deleted them.
+            block(_this13.modelManager.allItems);
+            return;
+          }
+
+          var item = originalItems[index];
+          _this13.modelManager.alternateUUIDForItem(item, alternateNextItem);
+          ++index;
+        };
+
+        alternateNextItem();
+      } else {
+        block(originalItems);
+      }
+    }
+  }, {
+    key: 'clearQueuedCallbacks',
+    value: function clearQueuedCallbacks() {
+      this._queuedCallbacks = [];
+    }
+  }, {
+    key: 'callQueuedCallbacksAndCurrent',
+    value: function callQueuedCallbacksAndCurrent(currentCallback, response) {
+      var allCallbacks = this.queuedCallbacks;
+      if (currentCallback) {
+        allCallbacks.push(currentCallback);
+      }
+      if (allCallbacks.length) {
+        var _iteratorNormalCompletion52 = true;
+        var _didIteratorError52 = false;
+        var _iteratorError52 = undefined;
+
+        try {
+          for (var _iterator52 = allCallbacks[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
+            var eachCallback = _step52.value;
+
+            eachCallback(response);
+          }
+        } catch (err) {
+          _didIteratorError52 = true;
+          _iteratorError52 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion52 && _iterator52.return) {
+              _iterator52.return();
+            }
+          } finally {
+            if (_didIteratorError52) {
+              throw _iteratorError52;
+            }
+          }
+        }
+
         this.clearQueuedCallbacks();
       }
     }
@@ -39790,7 +40664,7 @@ var SyncManager = function () {
       this.syncStatus.checker = this.$interval(function () {
         // check to see if the ongoing sync is taking too long, alert the user
         var secondsPassed = (new Date() - this.syncStatus.syncStart) / 1000;
-        var warningThreshold = 5; // seconds
+        var warningThreshold = 5.0; // seconds
         if (secondsPassed > warningThreshold) {
           this.$rootScope.$broadcast("sync:taking-too-long");
           this.stopCheckingIfSyncIsTakingTooLong();
@@ -39852,10 +40726,20 @@ var SyncManager = function () {
         this.syncStatus.current = 0;
       }
 
+      // when doing a sync request that returns items greater than the limit, and thus subsequent syncs are required,
+      // we want to keep track of all retreived items, then save to local storage only once all items have been retrieved,
+      // so that relationships remain intact
+      if (!this.allRetreivedItems) {
+        this.allRetreivedItems = [];
+      }
+
+      var version = this.authManager.protocolVersion();
+      var keys = this.authManager.keys();
+
       var params = {};
       params.limit = 150;
       params.items = _.map(subItems, function (item) {
-        var itemParams = new ItemParams(item, this.authManager.keys(), this.authManager.protocolVersion());
+        var itemParams = new ItemParams(item, keys, version);
         itemParams.additionalFields = options.additionalFields;
         return itemParams.paramsForSync();
       }.bind(this));
@@ -39874,6 +40758,7 @@ var SyncManager = function () {
         this.$rootScope.$broadcast("sync:updated_token", this.syncToken);
 
         var retrieved = this.handleItemsResponse(response.retrieved_items, null);
+        this.allRetreivedItems = this.allRetreivedItems.concat(retrieved);
 
         // merge only metadata for saved items
         // we write saved items to disk now because it clears their dirty status then saves
@@ -39883,7 +40768,6 @@ var SyncManager = function () {
 
         this.handleUnsavedItemsResponse(response.unsaved);
         this.writeItemsToLocalStorage(saved, false, null);
-        this.writeItemsToLocalStorage(retrieved, false, null);
 
         this.syncStatus.syncOpInProgress = false;
         this.syncStatus.current += subItems.length;
@@ -39904,6 +40788,9 @@ var SyncManager = function () {
             this.sync(callback, options);
           }.bind(this), 10); // wait 10ms to allow UI to update
         } else {
+          this.writeItemsToLocalStorage(this.allRetreivedItems, false, null);
+          this.allRetreivedItems = [];
+
           this.callQueuedCallbacksAndCurrent(callback, response);
           this.$rootScope.$broadcast("sync:completed");
         }
@@ -39938,7 +40825,8 @@ var SyncManager = function () {
   }, {
     key: 'handleItemsResponse',
     value: function handleItemsResponse(responseItems, omitFields) {
-      EncryptionHelper.decryptMultipleItems(responseItems, this.authManager.keys());
+      var keys = this.authManager.keys() || this.passcodeManager.keys();
+      EncryptionHelper.decryptMultipleItems(responseItems, keys);
       var items = this.modelManager.mapResponseItemsToLocalModelsOmittingFields(responseItems, omitFields);
       return items;
     }
@@ -39953,32 +40841,48 @@ var SyncManager = function () {
 
       var i = 0;
       var handleNext = function () {
-        if (i < unsaved.length) {
-          var mapping = unsaved[i];
-          var itemResponse = mapping.item;
-          EncryptionHelper.decryptMultipleItems([itemResponse], this.authManager.keys());
-          var item = this.modelManager.findItem(itemResponse.uuid);
-          if (!item) {
-            // could be deleted
-            return;
-          }
-          var error = mapping.error;
-          if (error.tag == "uuid_conflict") {
-            // uuid conflicts can occur if a user attempts to import an old data archive with uuids from the old account into a new account
-            this.modelManager.alternateUUIDForItem(item, handleNext);
-          } else if (error.tag === "sync_conflict") {
-            // create a new item with the same contents of this item if the contents differ
-            itemResponse.uuid = null; // we want a new uuid for the new item
-            var dup = this.modelManager.createItem(itemResponse);
-            if (!itemResponse.deleted && JSON.stringify(item.structureParams()) !== JSON.stringify(dup.structureParams())) {
-              this.modelManager.addItem(dup);
-              dup.conflict_of = item.uuid;
-              dup.setDirty(true);
-            }
-          }
-          ++i;
-        } else {
+        if (i >= unsaved.length) {
+          // Handled all items
           this.sync(null, { additionalFields: ["created_at", "updated_at"] });
+          return;
+        }
+
+        var handled = false;
+        var mapping = unsaved[i];
+        var itemResponse = mapping.item;
+        EncryptionHelper.decryptMultipleItems([itemResponse], this.authManager.keys());
+        var item = this.modelManager.findItem(itemResponse.uuid);
+
+        if (!item) {
+          // Could be deleted
+          return;
+        }
+
+        var error = mapping.error;
+
+        if (error.tag === "uuid_conflict") {
+          // UUID conflicts can occur if a user attempts to
+          // import an old data archive with uuids from the old account into a new account
+          handled = true;
+          this.modelManager.alternateUUIDForItem(item, handleNext);
+        } else if (error.tag === "sync_conflict") {
+          // Create a new item with the same contents of this item if the contents differ
+
+          // We want a new uuid for the new item. Note that this won't neccessarily adjust references.
+          itemResponse.uuid = null;
+
+          var dup = this.modelManager.createItem(itemResponse);
+          if (!itemResponse.deleted && JSON.stringify(item.structureParams()) !== JSON.stringify(dup.structureParams())) {
+            this.modelManager.addItem(dup);
+            dup.conflict_of = item.uuid;
+            dup.setDirty(true);
+          }
+        }
+
+        ++i;
+
+        if (!handled) {
+          handleNext();
         }
       }.bind(this);
 
@@ -39987,13 +40891,13 @@ var SyncManager = function () {
   }, {
     key: 'clearSyncToken',
     value: function clearSyncToken() {
-      localStorage.removeItem("syncToken");
+      this.storageManager.removeItem("syncToken");
     }
   }, {
     key: 'destroyLocalData',
     value: function destroyLocalData(callback) {
-      localStorage.clear();
-      this.dbManager.clearAllItems(function () {
+      this.storageManager.clear();
+      this.storageManager.clearAllModels(function () {
         if (callback) {
           this.$timeout(function () {
             callback();
@@ -40004,17 +40908,17 @@ var SyncManager = function () {
   }, {
     key: 'serverURL',
     get: function get() {
-      return localStorage.getItem("server") || window._default_sf_server;
+      return this.storageManager.getItem("server") || window._default_sf_server;
     }
   }, {
     key: 'masterKey',
     get: function get() {
-      return localStorage.getItem("mk");
+      return this.storageManager.getItem("mk");
     }
   }, {
     key: 'serverPassword',
     get: function get() {
-      return localStorage.getItem("pw");
+      return this.storageManager.getItem("pw");
     }
   }, {
     key: 'syncURL',
@@ -40025,11 +40929,11 @@ var SyncManager = function () {
     key: 'syncToken',
     set: function set(token) {
       this._syncToken = token;
-      localStorage.setItem("syncToken", token);
+      this.storageManager.setItem("syncToken", token);
     },
     get: function get() {
       if (!this._syncToken) {
-        this._syncToken = localStorage.getItem("syncToken");
+        this._syncToken = this.storageManager.getItem("syncToken");
       }
       return this._syncToken;
     }
@@ -40038,14 +40942,14 @@ var SyncManager = function () {
     set: function set(token) {
       this._cursorToken = token;
       if (token) {
-        localStorage.setItem("cursorToken", token);
+        this.storageManager.setItem("cursorToken", token);
       } else {
-        localStorage.removeItem("cursorToken");
+        this.storageManager.removeItem("cursorToken");
       }
     },
     get: function get() {
       if (!this._cursorToken) {
-        this._cursorToken = localStorage.getItem("cursorToken");
+        this._cursorToken = this.storageManager.getItem("cursorToken");
       }
       return this._cursorToken;
     }
@@ -40065,13 +40969,13 @@ var SyncManager = function () {
 angular.module('app.frontend').service('syncManager', SyncManager);
 ;
 var ThemeManager = function () {
-  ThemeManager.$inject = ['modelManager', 'syncManager', '$rootScope'];
-  function ThemeManager(modelManager, syncManager, $rootScope) {
+  function ThemeManager(modelManager, syncManager, $rootScope, storageManager) {
     _classCallCheck(this, ThemeManager);
 
     this.syncManager = syncManager;
     this.modelManager = modelManager;
     this.$rootScope = $rootScope;
+    this.storageManager = storageManager;
   }
 
   _createClass(ThemeManager, [{
@@ -40106,7 +41010,7 @@ var ThemeManager = function () {
       link.media = "screen,print";
       link.id = theme.uuid;
       document.getElementsByTagName("head")[0].appendChild(link);
-      localStorage.setItem("activeTheme", theme.uuid);
+      this.storageManager.setItem("activeTheme", theme.uuid);
 
       this.currentTheme = theme;
       this.$rootScope.$broadcast("theme-changed");
@@ -40114,7 +41018,7 @@ var ThemeManager = function () {
   }, {
     key: 'deactivateTheme',
     value: function deactivateTheme(theme) {
-      localStorage.removeItem("activeTheme");
+      this.storageManager.removeItem("activeTheme");
       var element = document.getElementById(theme.uuid);
       if (element) {
         element.disabled = true;
@@ -40127,7 +41031,7 @@ var ThemeManager = function () {
   }, {
     key: 'isThemeActive',
     value: function isThemeActive(theme) {
-      return localStorage.getItem("activeTheme") === theme.uuid;
+      return this.storageManager.getItem("activeTheme") === theme.uuid;
     }
   }, {
     key: 'fileNameFromPath',
@@ -40166,7 +41070,7 @@ var ThemeManager = function () {
   }, {
     key: 'activeTheme',
     get: function get() {
-      var activeThemeId = localStorage.getItem("activeTheme");
+      var activeThemeId = this.storageManager.getItem("activeTheme");
       if (!activeThemeId) {
         return null;
       }
@@ -40192,7 +41096,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    <div ng-if='!user'>\n" +
     "      <div class='mb-10'>\n" +
     "        <div class='step-one' ng-if='!formData.showLogin &amp;&amp; !formData.showRegister'>\n" +
-    "          <h3>Sign in or register to enable sync and encryption.</h3>\n" +
+    "          <h3>Sign in or register to enable sync and end-to-end encryption.</h3>\n" +
     "          <div class='small-v-space'></div>\n" +
     "          <div class='button-group mt-5'>\n" +
     "            <button class='ui-button half-button' ng-click='formData.showLogin = true'>\n" +
@@ -40219,10 +41123,17 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "              </div>\n" +
     "              <input class='form-control mt-5' name='server' ng-model='formData.url' placeholder='Server URL' required type='text'>\n" +
     "            </div>\n" +
-    "            <div class='checkbox mt-10' ng-if='localNotesCount() &gt; 0'>\n" +
+    "            <div class='checkbox mt-10'>\n" +
+    "              <p>\n" +
+    "                <input ng-false-value='true' ng-model='formData.ephemeral' ng-true-value='false' type='checkbox'>\n" +
+    "                  Stay signed in\n" +
+    "                </input>\n" +
+    "              </p>\n" +
+    "            </div>\n" +
+    "            <div class='checkbox mt-10' ng-if='notesAndTagsCount() &gt; 0'>\n" +
     "              <p>\n" +
     "                <input ng-bind='true' ng-change='mergeLocalChanged()' ng-model='formData.mergeLocal' type='checkbox'>\n" +
-    "                  Merge local notes ({{localNotesCount()}} notes)\n" +
+    "                  Merge local data ({{notesAndTagsCount()}} notes and tags)\n" +
     "                </input>\n" +
     "              </p>\n" +
     "            </div>\n" +
@@ -40239,8 +41150,8 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    <div ng-if='user'>\n" +
     "      <h2>{{user.email}}</h2>\n" +
     "      <p>{{server}}</p>\n" +
-    "      <div class='bold mt-10 blue' delay-hide='true' delay='1000' show='syncStatus.syncOpInProgress || syncStatus.needsMoreSync'>\n" +
-    "        <div class='spinner inline mr-5 blue'></div>\n" +
+    "      <div class='bold mt-10 tinted' delay-hide='true' delay='1000' show='syncStatus.syncOpInProgress || syncStatus.needsMoreSync'>\n" +
+    "        <div class='spinner inline mr-5 tinted'></div>\n" +
     "        {{\"Syncing\" + (syncStatus.total > 0 ? \":\" : \"\")}}\n" +
     "        <span ng-if='syncStatus.total &gt; 0'>{{syncStatus.current}}/{{syncStatus.total}}</span>\n" +
     "      </div>\n" +
@@ -40299,16 +41210,41 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "            </form>\n" +
     "          </div>\n" +
     "          <div class='mt-5' ng-if='securityUpdateData.processing'>\n" +
-    "            <p class='blue'>Processing...</p>\n" +
+    "            <p class='tinted'>Processing...</p>\n" +
     "          </div>\n" +
     "        </section>\n" +
     "      </div>\n" +
-    "      <div class='medium-v-space'></div>\n" +
-    "      <h4>Local Encryption</h4>\n" +
-    "      <p>Notes are encrypted locally before being sent to the server. Neither the server owner nor an intrusive entity can decrypt your locally encrypted notes.</p>\n" +
-    "      <div class='mt-5'>\n" +
-    "        <label>Status:</label>\n" +
-    "        {{encryptionStatusForNotes()}}\n" +
+    "    </div>\n" +
+    "    <div class='mt-25'>\n" +
+    "      <h4>Encryption Status</h4>\n" +
+    "      <p>\n" +
+    "        {{encryptionStatusString()}}\n" +
+    "      </p>\n" +
+    "      <div class='mt-5' ng-if='encryptionEnabled()'>\n" +
+    "        <i>{{encryptionStatusForNotes()}}</i>\n" +
+    "      </div>\n" +
+    "    </div>\n" +
+    "    <div class='mt-25'>\n" +
+    "      <h4>Passcode Lock</h4>\n" +
+    "      <div ng-if='!hasPasscode() &amp;&amp; passcodeOptionAvailable()'>\n" +
+    "        <p>Add an app passcode to lock the app and encrypt on-device key storage.</p>\n" +
+    "        <a class='block mt-5' ng-click='addPasscodeClicked()' ng-if='!formData.showPasscodeForm'>Add Passcode</a>\n" +
+    "        <div class='mt-5' ng-if='formData.showPasscodeForm'>\n" +
+    "          <p class='bold'>Choose a passcode:</p>\n" +
+    "          <input autofocus='true' class='form-control mt-10' ng-model='formData.passcode' placeholder='Passcode' type='password'>\n" +
+    "          <input class='form-control mt-10' ng-model='formData.confirmPasscode' placeholder='Confirm Passcode' type='password'>\n" +
+    "          <button class='standard ui-button block tinted mt-5' ng-click='submitPasscodeForm()'>Set Passcode</button>\n" +
+    "        </div>\n" +
+    "      </div>\n" +
+    "      <div ng-if='hasPasscode()'>\n" +
+    "        <p>\n" +
+    "          Passcode lock is enabled.\n" +
+    "          <span ng-if='isDesktopApplication()'>Your passcode will be required on new sessions after app quit.</span>\n" +
+    "        </p>\n" +
+    "        <a class='block mt-5' ng-click='removePasscodePressed()'>Remove Passcode</a>\n" +
+    "      </div>\n" +
+    "      <div ng-if='!passcodeOptionAvailable()'>\n" +
+    "        <p>Passcode lock is only available to permanent sessions. (You chose not to stay signed in.)</p>\n" +
     "      </div>\n" +
     "    </div>\n" +
     "    <div class='mt-25' ng-if='!importData.loading'>\n" +
@@ -40326,28 +41262,16 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      <a class='block mt-5' ng-class=\"{'mt-5' : !user}\" ng-click='downloadDataArchive()'>Download Data Archive</a>\n" +
     "      <label class='block mt-5'>\n" +
     "        <input file-change='-&gt;' handler='importFileSelected(files)' style='display: none;' type='file'>\n" +
-    "        <div class='fake-link'>Import Data from Archive</div>\n" +
+    "        <div class='fake-link tinted'>Import Data from Archive</div>\n" +
     "      </label>\n" +
     "      <div ng-if='importData.requestPassword'>\n" +
     "        <p>Enter the account password associated with the import file.</p>\n" +
-    "        <input class='form-control mt-5' ng-model='importData.password' type='password'>\n" +
-    "        <button class='standard ui-button block blue mt-5' ng-click='submitImportPassword()'>Decrypt & Import</button>\n" +
+    "        <input autofocus='true' class='form-control mt-5' ng-model='importData.password' type='password'>\n" +
+    "        <button class='standard ui-button block tinted mt-5' ng-click='submitImportPassword()'>Decrypt & Import</button>\n" +
     "      </div>\n" +
     "      <p class='mt-5' ng-if='user'>Notes are downloaded in the Standard File format, which allows you to re-import back into this app easily. To download as plain text files, choose \"Decrypted\".</p>\n" +
     "    </div>\n" +
     "    <div class='spinner mt-10' ng-if='importData.loading'></div>\n" +
-    "    <div class='mt-25'>\n" +
-    "      <h4>Analytics</h4>\n" +
-    "      <p>\n" +
-    "        Help Standard Notes improve by sending anonymous data on general usage.\n" +
-    "        <a href='https://standardnotes.org/privacy' target='_blank'>Learn more.</a>\n" +
-    "      </p>\n" +
-    "      <div class='mt-5'>\n" +
-    "        <label>Status:</label>\n" +
-    "        {{analyticsManager.enabled ? \"Enabled\" : \"Disabled\"}}\n" +
-    "        <a ng-click='analyticsManager.toggleStatus()'>{{analyticsManager.enabled ? \"Disable\" : \"Enable\"}}</a>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
     "    <a class='block mt-25 red' ng-click='destroyLocalData()'>{{ user ? \"Sign out and clear local data\" : \"Clear all local data\" }}</a>\n" +
     "  </div>\n" +
     "</div>\n"
@@ -40368,7 +41292,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    </div>\n" +
     "    <ul ng-if='!extension.hide'>\n" +
     "      <li class='menu-item' ng-class=\"{'faded' : !isActionEnabled(action, extension)}\" ng-click='executeAction(action, extension);' ng-repeat='action in extension.actionsWithContextForItem(item)'>\n" +
-    "        <div class='menu-item-title'>{{action.label}}</div>\n" +
+    "        <label class='menu-item-title'>{{action.label}}</label>\n" +
     "        <div class='menu-item-subtitle'>{{action.desc}}</div>\n" +
     "        <div class='small normal' ng-if='!isActionEnabled(action, extension)'>\n" +
     "          Requires {{action.access_type}} access to this note.\n" +
@@ -40376,7 +41300,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        <div ng-if='action.showNestedActions'>\n" +
     "          <ul class='mt-10'>\n" +
     "            <li class='menu-item white-bg nested-hover' ng-click='executeAction(subaction, extension, action); $event.stopPropagation();' ng-repeat='subaction in action.subactions' style='margin-top: -1px;'>\n" +
-    "              <div class='menu-item-title'>{{subaction.label}}</div>\n" +
+    "              <label class='menu-item-title'>{{subaction.label}}</label>\n" +
     "              <div class='menu-item-subtitle'>{{subaction.desc}}</div>\n" +
     "              <span ng-if='subaction.running'>\n" +
     "                <div class='spinner' style='margin-top: 3px;'></div>\n" +
@@ -40408,7 +41332,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "  <ul>\n" +
     "    <li class='menu-item' ng-click='selectEditor($event, editor)' ng-repeat='editor in editorManager.systemEditors'>\n" +
     "      <span class='pull-left mr-10' ng-if='selectedEditor === editor'>✓</span>\n" +
-    "      <div class='menu-item-title pull-left'>{{editor.name}}</div>\n" +
+    "      <label class='menu-item-title pull-left'>{{editor.name}}</label>\n" +
     "    </li>\n" +
     "  </ul>\n" +
     "  <div ng-if='editorManager.externalEditors.length &gt; 0'>\n" +
@@ -40419,10 +41343,10 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    <ul>\n" +
     "      <li class='menu-item' ng-click='selectEditor($event, editor)' ng-repeat='editor in editorManager.externalEditors'>\n" +
     "        <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
-    "        <div class='menu-item-title'>\n" +
+    "        <label class='menu-item-title'>\n" +
     "          {{editor.name}}\n" +
-    "          <span class='inline blue' ng-if='selectedEditor === editor' style='margin-left: 8px;'>✓</span>\n" +
-    "        </div>\n" +
+    "          <span class='inline tinted' ng-if='selectedEditor === editor' style='margin-left: 8px;'>✓</span>\n" +
+    "        </label>\n" +
     "      </li>\n" +
     "    </ul>\n" +
     "  </div>\n" +
@@ -40435,16 +41359,16 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "  <div class='panel-body'>\n" +
     "    <div class='container'>\n" +
     "      <div class='float-group h20'>\n" +
-    "        <h1 class='blue pull-left'>Extensions</h1>\n" +
+    "        <h1 class='tinted pull-left'>Extensions</h1>\n" +
     "        <a class='block pull-right dashboard-link' href='https://dashboard.standardnotes.org' target='_blank'>Open Dashboard</a>\n" +
     "      </div>\n" +
     "      <div class='clear' ng-if='!extensionManager.extensions.length &amp;&amp; !themeManager.themes.length &amp;&amp; !editorManager.externalEditors.length'>\n" +
     "        <p>Customize your experience with editors, themes, and actions.</p>\n" +
-    "        <div class='blue-box mt-10'>\n" +
+    "        <div class='tinted-box mt-10'>\n" +
     "          <h3>Available as part of the Extended subscription.</h3>\n" +
     "          <p class='mt-5'>Note history</p>\n" +
     "          <p class='mt-5'>Automated backups</p>\n" +
-    "          <p class='mt-5'>All editors, themes, and actions</p>\n" +
+    "          <p class='mt-5'>Editors, themes, and actions</p>\n" +
     "          <a href='https://standardnotes.org/extensions' target='_blank'>\n" +
     "            <button class='mt-10'>\n" +
     "              <h3>Learn More</h3>\n" +
@@ -40463,7 +41387,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "            <h3>{{theme.name}}</h3>\n" +
     "            <a ng-click='themeManager.activateTheme(theme); $event.stopPropagation();' ng-if='!themeManager.isThemeActive(theme)'>Activate</a>\n" +
     "            <a ng-click='themeManager.deactivateTheme(theme); $event.stopPropagation();' ng-if='themeManager.isThemeActive(theme)'>Deactivate</a>\n" +
-    "            <div ng-if='theme.showDetails'>\n" +
+    "            <div class='mt-3' ng-if='theme.showDetails'>\n" +
     "              <div class='link-group'>\n" +
     "                <a class='red' ng-click='deleteTheme(theme); $event.stopPropagation();'>Delete</a>\n" +
     "                <a ng-click='theme.showLink = !theme.showLink; $event.stopPropagation();'>Show Link</a>\n" +
@@ -40489,7 +41413,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "            <div class='mt-5' ng-if='editor.showDetails'>\n" +
     "              <div class='link-group'>\n" +
     "                <a ng-click='setDefaultEditor(editor); $event.stopPropagation();' ng-if='!editor.default'>Make Default</a>\n" +
-    "                <a class='blue' ng-click='removeDefaultEditor(editor); $event.stopPropagation();' ng-if='editor.default'>Remove as Default</a>\n" +
+    "                <a class='tinted' ng-click='removeDefaultEditor(editor); $event.stopPropagation();' ng-if='editor.default'>Remove as Default</a>\n" +
     "                <a ng-click='editor.showUrl = !editor.showUrl; $event.stopPropagation();'>Show Link</a>\n" +
     "                <a class='red' ng-click='deleteEditor(editor); $event.stopPropagation();'>Delete</a>\n" +
     "              </div>\n" +
@@ -40541,8 +41465,8 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "                  </div>\n" +
     "                  <div>\n" +
     "                    <div class='mt-5' ng-if='action.repeat_mode'>\n" +
-    "                      <button class='light' ng-click='extensionManager.disableRepeatAction(action, extension); $event.stopPropagation();' ng-if='extensionManager.isRepeatActionEnabled(action)'>Disable</button>\n" +
-    "                      <button class='light' ng-click='extensionManager.enableRepeatAction(action, extension); $event.stopPropagation();' ng-if='!extensionManager.isRepeatActionEnabled(action)'>Enable</button>\n" +
+    "                      <button class='light tinted' ng-click='extensionManager.disableRepeatAction(action, extension); $event.stopPropagation();' ng-if='extensionManager.isRepeatActionEnabled(action)'>Disable</button>\n" +
+    "                      <button class='light tinted' ng-click='extensionManager.enableRepeatAction(action, extension); $event.stopPropagation();' ng-if='!extensionManager.isRepeatActionEnabled(action)'>Enable</button>\n" +
     "                    </div>\n" +
     "                    <button class='light mt-10' ng-click='selectedAction(action, extension); $event.stopPropagation();' ng-if='!action.running &amp;&amp; !action.repeat_mode'>\n" +
     "                      Perform Action\n" +
@@ -40575,7 +41499,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "            <h3>{{component.name}}</h3>\n" +
     "            <a ng-click='componentManager.activateComponent(component); $event.stopPropagation();' ng-if='!componentManager.isComponentActive(component)'>Activate</a>\n" +
     "            <a ng-click='componentManager.deactivateComponent(component); $event.stopPropagation();' ng-if='componentManager.isComponentActive(component)'>Deactivate</a>\n" +
-    "            <div ng-if='component.showDetails'>\n" +
+    "            <div class='mt-3' ng-if='component.showDetails'>\n" +
     "              <div class='link-group'>\n" +
     "                <a class='red' ng-click='deleteComponent(component); $event.stopPropagation();'>Delete</a>\n" +
     "                <a ng-click='component.showLink = !component.showLink; $event.stopPropagation();'>Show Link</a>\n" +
@@ -40589,13 +41513,33 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        </li>\n" +
     "      </ul>\n" +
     "    </div>\n" +
+    "    <div ng-if='serverExtensions.length &gt; 0'>\n" +
+    "      <div class='container no-bottom section-margin'>\n" +
+    "        <h2>Server Extensions</h2>\n" +
+    "      </div>\n" +
+    "      <ul>\n" +
+    "        <li ng-click='ext.showDetails = !ext.showDetails' ng-repeat='ext in serverExtensions'>\n" +
+    "          <div class='container'>\n" +
+    "            <strong class='red medium' ng-if='ext.conflict_of'>Conflicted copy</strong>\n" +
+    "            <h3>{{nameForServerExtension(ext)}}</h3>\n" +
+    "            <div class='mt-3' ng-if='ext.showDetails'>\n" +
+    "              <div class='link-group'>\n" +
+    "                <a ng-click='ext.showUrl = !ext.showUrl; $event.stopPropagation();'>Show Link</a>\n" +
+    "                <a class='red' ng-click='deleteServerExt(ext); $event.stopPropagation();'>Delete</a>\n" +
+    "              </div>\n" +
+    "              <div class='wrap mt-5 selectable' ng-if='ext.showUrl'>{{ext.url}}</div>\n" +
+    "            </div>\n" +
+    "          </div>\n" +
+    "        </li>\n" +
+    "      </ul>\n" +
+    "    </div>\n" +
     "    <div class='container section-margin'>\n" +
-    "      <h2 class='blue'>Install</h2>\n" +
+    "      <h2 class='tinted'>Install</h2>\n" +
     "      <p class='faded'>Enter an install link</p>\n" +
     "      <form class='mt-10 mb-10'>\n" +
     "        <input autocomplete='off' autofocus='autofocus' class='form-control' name='url' ng-keyup='$event.keyCode == 13 &amp;&amp; submitInstallLink();' ng-model='formData.installLink' required type='url'>\n" +
     "      </form>\n" +
-    "      <p class='blue' ng-if='formData.successfullyInstalled'>Successfully installed extension.</p>\n" +
+    "      <p class='tinted' ng-if='formData.successfullyInstalled'>Successfully installed extension.</p>\n" +
     "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
@@ -40614,7 +41558,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    <p>{{permission}}</p>\n" +
     "  </div>\n" +
     "  <h4>Status</h4>\n" +
-    "  <p class='status' ng-class=\"{'trusted' : component.trusted}\">{{component.trusted ? 'Trusted' : 'Untrusted'}}</p>\n" +
+    "  <p class='status' ng-class=\"{'trusted tinted' : component.trusted}\">{{component.trusted ? 'Trusted' : 'Untrusted'}}</p>\n" +
     "  <div class='learn-more'>\n" +
     "    <h4>Details</h4>\n" +
     "    <p>\n" +
@@ -40624,7 +41568,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "  </div>\n" +
     "  <div class='buttons'>\n" +
     "    <button class='standard white' ng-click='deny()'>Deny</button>\n" +
-    "    <button class='standard blue' ng-click='accept()'>Accept</button>\n" +
+    "    <button class='standard tinted' ng-click='accept()'>Accept</button>\n" +
     "  </div>\n" +
     "</div>\n"
   );
@@ -40675,12 +41619,30 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "  <ul class='section-menu-bar' ng-if='ctrl.note'>\n" +
     "    <li click-outside='ctrl.showMenu = false;' is-open='ctrl.showMenu' ng-class=\"{'selected' : ctrl.showMenu}\">\n" +
     "      <label ng-click='ctrl.showMenu = !ctrl.showMenu; ctrl.showExtensions = false; ctrl.showEditorMenu = false;'>Menu</label>\n" +
-    "      <ul class='dropdown-menu' ng-if='ctrl.showMenu'>\n" +
+    "      <ul class='dropdown-menu sectioned-menu' ng-if='ctrl.showMenu'>\n" +
     "        <li>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.toggleFullScreen()'>Toggle Fullscreen</label>\n" +
+    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.togglePin()'>\n" +
+    "            <i class='icon ion-ios-flag'></i>\n" +
+    "            {{ctrl.note.pinned ? \"Unpin\" : \"Pin\"}}\n" +
+    "          </label>\n" +
     "        </li>\n" +
     "        <li>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.deleteNote()'>Delete Note</label>\n" +
+    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.toggleArchiveNote()'>\n" +
+    "            <i class='icon ion-ios-box'></i>\n" +
+    "            {{ctrl.note.archived ? \"Unarcnive\" : \"Archive\"}}\n" +
+    "          </label>\n" +
+    "        </li>\n" +
+    "        <li>\n" +
+    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.deleteNote()'>\n" +
+    "            <i class='icon ion-trash-b'></i>\n" +
+    "            Delete\n" +
+    "          </label>\n" +
+    "        </li>\n" +
+    "        <li>\n" +
+    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.toggleFullScreen()'>\n" +
+    "            <i class='icon ion-arrow-expand'></i>\n" +
+    "            Toggle Fullscreen\n" +
+    "          </label>\n" +
     "        </li>\n" +
     "        <li ng-if='ctrl.hasDisabledComponents()'>\n" +
     "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.restoreDisabledComponents()'>Restore Disabled Components</label>\n" +
@@ -40720,7 +41682,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "  <div class='pull-left'>\n" +
     "    <div class='footer-bar-link' click-outside='ctrl.showAccountMenu = false;' is-open='ctrl.showAccountMenu'>\n" +
     "      <a ng-class='{red: ctrl.error}' ng-click='ctrl.accountMenuPressed()'>Account</a>\n" +
-    "      <account-menu ng-if='ctrl.showAccountMenu'></account-menu>\n" +
+    "      <account-menu ng-if='ctrl.showAccountMenu' on-successful-auth='ctrl.onAuthSuccess'></account-menu>\n" +
     "    </div>\n" +
     "    <div class='footer-bar-link' click-outside='ctrl.showExtensionsMenu = false;' is-open='ctrl.showExtensionsMenu'>\n" +
     "      <a ng-click='ctrl.toggleExtensions()'>Extensions</a>\n" +
@@ -40734,7 +41696,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "  </div>\n" +
     "  <div class='pull-right'>\n" +
     "    <div class='footer-bar-link' ng-click='ctrl.clickedNewUpdateAnnouncement()' ng-if='ctrl.newUpdateAvailable'>\n" +
-    "      <span class='blue normal'>New update downloaded. Installs on app restart.</span>\n" +
+    "      <span class='tinted normal'>New update downloaded. Installs on app restart.</span>\n" +
     "    </div>\n" +
     "    <div class='footer-bar-link' style='margin-right: 5px;'>\n" +
     "      <div ng-if='ctrl.lastSyncDate' style='float: left; font-weight: normal; margin-right: 8px;'>\n" +
@@ -40747,6 +41709,9 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      </div>\n" +
     "      <strong ng-if='ctrl.offline'>Offline</strong>\n" +
     "      <a ng-click='ctrl.refreshData()' ng-if='!ctrl.offline'>Refresh</a>\n" +
+    "      <span ng-if='ctrl.hasPasscode()'>\n" +
+    "        <i class='icon ion-locked' ng-click='ctrl.lockApp()'></i>\n" +
+    "      </span>\n" +
     "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
@@ -40755,12 +41720,26 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 
   $templateCache.put('frontend/home.html',
     "<div class='main-ui-view'>\n" +
-    "  <div class='app'>\n" +
-    "    <tags-section add-new='tagsAddNew' all-tag='allTag' remove-tag='removeTag' save='tagsSave' selection-made='tagsSelectionMade' tags='tags' will-select='tagsWillMakeSelection'></tags-section>\n" +
+    "  <lock-screen ng-if='needsUnlock' on-success='onSuccessfulUnlock'></lock-screen>\n" +
+    "  <div class='app' ng-if='!needsUnlock'>\n" +
+    "    <tags-section add-new='tagsAddNew' all-tag='allTag' archive-tag='archiveTag' remove-tag='removeTag' save='tagsSave' selection-made='tagsSelectionMade' tags='tags' will-select='tagsWillMakeSelection'></tags-section>\n" +
     "    <notes-section add-new='notesAddNew' selection-made='notesSelectionMade' tag='selectedTag'></notes-section>\n" +
     "    <editor-section note='selectedNote' remove='deleteNote' save='saveNote' update-tags='updateTagsForNote'></editor-section>\n" +
     "  </div>\n" +
-    "  <footer></footer>\n" +
+    "  <footer ng-if='!needsUnlock'></footer>\n" +
+    "</div>\n"
+  );
+
+
+  $templateCache.put('frontend/lock-screen.html',
+    "<div id='lock-screen'>\n" +
+    "  <div class='content'>\n" +
+    "    <h3 class='center-align'>Passcode Required</h3>\n" +
+    "    <form class='mt-20' ng-submit='submitPasscodeForm()'>\n" +
+    "      <input autocomplete='new-password' autofocus='true' class='form-control mt-10' ng-model='formData.passcode' placeholder='Enter Passcode' type='password'>\n" +
+    "      <button class='standard ui-button block tinted mt-5' type='submit'>Unlock</button>\n" +
+    "    </form>\n" +
+    "  </div>\n" +
     "</div>\n"
   );
 
@@ -40779,7 +41758,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      </div>\n" +
     "      <ul class='section-menu-bar' id='tag-menu-bar'>\n" +
     "        <li ng-class=\"{'selected' : ctrl.showMenu}\">\n" +
-    "          <label ng-click='ctrl.showMenu = !ctrl.showMenu'>Sort</label>\n" +
+    "          <label ng-click='ctrl.showMenu = !ctrl.showMenu'>{{ctrl.sortByTitle()}}</label>\n" +
     "          <ul class='dropdown-menu' ng-if='ctrl.showMenu'>\n" +
     "            <li>\n" +
     "              <label ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByCreated()'>\n" +
@@ -40805,16 +41784,26 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    </div>\n" +
     "    <div class='scrollable'>\n" +
     "      <div can-load='true' class='infinite-scroll' infinite-scroll='ctrl.paginate()' threshold='200'>\n" +
-    "        <div class='note' ng-class=\"{'selected' : ctrl.selectedNote == note}\" ng-click='ctrl.selectNote(note)' ng-repeat='note in (ctrl.sortedNotes = (ctrl.tag.notes | filter: ctrl.filterNotes | orderBy: ctrl.sortBy:ctrl.sortDescending | limitTo:ctrl.notesToDisplay))'>\n" +
+    "        <div class='note' ng-class=\"{'selected' : ctrl.selectedNote == note}\" ng-click='ctrl.selectNote(note)' ng-repeat='note in (ctrl.sortedNotes = (ctrl.tag.notes | filter: ctrl.filterNotes | sortBy: ctrl.sortBy| limitTo:ctrl.notesToDisplay))'>\n" +
     "          <strong class='red medium' ng-if='note.conflict_of'>Conflicted copy</strong>\n" +
     "          <strong class='red medium' ng-if='note.errorDecrypting'>Error decrypting</strong>\n" +
+    "          <div class='pinned tinted' ng-class=\"{'tinted-selected' : ctrl.selectedNote == note}\" ng-if='note.pinned'>\n" +
+    "            <i class='icon ion-ios-flag'></i>\n" +
+    "            <strong class='medium'>Pinned</strong>\n" +
+    "          </div>\n" +
+    "          <div class='tags-string' ng-if='ctrl.tag.all'>\n" +
+    "            <div class='faded'>{{note.tagsString()}}</div>\n" +
+    "          </div>\n" +
     "          <div class='name' ng-if='note.title'>\n" +
     "            {{note.title}}\n" +
     "          </div>\n" +
     "          <div class='note-preview'>\n" +
     "            {{note.text}}\n" +
     "          </div>\n" +
-    "          <div class='date'>{{(note.created_at | appDateTime) || 'Now'}}</div>\n" +
+    "          <div class='date faded'>\n" +
+    "            <span ng-if=\"ctrl.sortBy == 'updated_at'\">Modified {{note.updatedAtString() || 'Now'}}</span>\n" +
+    "            <span ng-if=\"ctrl.sortBy != 'updated_at'\">{{note.createdAtString() || 'Now'}}</span>\n" +
+    "          </div>\n" +
     "        </div>\n" +
     "      </div>\n" +
     "    </div>\n" +
@@ -40848,6 +41837,11 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "          <a class='item' ng-click='ctrl.selectedRenameTag($event, tag)' ng-if='!ctrl.editingTag'>Rename</a>\n" +
     "          <a class='item' ng-click='ctrl.saveTag($event, tag)' ng-if='ctrl.editingTag'>Save</a>\n" +
     "          <a class='item' ng-click='ctrl.selectedDeleteTag(tag)'>Delete</a>\n" +
+    "        </div>\n" +
+    "      </div>\n" +
+    "      <div class='tag faded' ng-class=\"{'selected' : ctrl.selectedTag == ctrl.archiveTag}\" ng-click='ctrl.selectTag(ctrl.archiveTag)' ng-if='ctrl.archiveTag'>\n" +
+    "        <div class='info'>\n" +
+    "          <input class='title' ng-disabled='true' ng-model='ctrl.archiveTag.title'>\n" +
     "        </div>\n" +
     "      </div>\n" +
     "    </div>\n" +
