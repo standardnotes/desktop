@@ -1,22 +1,33 @@
 {
   "name": "standard-notes",
-  "version": "2.0.0",
   "main": "./app/index.js",
+  "repository": "standardnotes/desktop-beta",
   "devDependencies": {
-    "electron": "1.7.5",
-    "electron-builder": "^19.26.2"
+    "electron": "1.7.8",
+    "electron-builder": "^19.34.2"
   },
   "build": {
     "appId": "org.standardnotes.standardnotes",
     "mac": {
       "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "category": "Office",
+      "icon": "build/icon/",
+      "target": [
+        "AppImage",
+        "deb"
+      ]
     }
   },
   "scripts": {
     "pack": "build --dir",
-    "dist": "build -mwl --x64 --ia32",
+    "dist": "electron-builder -mwl --x64 --ia32",
+    "dist-win": "electron-builder -w --x64 --ia32",
     "mac": "build -m",
-    "release": "build -mwl --x64 --ia32",
+    "release": "electron-builder -mwl --x64 --ia32",
+    "build-linux": "electron-builder -l --x64 --ia32",
+    "build-beta": "electron-builder -mwl --x64 --ia32 --publish=always --em.productName='Standard Notes (Beta)' --em.appId=org.standardnotes.standardnotes.beta",
     "distwin": "build -w --x64 --ia32",
     "distmac": "build -m",
     "start": "electron . --enable-logging --icon _icon/icon.png",

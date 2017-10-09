@@ -33440,8 +33440,9 @@ var EncryptionHelper = function () {
       } else {
         // is base64 encoded
         try {
-          item.content = Neeto.crypto.base64Decode(item.content.substring(3, item.content.length));
+          item.content = JSON.parse(Neeto.crypto.base64Decode(item.content.substring(3, item.content.length)));
         } catch (e) {}
+
         return;
       }
 
@@ -33728,7 +33729,7 @@ function parametersFromURL(url) {
 function isDesktopApplication() {
   return window && window.process && window.process.type && window.process.versions["electron"];
 }
-;angular.module('app.frontend').config(function ($locationProvider) {
+;angular.module('app.frontend').config(['$locationProvider', function ($locationProvider) {
 
   if (!isDesktopApplication()) {
     if (window.history && window.history.pushState) {
@@ -33740,8 +33741,8 @@ function isDesktopApplication() {
   } else {
     $locationProvider.html5Mode(false);
   }
-});
-;angular.module('app.frontend').directive("editorSection", function ($timeout, $sce) {
+}]);
+;angular.module('app.frontend').directive("editorSection", ['$timeout', '$sce', function ($timeout, $sce) {
   return {
     restrict: 'E',
     scope: {
@@ -33778,7 +33779,7 @@ function isDesktopApplication() {
       });
     }
   };
-}).controller('EditorCtrl', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager, themeManager, componentManager, storageManager) {
+}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', 'editorManager', 'themeManager', 'componentManager', 'storageManager', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager, themeManager, componentManager, storageManager) {
 
   this.componentManager = componentManager;
   this.componentStack = [];
@@ -34360,8 +34361,8 @@ function isDesktopApplication() {
       this.loadedTabListener = false;
     }.bind(this));
   };
-});
-;angular.module('app.frontend').directive("footer", function (authManager) {
+}]);
+;angular.module('app.frontend').directive("footer", ['authManager', function (authManager) {
   return {
     restrict: 'E',
     scope: {},
@@ -34383,7 +34384,7 @@ function isDesktopApplication() {
       });
     }
   };
-}).controller('FooterCtrl', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager) {
+}]).controller('FooterCtrl', ['$rootScope', 'authManager', 'modelManager', '$timeout', 'dbManager', 'syncManager', 'storageManager', 'passcodeManager', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager) {
 
   this.user = authManager.user;
 
@@ -34467,8 +34468,8 @@ function isDesktopApplication() {
     this.newUpdateAvailable = false;
     alert("A new update is ready to install. Updates address performance and security issues, as well as bug fixes and feature enhancements. Simply quit Standard Notes and re-open it for the update to be applied.");
   };
-});
-;angular.module('app.frontend').controller('HomeCtrl', function ($scope, $location, $rootScope, $timeout, modelManager, dbManager, syncManager, authManager, themeManager, passcodeManager, storageManager) {
+}]);
+;angular.module('app.frontend').controller('HomeCtrl', ['$scope', '$location', '$rootScope', '$timeout', 'modelManager', 'dbManager', 'syncManager', 'authManager', 'themeManager', 'passcodeManager', 'storageManager', function ($scope, $location, $rootScope, $timeout, modelManager, dbManager, syncManager, authManager, themeManager, passcodeManager, storageManager) {
 
   storageManager.initialize(passcodeManager.hasPasscode(), authManager.isEphemeralSession());
 
@@ -34818,7 +34819,7 @@ function isDesktopApplication() {
   if (urlParam("server")) {
     autoSignInFromParams();
   }
-});
+}]);
 ;
 var LockScreen = function () {
   function LockScreen() {
@@ -34833,7 +34834,7 @@ var LockScreen = function () {
 
   _createClass(LockScreen, [{
     key: 'controller',
-    value: function controller($scope, passcodeManager) {
+    value: ['$scope', 'passcodeManager', function controller($scope, passcodeManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -34848,7 +34849,7 @@ var LockScreen = function () {
           $scope.onSuccess()();
         });
       };
-    }
+    }]
   }]);
 
   return LockScreen;
@@ -34888,7 +34889,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
       });
     }
   };
-}).controller('NotesCtrl', function (authManager, $timeout, $rootScope, modelManager, storageManager) {
+}).controller('NotesCtrl', ['authManager', '$timeout', '$rootScope', 'modelManager', 'storageManager', function (authManager, $timeout, $rootScope, modelManager, storageManager) {
 
   this.sortBy = storageManager.getItem("sortBy") || "created_at";
   this.sortDescending = this.sortBy != "title";
@@ -35025,7 +35026,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
     this.sortBy = type;
     storageManager.setItem("sortBy", type);
   };
-});
+}]);
 ;angular.module('app.frontend').directive("tagsSection", function () {
   return {
     restrict: 'E',
@@ -35060,7 +35061,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
       });
     }
   };
-}).controller('TagsCtrl', function ($rootScope, modelManager, $timeout, componentManager) {
+}).controller('TagsCtrl', ['$rootScope', 'modelManager', '$timeout', 'componentManager', function ($rootScope, modelManager, $timeout, componentManager) {
 
   var initialLoad = true;
 
@@ -35168,7 +35169,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
     var validNotes = Note.filterDummyNotes(tag.notes);
     return validNotes.length;
   };
-});
+}]);
 ;var AppDomain = "org.standardnotes.sn";
 var dateFormatter;
 
@@ -35458,6 +35459,15 @@ var SyncAdapter = function (_Item) {
   }, {
     key: 'structureParams',
     value: function structureParams() {
+      // There was a bug with the way Base64 content was parsed in previous releases related to this item.
+      // The bug would not parse the JSON behind the base64 string and thus saved data in an invalid format.
+      // This is the line: https://github.com/standardnotes/web/commit/1ad0bf73d8e995b7588854f1b1e4e4a02303a42f#diff-15753bac364782a3a5876032bcdbf99aR76
+      // We'll remedy this for affected users by trying to parse the content string
+      if (_typeof(this.content) !== 'object') {
+        try {
+          this.content = JSON.parse(this.content);
+        } catch (e) {}
+      }
       var params = this.content || {};
       _.merge(params, _get(SyncAdapter.prototype.__proto__ || Object.getPrototypeOf(SyncAdapter.prototype), 'structureParams', this).call(this));
       return params;
@@ -36317,9 +36327,9 @@ var ItemParams = function () {
     return domain;
   }
 
-  this.$get = function ($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
+  this.$get = ['$rootScope', '$timeout', 'httpManager', 'modelManager', 'dbManager', 'storageManager', function ($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
     return new AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager);
-  };
+  }];
 
   function AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
 
@@ -36588,6 +36598,7 @@ var ItemParams = function () {
 });
 ;
 var ComponentManager = function () {
+  ComponentManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'themeManager', '$timeout', '$compile'];
   function ComponentManager($rootScope, modelManager, syncManager, themeManager, $timeout, $compile) {
     _classCallCheck(this, ComponentManager);
 
@@ -37711,7 +37722,7 @@ angular.module('app.frontend').service('dbManager', DBManager);
     }
   };
 }]);
-;angular.module('app.frontend').directive('delayHide', function ($timeout) {
+;angular.module('app.frontend').directive('delayHide', ['$timeout', function ($timeout) {
   return {
     restrict: 'A',
     scope: {
@@ -37754,7 +37765,7 @@ angular.module('app.frontend').service('dbManager', DBManager);
     }
 
   };
-});
+}]);
 ;angular.module('app.frontend').directive('fileChange', function () {
   return {
     restrict: 'A',
@@ -37832,7 +37843,7 @@ var AccountMenu = function () {
 
   _createClass(AccountMenu, [{
     key: 'controller',
-    value: function controller($scope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
+    value: ['$scope', 'authManager', 'modelManager', 'syncManager', 'dbManager', 'passcodeManager', '$timeout', 'storageManager', function controller($scope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
       'ngInject';
 
       $scope.formData = { mergeLocal: true, url: syncManager.serverURL, ephemeral: false };
@@ -38029,16 +38040,20 @@ var AccountMenu = function () {
         var file = files[0];
         var reader = new FileReader();
         reader.onload = function (e) {
-          var data = JSON.parse(e.target.result);
-          $timeout(function () {
-            if (data.auth_params) {
-              // request password
-              $scope.importData.requestPassword = true;
-              $scope.importData.data = data;
-            } else {
-              $scope.performImport(data, null);
-            }
-          });
+          try {
+            var data = JSON.parse(e.target.result);
+            $timeout(function () {
+              if (data.auth_params) {
+                // request password
+                $scope.importData.requestPassword = true;
+                $scope.importData.data = data;
+              } else {
+                $scope.performImport(data, null);
+              }
+            });
+          } catch (e) {
+            alert("Unable to open file. Ensure it is a proper JSON file and try again.");
+          }
         };
 
         reader.readAsText(file);
@@ -38333,7 +38348,7 @@ var AccountMenu = function () {
       $scope.isDesktopApplication = function () {
         return isDesktopApplication();
       };
-    }
+    }]
   }]);
 
   return AccountMenu;
@@ -38356,7 +38371,7 @@ var ContextualExtensionsMenu = function () {
 
   _createClass(ContextualExtensionsMenu, [{
     key: 'controller',
-    value: function controller($scope, modelManager, extensionManager) {
+    value: ['$scope', 'modelManager', 'extensionManager', function controller($scope, modelManager, extensionManager) {
       'ngInject';
 
       $scope.renderData = {};
@@ -38453,7 +38468,7 @@ var ContextualExtensionsMenu = function () {
       $scope.accessTypeForExtension = function (extension) {
         return extensionManager.extensionUsesEncryptedData(extension) ? "encrypted" : "decrypted";
       };
-    }
+    }]
   }]);
 
   return ContextualExtensionsMenu;
@@ -38477,7 +38492,7 @@ var EditorMenu = function () {
 
   _createClass(EditorMenu, [{
     key: 'controller',
-    value: function controller($scope, editorManager) {
+    value: ['$scope', 'editorManager', function controller($scope, editorManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -38487,7 +38502,7 @@ var EditorMenu = function () {
         editor.conflict_of = null; // clear conflict if applicable
         $scope.callback()(editor);
       };
-    }
+    }]
   }]);
 
   return EditorMenu;
@@ -38508,7 +38523,7 @@ var GlobalExtensionsMenu = function () {
 
   _createClass(GlobalExtensionsMenu, [{
     key: 'controller',
-    value: function controller($scope, extensionManager, syncManager, modelManager, themeManager, editorManager, componentManager) {
+    value: ['$scope', 'extensionManager', 'syncManager', 'modelManager', 'themeManager', 'editorManager', 'componentManager', function controller($scope, extensionManager, syncManager, modelManager, themeManager, editorManager, componentManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -38568,6 +38583,9 @@ var GlobalExtensionsMenu = function () {
 
       $scope.nameForServerExtension = function (ext) {
         var url = ext.url;
+        if (!url) {
+          return "Invalid Extension";
+        }
         if (url.includes("gdrive")) {
           return "Google Drive Sync";
         } else if (url.includes("file_attacher")) {
@@ -38706,7 +38724,7 @@ var GlobalExtensionsMenu = function () {
         editorManager.addNewEditorFromURL(link);
         completion();
       };
-    }
+    }]
   }]);
 
   return GlobalExtensionsMenu;
@@ -38794,6 +38812,7 @@ angular.module('app.frontend').directive('permissionsModal', function () {
 });
 ;
 var EditorManager = function () {
+  EditorManager.$inject = ['$rootScope', 'modelManager', 'syncManager'];
   function EditorManager($rootScope, modelManager, syncManager) {
     _classCallCheck(this, EditorManager);
 
@@ -38911,6 +38930,7 @@ var EditorManager = function () {
 angular.module('app.frontend').service('editorManager', EditorManager);
 ;
 var ExtensionManager = function () {
+  ExtensionManager.$inject = ['httpManager', 'modelManager', 'authManager', 'syncManager', 'storageManager'];
   function ExtensionManager(httpManager, modelManager, authManager, syncManager, storageManager) {
     _classCallCheck(this, ExtensionManager);
 
@@ -39434,16 +39454,16 @@ var ExtensionManager = function () {
 }();
 
 angular.module('app.frontend').service('extensionManager', ExtensionManager);
-;angular.module('app.frontend').filter('appDate', function ($filter) {
+;angular.module('app.frontend').filter('appDate', ['$filter', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy', 'UTC') : '';
   };
-}).filter('appDateTime', function ($filter) {
+}]).filter('appDateTime', ['$filter', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy h:mm a') : '';
   };
-});
-;angular.module('app.frontend').filter('sortBy', function ($filter) {
+}]);
+;angular.module('app.frontend').filter('sortBy', ['$filter', function ($filter) {
   return function (items, sortBy) {
     var sortValueFn = function sortValueFn(a, b) {
       var pinCheck = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
@@ -39492,7 +39512,7 @@ angular.module('app.frontend').service('extensionManager', ExtensionManager);
       return sortValueFn(a, b);
     });
   };
-});
+}]);
 ;angular.module('app.frontend').filter('startFrom', function () {
   return function (input, start) {
     return input.slice(start);
@@ -39505,6 +39525,7 @@ angular.module('app.frontend').service('extensionManager', ExtensionManager);
 }]);
 ;
 var HttpManager = function () {
+  HttpManager.$inject = ['$timeout', 'storageManager'];
   function HttpManager($timeout, storageManager) {
     _classCallCheck(this, HttpManager);
 
@@ -39593,6 +39614,7 @@ var HttpManager = function () {
 angular.module('app.frontend').service('httpManager', HttpManager);
 ;
 var ModelManager = function () {
+  ModelManager.$inject = ['storageManager'];
   function ModelManager(storageManager) {
     _classCallCheck(this, ModelManager);
 
@@ -40112,9 +40134,9 @@ var ModelManager = function () {
 angular.module('app.frontend').service('modelManager', ModelManager);
 ;angular.module('app.frontend').provider('passcodeManager', function () {
 
-  this.$get = function ($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
+  this.$get = ['$rootScope', '$timeout', 'modelManager', 'dbManager', 'authManager', 'storageManager', function ($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
     return new PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager);
-  };
+  }];
 
   function PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
 
@@ -40235,6 +40257,7 @@ var MemoryStorage = function () {
 }();
 
 var StorageManager = function () {
+  StorageManager.$inject = ['dbManager'];
   function StorageManager(dbManager) {
     _classCallCheck(this, StorageManager);
 
@@ -40247,18 +40270,14 @@ var StorageManager = function () {
       if (hasPasscode) {
         // We don't want to save anything in fixed storage except for actual item data (in IndexedDB)
         this.storage = this.memoryStorage;
-        console.log("Using MemoryStorage Because Has Passcode");
       } else if (ephemeral) {
         // We don't want to save anything in fixed storage as well as IndexedDB
         this.storage = this.memoryStorage;
-        console.log("Using MemoryStorage Because Ephemeral Login");
       } else {
-        console.log("Using LocalStorage");
         this.storage = localStorage;
       }
 
       this.modelStorageMode = ephemeral ? StorageManager.Ephemeral : StorageManager.Fixed;
-      console.log("Initial Model Storage Mode", this.modelStorageMode);
     }
   }, {
     key: 'setItemsMode',
@@ -40472,6 +40491,7 @@ StorageManager.Fixed = "Fixed"; // localStorage
 angular.module('app.frontend').service('storageManager', StorageManager);
 ;
 var SyncManager = function () {
+  SyncManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'dbManager', 'httpManager', '$interval', '$timeout', 'storageManager', 'passcodeManager'];
   function SyncManager($rootScope, modelManager, authManager, dbManager, httpManager, $interval, $timeout, storageManager, passcodeManager) {
     _classCallCheck(this, SyncManager);
 
@@ -40969,6 +40989,7 @@ var SyncManager = function () {
 angular.module('app.frontend').service('syncManager', SyncManager);
 ;
 var ThemeManager = function () {
+  ThemeManager.$inject = ['modelManager', 'syncManager', '$rootScope', 'storageManager'];
   function ThemeManager(modelManager, syncManager, $rootScope, storageManager) {
     _classCallCheck(this, ThemeManager);
 
