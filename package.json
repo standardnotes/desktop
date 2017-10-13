@@ -1,7 +1,6 @@
 {
   "name": "standard-notes",
   "main": "./app/index.js",
-  "repository": "standardnotes/desktop-beta",
   "devDependencies": {
     "electron": "1.7.8",
     "electron-builder": "^19.34.2"
