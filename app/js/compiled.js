@@ -34695,6 +34695,7 @@ function isDesktopApplication() {
     tag.setDirty(true);
     syncManager.sync(callback);
     $rootScope.$broadcast("tag-changed");
+    modelManager.resortTag(tag);
   };
 
   /*
@@ -39914,6 +39915,14 @@ var ModelManager = function () {
       }.bind(this));
     }
   }, {
+    key: 'resortTag',
+    value: function resortTag(tag) {
+      _.pull(this.tags, tag);
+      this.tags.splice(_.sortedIndexBy(this.tags, tag, function (tag) {
+        if (tag.title) return tag.title.toLowerCase();else return '';
+      }), 0, tag);
+    }
+  }, {
     key: 'addItem',
     value: function addItem(item) {
       this.addItems([item]);
@@ -41299,6 +41308,11 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
   );
 
 
+  $templateCache.put('frontend/directives/column-resizer.html',
+    "<div style='width: 10px; height: 100%, background-color: red'></div>\n"
+  );
+
+
   $templateCache.put('frontend/directives/contextual-menu.html',
     "<ul class='dropdown-menu sectioned-menu'>\n" +
     "  <div class='extension' ng-repeat='extension in extensions'>\n" +
@@ -41564,6 +41578,11 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
+  );
+
+
+  $templateCache.put('frontend/directives/panel-resizer.html',
+    "<div style='width: 10px; height: 100%; background-color: red; cursor: col-resize;'></div>\n"
   );
 
 

@@ -303,6 +303,24 @@ button.white:hover {
   color: white;
 }
 
+.tinted-box {
+  background-color: #086dd6;
+  color: white;
+  border-radius: 4px;
+  padding: 16px 20px;
+}
+.tinted-box button {
+  background-color: white;
+  color: #086dd6;
+  border-radius: 3px;
+  font-weight: bold;
+  padding: 6px 20px;
+  width: 100%;
+}
+.tinted-box button:hover {
+  text-decoration: underline;
+}
+
 html,
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
