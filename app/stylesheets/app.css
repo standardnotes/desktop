@@ -827,7 +827,7 @@ a.disabled {
   padding-top: 16px;
   padding-left: 14px;
   padding-right: 14px;
-  height: 130px;
+  height: 147px;
   font-weight: normal;
   font-size: 18px;
 }
@@ -837,10 +837,11 @@ a.disabled {
 .notes #notes-add-button {
   right: 14px;
 }
-.notes #tag-menu-bar {
+.notes #notes-menu-bar {
   position: relative;
   margin: 0 -14px;
   margin-top: 14px;
+  height: 45px;
   width: auto;
 }
 .notes .filter-section {
@@ -881,7 +882,7 @@ a.disabled {
   background-color: #086dd6;
 }
 .notes .scrollable {
-  height: calc(100vh - (130px + 25px));
+  height: calc(100vh - (147px + 25px));
 }
 .notes .infinite-scroll {
   overflow-x: hidden;
@@ -1200,6 +1201,28 @@ ul.section-menu-bar > li {
   font-size: 13px;
   font-weight: bold;
   user-select: none;
+}
+ul.section-menu-bar > li.full-width {
+  width: 100%;
+}
+ul.section-menu-bar > li.item-with-subtitle label {
+  margin-right: 8px;
+}
+ul.section-menu-bar > li.item-with-subtitle .subtitle {
+  margin-top: 1px;
+  opacity: 0.5;
+  font-weight: normal;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  /* number of lines to show */
+  line-height: 18px;
+  /* fallback */
+  max-height: calc(18px * 1);
+  /* fallback */
 }
 ul.section-menu-bar > li.selected {
   background-color: #086dd6;
