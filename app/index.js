@@ -50,7 +50,8 @@ function createWindow () {
     'height': winState.height,
     'minWidth': 600,
     'minHeight': 400,
-    show: false
+    show: false,
+    autoHideMenuBar: true
   })
 
   // Register listeners on the window, so we can update the state
