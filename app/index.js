@@ -201,6 +201,18 @@ function loadMenu() {
         },
         {
           role: 'togglefullscreen'
+        },
+        {
+          label: 'Toggle Menu Bar',
+          type: 'checkbox',
+          click() {
+            if (win.isMenuBarAutoHide()) {
+              win.setAutoHideMenuBar(false)
+            } else {
+              win.setAutoHideMenuBar(true)
+              win.setMenuBarVisibility(false)
+            }
+          }
         }
       ]
     },
