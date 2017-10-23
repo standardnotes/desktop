@@ -203,6 +203,7 @@ function loadMenu() {
           role: 'togglefullscreen'
         },
         {
+          visible: process.platform === 'darwin' ? false : true,
           label: 'Toggle Menu Bar',
           type: 'checkbox',
           click() {
