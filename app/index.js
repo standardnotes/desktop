@@ -51,7 +51,6 @@ function createWindow () {
     'minWidth': 600,
     'minHeight': 400,
     show: false,
-    autoHideMenuBar: true
   })
 
   // Register listeners on the window, so we can update the state
@@ -204,7 +203,8 @@ function loadMenu() {
         },
         {
           visible: process.platform === 'darwin' ? false : true,
-          label: 'Toggle Menu Bar',
+          label: 'Hide Menu Bar',
+          sublabel: 'Show again with Alt key',
           type: 'checkbox',
           click() {
             if (win.isMenuBarAutoHide()) {
