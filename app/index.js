@@ -50,7 +50,7 @@ function createWindow () {
     'height': winState.height,
     'minWidth': 600,
     'minHeight': 400,
-    show: false
+    show: false,
   })
 
   // Register listeners on the window, so we can update the state
@@ -200,6 +200,18 @@ function loadMenu() {
         },
         {
           role: 'togglefullscreen'
+        },
+        {
+          visible: process.platform === 'darwin' ? false : true,
+          label: 'Hide Menu Bar',
+          accelerator: 'Alt + m',
+          click() {
+            if (win.isMenuBarVisible(true)) {
+              win.setMenuBarVisibility(false)
+            } else {
+              win.setMenuBarVisibility(true)
+            }
+          }
         }
       ]
     },
