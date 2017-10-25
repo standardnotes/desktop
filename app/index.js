@@ -204,14 +204,12 @@ function loadMenu() {
         {
           visible: process.platform === 'darwin' ? false : true,
           label: 'Hide Menu Bar',
-          sublabel: 'Show again with Alt key',
-          type: 'checkbox',
+          accelerator: 'Alt + m',
           click() {
-            if (win.isMenuBarAutoHide()) {
-              win.setAutoHideMenuBar(false)
-            } else {
-              win.setAutoHideMenuBar(true)
+            if (win.isMenuBarVisible(true)) {
               win.setMenuBarVisibility(false)
+            } else {
+              win.setMenuBarVisibility(true)
             }
           }
         }
