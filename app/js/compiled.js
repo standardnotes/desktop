@@ -33140,6 +33140,17 @@ a._data=this._data.clone();return a},_minBufferSize:0});j.Hasher=k.extend({cfg:f
 f)).finalize(b)}}});var s=p.algo={};return p}(Math);
 (function(){var e=CryptoJS,m=e.lib,p=m.WordArray,j=m.Hasher,l=[],m=e.algo.SHA1=j.extend({_doReset:function(){this._hash=new p.init([1732584193,4023233417,2562383102,271733878,3285377520])},_doProcessBlock:function(f,n){for(var b=this._hash.words,h=b[0],g=b[1],e=b[2],k=b[3],j=b[4],a=0;80>a;a++){if(16>a)l[a]=f[n+a]|0;else{var c=l[a-3]^l[a-8]^l[a-14]^l[a-16];l[a]=c<<1|c>>>31}c=(h<<5|h>>>27)+j+l[a];c=20>a?c+((g&e|~g&k)+1518500249):40>a?c+((g^e^k)+1859775393):60>a?c+((g&e|g&k|e&k)-1894007588):c+((g^e^
 k)-899497514);j=k;k=e;e=g<<30|g>>>2;g=h;h=c}b[0]=b[0]+h|0;b[1]=b[1]+g|0;b[2]=b[2]+e|0;b[3]=b[3]+k|0;b[4]=b[4]+j|0},_doFinalize:function(){var f=this._data,e=f.words,b=8*this._nDataBytes,h=8*f.sigBytes;e[h>>>5]|=128<<24-h%32;e[(h+64>>>9<<4)+14]=Math.floor(b/4294967296);e[(h+64>>>9<<4)+15]=b;f.sigBytes=4*e.length;this._process();return this._hash},clone:function(){var e=j.clone.call(this);e._hash=this._hash.clone();return e}});e.SHA1=j._createHelper(m);e.HmacSHA1=j._createHmacHelper(m)})();
+;/* mousetrap v1.6.1 craig.is/killing/mice */
+(function(r,v,f){function w(a,b,g){a.addEventListener?a.addEventListener(b,g,!1):a.attachEvent("on"+b,g)}function A(a){if("keypress"==a.type){var b=String.fromCharCode(a.which);a.shiftKey||(b=b.toLowerCase());return b}return p[a.which]?p[a.which]:t[a.which]?t[a.which]:String.fromCharCode(a.which).toLowerCase()}function F(a){var b=[];a.shiftKey&&b.push("shift");a.altKey&&b.push("alt");a.ctrlKey&&b.push("ctrl");a.metaKey&&b.push("meta");return b}function x(a){return"shift"==a||"ctrl"==a||"alt"==a||
+"meta"==a}function B(a,b){var g,c,d,f=[];g=a;"+"===g?g=["+"]:(g=g.replace(/\+{2}/g,"+plus"),g=g.split("+"));for(d=0;d<g.length;++d)c=g[d],C[c]&&(c=C[c]),b&&"keypress"!=b&&D[c]&&(c=D[c],f.push("shift")),x(c)&&f.push(c);g=c;d=b;if(!d){if(!n){n={};for(var q in p)95<q&&112>q||p.hasOwnProperty(q)&&(n[p[q]]=q)}d=n[g]?"keydown":"keypress"}"keypress"==d&&f.length&&(d="keydown");return{key:c,modifiers:f,action:d}}function E(a,b){return null===a||a===v?!1:a===b?!0:E(a.parentNode,b)}function c(a){function b(a){a=
+a||{};var b=!1,l;for(l in n)a[l]?b=!0:n[l]=0;b||(y=!1)}function g(a,b,u,e,c,g){var l,m,k=[],f=u.type;if(!h._callbacks[a])return[];"keyup"==f&&x(a)&&(b=[a]);for(l=0;l<h._callbacks[a].length;++l)if(m=h._callbacks[a][l],(e||!m.seq||n[m.seq]==m.level)&&f==m.action){var d;(d="keypress"==f&&!u.metaKey&&!u.ctrlKey)||(d=m.modifiers,d=b.sort().join(",")===d.sort().join(","));d&&(d=e&&m.seq==e&&m.level==g,(!e&&m.combo==c||d)&&h._callbacks[a].splice(l,1),k.push(m))}return k}function f(a,b,c,e){h.stopCallback(b,
+b.target||b.srcElement,c,e)||!1!==a(b,c)||(b.preventDefault?b.preventDefault():b.returnValue=!1,b.stopPropagation?b.stopPropagation():b.cancelBubble=!0)}function d(a){"number"!==typeof a.which&&(a.which=a.keyCode);var b=A(a);b&&("keyup"==a.type&&z===b?z=!1:h.handleKey(b,F(a),a))}function p(a,c,u,e){function l(c){return function(){y=c;++n[a];clearTimeout(r);r=setTimeout(b,1E3)}}function g(c){f(u,c,a);"keyup"!==e&&(z=A(c));setTimeout(b,10)}for(var d=n[a]=0;d<c.length;++d){var m=d+1===c.length?g:l(e||
+B(c[d+1]).action);q(c[d],m,e,a,d)}}function q(a,b,c,e,d){h._directMap[a+":"+c]=b;a=a.replace(/\s+/g," ");var f=a.split(" ");1<f.length?p(a,f,b,c):(c=B(a,c),h._callbacks[c.key]=h._callbacks[c.key]||[],g(c.key,c.modifiers,{type:c.action},e,a,d),h._callbacks[c.key][e?"unshift":"push"]({callback:b,modifiers:c.modifiers,action:c.action,seq:e,level:d,combo:a}))}var h=this;a=a||v;if(!(h instanceof c))return new c(a);h.target=a;h._callbacks={};h._directMap={};var n={},r,z=!1,t=!1,y=!1;h._handleKey=function(a,
+c,d){var e=g(a,c,d),k;c={};var h=0,l=!1;for(k=0;k<e.length;++k)e[k].seq&&(h=Math.max(h,e[k].level));for(k=0;k<e.length;++k)e[k].seq?e[k].level==h&&(l=!0,c[e[k].seq]=1,f(e[k].callback,d,e[k].combo,e[k].seq)):l||f(e[k].callback,d,e[k].combo);e="keypress"==d.type&&t;d.type!=y||x(a)||e||b(c);t=l&&"keydown"==d.type};h._bindMultiple=function(a,b,c){for(var d=0;d<a.length;++d)q(a[d],b,c)};w(a,"keypress",d);w(a,"keydown",d);w(a,"keyup",d)}if(r){var p={8:"backspace",9:"tab",13:"enter",16:"shift",17:"ctrl",
+18:"alt",20:"capslock",27:"esc",32:"space",33:"pageup",34:"pagedown",35:"end",36:"home",37:"left",38:"up",39:"right",40:"down",45:"ins",46:"del",91:"meta",93:"meta",224:"meta"},t={106:"*",107:"+",109:"-",110:".",111:"/",186:";",187:"=",188:",",189:"-",190:".",191:"/",192:"`",219:"[",220:"\\",221:"]",222:"'"},D={"~":"`","!":"1","@":"2","#":"3",$:"4","%":"5","^":"6","&":"7","*":"8","(":"9",")":"0",_:"-","+":"=",":":";",'"':"'","<":",",">":".","?":"/","|":"\\"},C={option:"alt",command:"meta","return":"enter",
+escape:"esc",plus:"+",mod:/Mac|iPod|iPhone|iPad/.test(navigator.platform)?"meta":"ctrl"},n;for(f=1;20>f;++f)p[111+f]="f"+f;for(f=0;9>=f;++f)p[f+96]=f.toString();c.prototype.bind=function(a,b,c){a=a instanceof Array?a:[a];this._bindMultiple.call(this,a,b,c);return this};c.prototype.unbind=function(a,b){return this.bind.call(this,a,function(){},b)};c.prototype.trigger=function(a,b){if(this._directMap[a+":"+b])this._directMap[a+":"+b]({},a);return this};c.prototype.reset=function(){this._callbacks={};
+this._directMap={};return this};c.prototype.stopCallback=function(a,b){return-1<(" "+b.className+" ").indexOf(" mousetrap ")||E(b,this.target)?!1:"INPUT"==b.tagName||"SELECT"==b.tagName||"TEXTAREA"==b.tagName||b.isContentEditable};c.prototype.handleKey=function(){return this._handleKey.apply(this,arguments)};c.addKeycodes=function(a){for(var b in a)a.hasOwnProperty(b)&&(p[b]=a[b]);n=null};c.init=function(){var a=c(v),b;for(b in a)"_"!==b.charAt(0)&&(c[b]=function(b){return function(){return a[b].apply(a,
+arguments)}}(b))};c.init();r.Mousetrap=c;"undefined"!==typeof module&&module.exports&&(module.exports=c);"function"===typeof define&&define.amd&&define(function(){return c})}})("undefined"!==typeof window?window:null,"undefined"!==typeof window?document:null);
 ;(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 'use strict';
 
@@ -33729,7 +33740,11 @@ function parametersFromURL(url) {
 function isDesktopApplication() {
   return window && window.process && window.process.type && window.process.versions["electron"];
 }
-;angular.module('app.frontend').config(function ($locationProvider) {
+
+function isMacApplication() {
+  return window && window.process && window.process.type && window.process.platform == "darwin";
+}
+;angular.module('app.frontend').config(['$locationProvider', function ($locationProvider) {
 
   if (!isDesktopApplication()) {
     if (window.history && window.history.pushState) {
@@ -33741,8 +33756,8 @@ function isDesktopApplication() {
   } else {
     $locationProvider.html5Mode(false);
   }
-});
-;angular.module('app.frontend').directive("editorSection", function ($timeout, $sce) {
+}]);
+;angular.module('app.frontend').directive("editorSection", ['$timeout', '$sce', function ($timeout, $sce) {
   return {
     restrict: 'E',
     scope: {
@@ -33779,7 +33794,100 @@ function isDesktopApplication() {
       });
     }
   };
-}).controller('EditorCtrl', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager, themeManager, componentManager, storageManager) {
+}]).controller('EditorCtrl', ['$sce', '$timeout', 'userManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', 'editorManager', 'themeManager', 'componentManager', 'storageManager', 'keyboardManager', function ($sce, $timeout, userManager, $rootScope, extensionManager, syncManager, modelManager, editorManager, themeManager, componentManager, storageManager, keyboardManager) {
+  var _this3 = this;
+
+  this.keyboardManager = keyboardManager;
+
+  keyboardManager.registerAction("delete-current-note", function () {
+    _this3.deleteNote();
+  });
+
+  keyboardManager.registerAction("toggle-note-archived", function () {
+    _this3.toggleArchiveNote();
+  });
+
+  keyboardManager.registerAction("toggle-note-pinned", function () {
+    _this3.togglePin();
+  });
+
+  keyboardManager.registerContextHandler("editor", function (source, type) {
+    if (type == 'begin') {
+      if (source == 'keyboard') {
+        // Focus note title
+        var titleInput = document.getElementById("note-title-editor");
+        if (titleInput) {
+          titleInput.focus();
+        }
+      }
+    }
+  });
+
+  this.resizeControl = {};
+
+  this.onPanelResizeFinish = function (width, left, isMaxWidth) {
+    if (isMaxWidth) {
+      userManager.userPreferences.setAppDataItem("editorWidth", null);
+    } else {
+      if (width !== undefined && width !== null) {
+        userManager.userPreferences.setAppDataItem("editorWidth", width);
+      }
+    }
+
+    if (left !== undefined && left !== null) {
+      userManager.userPreferences.setAppDataItem("editorLeft", left);
+    }
+    userManager.syncUserPreferences();
+  };
+
+  $rootScope.$on("user-preferences-changed", function () {
+    _this3.loadPreferences();
+  });
+
+  this.loadPreferences = function () {
+    this.monospaceFont = userManager.getUserPref("monospaceFont", "monospace");
+
+    if (!document.getElementById("editor-content")) {
+      // Elements have not yet loaded due to ng-if around wrapper
+      return;
+    }
+
+    this.reloadFont();
+
+    var width = userManager.getUserPref("editorWidth", null);
+    if (width !== null) {
+      this.resizeControl.setWidth(width);
+    }
+
+    var left = userManager.getUserPref("editorLeft", null);
+    if (left !== null) {
+      this.resizeControl.setLeft(left);
+    }
+  };
+
+  this.reloadFont = function () {
+    var editable = document.getElementById("note-text-editor");
+
+    if (!editable) {
+      return;
+    }
+    if (this.monospaceFont) {
+      if (isMacApplication()) {
+        editable.style.fontFamily = "Menlo, Consolas, 'DejaVu Sans Mono', monospace";
+      } else {
+        editable.style.fontFamily = "monospace";
+      }
+    } else {
+      editable.style.fontFamily = "inherit";
+    }
+  };
+
+  this.toggleKey = function (key) {
+    this[key] = !this[key];
+    userManager.userPreferences.setAppDataItem(key, this[key]);
+    userManager.syncUserPreferences();
+    this.reloadFont();
+  };
 
   this.componentManager = componentManager;
   this.componentStack = [];
@@ -33917,16 +34025,25 @@ function isDesktopApplication() {
   };
 
   this.setNote = function (note, oldNote) {
+    var _this4 = this;
+
     var currentEditor = this.editor;
     this.editor = null;
     this.showExtensions = false;
     this.showMenu = false;
     this.loadTagsString();
 
+    var onReady = function onReady() {
+      _this4.noteReady = true;
+      $timeout(function () {
+        _this4.loadPreferences();
+      });
+    };
+
     var setEditor = function (editor) {
       this.editor = editor;
       this.postNoteToExternalEditor();
-      this.noteReady = true;
+      onReady();
     }.bind(this);
 
     var editor = this.editorForNote(note);
@@ -33946,8 +34063,8 @@ function isDesktopApplication() {
         setEditor(editor);
       }
     } else {
-      this.editor = null;
-      this.noteReady = true;
+      this.editor = editorManager.systemEditor;
+      onReady();
     }
 
     if (note.safeText().length == 0 && note.dummy) {
@@ -33964,9 +34081,11 @@ function isDesktopApplication() {
   };
 
   this.selectedEditor = function (editor) {
+    var _this5 = this;
+
     this.showEditorMenu = false;
 
-    if (this.editor && editor !== this.editor) {
+    if (this.editor && editor !== this.editor && !this.editor.systemEditor) {
       this.editor.removeItemAsRelationship(this.note);
       this.editor.setDirty(true);
     }
@@ -33977,6 +34096,12 @@ function isDesktopApplication() {
     syncManager.sync();
 
     this.editor = editor;
+
+    if (editor.systemEditor) {
+      $timeout(function () {
+        _this5.reloadFont();
+      });
+    }
   }.bind(this);
 
   this.editorForNote = function (note) {
@@ -34029,7 +34154,7 @@ function isDesktopApplication() {
   };
 
   this.postNoteToExternalEditor = function () {
-    if (!this.editor) {
+    if (!this.editor || this.editor.systemEditor) {
       return;
     }
 
@@ -34075,7 +34200,7 @@ function isDesktopApplication() {
         if (statusTimeout) $timeout.cancel(statusTimeout);
         statusTimeout = $timeout(function () {
           var status = "All changes saved";
-          if (authManager.offline()) {
+          if (userManager.offline()) {
             status += " (offline)";
           }
           this.saveError = false;
@@ -34122,21 +34247,31 @@ function isDesktopApplication() {
 
   this.onNameFocus = function () {
     this.editingName = true;
-  };
-
-  this.onContentFocus = function () {
-    $rootScope.$broadcast("editorFocused");
+    keyboardManager.lockKeyboardContext();
   };
 
   this.onNameBlur = function () {
     this.editingName = false;
+    keyboardManager.unlockKeyboardContext();
   };
 
-  this.toggleFullScreen = function () {
-    this.fullscreen = !this.fullscreen;
-    if (this.fullscreen) {
-      this.focusEditor(0);
-    }
+  this.onTagsFocus = function () {
+    this.editingName = true;
+    keyboardManager.lockKeyboardContext();
+  };
+
+  this.onTagsBlur = function () {
+    this.editingName = false;
+    keyboardManager.unlockKeyboardContext();
+  };
+
+  this.onContentFocus = function () {
+    $rootScope.$broadcast("editorFocused");
+    keyboardManager.lockKeyboardContext();
+  };
+
+  this.onContentBlur = function () {
+    keyboardManager.unlockKeyboardContext();
   };
 
   this.selectedMenuItem = function ($event) {
@@ -34144,7 +34279,8 @@ function isDesktopApplication() {
   };
 
   this.deleteNote = function () {
-    if (confirm("Are you sure you want to delete this note?")) {
+    var title = this.note.title.length ? '\'' + this.note.title + '\'' : "this note";
+    if (confirm('Are you sure you want to delete ' + title + '?')) {
       this.remove()(this.note);
       this.showMenu = false;
     }
@@ -34366,8 +34502,8 @@ function isDesktopApplication() {
       this.loadedTabListener = false;
     }.bind(this));
   };
-});
-;angular.module('app.frontend').directive("footer", function (authManager) {
+}]);
+;angular.module('app.frontend').directive("footer", ['userManager', function (userManager) {
   return {
     restrict: 'E',
     scope: {},
@@ -34389,12 +34525,12 @@ function isDesktopApplication() {
       });
     }
   };
-}).controller('FooterCtrl', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager) {
+}]).controller('FooterCtrl', ['$rootScope', 'userManager', 'modelManager', '$timeout', 'dbManager', 'syncManager', 'storageManager', 'passcodeManager', function ($rootScope, userManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager) {
 
-  this.user = authManager.user;
+  this.user = userManager.user;
 
   this.updateOfflineStatus = function () {
-    this.offline = authManager.offline();
+    this.offline = userManager.offline();
   };
   this.updateOfflineStatus();
 
@@ -34473,10 +34609,14 @@ function isDesktopApplication() {
     this.newUpdateAvailable = false;
     alert("A new update is ready to install. Updates address performance and security issues, as well as bug fixes and feature enhancements. Simply quit Standard Notes and re-open it for the update to be applied.");
   };
-});
-;angular.module('app.frontend').controller('HomeCtrl', function ($scope, $location, $rootScope, $timeout, modelManager, dbManager, syncManager, authManager, themeManager, passcodeManager, storageManager) {
+}]);
+;angular.module('app.frontend').controller('HomeCtrl', ['$scope', '$location', '$rootScope', '$timeout', 'modelManager', 'dbManager', 'syncManager', 'userManager', 'themeManager', 'passcodeManager', 'storageManager', function ($scope, $location, $rootScope, $timeout, modelManager, dbManager, syncManager, userManager, themeManager, passcodeManager, storageManager) {
 
-  storageManager.initialize(passcodeManager.hasPasscode(), authManager.isEphemeralSession());
+  storageManager.initialize(passcodeManager.hasPasscode(), userManager.isEphemeralSession());
+
+  $rootScope.sync = function () {
+    syncManager.sync();
+  };
 
   $scope.onUpdateAvailable = function (version) {
     $rootScope.$broadcast('new-update-available', version);
@@ -34523,7 +34663,7 @@ function isDesktopApplication() {
   }
 
   function initiateSync() {
-    authManager.loadInitialData();
+    userManager.loadInitialData();
     syncManager.loadLocalItems(function (items) {
       $scope.allTag.didLoad = true;
       themeManager.activateInitialTheme();
@@ -34777,7 +34917,7 @@ function isDesktopApplication() {
     }
 
     syncManager.sync(function () {
-      if (authManager.offline()) {
+      if (userManager.offline()) {
         // when deleting items while ofline, we need to explictly tell angular to refresh UI
         setTimeout(function () {
           $scope.notifyDelete();
@@ -34800,9 +34940,9 @@ function isDesktopApplication() {
     var email = urlParam("email");
     var pw = urlParam("pw");
 
-    if (!authManager.offline()) {
+    if (!userManager.offline()) {
       // check if current account
-      if (syncManager.serverURL === server && authManager.user.email === email) {
+      if (syncManager.serverURL === server && userManager.user.email === email) {
         // already signed in, return
         return;
       } else {
@@ -34812,7 +34952,7 @@ function isDesktopApplication() {
         });
       }
     } else {
-      authManager.login(server, email, pw, false, function (response) {
+      userManager.login(server, email, pw, false, function (response) {
         window.location.reload();
       });
     }
@@ -34821,7 +34961,7 @@ function isDesktopApplication() {
   if (urlParam("server")) {
     autoSignInFromParams();
   }
-});
+}]);
 ;
 var LockScreen = function () {
   function LockScreen() {
@@ -34836,7 +34976,7 @@ var LockScreen = function () {
 
   _createClass(LockScreen, [{
     key: 'controller',
-    value: function controller($scope, passcodeManager) {
+    value: ['$scope', 'passcodeManager', function controller($scope, passcodeManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -34851,7 +34991,7 @@ var LockScreen = function () {
           $scope.onSuccess()();
         });
       };
-    }
+    }]
   }]);
 
   return LockScreen;
@@ -34891,49 +35031,155 @@ angular.module('app.frontend').directive('lockScreen', function () {
       });
     }
   };
-}).controller('NotesCtrl', function (authManager, $timeout, $rootScope, modelManager, storageManager) {
+}).controller('NotesCtrl', ['userManager', '$timeout', '$rootScope', 'modelManager', 'storageManager', 'keyboardManager', function (userManager, $timeout, $rootScope, modelManager, storageManager, keyboardManager) {
+  var _this6 = this;
 
-  this.sortBy = storageManager.getItem("sortBy") || "created_at";
-  this.showArchived = storageManager.getBooleanValue("showArchived") || false;
-  this.sortDescending = this.sortBy != "title";
+  this.keyboardManager = keyboardManager;
+  keyboardManager.setContext('notes');
+
+  keyboardManager.registerAction("create-new-note", function () {
+    _this6.createNewNote();
+  });
+
+  keyboardManager.registerAction("next-note", function () {
+    _this6.selectNextNote();
+    var searchBar = document.getElementById("search-bar");
+    if (searchBar) {
+      searchBar.blur();
+    };
+  });
+
+  keyboardManager.registerAction("previous-note", function () {
+    var handled = _this6.selectPreviousNote();
+    if (!handled) {
+      var searchBar = document.getElementById("search-bar");
+      if (searchBar) {
+        searchBar.focus();
+      };
+    }
+  });
+
+  this.selectNextNote = function () {
+    var visibleNotes = this.visibleNotes();
+    var currentIndex = this.selectedIndex;
+    if (currentIndex + 1 < visibleNotes.length) {
+      this.selectNote(visibleNotes[currentIndex + 1]);
+      return true;
+    }
+    return false;
+  };
+
+  this.selectPreviousNote = function () {
+    var visibleNotes = this.visibleNotes();
+    var currentIndex = this.selectedIndex;
+    if (currentIndex - 1 >= 0) {
+      this.selectNote(visibleNotes[currentIndex - 1]);
+      return true;
+    }
+    return false;
+  };
+
+  this.visibleNotes = function () {
+    return this.sortedNotes.filter(function (note) {
+      return note.visible;
+    });
+  };
+
+  this.panelController = {};
+
+  $rootScope.$on("user-preferences-changed", function () {
+    _this6.loadPreferences();
+  });
+
+  this.loadPreferences = function () {
+    this.sortBy = userManager.userPreferences.getAppDataItem("sortBy") || "created_at";
+    this.sortDescending = this.sortBy != "title";
+
+    this.showArchived = userManager.getUserPref("showArchived", false);
+    this.hidePinned = userManager.getUserPref("hidePinned", false);
+    this.hideNotePreview = userManager.getUserPref("hideNotePreview", false);
+    this.hideDate = userManager.getUserPref("hideDate", false);
+    this.hideTags = userManager.getUserPref("hideTags", false);
+
+    var width = userManager.userPreferences.getAppDataItem("notesPanelWidth");
+    if (width) {
+      this.panelController.setWidth(width);
+    }
+  };
+
+  this.loadPreferences();
+
+  this.onPanelResize = function (newWidth) {
+    userManager.userPreferences.setAppDataItem("notesPanelWidth", newWidth);
+    userManager.syncUserPreferences();
+  };
+
+  angular.element(document).ready(function () {
+    _this6.loadPreferences();
+  });
 
   $rootScope.$on("editorFocused", function () {
     this.showMenu = false;
   }.bind(this));
 
   $rootScope.$on("noteDeleted", function () {
-    this.selectFirstNote(false);
+    $timeout(this.onNoteRemoval.bind(this));
   }.bind(this));
 
   $rootScope.$on("noteArchived", function () {
-    this.selectFirstNote(false);
+    $timeout(this.onNoteRemoval.bind(this));
   }.bind(this));
+
+  // When a note is removed from the list
+  this.onNoteRemoval = function () {
+    var visibleNotes = this.visibleNotes();
+    if (this.selectedIndex < visibleNotes.length) {
+      this.selectNote(visibleNotes[this.selectedIndex]);
+    } else {
+      this.selectNote(visibleNotes[visibleNotes.length - 1]);
+    }
+  };
 
   this.notesToDisplay = 20;
   this.paginate = function () {
     this.notesToDisplay += 20;
   };
 
+  this.panelTitle = function () {
+    if (this.noteFilter.text.length) {
+      return this.tag.notes.filter(function (i) {
+        return i.visible;
+      }).length + ' search results';
+    } else if (this.tag) {
+      return this.tag.title + ' notes';
+    }
+  };
+
   this.optionsSubtitle = function () {
-    var base = "Sorting by";
+    var base = "";
     if (this.sortBy == "created_at") {
-      base += " date added";
+      base += " Date Added";
     } else if (this.sortBy == "updated_at") {
-      base += " date modifed";
+      base += " Date Modifed";
     } else if (this.sortBy == "title") {
-      base += " title";
+      base += " Title";
     }
 
     if (this.showArchived && (!this.tag || !this.tag.archiveTag)) {
-      base += " | Including archived";
+      base += " | + Archived";
+    }
+
+    if (this.hidePinned) {
+      base += " | – Pinned";
     }
 
     return base;
   };
 
-  this.toggleShowArchived = function () {
-    this.showArchived = !this.showArchived;
-    storageManager.setBooleanValue("showArchived", this.showArchived);
+  this.toggleKey = function (key) {
+    this[key] = !this[key];
+    userManager.userPreferences.setAppDataItem(key, this[key]);
+    userManager.syncUserPreferences();
   };
 
   this.tagDidChange = function (tag, oldTag) {
@@ -34957,9 +35203,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
   };
 
   this.selectFirstNote = function (createNew) {
-    var visibleNotes = this.sortedNotes.filter(function (note) {
-      return note.visible;
-    });
+    var visibleNotes = this.visibleNotes();
 
     if (visibleNotes.length > 0) {
       this.selectNote(visibleNotes[0]);
@@ -34969,9 +35213,13 @@ angular.module('app.frontend').directive('lockScreen', function () {
   };
 
   this.selectNote = function (note) {
+    if (!note) {
+      return;
+    }
     this.selectedNote = note;
     note.conflict_of = null; // clear conflict
     this.selectionMade()(note);
+    this.selectedIndex = this.visibleNotes().indexOf(note);
   };
 
   this.createNewNote = function () {
@@ -34990,7 +35238,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
       return note.visible;
     }
 
-    if (note.archived && !this.showArchived) {
+    if (note.archived && !this.showArchived || note.pinned && this.hidePinned) {
       note.visible = false;
       return note.visible;
     }
@@ -35040,9 +35288,10 @@ angular.module('app.frontend').directive('lockScreen', function () {
 
   this.setSortBy = function (type) {
     this.sortBy = type;
-    storageManager.setItem("sortBy", type);
+    userManager.userPreferences.setAppDataItem("sortBy", this.sortBy);
+    userManager.syncUserPreferences();
   };
-});
+}]);
 ;angular.module('app.frontend').directive("tagsSection", function () {
   return {
     restrict: 'E',
@@ -35077,9 +35326,60 @@ angular.module('app.frontend').directive('lockScreen', function () {
       });
     }
   };
-}).controller('TagsCtrl', function ($rootScope, modelManager, $timeout, componentManager) {
+}).controller('TagsCtrl', ['$rootScope', 'modelManager', '$timeout', 'componentManager', 'userManager', 'keyboardManager', function ($rootScope, modelManager, $timeout, componentManager, userManager, keyboardManager) {
+  var _this7 = this;
+
+  this.keyboardManager = keyboardManager;
+
+  keyboardManager.registerAction("next-tag", function () {
+    _this7.selectNextTag();
+  });
+
+  keyboardManager.registerAction("previous-tag", function () {
+    _this7.selectPreviousTag();
+  });
+
+  keyboardManager.registerAction("create-new-tag", function () {
+    _this7.createNewTag();
+  });
+
+  this.selectNextTag = function () {
+    var currentIndex = this.tags.indexOf(this.selectedTag);
+    if (currentIndex + 1 < this.tags.length) {
+      this.selectTag(this.tags[currentIndex + 1]);
+    }
+  };
+
+  this.selectPreviousTag = function () {
+    var currentIndex = this.tags.indexOf(this.selectedTag);
+    if (currentIndex - 1 >= 0) {
+      this.selectTag(this.tags[currentIndex - 1]);
+    } else {
+      this.selectTag(this.allTag);
+    }
+  };
 
   var initialLoad = true;
+
+  this.panelController = {};
+
+  $rootScope.$on("user-preferences-changed", function () {
+    _this7.loadPreferences();
+  });
+
+  this.loadPreferences = function () {
+    var width = userManager.userPreferences.getAppDataItem("tagsPanelWidth");
+    if (width) {
+      this.panelController.setWidth(width);
+    }
+  };
+
+  this.loadPreferences();
+
+  this.onPanelResize = function (newWidth) {
+    userManager.userPreferences.setAppDataItem("tagsPanelWidth", newWidth);
+    userManager.syncUserPreferences();
+  };
 
   componentManager.registerHandler({ identifier: "tags", areas: ["tags-list"], activationHandler: function (component) {
       this.component = component;
@@ -35128,7 +35428,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
     this.selectionMade()(tag);
   };
 
-  this.clickedAddNewTag = function () {
+  this.createNewTag = function () {
     if (this.editingTag) {
       return;
     }
@@ -35187,7 +35487,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
     });
     return validNotes.length;
   };
-});
+}]);
 ;var AppDomain = "org.standardnotes.sn";
 var dateFormatter;
 
@@ -35354,6 +35654,14 @@ var Item = function () {
       return false;
     }
 
+    /* Items returning true for singleton will not be cloned on sync conflicts. */
+
+  }, {
+    key: 'singleton',
+    value: function singleton() {
+      return false;
+    }
+
     /*
     App Data
     */
@@ -35517,16 +35825,16 @@ var Component = function (_Item2) {
   function Component(json_obj) {
     _classCallCheck(this, Component);
 
-    var _this4 = _possibleConstructorReturn(this, (Component.__proto__ || Object.getPrototypeOf(Component)).call(this, json_obj));
+    var _this9 = _possibleConstructorReturn(this, (Component.__proto__ || Object.getPrototypeOf(Component)).call(this, json_obj));
 
-    if (!_this4.componentData) {
-      _this4.componentData = {};
+    if (!_this9.componentData) {
+      _this9.componentData = {};
     }
 
-    if (!_this4.disassociatedItemIds) {
-      _this4.disassociatedItemIds = [];
+    if (!_this9.disassociatedItemIds) {
+      _this9.disassociatedItemIds = [];
     }
-    return _this4;
+    return _this9;
   }
 
   _createClass(Component, [{
@@ -35591,15 +35899,15 @@ var Editor = function (_Item3) {
   function Editor(json_obj) {
     _classCallCheck(this, Editor);
 
-    var _this5 = _possibleConstructorReturn(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, json_obj));
+    var _this10 = _possibleConstructorReturn(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, json_obj));
 
-    if (!_this5.notes) {
-      _this5.notes = [];
+    if (!_this10.notes) {
+      _this10.notes = [];
     }
-    if (!_this5.data) {
-      _this5.data = {};
+    if (!_this10.data) {
+      _this10.data = {};
     }
-    return _this5;
+    return _this10;
   }
 
   _createClass(Editor, [{
@@ -35690,6 +35998,11 @@ var Editor = function (_Item3) {
     key: 'toJSON',
     value: function toJSON() {
       return { uuid: this.uuid };
+    }
+  }, {
+    key: 'singleton',
+    value: function singleton() {
+      return this.systemEditor == true;
     }
   }, {
     key: 'setData',
@@ -35801,19 +36114,23 @@ var Extension = function (_Item4) {
   function Extension(json) {
     _classCallCheck(this, Extension);
 
-    var _this6 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
+    var _this11 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
 
-    _.merge(_this6, json);
-
-    _this6.encrypted = true;
-    _this6.content_type = "Extension";
+    if (_this11.encrypted === null || _this11.encrypted === undefined) {
+      // Default to encrypted on creation.
+      _this11.encrypted = true;
+    }
 
     if (json.actions) {
-      _this6.actions = json.actions.map(function (action) {
+      _this11.actions = json.actions.map(function (action) {
         return new Action(action);
       });
     }
-    return _this6;
+
+    if (!_this11.actions) {
+      _this11.actions = [];
+    }
+    return _this11;
   }
 
   _createClass(Extension, [{
@@ -35837,22 +36154,19 @@ var Extension = function (_Item4) {
       this.name = contentObject.name;
       this.description = contentObject.description;
       this.url = contentObject.url;
+
+      if (contentObject.encrypted !== null && contentObject.encrypted !== undefined) {
+        this.encrypted = contentObject.encrypted;
+      } else {
+        this.encrypted = true;
+      }
+
       this.supported_types = contentObject.supported_types;
       if (contentObject.actions) {
         this.actions = contentObject.actions.map(function (action) {
           return new Action(action);
         });
-      } else {
-        this.actions = [];
       }
-    }
-  }, {
-    key: 'updateFromExternalResponseItem',
-    value: function updateFromExternalResponseItem(externalResponseItem) {
-      _.merge(this, externalResponseItem);
-      this.actions = externalResponseItem.actions.map(function (action) {
-        return new Action(action);
-      });
     }
   }, {
     key: 'referenceParams',
@@ -35867,11 +36181,17 @@ var Extension = function (_Item4) {
         url: this.url,
         description: this.description,
         actions: this.actions,
-        supported_types: this.supported_types
+        supported_types: this.supported_types,
+        encrypted: this.encrypted
       };
 
       _.merge(params, _get(Extension.prototype.__proto__ || Object.getPrototypeOf(Extension.prototype), 'structureParams', this).call(this));
       return params;
+    }
+  }, {
+    key: 'content_type',
+    get: function get() {
+      return "Extension";
     }
   }]);
 
@@ -35885,12 +36205,12 @@ var Note = function (_Item5) {
   function Note(json_obj) {
     _classCallCheck(this, Note);
 
-    var _this7 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
+    var _this12 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
 
-    if (!_this7.tags) {
-      _this7.tags = [];
+    if (!_this12.tags) {
+      _this12.tags = [];
     }
-    return _this7;
+    return _this12;
   }
 
   _createClass(Note, [{
@@ -36049,12 +36369,12 @@ var Tag = function (_Item6) {
   function Tag(json_obj) {
     _classCallCheck(this, Tag);
 
-    var _this8 = _possibleConstructorReturn(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
+    var _this13 = _possibleConstructorReturn(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
 
-    if (!_this8.notes) {
-      _this8.notes = [];
+    if (!_this13.notes) {
+      _this13.notes = [];
     }
-    return _this8;
+    return _this13;
   }
 
   _createClass(Tag, [{
@@ -36230,8 +36550,43 @@ var Theme = function (_Item7) {
 }(Item);
 
 ;
-var EncryptedStorage = function (_Item8) {
-  _inherits(EncryptedStorage, _Item8);
+var UserPreferences = function (_Item8) {
+  _inherits(UserPreferences, _Item8);
+
+  function UserPreferences(json_obj) {
+    _classCallCheck(this, UserPreferences);
+
+    return _possibleConstructorReturn(this, (UserPreferences.__proto__ || Object.getPrototypeOf(UserPreferences)).call(this, json_obj));
+  }
+
+  _createClass(UserPreferences, [{
+    key: 'mapContentToLocalProperties',
+    value: function mapContentToLocalProperties(contentObject) {
+      _get(UserPreferences.prototype.__proto__ || Object.getPrototypeOf(UserPreferences.prototype), 'mapContentToLocalProperties', this).call(this, contentObject);
+    }
+  }, {
+    key: 'toJSON',
+    value: function toJSON() {
+      return { uuid: this.uuid };
+    }
+  }, {
+    key: 'singleton',
+    value: function singleton() {
+      return true;
+    }
+  }, {
+    key: 'content_type',
+    get: function get() {
+      return "SN|UserPreferences";
+    }
+  }]);
+
+  return UserPreferences;
+}(Item);
+
+;
+var EncryptedStorage = function (_Item9) {
+  _inherits(EncryptedStorage, _Item9);
 
   function EncryptedStorage(json_obj) {
     _classCallCheck(this, EncryptedStorage);
@@ -36337,287 +36692,9 @@ var ItemParams = function () {
   return ItemParams;
 }();
 
-;angular.module('app.frontend').provider('authManager', function () {
-
-  function domainName() {
-    var domain_comps = location.hostname.split(".");
-    var domain = domain_comps[domain_comps.length - 2] + "." + domain_comps[domain_comps.length - 1];
-    return domain;
-  }
-
-  this.$get = function ($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
-    return new AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager);
-  };
-
-  function AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
-
-    this.loadInitialData = function () {
-      var userData = storageManager.getItem("user");
-      if (userData) {
-        this.user = JSON.parse(userData);
-      } else {
-        // legacy, check for uuid
-        var idData = storageManager.getItem("uuid");
-        if (idData) {
-          this.user = { uuid: idData };
-        }
-      }
-
-      this.checkForSecurityUpdate();
-    };
-
-    this.offline = function () {
-      return !this.user;
-    };
-
-    this.isEphemeralSession = function () {
-      if (this.ephemeral == null || this.ephemeral == undefined) {
-        this.ephemeral = JSON.parse(storageManager.getItem("ephemeral", StorageManager.Fixed));
-      }
-      return this.ephemeral;
-    };
-
-    this.setEphemeral = function (ephemeral) {
-      this.ephemeral = ephemeral;
-      if (ephemeral) {
-        storageManager.setModelStorageMode(StorageManager.Ephemeral);
-        storageManager.setItemsMode(storageManager.hasPasscode() ? StorageManager.FixedEncrypted : StorageManager.Ephemeral);
-      } else {
-        storageManager.setItem("ephemeral", JSON.stringify(false), StorageManager.Fixed);
-      }
-    };
-
-    this.getAuthParams = function () {
-      if (!this._authParams) {
-        this._authParams = JSON.parse(storageManager.getItem("auth_params"));
-      }
-      return this._authParams;
-    };
-
-    this.keys = function () {
-      if (!this._keys) {
-        var mk = storageManager.getItem("mk");
-        if (!mk) {
-          return null;
-        }
-        this._keys = { mk: mk, ak: storageManager.getItem("ak") };
-      }
-      return this._keys;
-    };
-
-    this.protocolVersion = function () {
-      var authParams = this.getAuthParams();
-      if (authParams && authParams.version) {
-        return authParams.version;
-      }
-
-      var keys = this.keys();
-      if (keys && keys.ak) {
-        return "002";
-      } else {
-        return "001";
-      }
-    };
-
-    this.costMinimumForVersion = function (version) {
-      // all current versions have a min of 3000
-      // future versions will increase this
-      return 3000;
-    };
-
-    this.isProtocolVersionSupported = function (version) {
-      var supportedVersions = ["001", "002"];
-      return supportedVersions.includes(version);
-    };
-
-    this.getAuthParamsForEmail = function (url, email, callback) {
-      var requestUrl = url + "/auth/params";
-      httpManager.getAbsolute(requestUrl, { email: email }, function (response) {
-        callback(response);
-      }, function (response) {
-        console.error("Error getting auth params", response);
-        callback(null);
-      });
-    };
-
-    this.supportsPasswordDerivationCost = function (cost) {
-      // some passwords are created on platforms with stronger pbkdf2 capabilities, like iOS,
-      // which accidentally used 60,000 iterations (now adjusted), which CryptoJS can't handle here (WebCrypto can however).
-      // if user has high password cost and is using browser that doesn't support WebCrypto,
-      // we want to tell them that they can't login with this browser.
-      if (cost > 5000) {
-        return Neeto.crypto instanceof SNCryptoWeb ? true : false;
-      } else {
-        return true;
-      }
-    };
-
-    this.login = function (url, email, password, ephemeral, callback) {
-      this.getAuthParamsForEmail(url, email, function (authParams) {
-
-        if (!authParams || !authParams.pw_cost) {
-          callback({ error: { message: "Invalid email or password." } });
-          return;
-        }
-
-        if (!this.isProtocolVersionSupported(authParams.version)) {
-          alert("The protocol version associated with your account is outdated and no longer supported by this application. Please visit standardnotes.org/help/security-update for more information.");
-          callback({ didDisplayAlert: true });
-          return;
-        }
-
-        if (!this.supportsPasswordDerivationCost(authParams.pw_cost)) {
-          var string = "Your account was created on a platform with higher security capabilities than this browser supports. " + "If we attempted to generate your login keys here, it would take hours. " + "Please use a browser with more up to date security capabilities, like Google Chrome or Firefox, to login.";
-          alert(string);
-          callback({ didDisplayAlert: true });
-          return;
-        }
-
-        var minimum = this.costMinimumForVersion(authParams.version);
-        if (authParams.pw_cost < minimum) {
-          alert("Unable to login due to insecure password parameters. Please visit standardnotes.org/help/password-upgrade for more information.");
-          callback({ didDisplayAlert: true });
-          return;
-        }
-
-        Neeto.crypto.computeEncryptionKeysForUser(_.merge({ password: password }, authParams), function (keys) {
-
-          var requestUrl = url + "/auth/sign_in";
-          var params = { password: keys.pw, email: email };
-          httpManager.postAbsolute(requestUrl, params, function (response) {
-            this.setEphemeral(ephemeral);
-
-            this.handleAuthResponse(response, email, url, authParams, keys);
-            storageManager.setModelStorageMode(ephemeral ? StorageManager.Ephemeral : StorageManager.Fixed);
-
-            this.checkForSecurityUpdate();
-
-            callback(response);
-          }.bind(this), function (response) {
-            console.error("Error logging in", response);
-            callback(response);
-          });
-        }.bind(this));
-      }.bind(this));
-    };
-
-    this.handleAuthResponse = function (response, email, url, authParams, keys) {
-      try {
-        if (url) {
-          storageManager.setItem("server", url);
-        }
-
-        this.user = response.user;
-        storageManager.setItem("user", JSON.stringify(response.user));
-
-        this._authParams = authParams;
-        storageManager.setItem("auth_params", JSON.stringify(authParams));
-
-        storageManager.setItem("jwt", response.token);
-        this.saveKeys(keys);
-      } catch (e) {
-        dbManager.displayOfflineAlert();
-      }
-    };
-
-    this.saveKeys = function (keys) {
-      this._keys = keys;
-      storageManager.setItem("pw", keys.pw);
-      storageManager.setItem("mk", keys.mk);
-      storageManager.setItem("ak", keys.ak);
-    };
-
-    this.register = function (url, email, password, ephemeral, callback) {
-      Neeto.crypto.generateInitialEncryptionKeysForUser({ password: password, email: email }, function (keys, authParams) {
-        var requestUrl = url + "/auth";
-        var params = _.merge({ password: keys.pw, email: email }, authParams);
-
-        httpManager.postAbsolute(requestUrl, params, function (response) {
-          this.setEphemeral(ephemeral);
-
-          this.handleAuthResponse(response, email, url, authParams, keys);
-
-          storageManager.setModelStorageMode(ephemeral ? StorageManager.Ephemeral : StorageManager.Fixed);
-
-          callback(response);
-        }.bind(this), function (response) {
-          console.error("Registration error", response);
-          callback(response);
-        }.bind(this));
-      }.bind(this));
-    };
-
-    this.changePassword = function (email, new_password, callback) {
-      Neeto.crypto.generateInitialEncryptionKeysForUser({ password: new_password, email: email }, function (keys, authParams) {
-        var requestUrl = storageManager.getItem("server") + "/auth/change_pw";
-        var params = _.merge({ new_password: keys.pw }, authParams);
-
-        httpManager.postAbsolute(requestUrl, params, function (response) {
-          this.handleAuthResponse(response, email, null, authParams, keys);
-          callback(response);
-        }.bind(this), function (response) {
-          var error = response;
-          if (!error) {
-            error = { message: "Something went wrong while changing your password. Your password was not changed. Please try again." };
-          }
-          console.error("Change pw error", response);
-          callback({ error: error });
-        });
-      }.bind(this));
-    };
-
-    this.updateAuthParams = function (authParams, callback) {
-      var requestUrl = storageManager.getItem("server") + "/auth/update";
-      var params = authParams;
-      httpManager.postAbsolute(requestUrl, params, function (response) {
-        storageManager.setItem("auth_params", JSON.stringify(authParams));
-        if (callback) {
-          callback(response);
-        }
-      }.bind(this), function (response) {
-        var error = response;
-        console.error("Update error:", response);
-        if (callback) {
-          callback({ error: error });
-        }
-      });
-    };
-
-    this.checkForSecurityUpdate = function () {
-      if (this.offline()) {
-        return;
-      }
-
-      if (this.protocolVersion() === "001") {
-        if (this.keys().ak) {
-          // upgrade to 002
-          var authParams = this.getAuthParams();
-          authParams.version = "002";
-          this.updateAuthParams(authParams, function (response) {
-            if (!response.error) {
-              // let rest of UI load first
-              $timeout(function () {
-                alert("Your encryption version has been updated. To take full advantage of this update, please resync all your items by clicking Account -> Advanced -> Re-encrypt All Items.");
-              }, 750);
-            }
-          });
-        }
-      }
-    };
-
-    this.staticifyObject = function (object) {
-      return JSON.parse(JSON.stringify(object));
-    };
-
-    this.signOut = function () {
-      this._keys = null;
-      this.user = null;
-      this._authParams = null;
-    };
-  }
-});
 ;
 var ComponentManager = function () {
+  ComponentManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'themeManager', '$timeout', '$compile'];
   function ComponentManager($rootScope, modelManager, syncManager, themeManager, $timeout, $compile) {
     _classCallCheck(this, ComponentManager);
 
@@ -36649,7 +36726,7 @@ var ComponentManager = function () {
     }.bind(this), false);
 
     this.modelManager.addItemSyncObserver("component-manager", "*", function (items) {
-      var _this11 = this;
+      var _this17 = this;
 
       var syncedComponents = items.filter(function (item) {
         return item.content_type === "SN|Component";
@@ -36694,9 +36771,9 @@ var ComponentManager = function () {
         }];
 
 
-        _this11.runWithPermissions(observer.component, requiredPermissions, observer.originalMessage.permissions, function () {
+        _this17.runWithPermissions(observer.component, requiredPermissions, observer.originalMessage.permissions, function () {
           this.sendItemsInReply(observer.component, relevantItems, observer.originalMessage);
-        }.bind(_this11));
+        }.bind(_this17));
       };
 
       var _iteratorNormalCompletion16 = true;
@@ -36731,7 +36808,7 @@ var ComponentManager = function () {
       }];
 
       var _loop2 = function _loop2(observer) {
-        _this11.runWithPermissions(observer.component, requiredContextPermissions, observer.originalMessage.permissions, function () {
+        _this17.runWithPermissions(observer.component, requiredContextPermissions, observer.originalMessage.permissions, function () {
           var _iteratorNormalCompletion18 = true;
           var _didIteratorError18 = false;
           var _iteratorError18 = undefined;
@@ -36765,7 +36842,7 @@ var ComponentManager = function () {
               }
             }
           }
-        }.bind(_this11));
+        }.bind(_this17));
       };
 
       var _iteratorNormalCompletion17 = true;
@@ -36862,7 +36939,9 @@ var ComponentManager = function () {
               var observer = _step21.value;
 
               var itemInContext = handler.contextRequestHandler(observer.component);
-              this.sendContextItemInReply(observer.component, itemInContext, observer.originalMessage);
+              if (itemInContext) {
+                this.sendContextItemInReply(observer.component, itemInContext, observer.originalMessage);
+              }
             }
           } catch (err) {
             _didIteratorError21 = true;
@@ -36933,7 +37012,7 @@ var ComponentManager = function () {
   }, {
     key: 'handleMessage',
     value: function handleMessage(component, message) {
-      var _this12 = this;
+      var _this18 = this;
 
       if (!component) {
         if (this.loggingEnabled) {
@@ -37040,7 +37119,7 @@ var ComponentManager = function () {
 
       var _loop3 = function _loop3(handler) {
         if (handler.areas.includes(component.area)) {
-          _this12.timeout(function () {
+          _this18.timeout(function () {
             handler.actionHandler(component, message.action, message.data);
           });
         }
@@ -37151,7 +37230,9 @@ var ComponentManager = function () {
               continue;
             }
             var itemInContext = handler.contextRequestHandler(component);
-            this.sendContextItemInReply(component, itemInContext, message);
+            if (itemInContext) {
+              this.sendContextItemInReply(component, itemInContext, message);
+            }
           }
         } catch (err) {
           _didIteratorError26 = true;
@@ -37741,7 +37822,7 @@ angular.module('app.frontend').service('dbManager', DBManager);
     }
   };
 }]);
-;angular.module('app.frontend').directive('delayHide', function ($timeout) {
+;angular.module('app.frontend').directive('delayHide', ['$timeout', function ($timeout) {
   return {
     restrict: 'A',
     scope: {
@@ -37784,7 +37865,7 @@ angular.module('app.frontend').service('dbManager', DBManager);
     }
 
   };
-});
+}]);
 ;angular.module('app.frontend').directive('fileChange', function () {
   return {
     restrict: 'A',
@@ -37862,21 +37943,21 @@ var AccountMenu = function () {
 
   _createClass(AccountMenu, [{
     key: 'controller',
-    value: function controller($scope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
+    value: ['$scope', 'userManager', 'modelManager', 'syncManager', 'dbManager', 'passcodeManager', '$timeout', 'storageManager', function controller($scope, userManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
       'ngInject';
 
       $scope.formData = { mergeLocal: true, url: syncManager.serverURL, ephemeral: false };
-      $scope.user = authManager.user;
+      $scope.user = userManager.user;
       $scope.server = syncManager.serverURL;
 
       $scope.syncStatus = syncManager.syncStatus;
 
       $scope.encryptionKey = function () {
-        return authManager.keys().mk;
+        return userManager.keys().mk;
       };
 
       $scope.authKey = function () {
-        return authManager.keys().ak;
+        return userManager.keys().ak;
       };
 
       $scope.serverPassword = function () {
@@ -37913,7 +37994,7 @@ var AccountMenu = function () {
 
         // perform a sync beforehand to pull in any last minutes changes before we change the encryption key (and thus cant decrypt new changes)
         syncManager.sync(function (response) {
-          authManager.changePassword(email, $scope.newPasswordData.newPassword, function (response) {
+          userManager.changePassword(email, $scope.newPasswordData.newPassword, function (response) {
             if (response.error) {
               alert("There was an error changing your password. Please try again.");
               $scope.newPasswordData.status = null;
@@ -37950,7 +38031,7 @@ var AccountMenu = function () {
       $scope.login = function () {
         $scope.formData.status = "Generating Login Keys...";
         $timeout(function () {
-          authManager.login($scope.formData.url, $scope.formData.email, $scope.formData.user_password, $scope.formData.ephemeral, function (response) {
+          userManager.login($scope.formData.url, $scope.formData.email, $scope.formData.user_password, $scope.formData.ephemeral, function (response) {
             if (!response || response.error) {
               $scope.formData.status = null;
               var error = response ? response.error : { message: "An unknown error occured." };
@@ -37975,7 +38056,7 @@ var AccountMenu = function () {
         $scope.formData.status = "Generating Account Keys...";
 
         $timeout(function () {
-          authManager.register($scope.formData.url, $scope.formData.email, $scope.formData.user_password, $scope.formData.ephemeral, function (response) {
+          userManager.register($scope.formData.url, $scope.formData.email, $scope.formData.user_password, $scope.formData.ephemeral, function (response) {
             if (!response || response.error) {
               $scope.formData.status = null;
               var error = response ? response.error : { message: "An unknown error occured." };
@@ -38020,7 +38101,7 @@ var AccountMenu = function () {
           return;
         }
 
-        authManager.signOut();
+        userManager.signOut();
         syncManager.destroyLocalData(function () {
           window.location.reload();
         });
@@ -38029,7 +38110,7 @@ var AccountMenu = function () {
       /* Import/Export */
 
       $scope.archiveFormData = { encrypted: $scope.user ? true : false };
-      $scope.user = authManager.user;
+      $scope.user = userManager.user;
 
       $scope.submitImportPassword = function () {
         $scope.performImport($scope.importData.data, $scope.importData.password);
@@ -38094,6 +38175,12 @@ var AccountMenu = function () {
             item.setDirty(true);
             item.deleted = false;
             item.markAllReferencesDirty();
+
+            // We don't want to activate any components during import process in case of exceptions
+            // breaking up the import proccess
+            if (item.content_type == "SN|Component") {
+              item.active = false;
+            }
           });
 
           syncManager.sync(function (response) {
@@ -38208,7 +38295,7 @@ var AccountMenu = function () {
 
       $scope.downloadDataArchive = function () {
         // download in Standard File format
-        var keys = $scope.archiveFormData.encrypted ? authManager.keys() : null;
+        var keys = $scope.archiveFormData.encrypted ? userManager.keys() : null;
         var data = $scope.itemsData(keys);
         downloadData(data, 'SN Archive - ' + new Date() + '.txt');
 
@@ -38221,7 +38308,7 @@ var AccountMenu = function () {
 
       $scope.itemsData = function (keys) {
         var items = _.map(modelManager.allItems, function (item) {
-          var itemParams = new ItemParams(item, keys, authManager.protocolVersion());
+          var itemParams = new ItemParams(item, keys, userManager.protocolVersion());
           return itemParams.paramsForExportFile();
         }.bind(this));
 
@@ -38229,7 +38316,7 @@ var AccountMenu = function () {
 
         if (keys) {
           // auth params are only needed when encrypted with a standard file key
-          data["auth_params"] = authManager.getAuthParams();
+          data["auth_params"] = userManager.getAuthParams();
         }
 
         var data = new Blob([JSON.stringify(data, null, 2 /* pretty print */)], { type: 'text/json' });
@@ -38264,7 +38351,7 @@ var AccountMenu = function () {
       // 002 Update
 
       $scope.securityUpdateAvailable = function () {
-        var keys = authManager.keys();
+        var keys = userManager.keys();
         return keys && !keys.ak;
       };
 
@@ -38277,10 +38364,10 @@ var AccountMenu = function () {
 
       $scope.submitSecurityUpdateForm = function () {
         $scope.securityUpdateData.processing = true;
-        var authParams = authManager.getAuthParams();
+        var authParams = userManager.getAuthParams();
 
         Neeto.crypto.computeEncryptionKeysForUser(_.merge({ password: $scope.securityUpdateData.password }, authParams), function (keys) {
-          if (keys.mk !== authManager.keys().mk) {
+          if (keys.mk !== userManager.keys().mk) {
             alert("Invalid password. Please try again.");
             $timeout(function () {
               $scope.securityUpdateData.processing = false;
@@ -38288,7 +38375,7 @@ var AccountMenu = function () {
             return;
           }
 
-          authManager.saveKeys(keys);
+          userManager.saveKeys(keys);
         });
       };
 
@@ -38307,11 +38394,11 @@ var AccountMenu = function () {
       };
 
       $scope.encryptionEnabled = function () {
-        return passcodeManager.hasPasscode() || !authManager.offline();
+        return passcodeManager.hasPasscode() || !userManager.offline();
       };
 
       $scope.encryptionSource = function () {
-        if (!authManager.offline()) {
+        if (!userManager.offline()) {
           return "Account keys";
         } else if (passcodeManager.hasPasscode()) {
           return "Local Passcode";
@@ -38321,7 +38408,7 @@ var AccountMenu = function () {
       };
 
       $scope.encryptionStatusString = function () {
-        if (!authManager.offline()) {
+        if (!userManager.offline()) {
           return "End-to-end encryption is enabled. Your data is encrypted before being synced to your private account.";
         } else if (passcodeManager.hasPasscode()) {
           return "Encryption is enabled. Your data is encrypted using your passcode before being stored on disk.";
@@ -38336,7 +38423,7 @@ var AccountMenu = function () {
 
       $scope.passcodeOptionAvailable = function () {
         // If you're signed in with an ephemeral session, passcode lock is unavailable
-        return authManager.offline() || !authManager.isEphemeralSession();
+        return userManager.offline() || !userManager.isEphemeralSession();
       };
 
       $scope.hasPasscode = function () {
@@ -38357,7 +38444,7 @@ var AccountMenu = function () {
         passcodeManager.setPasscode(passcode, function () {
           $timeout(function () {
             $scope.formData.showPasscodeForm = false;
-            var offline = authManager.offline();
+            var offline = userManager.offline();
 
             // Allow UI to update before showing alert
             setTimeout(function () {
@@ -38376,14 +38463,14 @@ var AccountMenu = function () {
       };
 
       $scope.removePasscodePressed = function () {
-        var signedIn = !authManager.offline();
+        var signedIn = !userManager.offline();
         var message = "Are you sure you want to remove your local passcode?";
         if (!signedIn) {
           message += " This will remove encryption from your local data.";
         }
         if (confirm(message)) {
           passcodeManager.clearPasscode();
-          if (authManager.offline()) {
+          if (userManager.offline()) {
             syncManager.markAllItemsDirtyAndSaveOffline();
           }
         }
@@ -38392,7 +38479,7 @@ var AccountMenu = function () {
       $scope.isDesktopApplication = function () {
         return isDesktopApplication();
       };
-    }
+    }]
   }]);
 
   return AccountMenu;
@@ -38415,7 +38502,7 @@ var ContextualExtensionsMenu = function () {
 
   _createClass(ContextualExtensionsMenu, [{
     key: 'controller',
-    value: function controller($scope, modelManager, extensionManager) {
+    value: ['$scope', 'modelManager', 'extensionManager', function controller($scope, modelManager, extensionManager) {
       'ngInject';
 
       $scope.renderData = {};
@@ -38499,7 +38586,7 @@ var ContextualExtensionsMenu = function () {
 
       $scope.isActionEnabled = function (action, extension) {
         if (action.access_type) {
-          var extEncryptedAccess = extensionManager.extensionUsesEncryptedData(extension);
+          var extEncryptedAccess = extension.encrypted;
           if (action.access_type == "decrypted" && extEncryptedAccess) {
             return false;
           } else if (action.access_type == "encrypted" && !extEncryptedAccess) {
@@ -38510,9 +38597,9 @@ var ContextualExtensionsMenu = function () {
       };
 
       $scope.accessTypeForExtension = function (extension) {
-        return extensionManager.extensionUsesEncryptedData(extension) ? "encrypted" : "decrypted";
+        return extension.encrypted ? "encrypted" : "decrypted";
       };
-    }
+    }]
   }]);
 
   return ContextualExtensionsMenu;
@@ -38536,7 +38623,7 @@ var EditorMenu = function () {
 
   _createClass(EditorMenu, [{
     key: 'controller',
-    value: function controller($scope, editorManager) {
+    value: ['$scope', 'editorManager', function controller($scope, editorManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -38546,7 +38633,7 @@ var EditorMenu = function () {
         editor.conflict_of = null; // clear conflict if applicable
         $scope.callback()(editor);
       };
-    }
+    }]
   }]);
 
   return EditorMenu;
@@ -38567,7 +38654,7 @@ var GlobalExtensionsMenu = function () {
 
   _createClass(GlobalExtensionsMenu, [{
     key: 'controller',
-    value: function controller($scope, extensionManager, syncManager, modelManager, themeManager, editorManager, componentManager) {
+    value: ['$scope', 'extensionManager', 'syncManager', 'modelManager', 'themeManager', 'editorManager', 'componentManager', function controller($scope, extensionManager, syncManager, modelManager, themeManager, editorManager, componentManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -38592,7 +38679,9 @@ var GlobalExtensionsMenu = function () {
       };
 
       $scope.changeExtensionEncryptionFormat = function (encrypted, extension) {
-        extensionManager.changeExtensionEncryptionFormat(encrypted, extension);
+        extension.encrypted = encrypted;
+        extension.setDirty(true);
+        syncManager.sync();
       };
 
       $scope.deleteActionExtension = function (extension) {
@@ -38612,6 +38701,36 @@ var GlobalExtensionsMenu = function () {
           themeManager.deactivateTheme(theme);
           modelManager.setItemToBeDeleted(theme);
           syncManager.sync();
+        }
+      };
+
+      $scope.renameExtension = function (extension) {
+        extension.tempName = extension.name;
+        extension.rename = true;
+      };
+
+      $scope.submitExtensionRename = function (extension) {
+        extension.name = extension.tempName;
+        extension.tempName = null;
+        extension.setDirty(true);
+        extension.rename = false;
+        syncManager.sync();
+      };
+
+      $scope.clickedExtension = function (extension) {
+        if (extension.rename) {
+          return;
+        }
+
+        if ($scope.currentlyExpandedExtension && $scope.currentlyExpandedExtension !== extension) {
+          $scope.currentlyExpandedExtension.showDetails = false;
+          $scope.currentlyExpandedExtension.rename = false;
+        }
+
+        extension.showDetails = !extension.showDetails;
+
+        if (extension.showDetails) {
+          $scope.currentlyExpandedExtension = extension;
         }
       };
 
@@ -38768,7 +38887,7 @@ var GlobalExtensionsMenu = function () {
         editorManager.addNewEditorFromURL(link);
         completion();
       };
-    }
+    }]
   }]);
 
   return GlobalExtensionsMenu;
@@ -38776,6 +38895,216 @@ var GlobalExtensionsMenu = function () {
 
 angular.module('app.frontend').directive('globalExtensionsMenu', function () {
   return new GlobalExtensionsMenu();
+});
+;
+var PanelResizer = function () {
+  function PanelResizer() {
+    _classCallCheck(this, PanelResizer);
+
+    this.restrict = "E";
+    this.templateUrl = "frontend/directives/panel-resizer.html";
+    this.scope = {
+      index: "=",
+      panelId: "=",
+      onResize: "&",
+      onResizeFinish: "&",
+      control: "=",
+      alwaysVisible: "=",
+      minWidth: "=",
+      property: "=",
+      hoverable: "=",
+      collapsable: "="
+    };
+  }
+
+  _createClass(PanelResizer, [{
+    key: 'link',
+    value: function link(scope, elem, attrs, ctrl) {
+      scope.elem = elem;
+
+      scope.control.setWidth = function (value) {
+        scope.setWidth(value, true);
+      };
+
+      scope.control.setLeft = function (value) {
+        scope.setLeft(value);
+      };
+    }
+  }, {
+    key: 'controller',
+    value: ['$scope', '$element', 'modelManager', 'extensionManager', function controller($scope, $element, modelManager, extensionManager) {
+      'ngInject';
+
+      var panel = document.getElementById($scope.panelId);
+      var resizerColumn = $element[0];
+      var resizerWidth = resizerColumn.offsetWidth;
+      var minWidth = $scope.minWidth || resizerWidth;
+
+      function getParentRect() {
+        return panel.parentNode.getBoundingClientRect();
+      }
+
+      var pressed = false;
+      var startWidth = panel.scrollWidth,
+          startX,
+          lastDownX,
+          collapsed,
+          lastWidth = startWidth,
+          startLeft,
+          lastLeft;
+      var appFrame = document.getElementById("app").getBoundingClientRect();
+
+      if ($scope.alwaysVisible) {
+        console.log("Adding always visible", $scope.alwaysVisible);
+        resizerColumn.classList.add("always-visible");
+      }
+
+      if ($scope.hoverable) {
+        resizerColumn.classList.add("hoverable");
+      }
+
+      $scope.setWidth = function (width, finish) {
+        if (width < minWidth) {
+          width = minWidth;
+        }
+
+        var parentRect = getParentRect();
+
+        if (width > parentRect.width) {
+          width = parentRect.width;
+        }
+
+        if (width == parentRect.width) {
+          panel.style.width = "100%";
+          panel.style.flexBasis = "100%";
+        } else {
+          panel.style.flexBasis = width + "px";
+          panel.style.width = width + "px";
+        }
+
+        lastWidth = width;
+
+        if (finish) {
+          $scope.finishSettingWidth();
+        }
+      };
+
+      $scope.setLeft = function (left) {
+        panel.style.left = left + "px";
+        lastLeft = left;
+      };
+
+      $scope.finishSettingWidth = function () {
+        if (!$scope.collapsable) {
+          return;
+        }
+
+        if (lastWidth <= minWidth) {
+          collapsed = true;
+        } else {
+          collapsed = false;
+        }
+        if (collapsed) {
+          resizerColumn.classList.add("collapsed");
+        } else {
+          resizerColumn.classList.remove("collapsed");
+        }
+      };
+
+      resizerColumn.addEventListener("mousedown", function (event) {
+        pressed = true;
+        lastDownX = event.clientX;
+        startWidth = panel.scrollWidth;
+        startLeft = panel.offsetLeft;
+        panel.classList.add("no-selection");
+
+        if ($scope.hoverable) {
+          resizerColumn.classList.add("dragging");
+        }
+      });
+
+      document.addEventListener("mousemove", function (event) {
+        if (!pressed) {
+          return;
+        }
+
+        event.preventDefault();
+
+        if ($scope.property && $scope.property == 'left') {
+          handleLeftEvent(event);
+        } else {
+          handleWidthEvent(event);
+        }
+      });
+
+      function handleWidthEvent(event) {
+        var rect = panel.getBoundingClientRect();
+        var panelMaxX = rect.left + (startWidth || panel.style.maxWidth);
+
+        var x = event.clientX;
+
+        var deltaX = x - lastDownX;
+        var newWidth = startWidth + deltaX;
+
+        $scope.setWidth(newWidth, false);
+
+        if ($scope.onResize()) {
+          $scope.onResize()(lastWidth, panel);
+        }
+      }
+
+      function handleLeftEvent(event) {
+        var panelRect = panel.getBoundingClientRect();
+        var x = event.clientX;
+        var deltaX = x - lastDownX;
+        var newLeft = startLeft + deltaX;
+        if (newLeft < 0) {
+          newLeft = 0;
+          deltaX = -startLeft;
+        }
+
+        var parentRect = getParentRect();
+
+        var newWidth = startWidth - deltaX;
+        if (newWidth < minWidth) {
+          newWidth = minWidth;
+        }
+
+        if (newWidth > parentRect.width) {
+          newWidth = parentRect.width;
+        }
+
+        if (newLeft + newWidth > parentRect.width) {
+          newLeft = parentRect.width - newWidth;
+        }
+
+        $scope.setLeft(newLeft, false);
+        $scope.setWidth(newWidth, false);
+      }
+
+      document.addEventListener("mouseup", function (event) {
+        if (pressed) {
+          pressed = false;
+          resizerColumn.classList.remove("dragging");
+          panel.classList.remove("no-selection");
+
+          var isMaxWidth = lastWidth == getParentRect().width;
+
+          if ($scope.onResizeFinish) {
+            $scope.onResizeFinish()(lastWidth, lastLeft, isMaxWidth);
+          }
+
+          $scope.finishSettingWidth();
+        }
+      });
+    }]
+  }]);
+
+  return PanelResizer;
+}();
+
+angular.module('app.frontend').directive('panelResizer', function () {
+  return new PanelResizer();
 });
 ;
 var PermissionsModal = function () {
@@ -38856,6 +39185,7 @@ angular.module('app.frontend').directive('permissionsModal', function () {
 });
 ;
 var EditorManager = function () {
+  EditorManager.$inject = ['$rootScope', 'modelManager', 'syncManager'];
   function EditorManager($rootScope, modelManager, syncManager) {
     _classCallCheck(this, EditorManager);
 
@@ -38863,28 +39193,27 @@ var EditorManager = function () {
     this.modelManager = modelManager;
 
     this.editorType = "SN|Editor";
-    this._systemEditor = {
+    this._systemEditor = new Editor({
       systemEditor: true,
-      name: "Plain"
-    };
+      name: "Plain",
+      content_type: this.editorType,
+      dummy: true
+    });
 
     $rootScope.$on("sync:completed", function () {
       // we want to wait for sync completion before creating a syncable system editor
       // we need to sync the system editor so that we can assign note preferences to it
       // that is, when a user selects Plain for a note, we need to remember that
-      if (this.systemEditor.uuid) {
+      if (!this._systemEditor.dummy) {
         return;
       }
+
+      this._systemEditor.dummy = false;
 
       var liveSysEditor = _.find(this.allEditors, { systemEditor: true });
       if (liveSysEditor) {
         this._systemEditor = liveSysEditor;
       } else {
-        this._systemEditor = modelManager.createItem({
-          content_type: this.editorType,
-          systemEditor: true,
-          name: "Plain"
-        });
         modelManager.addItem(this._systemEditor);
         this._systemEditor.setDirty(true);
         syncManager.sync();
@@ -38953,7 +39282,7 @@ var EditorManager = function () {
   }, {
     key: 'systemEditors',
     get: function get() {
-      return [this.systemEditor];
+      return [this._systemEditor];
     }
   }, {
     key: 'systemEditor',
@@ -38973,14 +39302,14 @@ var EditorManager = function () {
 angular.module('app.frontend').service('editorManager', EditorManager);
 ;
 var ExtensionManager = function () {
-  function ExtensionManager(httpManager, modelManager, authManager, syncManager, storageManager) {
+  ExtensionManager.$inject = ['httpManager', 'modelManager', 'userManager', 'syncManager', 'storageManager'];
+  function ExtensionManager(httpManager, modelManager, userManager, syncManager, storageManager) {
     _classCallCheck(this, ExtensionManager);
 
     this.httpManager = httpManager;
     this.modelManager = modelManager;
-    this.authManager = authManager;
+    this.userManager = userManager;
     this.enabledRepeatActionUrls = JSON.parse(storageManager.getItem("enabledRepeatActionUrls")) || [];
-    this.decryptedExtensions = JSON.parse(storageManager.getItem("decryptedExtensions")) || [];
     this.syncManager = syncManager;
     this.storageManager = storageManager;
 
@@ -38992,10 +39321,6 @@ var ExtensionManager = function () {
       try {
         for (var _iterator35 = items[Symbol.iterator](), _step35; !(_iteratorNormalCompletion35 = (_step35 = _iterator35.next()).done); _iteratorNormalCompletion35 = true) {
           var ext = _step35.value;
-
-
-          ext.encrypted = this.extensionUsesEncryptedData(ext);
-
           var _iteratorNormalCompletion36 = true;
           var _didIteratorError36 = false;
           var _iteratorError36 = undefined;
@@ -39076,24 +39401,6 @@ var ExtensionManager = function () {
       }
     }
   }, {
-    key: 'extensionUsesEncryptedData',
-    value: function extensionUsesEncryptedData(extension) {
-      return !_.includes(this.decryptedExtensions, extension.url);
-    }
-  }, {
-    key: 'changeExtensionEncryptionFormat',
-    value: function changeExtensionEncryptionFormat(encrypted, extension) {
-      if (encrypted) {
-        _.pull(this.decryptedExtensions, extension.url);
-      } else {
-        this.decryptedExtensions.push(extension.url);
-      }
-
-      this.storageManager.setItem("decryptedExtensions", JSON.stringify(this.decryptedExtensions));
-
-      extension.encrypted = this.extensionUsesEncryptedData(extension);
-    }
-  }, {
     key: 'addExtension',
     value: function addExtension(url, callback) {
       this.retrieveExtensionFromServer(url, callback);
@@ -39109,7 +39416,6 @@ var ExtensionManager = function () {
         for (var _iterator38 = extension.actions[Symbol.iterator](), _step38; !(_iteratorNormalCompletion38 = (_step38 = _iterator38.next()).done); _iteratorNormalCompletion38 = true) {
           var action = _step38.value;
 
-          _.pull(this.decryptedExtensions, extension);
           if (action.repeat_mode) {
             if (this.isRepeatActionEnabled(action)) {
               this.disableRepeatAction(action);
@@ -39145,18 +39451,10 @@ var ExtensionManager = function () {
     value: function loadExtensionInContextOfItem(extension, item, callback) {
 
       this.httpManager.getAbsolute(extension.url, { content_type: item.content_type, item_uuid: item.uuid }, function (response) {
-        var scopedExtension = new Extension(response);
-        if (scopedExtension) {
-          _.merge(extension, scopedExtension);
-          extension.actions = scopedExtension.actions;
-          extension.encrypted = this.extensionUsesEncryptedData(extension);
-        }
-        if (callback) {
-          callback(scopedExtension);
-        }
+        this.updateExtensionFromRemoteResponse(extension, response);
+        callback && callback(extension);
       }.bind(this), function (response) {
         console.log("Error loading extension", response);
-        extension.encrypted = this.extensionUsesEncryptedData(extension);
         if (callback) {
           callback(null);
         }
@@ -39187,9 +39485,13 @@ var ExtensionManager = function () {
   }, {
     key: 'handleExtensionLoadExternalResponseItem',
     value: function handleExtensionLoadExternalResponseItem(url, externalResponseItem) {
+      // Don't allow remote response to set these flags
+      delete externalResponseItem.encrypted;
+      delete externalResponseItem.uuid;
+
       var extension = _.find(this.extensions, { url: url });
       if (extension) {
-        extension.updateFromExternalResponseItem(externalResponseItem);
+        this.updateExtensionFromRemoteResponse(extension, externalResponseItem);
       } else {
         extension = new Extension(externalResponseItem);
         extension.url = url;
@@ -39199,6 +39501,24 @@ var ExtensionManager = function () {
       }
 
       return extension;
+    }
+  }, {
+    key: 'updateExtensionFromRemoteResponse',
+    value: function updateExtensionFromRemoteResponse(extension, response) {
+      if (response.description) {
+        extension.description = response.description;
+      }
+      if (response.supported_types) {
+        extension.supported_types = response.supported_types;
+      }
+
+      if (response.actions) {
+        extension.actions = response.actions.map(function (action) {
+          return new Action(action);
+        });
+      } else {
+        extension.actions = [];
+      }
     }
   }, {
     key: 'refreshExtensionsFromServer',
@@ -39262,7 +39582,7 @@ var ExtensionManager = function () {
     key: 'executeAction',
     value: function executeAction(action, extension, item, callback) {
 
-      if (this.extensionUsesEncryptedData(extension) && this.authManager.offline()) {
+      if (extension.encrypted && this.userManager.offline()) {
         alert("To send data encrypted, you must have an encryption key, and must therefore be signed in.");
         callback(null);
         return;
@@ -39282,7 +39602,7 @@ var ExtensionManager = function () {
             this.httpManager.getAbsolute(action.url, {}, function (response) {
               action.error = false;
               var items = response.items || [response.item];
-              EncryptionHelper.decryptMultipleItems(items, this.authManager.keys());
+              EncryptionHelper.decryptMultipleItems(items, this.userManager.keys());
               items = this.modelManager.mapResponseItemsToLocalModels(items);
               var _iteratorNormalCompletion41 = true;
               var _didIteratorError41 = false;
@@ -39324,7 +39644,7 @@ var ExtensionManager = function () {
 
             this.httpManager.getAbsolute(action.url, {}, function (response) {
               action.error = false;
-              EncryptionHelper.decryptItem(response.item, this.authManager.keys());
+              EncryptionHelper.decryptItem(response.item, this.userManager.keys());
               var item = this.modelManager.createItem(response.item);
               customCallback({ item: item });
             }.bind(this), function (response) {
@@ -39413,11 +39733,9 @@ var ExtensionManager = function () {
         return;
       }
 
-      // console.log("Successfully queued", action, this.actionQueue.length);
       this.actionQueue.push(action);
 
       setTimeout(function () {
-        // console.log("Performing queued action", action);
         this.triggerWatchAction(action, extension, changedItems);
         _.pull(this.actionQueue, action);
       }.bind(this), delay * 1000);
@@ -39437,8 +39755,6 @@ var ExtensionManager = function () {
 
       action.lastExecuted = new Date();
 
-      console.log("Performing action.");
-
       if (action.verb == "post") {
         var params = {};
         params.items = changedItems.map(function (item) {
@@ -39457,19 +39773,19 @@ var ExtensionManager = function () {
   }, {
     key: 'outgoingParamsForItem',
     value: function outgoingParamsForItem(item, extension) {
-      var keys = this.authManager.keys();
-      if (!this.extensionUsesEncryptedData(extension)) {
+      var keys = this.userManager.keys();
+      if (!extension.encrypted) {
         keys = null;
       }
-      var itemParams = new ItemParams(item, keys, this.authManager.protocolVersion());
+      var itemParams = new ItemParams(item, keys, this.userManager.protocolVersion());
       return itemParams.paramsForExtension();
     }
   }, {
     key: 'performPost',
     value: function performPost(action, extension, params, callback) {
 
-      if (this.extensionUsesEncryptedData(extension)) {
-        params.auth_params = this.authManager.getAuthParams();
+      if (extension.encrypted) {
+        params.auth_params = this.userManager.getAuthParams();
       }
 
       this.httpManager.postAbsolute(action.url, params, function (response) {
@@ -39496,16 +39812,16 @@ var ExtensionManager = function () {
 }();
 
 angular.module('app.frontend').service('extensionManager', ExtensionManager);
-;angular.module('app.frontend').filter('appDate', function ($filter) {
+;angular.module('app.frontend').filter('appDate', ['$filter', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy', 'UTC') : '';
   };
-}).filter('appDateTime', function ($filter) {
+}]).filter('appDateTime', ['$filter', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy h:mm a') : '';
   };
-});
-;angular.module('app.frontend').filter('sortBy', function ($filter) {
+}]);
+;angular.module('app.frontend').filter('sortBy', ['$filter', function ($filter) {
   return function (items, sortBy) {
     var sortValueFn = function sortValueFn(a, b) {
       var pinCheck = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
@@ -39554,7 +39870,7 @@ angular.module('app.frontend').service('extensionManager', ExtensionManager);
       return sortValueFn(a, b);
     });
   };
-});
+}]);
 ;angular.module('app.frontend').filter('startFrom', function () {
   return function (input, start) {
     return input.slice(start);
@@ -39567,6 +39883,7 @@ angular.module('app.frontend').service('extensionManager', ExtensionManager);
 }]);
 ;
 var HttpManager = function () {
+  HttpManager.$inject = ['$timeout', 'storageManager'];
   function HttpManager($timeout, storageManager) {
     _classCallCheck(this, HttpManager);
 
@@ -39654,7 +39971,287 @@ var HttpManager = function () {
 
 angular.module('app.frontend').service('httpManager', HttpManager);
 ;
+var KeyboardManager = function () {
+  KeyboardManager.$inject = ['$timeout'];
+  function KeyboardManager($timeout) {
+    var _this19 = this;
+
+    _classCallCheck(this, KeyboardManager);
+
+    this.$timeout = $timeout;
+    this.actions = [];
+    this.contextHandlers = [];
+    this.orderedContexts = ["tags", "notes", "editor"];
+
+    this.registerAction("previous-context", function () {
+      var previousIndex = _this19.orderedContexts.indexOf(_this19.context) - 1;
+      if (previousIndex >= 0) {
+        _this19.setContext(_this19.orderedContexts[previousIndex], 'keyboard');
+      }
+    });
+
+    this.registerAction("next-context", function () {
+      var nextIndex = _this19.orderedContexts.indexOf(_this19.context) + 1;
+      if (nextIndex < _this19.orderedContexts.length) {
+        _this19.setContext(_this19.orderedContexts[nextIndex], 'keyboard');
+      }
+    });
+
+    this.registerDefaultShortcuts();
+  }
+
+  _createClass(KeyboardManager, [{
+    key: 'registerDefaultShortcuts',
+    value: function registerDefaultShortcuts() {
+      var _this20 = this;
+
+      var _iteratorNormalCompletion42 = true;
+      var _didIteratorError42 = false;
+      var _iteratorError42 = undefined;
+
+      try {
+        for (var _iterator42 = this.defaultMappings()[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
+          var mapping = _step42.value;
+
+          Mousetrap.bind(mapping.shortcut, function (e, command) {
+            _this20.handleKeyboardCommand(command);
+            return !mapping.preventDefault;
+          });
+        }
+      } catch (err) {
+        _didIteratorError42 = true;
+        _iteratorError42 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion42 && _iterator42.return) {
+            _iterator42.return();
+          }
+        } finally {
+          if (_didIteratorError42) {
+            throw _iteratorError42;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'handleKeyboardCommand',
+    value: function handleKeyboardCommand(shortcut) {
+      var _this21 = this;
+
+      var _iteratorNormalCompletion43 = true;
+      var _didIteratorError43 = false;
+      var _iteratorError43 = undefined;
+
+      try {
+        for (var _iterator43 = this.defaultMappings()[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
+          var mapping = _step43.value;
+
+          var validShortcuts = Array.isArray(mapping.shortcut) ? mapping.shortcut : [mapping.shortcut];
+          var validContexts = Array.isArray(mapping.context) ? mapping.context : [mapping.context];
+          var isCorrectContext = validContexts.includes("*") || validContexts.includes(this.context);
+
+          if (validShortcuts.includes(shortcut) && isCorrectContext) {
+            (function () {
+              var action = _this21.actionForName(mapping.action);
+              _this21.$timeout(function () {
+                action.callback();
+              });
+            })();
+          }
+        }
+      } catch (err) {
+        _didIteratorError43 = true;
+        _iteratorError43 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion43 && _iterator43.return) {
+            _iterator43.return();
+          }
+        } finally {
+          if (_didIteratorError43) {
+            throw _iteratorError43;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'registerContextHandler',
+    value: function registerContextHandler(context, callback) {
+      var contextObserver = { id: Math.random, context: context, callback: callback };
+      this.contextHandlers.push(contextObserver);
+      return contextObserver;
+    }
+  }, {
+    key: 'setContext',
+    value: function setContext(context) {
+      var source = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'click';
+
+      if (this.context == context) {
+        return;
+      }
+
+      if (this.keyboardContextLocked && source == 'keyboard') {
+        return;
+      }
+
+      // Notify of ending context
+      if (this.context) {
+        var _iteratorNormalCompletion44 = true;
+        var _didIteratorError44 = false;
+        var _iteratorError44 = undefined;
+
+        try {
+          for (var _iterator44 = this.contextHandlers[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
+            var observer = _step44.value;
+
+            if (observer.context == this.context) {
+              observer.callback(source, 'end');
+            }
+          }
+        } catch (err) {
+          _didIteratorError44 = true;
+          _iteratorError44 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion44 && _iterator44.return) {
+              _iterator44.return();
+            }
+          } finally {
+            if (_didIteratorError44) {
+              throw _iteratorError44;
+            }
+          }
+        }
+      }
+
+      this.context = context;
+
+      // Notify of begining context
+      var _iteratorNormalCompletion45 = true;
+      var _didIteratorError45 = false;
+      var _iteratorError45 = undefined;
+
+      try {
+        for (var _iterator45 = this.contextHandlers[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
+          var observer = _step45.value;
+
+          if (observer.context == context) {
+            observer.callback(source, 'begin');
+          }
+        }
+      } catch (err) {
+        _didIteratorError45 = true;
+        _iteratorError45 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion45 && _iterator45.return) {
+            _iterator45.return();
+          }
+        } finally {
+          if (_didIteratorError45) {
+            throw _iteratorError45;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'lockKeyboardContext',
+    value: function lockKeyboardContext() {
+      this.keyboardContextLocked = true;
+    }
+  }, {
+    key: 'unlockKeyboardContext',
+    value: function unlockKeyboardContext() {
+      this.keyboardContextLocked = false;
+    }
+  }, {
+    key: 'registerAction',
+    value: function registerAction(action, callback) {
+      this.actions.push({
+        name: action,
+        callback: callback
+      });
+    }
+  }, {
+    key: 'actionForName',
+    value: function actionForName(actionName) {
+      return _.find(this.actions, { name: actionName });
+    }
+  }, {
+    key: 'defaultMappings',
+    value: function defaultMappings() {
+      return [
+
+      // internal
+      {
+        action: "next-context",
+        context: ["tags", "notes", "editor"],
+        shortcut: "right"
+      }, {
+        action: "previous-context",
+        context: ["tags", "notes", "editor"],
+        shortcut: "left"
+      },
+
+      // notes
+      {
+        action: "create-new-note",
+        context: "*",
+        shortcut: ["command+n", "command+k", "command+shift+k"]
+      }, {
+        action: "next-note",
+        context: "notes",
+        shortcut: "down",
+        preventDefault: true
+      }, {
+        action: "previous-note",
+        context: "notes",
+        shortcut: "up",
+        preventDefault: true
+      },
+
+      // tags
+      {
+        action: "create-new-tag",
+        context: "*",
+        shortcut: ["command+t", "command+shift+e"]
+      }, {
+        action: "next-tag",
+        context: "tags",
+        shortcut: "down",
+        preventDefault: true
+      }, {
+        action: "previous-tag",
+        context: "tags",
+        shortcut: "up",
+        preventDefault: true
+      },
+
+      // editor
+      {
+        action: "delete-current-note",
+        context: ["notes", "editor"],
+        shortcut: ["command+d", "command+shift+d"],
+        preventDefault: true
+      }, {
+        action: "toggle-note-archived",
+        context: ["notes", "editor"],
+        shortcut: "command+shift+a"
+      }, {
+        action: "toggle-note-pinned",
+        context: ["notes", "editor"],
+        shortcut: "command+shift+p"
+      }];
+    }
+  }]);
+
+  return KeyboardManager;
+}();
+
+angular.module('app.frontend').service('keyboardManager', KeyboardManager);
+;
 var ModelManager = function () {
+  ModelManager.$inject = ['storageManager'];
   function ModelManager(storageManager) {
     _classCallCheck(this, ModelManager);
 
@@ -39665,7 +40262,7 @@ var ModelManager = function () {
     this.itemChangeObservers = [];
     this.items = [];
     this._extensions = [];
-    this.acceptableContentTypes = ["Note", "Tag", "Extension", "SN|Editor", "SN|Theme", "SN|Component", "SF|Extension"];
+    this.acceptableContentTypes = ["Note", "Tag", "Extension", "SN|Editor", "SN|Theme", "SN|Component", "SF|Extension", "SN|UserPreferences"];
   }
 
   _createClass(ModelManager, [{
@@ -39703,27 +40300,27 @@ var ModelManager = function () {
       // for example, editors have a one way relationship with notes. When a note changes its UUID, it has no way to inform the editor
       // to update its relationships
 
-      var _iteratorNormalCompletion42 = true;
-      var _didIteratorError42 = false;
-      var _iteratorError42 = undefined;
+      var _iteratorNormalCompletion46 = true;
+      var _didIteratorError46 = false;
+      var _iteratorError46 = undefined;
 
       try {
-        for (var _iterator42 = this.items[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
-          var model = _step42.value;
+        for (var _iterator46 = this.items[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
+          var model = _step46.value;
 
           model.potentialItemOfInterestHasChangedItsUUID(newItem, oldUUID, newUUID);
         }
       } catch (err) {
-        _didIteratorError42 = true;
-        _iteratorError42 = err;
+        _didIteratorError46 = true;
+        _iteratorError46 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion42 && _iterator42.return) {
-            _iterator42.return();
+          if (!_iteratorNormalCompletion46 && _iterator46.return) {
+            _iterator46.return();
           }
         } finally {
-          if (_didIteratorError42) {
-            throw _iteratorError42;
+          if (_didIteratorError46) {
+            throw _iteratorError46;
           }
         }
       }
@@ -39770,13 +40367,13 @@ var ModelManager = function () {
           allModels = [];
 
       // first loop should add and process items
-      var _iteratorNormalCompletion43 = true;
-      var _didIteratorError43 = false;
-      var _iteratorError43 = undefined;
+      var _iteratorNormalCompletion47 = true;
+      var _didIteratorError47 = false;
+      var _iteratorError47 = undefined;
 
       try {
-        for (var _iterator43 = items[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
-          var json_obj = _step43.value;
+        for (var _iterator47 = items[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
+          var json_obj = _step47.value;
 
           json_obj = _.omit(json_obj, omitFields || []);
           var item = this.findItem(json_obj["uuid"]);
@@ -39808,16 +40405,16 @@ var ModelManager = function () {
 
         // second loop should process references
       } catch (err) {
-        _didIteratorError43 = true;
-        _iteratorError43 = err;
+        _didIteratorError47 = true;
+        _iteratorError47 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion43 && _iterator43.return) {
-            _iterator43.return();
+          if (!_iteratorNormalCompletion47 && _iterator47.return) {
+            _iterator47.return();
           }
         } finally {
-          if (_didIteratorError43) {
-            throw _iteratorError43;
+          if (_didIteratorError47) {
+            throw _iteratorError47;
           }
         }
       }
@@ -39836,13 +40433,13 @@ var ModelManager = function () {
   }, {
     key: 'notifySyncObserversOfModels',
     value: function notifySyncObserversOfModels(models) {
-      var _iteratorNormalCompletion44 = true;
-      var _didIteratorError44 = false;
-      var _iteratorError44 = undefined;
+      var _iteratorNormalCompletion48 = true;
+      var _didIteratorError48 = false;
+      var _iteratorError48 = undefined;
 
       try {
-        for (var _iterator44 = this.itemSyncObservers[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
-          var observer = _step44.value;
+        for (var _iterator48 = this.itemSyncObservers[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
+          var observer = _step48.value;
 
           var relevantItems = models.filter(function (item) {
             return item.content_type == observer.type || observer.type == "*";
@@ -39852,16 +40449,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError44 = true;
-        _iteratorError44 = err;
+        _didIteratorError48 = true;
+        _iteratorError48 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion44 && _iterator44.return) {
-            _iterator44.return();
+          if (!_iteratorNormalCompletion48 && _iterator48.return) {
+            _iterator48.return();
           }
         } finally {
-          if (_didIteratorError44) {
-            throw _iteratorError44;
+          if (_didIteratorError48) {
+            throw _iteratorError48;
           }
         }
       }
@@ -39869,13 +40466,13 @@ var ModelManager = function () {
   }, {
     key: 'notifyItemChangeObserversOfModels',
     value: function notifyItemChangeObserversOfModels(models) {
-      var _iteratorNormalCompletion45 = true;
-      var _didIteratorError45 = false;
-      var _iteratorError45 = undefined;
+      var _iteratorNormalCompletion49 = true;
+      var _didIteratorError49 = false;
+      var _iteratorError49 = undefined;
 
       try {
-        for (var _iterator45 = this.itemChangeObservers[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
-          var observer = _step45.value;
+        for (var _iterator49 = this.itemChangeObservers[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
+          var observer = _step49.value;
 
           var relevantItems = models.filter(function (item) {
             return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
@@ -39886,16 +40483,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError45 = true;
-        _iteratorError45 = err;
+        _didIteratorError49 = true;
+        _iteratorError49 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion45 && _iterator45.return) {
-            _iterator45.return();
+          if (!_iteratorNormalCompletion49 && _iterator49.return) {
+            _iterator49.return();
           }
         } finally {
-          if (_didIteratorError45) {
-            throw _iteratorError45;
+          if (_didIteratorError49) {
+            throw _iteratorError49;
           }
         }
       }
@@ -39918,6 +40515,8 @@ var ModelManager = function () {
         item = new Component(json_obj);
       } else if (json_obj.content_type == "SF|Extension") {
         item = new SyncAdapter(json_obj);
+      } else if (json_obj.content_type == "SN|UserPreferences") {
+        item = new UserPreferences(json_obj);
       } else {
         item = new Item(json_obj);
       }
@@ -39980,13 +40579,13 @@ var ModelManager = function () {
         return;
       }
 
-      var _iteratorNormalCompletion46 = true;
-      var _didIteratorError46 = false;
-      var _iteratorError46 = undefined;
+      var _iteratorNormalCompletion50 = true;
+      var _didIteratorError50 = false;
+      var _iteratorError50 = undefined;
 
       try {
-        for (var _iterator46 = contentObject.references[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
-          var reference = _step46.value;
+        for (var _iterator50 = contentObject.references[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
+          var reference = _step50.value;
 
           var referencedItem = this.findItem(reference.uuid);
           if (referencedItem) {
@@ -39997,16 +40596,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError46 = true;
-        _iteratorError46 = err;
+        _didIteratorError50 = true;
+        _iteratorError50 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion46 && _iterator46.return) {
-            _iterator46.return();
+          if (!_iteratorNormalCompletion50 && _iterator50.return) {
+            _iterator50.return();
           }
         } finally {
-          if (_didIteratorError46) {
-            throw _iteratorError46;
+          if (_didIteratorError50) {
+            throw _iteratorError50;
           }
         }
       }
@@ -40041,27 +40640,27 @@ var ModelManager = function () {
   }, {
     key: 'clearDirtyItems',
     value: function clearDirtyItems(items) {
-      var _iteratorNormalCompletion47 = true;
-      var _didIteratorError47 = false;
-      var _iteratorError47 = undefined;
+      var _iteratorNormalCompletion51 = true;
+      var _didIteratorError51 = false;
+      var _iteratorError51 = undefined;
 
       try {
-        for (var _iterator47 = items[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
-          var item = _step47.value;
+        for (var _iterator51 = items[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
+          var item = _step51.value;
 
           item.setDirty(false);
         }
       } catch (err) {
-        _didIteratorError47 = true;
-        _iteratorError47 = err;
+        _didIteratorError51 = true;
+        _iteratorError51 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion47 && _iterator47.return) {
-            _iterator47.return();
+          if (!_iteratorNormalCompletion51 && _iterator51.return) {
+            _iterator51.return();
           }
         } finally {
-          if (_didIteratorError47) {
-            throw _iteratorError47;
+          if (_didIteratorError51) {
+            throw _iteratorError51;
           }
         }
       }
@@ -40090,27 +40689,27 @@ var ModelManager = function () {
         return _.includes(this.acceptableContentTypes, item.content_type);
       }.bind(this));
 
-      var _iteratorNormalCompletion48 = true;
-      var _didIteratorError48 = false;
-      var _iteratorError48 = undefined;
+      var _iteratorNormalCompletion52 = true;
+      var _didIteratorError52 = false;
+      var _iteratorError52 = undefined;
 
       try {
-        for (var _iterator48 = relevantItems[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
-          var item = _step48.value;
+        for (var _iterator52 = relevantItems[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
+          var item = _step52.value;
 
           item.setDirty(true);
         }
       } catch (err) {
-        _didIteratorError48 = true;
-        _iteratorError48 = err;
+        _didIteratorError52 = true;
+        _iteratorError52 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion48 && _iterator48.return) {
-            _iterator48.return();
+          if (!_iteratorNormalCompletion52 && _iterator52.return) {
+            _iterator52.return();
           }
         } finally {
-          if (_didIteratorError48) {
-            throw _iteratorError48;
+          if (_didIteratorError52) {
+            throw _iteratorError52;
           }
         }
       }
@@ -40131,6 +40730,23 @@ var ModelManager = function () {
       }
 
       this.storageManager.deleteModel(item, callback);
+    }
+  }, {
+    key: 'removeItemsLocally',
+    value: function removeItemsLocally(items, callback) {
+      var index = 0;
+
+      var handleNext = function () {
+        if (index >= items.length) {
+          callback();
+          return;
+        }
+
+        this.removeItemLocally(items[index], handleNext);
+        index++;
+      }.bind(this);
+
+      handleNext();
     }
 
     /*
@@ -40182,11 +40798,11 @@ var ModelManager = function () {
 angular.module('app.frontend').service('modelManager', ModelManager);
 ;angular.module('app.frontend').provider('passcodeManager', function () {
 
-  this.$get = function ($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
-    return new PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager);
-  };
+  this.$get = ['$rootScope', '$timeout', 'modelManager', 'dbManager', 'userManager', 'storageManager', function ($rootScope, $timeout, modelManager, dbManager, userManager, storageManager) {
+    return new PasscodeManager($rootScope, $timeout, modelManager, dbManager, userManager, storageManager);
+  }];
 
-  function PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
+  function PasscodeManager($rootScope, $timeout, modelManager, dbManager, userManager, storageManager) {
 
     this._hasPasscode = storageManager.getItem("offlineParams", StorageManager.Fixed) != null;
     this._locked = this._hasPasscode;
@@ -40238,7 +40854,7 @@ angular.module('app.frontend').service('modelManager', ModelManager);
     };
 
     this.clearPasscode = function () {
-      storageManager.setItemsMode(authManager.isEphemeralSession() ? StorageManager.Ephemeral : StorageManager.Fixed); // Transfer from Ephemeral
+      storageManager.setItemsMode(userManager.isEphemeralSession() ? StorageManager.Ephemeral : StorageManager.Fixed); // Transfer from Ephemeral
       storageManager.removeItem("offlineParams", StorageManager.Fixed);
       this._keys = null;
       this._hasPasscode = false;
@@ -40247,7 +40863,7 @@ angular.module('app.frontend').service('modelManager', ModelManager);
     this.encryptLocalStorage = function (keys) {
       storageManager.setKeys(keys);
       // Switch to Ephemeral storage, wiping Fixed storage
-      storageManager.setItemsMode(authManager.isEphemeralSession() ? StorageManager.Ephemeral : StorageManager.FixedEncrypted);
+      storageManager.setItemsMode(userManager.isEphemeralSession() ? StorageManager.Ephemeral : StorageManager.FixedEncrypted);
     };
 
     this.decryptLocalStorage = function (keys) {
@@ -40305,6 +40921,7 @@ var MemoryStorage = function () {
 }();
 
 var StorageManager = function () {
+  StorageManager.$inject = ['dbManager'];
   function StorageManager(dbManager) {
     _classCallCheck(this, StorageManager);
 
@@ -40438,27 +41055,27 @@ var StorageManager = function () {
       EncryptionHelper.decryptItem(stored, this.encryptedStorageKeys);
       var encryptedStorage = new EncryptedStorage(stored);
 
-      var _iteratorNormalCompletion49 = true;
-      var _didIteratorError49 = false;
-      var _iteratorError49 = undefined;
+      var _iteratorNormalCompletion53 = true;
+      var _didIteratorError53 = false;
+      var _iteratorError53 = undefined;
 
       try {
-        for (var _iterator49 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
-          var key = _step49.value;
+        for (var _iterator53 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
+          var key = _step53.value;
 
           this.setItem(key, encryptedStorage.storage[key]);
         }
       } catch (err) {
-        _didIteratorError49 = true;
-        _iteratorError49 = err;
+        _didIteratorError53 = true;
+        _iteratorError53 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion49 && _iterator49.return) {
-            _iterator49.return();
+          if (!_iteratorNormalCompletion53 && _iterator53.return) {
+            _iterator53.return();
           }
         } finally {
-          if (_didIteratorError49) {
-            throw _iteratorError49;
+          if (_didIteratorError53) {
+            throw _iteratorError53;
           }
         }
       }
@@ -40548,19 +41165,23 @@ StorageManager.Fixed = "Fixed"; // localStorage
 angular.module('app.frontend').service('storageManager', StorageManager);
 ;
 var SyncManager = function () {
-  function SyncManager($rootScope, modelManager, authManager, dbManager, httpManager, $interval, $timeout, storageManager, passcodeManager) {
+  SyncManager.$inject = ['$rootScope', 'modelManager', 'userManager', 'dbManager', 'httpManager', '$interval', '$timeout', 'storageManager', 'passcodeManager'];
+  function SyncManager($rootScope, modelManager, userManager, dbManager, httpManager, $interval, $timeout, storageManager, passcodeManager) {
     _classCallCheck(this, SyncManager);
 
     this.$rootScope = $rootScope;
     this.httpManager = httpManager;
     this.modelManager = modelManager;
-    this.authManager = authManager;
+    this.userManager = userManager;
     this.dbManager = dbManager;
     this.$interval = $interval;
     this.$timeout = $timeout;
     this.storageManager = storageManager;
     this.passcodeManager = passcodeManager;
     this.syncStatus = {};
+
+    this.pendingSingletons = [];
+    this.syncableSingletons = [];
   }
 
   _createClass(SyncManager, [{
@@ -40571,8 +41192,8 @@ var SyncManager = function () {
         return;
       }
       // Use null to use the latest protocol version if offline
-      var version = this.authManager.offline() ? null : this.authManager.protocolVersion();
-      var keys = this.authManager.offline() ? this.passcodeManager.keys() : this.authManager.keys();
+      var version = this.userManager.offline() ? null : this.userManager.protocolVersion();
+      var keys = this.userManager.offline() ? this.passcodeManager.keys() : this.userManager.keys();
       var params = items.map(function (item) {
         var itemParams = new ItemParams(item, keys, version);
         itemParams = itemParams.paramsForLocalStorage();
@@ -40598,29 +41219,29 @@ var SyncManager = function () {
     value: function syncOffline(items, callback) {
       this.writeItemsToLocalStorage(items, true, function (responseItems) {
         // delete anything needing to be deleted
-        var _iteratorNormalCompletion50 = true;
-        var _didIteratorError50 = false;
-        var _iteratorError50 = undefined;
+        var _iteratorNormalCompletion54 = true;
+        var _didIteratorError54 = false;
+        var _iteratorError54 = undefined;
 
         try {
-          for (var _iterator50 = items[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
-            var item = _step50.value;
+          for (var _iterator54 = items[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
+            var item = _step54.value;
 
             if (item.deleted) {
               this.modelManager.removeItemLocally(item);
             }
           }
         } catch (err) {
-          _didIteratorError50 = true;
-          _iteratorError50 = err;
+          _didIteratorError54 = true;
+          _iteratorError54 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion50 && _iterator50.return) {
-              _iterator50.return();
+            if (!_iteratorNormalCompletion54 && _iterator54.return) {
+              _iterator54.return();
             }
           } finally {
-            if (_didIteratorError50) {
-              throw _iteratorError50;
+            if (_didIteratorError54) {
+              throw _iteratorError54;
             }
           }
         }
@@ -40628,6 +41249,8 @@ var SyncManager = function () {
         if (callback) {
           callback({ success: true });
         }
+
+        this.$rootScope.$broadcast("sync:completed");
       }.bind(this));
     }
 
@@ -40640,37 +41263,37 @@ var SyncManager = function () {
   }, {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback, alternateUUIDs) {
-      var _this13 = this;
+      var _this22 = this;
 
       var originalItems = this.modelManager.allItems;
 
       var block = function block(items) {
-        var _iteratorNormalCompletion51 = true;
-        var _didIteratorError51 = false;
-        var _iteratorError51 = undefined;
+        var _iteratorNormalCompletion55 = true;
+        var _didIteratorError55 = false;
+        var _iteratorError55 = undefined;
 
         try {
-          for (var _iterator51 = items[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
-            var item = _step51.value;
+          for (var _iterator55 = items[Symbol.iterator](), _step55; !(_iteratorNormalCompletion55 = (_step55 = _iterator55.next()).done); _iteratorNormalCompletion55 = true) {
+            var item = _step55.value;
 
             item.setDirty(true);
           }
         } catch (err) {
-          _didIteratorError51 = true;
-          _iteratorError51 = err;
+          _didIteratorError55 = true;
+          _iteratorError55 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion51 && _iterator51.return) {
-              _iterator51.return();
+            if (!_iteratorNormalCompletion55 && _iterator55.return) {
+              _iterator55.return();
             }
           } finally {
-            if (_didIteratorError51) {
-              throw _iteratorError51;
+            if (_didIteratorError55) {
+              throw _iteratorError55;
             }
           }
         }
 
-        _this13.writeItemsToLocalStorage(items, false, callback);
+        _this22.writeItemsToLocalStorage(items, false, callback);
       };
 
       if (alternateUUIDs) {
@@ -40679,12 +41302,12 @@ var SyncManager = function () {
         var alternateNextItem = function alternateNextItem() {
           if (index >= originalItems.length) {
             // We don't use originalItems as altnerating UUID will have deleted them.
-            block(_this13.modelManager.allItems);
+            block(_this22.modelManager.allItems);
             return;
           }
 
           var item = originalItems[index];
-          _this13.modelManager.alternateUUIDForItem(item, alternateNextItem);
+          _this22.modelManager.alternateUUIDForItem(item, alternateNextItem);
           ++index;
         };
 
@@ -40706,27 +41329,27 @@ var SyncManager = function () {
         allCallbacks.push(currentCallback);
       }
       if (allCallbacks.length) {
-        var _iteratorNormalCompletion52 = true;
-        var _didIteratorError52 = false;
-        var _iteratorError52 = undefined;
+        var _iteratorNormalCompletion56 = true;
+        var _didIteratorError56 = false;
+        var _iteratorError56 = undefined;
 
         try {
-          for (var _iterator52 = allCallbacks[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
-            var eachCallback = _step52.value;
+          for (var _iterator56 = allCallbacks[Symbol.iterator](), _step56; !(_iteratorNormalCompletion56 = (_step56 = _iterator56.next()).done); _iteratorNormalCompletion56 = true) {
+            var eachCallback = _step56.value;
 
             eachCallback(response);
           }
         } catch (err) {
-          _didIteratorError52 = true;
-          _iteratorError52 = err;
+          _didIteratorError56 = true;
+          _iteratorError56 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion52 && _iterator52.return) {
-              _iterator52.return();
+            if (!_iteratorNormalCompletion56 && _iterator56.return) {
+              _iterator56.return();
             }
           } finally {
-            if (_didIteratorError52) {
-              throw _iteratorError52;
+            if (_didIteratorError56) {
+              throw _iteratorError56;
             }
           }
         }
@@ -40755,6 +41378,8 @@ var SyncManager = function () {
   }, {
     key: 'sync',
     value: function sync(callback) {
+      var _this23 = this;
+
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
 
@@ -40776,7 +41401,7 @@ var SyncManager = function () {
 
       // we want to write all dirty items to disk only if the user is offline, or if the sync op fails
       // if the sync op succeeds, these items will be written to disk by handling the "saved_items" response from the server
-      if (this.authManager.offline()) {
+      if (this.userManager.offline()) {
         this.syncOffline(allDirtyItems, callback);
         this.modelManager.clearDirtyItems(allDirtyItems);
         return;
@@ -40789,8 +41414,20 @@ var SyncManager = function () {
       this.beginCheckingIfSyncIsTakingTooLong();
 
       var submitLimit = 100;
-      var subItems = allDirtyItems.slice(0, submitLimit);
-      if (subItems.length < allDirtyItems.length) {
+
+      var subItems = allDirtyItems.slice(0, submitLimit).filter(function (item) {
+        // for singleton items, we want to retrieve the latest information the server has before syncing,
+        // to make sure we don't create more than one instance.
+        var isSingleton = item.singleton();
+        var syncable = _.includes(_this23.syncableSingletons, item);
+        if (isSingleton && !syncable) {
+          _this23.pendingSingletons.push(item);
+          return false;
+        }
+        return true;
+      });
+
+      if (subItems.length < allDirtyItems.length - this.pendingSingletons.length) {
         // more items left to be synced, repeat
         this.syncStatus.needsMoreSync = true;
       } else {
@@ -40809,8 +41446,8 @@ var SyncManager = function () {
         this.allRetreivedItems = [];
       }
 
-      var version = this.authManager.protocolVersion();
-      var keys = this.authManager.keys();
+      var version = this.userManager.protocolVersion();
+      var keys = this.userManager.keys();
 
       var params = {};
       params.limit = 150;
@@ -40869,6 +41506,8 @@ var SyncManager = function () {
 
           this.callQueuedCallbacksAndCurrent(callback, response);
           this.$rootScope.$broadcast("sync:completed");
+
+          this.syncPendingSingletons();
         }
       }.bind(this);
 
@@ -40899,9 +41538,106 @@ var SyncManager = function () {
       }
     }
   }, {
+    key: 'syncPendingSingletons',
+    value: function syncPendingSingletons() {
+      var _this24 = this;
+
+      this.syncableSingletons = [];
+
+      if (this.pendingSingletons.length == 0) {
+        return;
+      }
+
+      var toBeDeleted = [];
+      var _iteratorNormalCompletion57 = true;
+      var _didIteratorError57 = false;
+      var _iteratorError57 = undefined;
+
+      try {
+        for (var _iterator57 = this.pendingSingletons[Symbol.iterator](), _step57; !(_iteratorNormalCompletion57 = (_step57 = _iterator57.next()).done); _iteratorNormalCompletion57 = true) {
+          var singleton = _step57.value;
+
+          // Find existing items that may already exist
+          var items = this.modelManager.itemsForContentType(singleton.content_type);
+
+          if (items.length == 0) {
+            // Can't find similar, safe to sync
+            this.syncableSingletons.push(singleton);
+            continue;
+          }
+
+          var _iteratorNormalCompletion58 = true;
+          var _didIteratorError58 = false;
+          var _iteratorError58 = undefined;
+
+          try {
+            for (var _iterator58 = items[Symbol.iterator](), _step58; !(_iteratorNormalCompletion58 = (_step58 = _iterator58.next()).done); _iteratorNormalCompletion58 = true) {
+              var item = _step58.value;
+
+              // Skip own item
+              if (item.uuid == singleton.uuid) {
+                // If there's only 1 item found, then it's safe to sync this item
+                if (items.length == 1) {
+                  this.syncableSingletons.push(singleton);
+                }
+                continue;
+              }
+
+              var itemAlreadyExists = item.singleton();
+              if (itemAlreadyExists) {
+                // Delete the pending singleton
+                toBeDeleted.push(singleton);
+              } else {
+                this.syncableSingletons.push(singleton);
+              }
+            }
+          } catch (err) {
+            _didIteratorError58 = true;
+            _iteratorError58 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion58 && _iterator58.return) {
+                _iterator58.return();
+              }
+            } finally {
+              if (_didIteratorError58) {
+                throw _iteratorError58;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        _didIteratorError57 = true;
+        _iteratorError57 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion57 && _iterator57.return) {
+            _iterator57.return();
+          }
+        } finally {
+          if (_didIteratorError57) {
+            throw _iteratorError57;
+          }
+        }
+      }
+
+      var sync = function sync() {
+        _this24.pendingSingletons = [];
+        _this24.sync();
+      };
+
+      if (toBeDeleted.length) {
+        this.modelManager.removeItemsLocally(toBeDeleted, function () {
+          sync();
+        });
+      } else {
+        sync();
+      }
+    }
+  }, {
     key: 'handleItemsResponse',
     value: function handleItemsResponse(responseItems, omitFields) {
-      var keys = this.authManager.keys() || this.passcodeManager.keys();
+      var keys = this.userManager.keys() || this.passcodeManager.keys();
       EncryptionHelper.decryptMultipleItems(responseItems, keys);
       var items = this.modelManager.mapResponseItemsToLocalModelsOmittingFields(responseItems, omitFields);
       return items;
@@ -40926,11 +41662,13 @@ var SyncManager = function () {
         var handled = false;
         var mapping = unsaved[i];
         var itemResponse = mapping.item;
-        EncryptionHelper.decryptMultipleItems([itemResponse], this.authManager.keys());
+        EncryptionHelper.decryptMultipleItems([itemResponse], this.userManager.keys());
         var item = this.modelManager.findItem(itemResponse.uuid);
 
         if (!item) {
           // Could be deleted
+          ++i;
+          handleNext();
           return;
         }
 
@@ -40941,9 +41679,8 @@ var SyncManager = function () {
           // import an old data archive with uuids from the old account into a new account
           handled = true;
           this.modelManager.alternateUUIDForItem(item, handleNext);
-        } else if (error.tag === "sync_conflict") {
+        } else if (error.tag === "sync_conflict" && !item.singleton()) {
           // Create a new item with the same contents of this item if the contents differ
-
           // We want a new uuid for the new item. Note that this won't neccessarily adjust references.
           itemResponse.uuid = null;
 
@@ -41045,6 +41782,7 @@ var SyncManager = function () {
 angular.module('app.frontend').service('syncManager', SyncManager);
 ;
 var ThemeManager = function () {
+  ThemeManager.$inject = ['modelManager', 'syncManager', '$rootScope', 'storageManager'];
   function ThemeManager(modelManager, syncManager, $rootScope, storageManager) {
     _classCallCheck(this, ThemeManager);
 
@@ -41160,6 +41898,342 @@ var ThemeManager = function () {
 }();
 
 angular.module('app.frontend').service('themeManager', ThemeManager);
+;angular.module('app.frontend').provider('userManager', function () {
+
+  function domainName() {
+    var domain_comps = location.hostname.split(".");
+    var domain = domain_comps[domain_comps.length - 2] + "." + domain_comps[domain_comps.length - 1];
+    return domain;
+  }
+
+  this.$get = ['$rootScope', '$timeout', 'httpManager', 'modelManager', 'dbManager', 'storageManager', function ($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
+    return new UserManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager);
+  }];
+
+  function UserManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
+
+    this.loadInitialData = function () {
+      var userData = storageManager.getItem("user");
+      if (userData) {
+        this.user = JSON.parse(userData);
+      } else {
+        // legacy, check for uuid
+        var idData = storageManager.getItem("uuid");
+        if (idData) {
+          this.user = { uuid: idData };
+        }
+      }
+
+      this.checkForSecurityUpdate();
+    };
+
+    this.offline = function () {
+      return !this.user;
+    };
+
+    this.isEphemeralSession = function () {
+      if (this.ephemeral == null || this.ephemeral == undefined) {
+        this.ephemeral = JSON.parse(storageManager.getItem("ephemeral", StorageManager.Fixed));
+      }
+      return this.ephemeral;
+    };
+
+    this.setEphemeral = function (ephemeral) {
+      this.ephemeral = ephemeral;
+      if (ephemeral) {
+        storageManager.setModelStorageMode(StorageManager.Ephemeral);
+        storageManager.setItemsMode(storageManager.hasPasscode() ? StorageManager.FixedEncrypted : StorageManager.Ephemeral);
+      } else {
+        storageManager.setItem("ephemeral", JSON.stringify(false), StorageManager.Fixed);
+      }
+    };
+
+    this.getAuthParams = function () {
+      if (!this._authParams) {
+        this._authParams = JSON.parse(storageManager.getItem("auth_params"));
+      }
+      return this._authParams;
+    };
+
+    this.keys = function () {
+      if (!this._keys) {
+        var mk = storageManager.getItem("mk");
+        if (!mk) {
+          return null;
+        }
+        this._keys = { mk: mk, ak: storageManager.getItem("ak") };
+      }
+      return this._keys;
+    };
+
+    this.protocolVersion = function () {
+      var authParams = this.getAuthParams();
+      if (authParams && authParams.version) {
+        return authParams.version;
+      }
+
+      var keys = this.keys();
+      if (keys && keys.ak) {
+        return "002";
+      } else {
+        return "001";
+      }
+    };
+
+    this.costMinimumForVersion = function (version) {
+      // all current versions have a min of 3000
+      // future versions will increase this
+      return 3000;
+    };
+
+    this.isProtocolVersionSupported = function (version) {
+      var supportedVersions = ["001", "002"];
+      return supportedVersions.includes(version);
+    };
+
+    this.getAuthParamsForEmail = function (url, email, callback) {
+      var requestUrl = url + "/auth/params";
+      httpManager.getAbsolute(requestUrl, { email: email }, function (response) {
+        callback(response);
+      }, function (response) {
+        console.error("Error getting auth params", response);
+        callback(null);
+      });
+    };
+
+    this.supportsPasswordDerivationCost = function (cost) {
+      // some passwords are created on platforms with stronger pbkdf2 capabilities, like iOS,
+      // which accidentally used 60,000 iterations (now adjusted), which CryptoJS can't handle here (WebCrypto can however).
+      // if user has high password cost and is using browser that doesn't support WebCrypto,
+      // we want to tell them that they can't login with this browser.
+      if (cost > 5000) {
+        return Neeto.crypto instanceof SNCryptoWeb ? true : false;
+      } else {
+        return true;
+      }
+    };
+
+    this.login = function (url, email, password, ephemeral, callback) {
+      this.getAuthParamsForEmail(url, email, function (authParams) {
+
+        if (!authParams || !authParams.pw_cost) {
+          callback({ error: { message: "Invalid email or password." } });
+          return;
+        }
+
+        if (!this.isProtocolVersionSupported(authParams.version)) {
+          alert("The protocol version associated with your account is outdated and no longer supported by this application. Please visit standardnotes.org/help/security-update for more information.");
+          callback({ didDisplayAlert: true });
+          return;
+        }
+
+        if (!this.supportsPasswordDerivationCost(authParams.pw_cost)) {
+          var string = "Your account was created on a platform with higher security capabilities than this browser supports. " + "If we attempted to generate your login keys here, it would take hours. " + "Please use a browser with more up to date security capabilities, like Google Chrome or Firefox, to login.";
+          alert(string);
+          callback({ didDisplayAlert: true });
+          return;
+        }
+
+        var minimum = this.costMinimumForVersion(authParams.version);
+        if (authParams.pw_cost < minimum) {
+          alert("Unable to login due to insecure password parameters. Please visit standardnotes.org/help/password-upgrade for more information.");
+          callback({ didDisplayAlert: true });
+          return;
+        }
+
+        Neeto.crypto.computeEncryptionKeysForUser(_.merge({ password: password }, authParams), function (keys) {
+
+          var requestUrl = url + "/auth/sign_in";
+          var params = { password: keys.pw, email: email };
+          httpManager.postAbsolute(requestUrl, params, function (response) {
+            this.setEphemeral(ephemeral);
+
+            this.handleAuthResponse(response, email, url, authParams, keys);
+            storageManager.setModelStorageMode(ephemeral ? StorageManager.Ephemeral : StorageManager.Fixed);
+
+            this.checkForSecurityUpdate();
+
+            callback(response);
+          }.bind(this), function (response) {
+            console.error("Error logging in", response);
+            callback(response);
+          });
+        }.bind(this));
+      }.bind(this));
+    };
+
+    this.handleAuthResponse = function (response, email, url, authParams, keys) {
+      try {
+        if (url) {
+          storageManager.setItem("server", url);
+        }
+
+        this.user = response.user;
+        storageManager.setItem("user", JSON.stringify(response.user));
+
+        this._authParams = authParams;
+        storageManager.setItem("auth_params", JSON.stringify(authParams));
+
+        storageManager.setItem("jwt", response.token);
+        this.saveKeys(keys);
+      } catch (e) {
+        dbManager.displayOfflineAlert();
+      }
+    };
+
+    this.saveKeys = function (keys) {
+      this._keys = keys;
+      storageManager.setItem("pw", keys.pw);
+      storageManager.setItem("mk", keys.mk);
+      storageManager.setItem("ak", keys.ak);
+    };
+
+    this.register = function (url, email, password, ephemeral, callback) {
+      Neeto.crypto.generateInitialEncryptionKeysForUser({ password: password, email: email }, function (keys, authParams) {
+        var requestUrl = url + "/auth";
+        var params = _.merge({ password: keys.pw, email: email }, authParams);
+
+        httpManager.postAbsolute(requestUrl, params, function (response) {
+          this.setEphemeral(ephemeral);
+
+          this.handleAuthResponse(response, email, url, authParams, keys);
+
+          storageManager.setModelStorageMode(ephemeral ? StorageManager.Ephemeral : StorageManager.Fixed);
+
+          callback(response);
+        }.bind(this), function (response) {
+          console.error("Registration error", response);
+          callback(response);
+        }.bind(this));
+      }.bind(this));
+    };
+
+    this.changePassword = function (email, new_password, callback) {
+      Neeto.crypto.generateInitialEncryptionKeysForUser({ password: new_password, email: email }, function (keys, authParams) {
+        var requestUrl = storageManager.getItem("server") + "/auth/change_pw";
+        var params = _.merge({ new_password: keys.pw }, authParams);
+
+        httpManager.postAbsolute(requestUrl, params, function (response) {
+          this.handleAuthResponse(response, email, null, authParams, keys);
+          callback(response);
+        }.bind(this), function (response) {
+          var error = response;
+          if (!error) {
+            error = { message: "Something went wrong while changing your password. Your password was not changed. Please try again." };
+          }
+          console.error("Change pw error", response);
+          callback({ error: error });
+        });
+      }.bind(this));
+    };
+
+    this.updateAuthParams = function (authParams, callback) {
+      var requestUrl = storageManager.getItem("server") + "/auth/update";
+      var params = authParams;
+      httpManager.postAbsolute(requestUrl, params, function (response) {
+        storageManager.setItem("auth_params", JSON.stringify(authParams));
+        if (callback) {
+          callback(response);
+        }
+      }.bind(this), function (response) {
+        var error = response;
+        console.error("Update error:", response);
+        if (callback) {
+          callback({ error: error });
+        }
+      });
+    };
+
+    this.checkForSecurityUpdate = function () {
+      if (this.offline()) {
+        return;
+      }
+
+      if (this.protocolVersion() === "001") {
+        if (this.keys().ak) {
+          // upgrade to 002
+          var authParams = this.getAuthParams();
+          authParams.version = "002";
+          this.updateAuthParams(authParams, function (response) {
+            if (!response.error) {
+              // let rest of UI load first
+              $timeout(function () {
+                alert("Your encryption version has been updated. To take full advantage of this update, please resync all your items by clicking Account -> Advanced -> Re-encrypt All Items.");
+              }, 750);
+            }
+          });
+        }
+      }
+    };
+
+    this.staticifyObject = function (object) {
+      return JSON.parse(JSON.stringify(object));
+    };
+
+    this.signOut = function () {
+      this._keys = null;
+      this.user = null;
+      this._authParams = null;
+    };
+
+    /* User Preferences */
+    var prefsContentType = "SN|UserPreferences";
+
+    this.userPreferences = new UserPreferences({ content_type: prefsContentType, dummy: true });
+
+    modelManager.addItemSyncObserver("user-manager", prefsContentType, function (items) {
+      var newPrefs = items.filter(function (item) {
+        return item.deleted == false;
+      })[0];
+      if (!newPrefs) {
+        return;
+      }
+
+      if (newPrefs.uuid !== this.userPreferences.uuid && !this.userPreferences.dummy) {
+        // prefs coming from server take higher priority against local copy
+        // delete existing prefs. This happens in the case of starting in an offline session,
+        // then signing in and retrieving prefered preferences
+        modelManager.setItemToBeDeleted(this.userPreferences);
+        $rootScope.sync();
+      }
+      this.userPreferences = newPrefs;
+      this.userPreferencesDidChange();
+    }.bind(this));
+
+    this.userPreferencesDidChange = function () {
+      $rootScope.$broadcast("user-preferences-changed");
+    };
+
+    $rootScope.$on("sync:completed", function () {
+
+      if (!this.userPreferences.dummy) {
+        return;
+      }
+
+      this.userPreferences.dummy = false;
+
+      var userPrefs = modelManager.itemsForContentType(prefsContentType)[0];
+      if (userPrefs) {
+        this.userPreferences = userPrefs;
+        this.userPreferencesDidChange();
+      } else {
+        modelManager.addItem(this.userPreferences);
+        this.userPreferences.setDirty(true);
+        $rootScope.sync();
+      }
+    }.bind(this));
+
+    this.syncUserPreferences = function () {
+      this.userPreferences.setDirty(true);
+      $rootScope.sync();
+    };
+
+    this.getUserPref = function (key, defaultValue) {
+      var value = this.userPreferences.getAppDataItem(key);
+      return value !== undefined && value != null ? value : defaultValue;
+    };
+  }
+});
 
 
 },{}]},{},[1]);
@@ -41465,15 +42539,19 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        <h2>Themes</h2>\n" +
     "      </div>\n" +
     "      <ul>\n" +
-    "        <li ng-click='theme.showDetails = !theme.showDetails' ng-repeat='theme in themeManager.themes'>\n" +
+    "        <li ng-click='clickedExtension(theme)' ng-repeat=\"theme in themeManager.themes | orderBy: 'name'\">\n" +
     "          <div class='container'>\n" +
-    "            <h3>{{theme.name}}</h3>\n" +
+    "            <h3>\n" +
+    "              <input class='bold' mb-autofocus='true' ng-if='theme.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(theme);' ng-model='theme.tempName' should-focus='true'>\n" +
+    "              <span ng-if='!theme.rename'>{{theme.name}}</span>\n" +
+    "            </h3>\n" +
     "            <a ng-click='themeManager.activateTheme(theme); $event.stopPropagation();' ng-if='!themeManager.isThemeActive(theme)'>Activate</a>\n" +
     "            <a ng-click='themeManager.deactivateTheme(theme); $event.stopPropagation();' ng-if='themeManager.isThemeActive(theme)'>Deactivate</a>\n" +
     "            <div class='mt-3' ng-if='theme.showDetails'>\n" +
     "              <div class='link-group'>\n" +
-    "                <a class='red' ng-click='deleteTheme(theme); $event.stopPropagation();'>Delete</a>\n" +
+    "                <a ng-click='renameExtension(theme); $event.stopPropagation();'>Rename</a>\n" +
     "                <a ng-click='theme.showLink = !theme.showLink; $event.stopPropagation();'>Show Link</a>\n" +
+    "                <a class='red' ng-click='deleteTheme(theme); $event.stopPropagation();'>Delete</a>\n" +
     "                <p class='small selectable wrap' ng-if='theme.showLink'>\n" +
     "                  {{theme.url}}\n" +
     "                </p>\n" +
@@ -41489,14 +42567,18 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        <p style='margin-top: 3px;'>Choose \"Editor\" in the note menu to use an editor for a specific note.</p>\n" +
     "      </div>\n" +
     "      <ul>\n" +
-    "        <li ng-click='editor.showDetails = !editor.showDetails' ng-repeat='editor in editorManager.externalEditors'>\n" +
+    "        <li ng-click='clickedExtension(editor)' ng-repeat=\"editor in editorManager.externalEditors | orderBy: 'name'\">\n" +
     "          <div class='container'>\n" +
     "            <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
-    "            <h3>{{editor.name}}</h3>\n" +
+    "            <h3>\n" +
+    "              <input class='bold' mb-autofocus='true' ng-if='editor.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(editor);' ng-model='editor.tempName' should-focus='true'>\n" +
+    "              <span ng-if='!editor.rename'>{{editor.name}}</span>\n" +
+    "            </h3>\n" +
     "            <div class='mt-5' ng-if='editor.showDetails'>\n" +
     "              <div class='link-group'>\n" +
     "                <a ng-click='setDefaultEditor(editor); $event.stopPropagation();' ng-if='!editor.default'>Make Default</a>\n" +
     "                <a class='tinted' ng-click='removeDefaultEditor(editor); $event.stopPropagation();' ng-if='editor.default'>Remove as Default</a>\n" +
+    "                <a ng-click='renameExtension(editor); $event.stopPropagation();'>Rename</a>\n" +
     "                <a ng-click='editor.showUrl = !editor.showUrl; $event.stopPropagation();'>Show Link</a>\n" +
     "                <a class='red' ng-click='deleteEditor(editor); $event.stopPropagation();'>Delete</a>\n" +
     "              </div>\n" +
@@ -41512,9 +42594,12 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        <p style='margin-top: 3px;'>Choose \"Actions\" in the note editor to use installed actions.</p>\n" +
     "      </div>\n" +
     "      <ul>\n" +
-    "        <li ng-click='extension.showDetails = !extension.showDetails' ng-init='extension.formData = {}' ng-repeat=\"extension in extensionManager.extensions | orderBy: 'name'\">\n" +
+    "        <li ng-click='clickedExtension(extension)' ng-init='extension.formData = {}' ng-repeat=\"extension in extensionManager.extensions | orderBy: 'name'\">\n" +
     "          <div class='container'>\n" +
-    "            <h3>{{extension.name}}</h3>\n" +
+    "            <h3>\n" +
+    "              <input class='bold' mb-autofocus='true' ng-if='extension.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(extension);' ng-model='extension.tempName' should-focus='true'>\n" +
+    "              <span ng-if='!extension.rename'>{{extension.name}}</span>\n" +
+    "            </h3>\n" +
     "            <p class='small' ng-if='extension.description'>{{extension.description}}</p>\n" +
     "            <div ng-if='extension.showDetails'>\n" +
     "              <div class='mt-10'>\n" +
@@ -41564,9 +42649,10 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "                  </label>\n" +
     "                </li>\n" +
     "              </ul>\n" +
+    "              <a class='block mt-5' ng-click='renameExtension(extension); $event.stopPropagation();'>Rename</a>\n" +
     "              <a class='block mt-5' ng-click='extension.showURL = !extension.showURL; $event.stopPropagation();'>Show Link</a>\n" +
     "              <p class='wrap selectable small' ng-if='extension.showURL'>{{extension.url}}</p>\n" +
-    "              <a class='block mt-5' ng-click='deleteActionExtension(extension); $event.stopPropagation();'>Remove extension</a>\n" +
+    "              <a class='block mt-5' ng-click='deleteActionExtension(extension); $event.stopPropagation();'>Delete</a>\n" +
     "            </div>\n" +
     "          </div>\n" +
     "        </li>\n" +
@@ -41577,16 +42663,20 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        <h2>Components</h2>\n" +
     "      </div>\n" +
     "      <ul>\n" +
-    "        <li ng-click='component.showDetails = !component.showDetails' ng-repeat='component in componentManager.components'>\n" +
+    "        <li ng-click='clickedExtension(component)' ng-repeat=\"component in componentManager.components | orderBy: 'name'\">\n" +
     "          <div class='container'>\n" +
-    "            <h3>{{component.name}}</h3>\n" +
+    "            <h3>\n" +
+    "              <input class='bold' mb-autofocus='true' ng-if='component.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(component);' ng-model='component.tempName' should-focus='true'>\n" +
+    "              <span ng-if='!component.rename'>{{component.name}}</span>\n" +
+    "            </h3>\n" +
     "            <a ng-click='componentManager.activateComponent(component); $event.stopPropagation();' ng-if='!componentManager.isComponentActive(component)'>Activate</a>\n" +
     "            <a ng-click='componentManager.deactivateComponent(component); $event.stopPropagation();' ng-if='componentManager.isComponentActive(component)'>Deactivate</a>\n" +
     "            <div class='mt-3' ng-if='component.showDetails'>\n" +
     "              <div class='link-group'>\n" +
-    "                <a class='red' ng-click='deleteComponent(component); $event.stopPropagation();'>Delete</a>\n" +
+    "                <a ng-click='renameExtension(component); $event.stopPropagation();'>Rename</a>\n" +
     "                <a ng-click='component.showLink = !component.showLink; $event.stopPropagation();'>Show Link</a>\n" +
     "                <a ng-click='revokePermissions(component); $event.stopPropagation();' ng-if='component.permissions.length'>Revoke Permissions</a>\n" +
+    "                <a class='red' ng-click='deleteComponent(component); $event.stopPropagation();'>Delete</a>\n" +
     "                <p class='small selectable wrap' ng-if='component.showLink'>\n" +
     "                  {{component.url}}\n" +
     "                </p>\n" +
@@ -41630,7 +42720,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 
 
   $templateCache.put('frontend/directives/panel-resizer.html',
-    "<div style='width: 10px; height: 100%; background-color: red; cursor: col-resize;'></div>\n"
+    "<div class='panel-resizer-column'></div>\n"
   );
 
 
@@ -41691,51 +42781,61 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 
 
   $templateCache.put('frontend/editor.html',
-    "<div class='section editor' ng-class=\"{'fullscreen' : ctrl.fullscreen}\">\n" +
-    "  <div class='section-title-bar' id='editor-title-bar' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-show='ctrl.note &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
+    "<div class='section editor' id='editor-column' ng-click=\"ctrl.keyboardManager.setContext('editor')\">\n" +
+    "  <div class='section-title-bar' id='editor-title-bar' ng-show='ctrl.note &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
     "    <div class='title'>\n" +
-    "      <input class='input' id='note-title-editor' ng-change='ctrl.nameChanged()' ng-focus='ctrl.onNameFocus()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTitle($event)' ng-model='ctrl.note.title' select-on-click='true'>\n" +
+    "      <input class='input mousetrap focusable' id='note-title-editor' ng-blur='ctrl.onNameBlur()' ng-change='ctrl.nameChanged()' ng-focus='ctrl.onNameFocus()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTitle($event)' ng-model='ctrl.note.title' select-on-click='true'>\n" +
     "    </div>\n" +
     "    <div id='save-status' ng-bind-html='ctrl.noteStatus' ng-class=\"{'red bold': ctrl.saveError, 'orange bold': ctrl.syncTakingTooLong}\"></div>\n" +
     "    <div class='editor-tags'>\n" +
     "      <div id='note-tags-component-container' ng-if='ctrl.tagsComponent &amp;&amp; ctrl.tagsComponent.active'>\n" +
-    "        <iframe data-component-id='{{ctrl.tagsComponent.uuid}}' frameBorder='0' id='note-tags-iframe' ng-src='{{ctrl.tagsComponent.url | trusted}}' sandbox='allow-scripts'></iframe>\n" +
+    "        <iframe class='focusable' data-component-id='{{ctrl.tagsComponent.uuid}}' frameBorder='0' id='note-tags-iframe' ng-src='{{ctrl.tagsComponent.url | trusted}}' sandbox='allow-scripts'></iframe>\n" +
     "      </div>\n" +
-    "      <input class='tags-input' ng-blur='ctrl.updateTagsFromTagsString($event, ctrl.tagsString)' ng-if='!(ctrl.tagsComponent &amp;&amp; ctrl.tagsComponent.active)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur();' ng-model='ctrl.tagsString' placeholder='#tags' type='text'>\n" +
+    "      <input class='tags-input mousetrap focusable' ng-blur='ctrl.onTagsBlur()' ng-focus='ctrl.onTagsFocus()' ng-if='!(ctrl.tagsComponent &amp;&amp; ctrl.tagsComponent.active)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur();' ng-model='ctrl.tagsString' placeholder='#tags' type='text'>\n" +
     "    </div>\n" +
     "  </div>\n" +
     "  <ul class='section-menu-bar' ng-if='ctrl.note'>\n" +
     "    <li click-outside='ctrl.showMenu = false;' is-open='ctrl.showMenu' ng-class=\"{'selected' : ctrl.showMenu}\">\n" +
     "      <label ng-click='ctrl.showMenu = !ctrl.showMenu; ctrl.showExtensions = false; ctrl.showEditorMenu = false;'>Menu</label>\n" +
-    "      <ul class='dropdown-menu sectioned-menu' ng-if='ctrl.showMenu'>\n" +
-    "        <li>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.togglePin()'>\n" +
-    "            <i class='icon ion-ios-flag'></i>\n" +
-    "            {{ctrl.note.pinned ? \"Unpin\" : \"Pin\"}}\n" +
-    "          </label>\n" +
-    "        </li>\n" +
-    "        <li>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.toggleArchiveNote()'>\n" +
-    "            <i class='icon ion-ios-box'></i>\n" +
-    "            {{ctrl.note.archived ? \"Unarchive\" : \"Archive\"}}\n" +
-    "          </label>\n" +
-    "        </li>\n" +
-    "        <li>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.deleteNote()'>\n" +
-    "            <i class='icon ion-trash-b'></i>\n" +
-    "            Delete\n" +
-    "          </label>\n" +
-    "        </li>\n" +
-    "        <li>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.toggleFullScreen()'>\n" +
-    "            <i class='icon ion-arrow-expand'></i>\n" +
-    "            Toggle Fullscreen\n" +
-    "          </label>\n" +
-    "        </li>\n" +
-    "        <li ng-if='ctrl.hasDisabledComponents()'>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.restoreDisabledComponents()'>Restore Disabled Components</label>\n" +
-    "        </li>\n" +
-    "      </ul>\n" +
+    "      <div class='dropdown-menu sectioned-menu' ng-if='ctrl.showMenu'>\n" +
+    "        <ul>\n" +
+    "          <div class='header'>\n" +
+    "            <div class='title'>Note</div>\n" +
+    "          </div>\n" +
+    "          <li ng-click='ctrl.selectedMenuItem($event); ctrl.togglePin()'>\n" +
+    "            <label>\n" +
+    "              <i class='icon ion-ios-flag'></i>\n" +
+    "              {{ctrl.note.pinned ? \"Unpin\" : \"Pin\"}}\n" +
+    "            </label>\n" +
+    "          </li>\n" +
+    "          <li ng-click='ctrl.selectedMenuItem($event); ctrl.toggleArchiveNote()'>\n" +
+    "            <label>\n" +
+    "              <i class='icon ion-ios-box'></i>\n" +
+    "              {{ctrl.note.archived ? \"Unarchive\" : \"Archive\"}}\n" +
+    "            </label>\n" +
+    "          </li>\n" +
+    "          <li ng-click='ctrl.selectedMenuItem($event); ctrl.deleteNote()'>\n" +
+    "            <label>\n" +
+    "              <i class='icon ion-trash-b'></i>\n" +
+    "              Delete\n" +
+    "            </label>\n" +
+    "          </li>\n" +
+    "          <li ng-if='ctrl.hasDisabledComponents()'>\n" +
+    "            <label ng-click='ctrl.selectedMenuItem($event); ctrl.restoreDisabledComponents()'>Restore Disabled Components</label>\n" +
+    "          </li>\n" +
+    "        </ul>\n" +
+    "        <ul ng-if='ctrl.editor.systemEditor == true'>\n" +
+    "          <div class='header'>\n" +
+    "            <div class='title'>Display</div>\n" +
+    "          </div>\n" +
+    "          <li ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('monospaceFont')\">\n" +
+    "            <label>\n" +
+    "              <span class='top mt-5 mr-5' ng-if='ctrl.monospaceFont == true'>✓</span>\n" +
+    "              Monospace Font\n" +
+    "            </label>\n" +
+    "          </li>\n" +
+    "        </ul>\n" +
+    "      </div>\n" +
     "    </li>\n" +
     "    <li click-outside='ctrl.showEditorMenu = false;' is-open='ctrl.showEditorMenu' ng-class=\"{'selected' : ctrl.showEditorMenu}\">\n" +
     "      <label ng-click='ctrl.showEditorMenu = !ctrl.showEditorMenu; ctrl.showMenu = false; ctrl.showExtensions = false;'>Editor</label>\n" +
@@ -41746,11 +42846,13 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      <contextual-extensions-menu item='ctrl.note' ng-if='ctrl.showExtensions'></contextual-extensions-menu>\n" +
     "    </li>\n" +
     "  </ul>\n" +
-    "  <div class='editor-content' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.noteReady &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
-    "    <iframe frameBorder='0' id='editor-iframe' ng-if='ctrl.editor &amp;&amp; !ctrl.editor.systemEditor' ng-src='{{ctrl.editor.url | trusted}}' style='width: 100%;'>\n" +
+    "  <div class='editor-content' id='editor-content' ng-if='ctrl.noteReady &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
+    "    <panel-resizer class='left' control='ctrl.resizeControl' hoverable='true' min-width='300' on-resize-finish='ctrl.onPanelResizeFinish' panel-id=\"'editor-content'\" property=\"'left'\"></panel-resizer>\n" +
+    "    <iframe class='focusable' frameBorder='0' id='editor-iframe' ng-if='ctrl.editor &amp;&amp; !ctrl.editor.systemEditor' ng-src='{{ctrl.editor.url | trusted}}' style='width: 100%;'>\n" +
     "      Loading\n" +
     "    </iframe>\n" +
-    "    <textarea class='editable' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.editor || ctrl.editor.systemEditor' ng-model='ctrl.note.text'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
+    "    <textarea class='editable mousetrap focusable' dir='auto' id='note-text-editor' ng-blur='ctrl.onContentBlur()' ng-change='ctrl.contentChanged()' ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.editor || ctrl.editor.systemEditor' ng-model='ctrl.note.text'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
+    "    <panel-resizer control='ctrl.resizeControl' hoverable='true' min-width='300' on-resize-finish='ctrl.onPanelResizeFinish' panel-id=\"'editor-content'\"></panel-resizer>\n" +
     "  </div>\n" +
     "  <section class='section' ng-if='ctrl.note.errorDecrypting'>\n" +
     "    <p class='medium-padding' style='padding-top: 0 !important;'>There was an error decrypting this item. Ensure you are running the latest version of this app, then sign out and sign back in to try again.</p>\n" +
@@ -41809,7 +42911,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
   $templateCache.put('frontend/home.html',
     "<div class='main-ui-view'>\n" +
     "  <lock-screen ng-if='needsUnlock' on-success='onSuccessfulUnlock'></lock-screen>\n" +
-    "  <div class='app' ng-if='!needsUnlock'>\n" +
+    "  <div class='app' id='app' ng-if='!needsUnlock'>\n" +
     "    <tags-section add-new='tagsAddNew' all-tag='allTag' archive-tag='archiveTag' remove-tag='removeTag' save='tagsSave' selection-made='tagsSelectionMade' tags='tags' will-select='tagsWillMakeSelection'></tags-section>\n" +
     "    <notes-section add-new='notesAddNew' selection-made='notesSelectionMade' tag='selectedTag'></notes-section>\n" +
     "    <editor-section note='selectedNote' remove='deleteNote' save='saveNote' update-tags='updateTagsForNote'></editor-section>\n" +
@@ -41833,55 +42935,84 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 
 
   $templateCache.put('frontend/notes.html',
-    "<div class='section notes'>\n" +
+    "<div class='section notes' id='notes-column' ng-click=\"ctrl.keyboardManager.setContext('notes')\">\n" +
     "  <div class='content'>\n" +
     "    <div class='section-title-bar' id='notes-title-bar'>\n" +
-    "      <div class='title'>{{ctrl.tag.title}} notes</div>\n" +
-    "      <div class='add-button' id='notes-add-button' ng-click='ctrl.createNewNote()'>+</div>\n" +
-    "      <br>\n" +
-    "      <div class='filter-section'>\n" +
-    "        <input class='filter-bar' lowercase='true' ng-change='ctrl.filterTextChanged()' ng-model='ctrl.noteFilter.text' placeholder='Search' select-on-click='true'>\n" +
-    "          <div id='search-clear-button' ng-click=\"ctrl.noteFilter.text = ''; ctrl.filterTextChanged()\" ng-if='ctrl.noteFilter.text'>✕</div>\n" +
-    "        </input>\n" +
+    "      <div class='padded'>\n" +
+    "        <div class='section-title-bar-header'>\n" +
+    "          <div class='title'>{{ctrl.panelTitle()}}</div>\n" +
+    "          <div class='add-button' id='notes-add-button' ng-click='ctrl.createNewNote()'>+</div>\n" +
+    "        </div>\n" +
+    "        <div class='filter-section'>\n" +
+    "          <input class='filter-bar mousetrap' id='search-bar' lowercase='true' ng-change='ctrl.filterTextChanged()' ng-model='ctrl.noteFilter.text' placeholder='Search' select-on-click='true'>\n" +
+    "            <div id='search-clear-button' ng-click=\"ctrl.noteFilter.text = ''; ctrl.filterTextChanged()\" ng-if='ctrl.noteFilter.text'>✕</div>\n" +
+    "          </input>\n" +
+    "        </div>\n" +
     "      </div>\n" +
-    "      <ul class='section-menu-bar' id='notes-menu-bar'>\n" +
-    "        <li class='item-with-subtitle' ng-class=\"{'selected' : ctrl.showMenu}\">\n" +
+    "      <ul class='section-menu-bar no-h-padding' id='notes-menu-bar'>\n" +
+    "        <li class='item-with-subtitle full-width' ng-class=\"{'selected' : ctrl.showMenu}\">\n" +
     "          <div class='wrapper' ng-click='ctrl.showMenu = !ctrl.showMenu'>\n" +
-    "            <label>Options</label>\n" +
-    "            <div class='subtitle'>{{ctrl.optionsSubtitle()}}</div>\n" +
+    "            <label>\n" +
+    "              Options\n" +
+    "              <span class='subtitle'>{{ctrl.optionsSubtitle()}}</span>\n" +
+    "            </label>\n" +
     "          </div>\n" +
-    "          <div class='sectioned-menu dropdown-menu' ng-if='ctrl.showMenu'>\n" +
+    "          <div class='sectioned-menu dropdown-menu full-width' ng-if='ctrl.showMenu'>\n" +
     "            <ul>\n" +
     "              <div class='header'>\n" +
-    "                <div class='title'>Sort by</div>\n" +
+    "                <div class='title'>Sort By</div>\n" +
     "              </div>\n" +
     "              <li ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByCreated()'>\n" +
     "                <label>\n" +
     "                  <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'created_at'\">✓</span>\n" +
-    "                  By date added\n" +
+    "                  By Date Added\n" +
     "                </label>\n" +
     "              </li>\n" +
     "              <li ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByUpdated()'>\n" +
     "                <label>\n" +
     "                  <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'updated_at'\">✓</span>\n" +
-    "                  By date modified\n" +
+    "                  By Date Modified\n" +
     "                </label>\n" +
     "              </li>\n" +
     "              <li ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByTitle()'>\n" +
     "                <label>\n" +
     "                  <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'title'\">✓</span>\n" +
-    "                  By title\n" +
+    "                  By Title\n" +
     "                </label>\n" +
     "              </li>\n" +
     "            </ul>\n" +
     "            <ul ng-if='!ctrl.tag.archiveTag'>\n" +
     "              <div class='header'>\n" +
-    "                <div class='title'>Archives</div>\n" +
+    "                <div class='title'>Display</div>\n" +
     "              </div>\n" +
-    "              <li ng-click='ctrl.selectedMenuItem($event); ctrl.toggleShowArchived()'>\n" +
+    "              <li ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('showArchived')\">\n" +
     "                <label>\n" +
     "                  <span class='top mt-5 mr-5' ng-if='ctrl.showArchived == true'>✓</span>\n" +
-    "                  Show archived notes\n" +
+    "                  Show Archived Notes\n" +
+    "                </label>\n" +
+    "              </li>\n" +
+    "              <li ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('hidePinned')\">\n" +
+    "                <label>\n" +
+    "                  <span class='top mt-5 mr-5' ng-if='ctrl.hidePinned == true'>✓</span>\n" +
+    "                  Hide Pinned Notes\n" +
+    "                </label>\n" +
+    "              </li>\n" +
+    "              <li ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('hideNotePreview')\">\n" +
+    "                <label>\n" +
+    "                  <span class='top mt-5 mr-5' ng-if='ctrl.hideNotePreview == true'>✓</span>\n" +
+    "                  Hide Note Preview\n" +
+    "                </label>\n" +
+    "              </li>\n" +
+    "              <li ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('hideDate')\">\n" +
+    "                <label>\n" +
+    "                  <span class='top mt-5 mr-5' ng-if='ctrl.hideDate == true'>✓</span>\n" +
+    "                  Hide Date\n" +
+    "                </label>\n" +
+    "              </li>\n" +
+    "              <li ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('hideTags')\">\n" +
+    "                <label>\n" +
+    "                  <span class='top mt-5 mr-5' ng-if='ctrl.hideTags == true'>✓</span>\n" +
+    "                  Hide Tags\n" +
     "                </label>\n" +
     "              </li>\n" +
     "            </ul>\n" +
@@ -41902,16 +43033,16 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "            <i class='icon ion-ios-box'></i>\n" +
     "            <strong class='medium'>Archived</strong>\n" +
     "          </div>\n" +
-    "          <div class='tags-string' ng-if='ctrl.tag.all'>\n" +
+    "          <div class='tags-string' ng-if='ctrl.tag.all &amp;&amp; !ctrl.hideTags'>\n" +
     "            <div class='faded'>{{note.tagsString()}}</div>\n" +
     "          </div>\n" +
     "          <div class='name' ng-if='note.title'>\n" +
     "            {{note.title}}\n" +
     "          </div>\n" +
-    "          <div class='note-preview'>\n" +
+    "          <div class='note-preview' ng-if='!ctrl.hideNotePreview'>\n" +
     "            {{note.text}}\n" +
     "          </div>\n" +
-    "          <div class='date faded'>\n" +
+    "          <div class='date faded' ng-if='!ctrl.hideDate'>\n" +
     "            <span ng-if=\"ctrl.sortBy == 'updated_at'\">Modified {{note.updatedAtString() || 'Now'}}</span>\n" +
     "            <span ng-if=\"ctrl.sortBy != 'updated_at'\">{{note.createdAtString() || 'Now'}}</span>\n" +
     "          </div>\n" +
@@ -41919,17 +43050,20 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      </div>\n" +
     "    </div>\n" +
     "  </div>\n" +
+    "  <panel-resizer collapsable='true' control='ctrl.panelController' hoverable='true' on-resize-finish='ctrl.onPanelResize' panel-id=\"'notes-column'\"></panel-resizer>\n" +
     "</div>\n"
   );
 
 
   $templateCache.put('frontend/tags.html',
-    "<div class='section tags' id='tags-column'>\n" +
+    "<div class='section tags' id='tags-column' ng-click=\"ctrl.keyboardManager.setContext('tags')\">\n" +
     "  <iframe frameBorder='0' id='tags-list-iframe' ng-if='ctrl.component &amp;&amp; ctrl.component.active' ng-src='{{ctrl.component.url | trusted}}' sandbox='allow-scripts' style='width: 100%; height: 100%;'></iframe>\n" +
     "  <div class='content' id='tags-content' ng-if='!(ctrl.component &amp;&amp; ctrl.component.active)'>\n" +
     "    <div class='section-title-bar' id='tags-title-bar'>\n" +
-    "      <div class='title'>Tags</div>\n" +
-    "      <div class='add-button' id='tag-add-button' ng-click='ctrl.clickedAddNewTag()'>+</div>\n" +
+    "      <div class='section-title-bar-header'>\n" +
+    "        <div class='title'>Tags</div>\n" +
+    "        <div class='add-button' id='tag-add-button' ng-click='ctrl.createNewTag()'>+</div>\n" +
+    "      </div>\n" +
     "    </div>\n" +
     "    <div class='scrollable'>\n" +
     "      <div class='tag' ng-class=\"{'selected' : ctrl.selectedTag == ctrl.allTag}\" ng-click='ctrl.selectTag(ctrl.allTag)' ng-if='ctrl.allTag'>\n" +
@@ -41957,6 +43091,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      </div>\n" +
     "    </div>\n" +
     "  </div>\n" +
+    "  <panel-resizer collapsable='true' control='ctrl.panelController' hoverable='true' on-resize-finish='ctrl.onPanelResize' panel-id=\"'tags-column'\"></panel-resizer>\n" +
     "</div>\n"
   );
 
