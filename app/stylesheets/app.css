@@ -846,7 +846,7 @@ a.disabled {
   color: black;
 }
 
-#notes-column.notes {
+#notes-column, .notes {
   border-left: 1px solid #dddddd;
   border-right: 1px solid #dddddd;
   width: 350px;
@@ -855,32 +855,32 @@ a.disabled {
   -khtml-user-select: none;
   -webkit-user-select: none;
 }
-#notes-column.notes .content {
+#notes-column .content, .notes .content {
   display: flex;
   flex-direction: column;
 }
-#notes-column.notes #notes-title-bar {
+#notes-column #notes-title-bar, .notes #notes-title-bar {
   color: rgba(0, 0, 0, 0.4);
   padding-top: 16px;
   font-weight: normal;
   font-size: 18px;
 }
-#notes-column.notes #notes-title-bar .title {
+#notes-column #notes-title-bar .title, .notes #notes-title-bar .title {
   width: calc(90% - 45px);
 }
-#notes-column.notes #notes-menu-bar {
+#notes-column #notes-menu-bar, .notes #notes-menu-bar {
   position: relative;
   margin-top: 14px;
   height: auto;
   width: auto;
 }
-#notes-column.notes .filter-section {
+#notes-column .filter-section, .notes .filter-section {
   clear: left;
   height: 32px;
   margin-top: 14px;
   position: relative;
 }
-#notes-column.notes .filter-section .filter-bar {
+#notes-column .filter-section .filter-bar, .notes .filter-section .filter-bar {
   background-color: #e9e9e9;
   border-radius: 4px;
   height: 100%;
@@ -893,7 +893,7 @@ a.disabled {
   width: 100%;
   position: relative;
 }
-#notes-column.notes .filter-section #search-clear-button {
+#notes-column .filter-section #search-clear-button, .notes .filter-section #search-clear-button {
   border-radius: 50%;
   width: 17px;
   height: 17px;
@@ -908,43 +908,43 @@ a.disabled {
   right: 8px;
   transition: background-color 0.15s linear;
 }
-#notes-column.notes .filter-section #search-clear-button:hover {
+#notes-column .filter-section #search-clear-button:hover, .notes .filter-section #search-clear-button:hover {
   background-color: #086dd6;
 }
-#notes-column.notes .scrollable {
+#notes-column .scrollable, .notes .scrollable {
   height: 100%;
 }
-#notes-column.notes .infinite-scroll {
+#notes-column .infinite-scroll, .notes .infinite-scroll {
   overflow-x: hidden;
   height: inherit;
 }
-#notes-column.notes .note {
+#notes-column .note, .notes .note {
   width: 100%;
   padding: 15px;
   border-bottom: 1px solid #e3e3e3;
   cursor: pointer;
   background-color: white;
 }
-#notes-column.notes .note > .name {
+#notes-column .note > .name, .notes .note > .name {
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-#notes-column.notes .note > .date {
+#notes-column .note > .date, .notes .note > .date {
   font-size: 12px;
   margin-top: 4px;
 }
-#notes-column.notes .note .tags-string {
+#notes-column .note .tags-string, .notes .note .tags-string {
   margin-bottom: 4px;
   font-size: 13px;
 }
-#notes-column.notes .note .pinned .icon {
+#notes-column .note .pinned .icon, .notes .note .pinned .icon {
   display: inline-block;
   vertical-align: top;
   margin-top: 2px;
   margin-right: 2px;
 }
-#notes-column.notes .note .note-preview {
+#notes-column .note .note-preview, .notes .note .note-preview {
   font-size: 15px;
   margin-top: 1px;
   overflow: hidden;
@@ -958,11 +958,11 @@ a.disabled {
   max-height: calc(18px * 1);
   /* fallback */
 }
-#notes-column.notes .note.selected {
+#notes-column .note.selected, .notes .note.selected {
   background-color: #086dd6;
   color: white;
 }
-#notes-column.notes .note.selected .pinned {
+#notes-column .note.selected .pinned, .notes .note.selected .pinned {
   color: white;
 }
 

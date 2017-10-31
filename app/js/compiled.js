@@ -33867,6 +33867,7 @@ function isMacApplication() {
 
   this.reloadFont = function () {
     var editable = document.getElementById("note-text-editor");
+
     if (!editable) {
       return;
     }
@@ -34080,6 +34081,8 @@ function isMacApplication() {
   };
 
   this.selectedEditor = function (editor) {
+    var _this5 = this;
+
     this.showEditorMenu = false;
 
     if (this.editor && editor !== this.editor && !this.editor.systemEditor) {
@@ -34093,6 +34096,12 @@ function isMacApplication() {
     syncManager.sync();
 
     this.editor = editor;
+
+    if (editor.systemEditor) {
+      $timeout(function () {
+        _this5.reloadFont();
+      });
+    }
   }.bind(this);
 
   this.editorForNote = function (note) {
@@ -35023,17 +35032,17 @@ angular.module('app.frontend').directive('lockScreen', function () {
     }
   };
 }).controller('NotesCtrl', ['userManager', '$timeout', '$rootScope', 'modelManager', 'storageManager', 'keyboardManager', function (userManager, $timeout, $rootScope, modelManager, storageManager, keyboardManager) {
-  var _this5 = this;
+  var _this6 = this;
 
   this.keyboardManager = keyboardManager;
   keyboardManager.setContext('notes');
 
   keyboardManager.registerAction("create-new-note", function () {
-    _this5.createNewNote();
+    _this6.createNewNote();
   });
 
   keyboardManager.registerAction("next-note", function () {
-    _this5.selectNextNote();
+    _this6.selectNextNote();
     var searchBar = document.getElementById("search-bar");
     if (searchBar) {
       searchBar.blur();
@@ -35041,7 +35050,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
   });
 
   keyboardManager.registerAction("previous-note", function () {
-    var handled = _this5.selectPreviousNote();
+    var handled = _this6.selectPreviousNote();
     if (!handled) {
       var searchBar = document.getElementById("search-bar");
       if (searchBar) {
@@ -35079,7 +35088,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
   this.panelController = {};
 
   $rootScope.$on("user-preferences-changed", function () {
-    _this5.loadPreferences();
+    _this6.loadPreferences();
   });
 
   this.loadPreferences = function () {
@@ -35106,7 +35115,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
   };
 
   angular.element(document).ready(function () {
-    _this5.loadPreferences();
+    _this6.loadPreferences();
   });
 
   $rootScope.$on("editorFocused", function () {
@@ -35318,20 +35327,20 @@ angular.module('app.frontend').directive('lockScreen', function () {
     }
   };
 }).controller('TagsCtrl', ['$rootScope', 'modelManager', '$timeout', 'componentManager', 'userManager', 'keyboardManager', function ($rootScope, modelManager, $timeout, componentManager, userManager, keyboardManager) {
-  var _this6 = this;
+  var _this7 = this;
 
   this.keyboardManager = keyboardManager;
 
   keyboardManager.registerAction("next-tag", function () {
-    _this6.selectNextTag();
+    _this7.selectNextTag();
   });
 
   keyboardManager.registerAction("previous-tag", function () {
-    _this6.selectPreviousTag();
+    _this7.selectPreviousTag();
   });
 
   keyboardManager.registerAction("create-new-tag", function () {
-    _this6.createNewTag();
+    _this7.createNewTag();
   });
 
   this.selectNextTag = function () {
@@ -35355,7 +35364,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
   this.panelController = {};
 
   $rootScope.$on("user-preferences-changed", function () {
-    _this6.loadPreferences();
+    _this7.loadPreferences();
   });
 
   this.loadPreferences = function () {
@@ -35816,16 +35825,16 @@ var Component = function (_Item2) {
   function Component(json_obj) {
     _classCallCheck(this, Component);
 
-    var _this8 = _possibleConstructorReturn(this, (Component.__proto__ || Object.getPrototypeOf(Component)).call(this, json_obj));
+    var _this9 = _possibleConstructorReturn(this, (Component.__proto__ || Object.getPrototypeOf(Component)).call(this, json_obj));
 
-    if (!_this8.componentData) {
-      _this8.componentData = {};
+    if (!_this9.componentData) {
+      _this9.componentData = {};
     }
 
-    if (!_this8.disassociatedItemIds) {
-      _this8.disassociatedItemIds = [];
+    if (!_this9.disassociatedItemIds) {
+      _this9.disassociatedItemIds = [];
     }
-    return _this8;
+    return _this9;
   }
 
   _createClass(Component, [{
@@ -35890,15 +35899,15 @@ var Editor = function (_Item3) {
   function Editor(json_obj) {
     _classCallCheck(this, Editor);
 
-    var _this9 = _possibleConstructorReturn(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, json_obj));
+    var _this10 = _possibleConstructorReturn(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, json_obj));
 
-    if (!_this9.notes) {
-      _this9.notes = [];
+    if (!_this10.notes) {
+      _this10.notes = [];
     }
-    if (!_this9.data) {
-      _this9.data = {};
+    if (!_this10.data) {
+      _this10.data = {};
     }
-    return _this9;
+    return _this10;
   }
 
   _createClass(Editor, [{
@@ -36105,19 +36114,23 @@ var Extension = function (_Item4) {
   function Extension(json) {
     _classCallCheck(this, Extension);
 
-    var _this10 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
+    var _this11 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
 
-    _.merge(_this10, json);
+    if (_this11.encrypted === null || _this11.encrypted === undefined) {
+      // Default to encrypted on creation.
+      _this11.encrypted = true;
+    }
+
     if (json.actions) {
-      _this10.actions = json.actions.map(function (action) {
+      _this11.actions = json.actions.map(function (action) {
         return new Action(action);
       });
     }
 
-    if (!_this10.actions) {
-      _this10.actions = [];
+    if (!_this11.actions) {
+      _this11.actions = [];
     }
-    return _this10;
+    return _this11;
   }
 
   _createClass(Extension, [{
@@ -36192,12 +36205,12 @@ var Note = function (_Item5) {
   function Note(json_obj) {
     _classCallCheck(this, Note);
 
-    var _this11 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
+    var _this12 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
 
-    if (!_this11.tags) {
-      _this11.tags = [];
+    if (!_this12.tags) {
+      _this12.tags = [];
     }
-    return _this11;
+    return _this12;
   }
 
   _createClass(Note, [{
@@ -36356,12 +36369,12 @@ var Tag = function (_Item6) {
   function Tag(json_obj) {
     _classCallCheck(this, Tag);
 
-    var _this12 = _possibleConstructorReturn(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
+    var _this13 = _possibleConstructorReturn(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
 
-    if (!_this12.notes) {
-      _this12.notes = [];
+    if (!_this13.notes) {
+      _this13.notes = [];
     }
-    return _this12;
+    return _this13;
   }
 
   _createClass(Tag, [{
@@ -36713,7 +36726,7 @@ var ComponentManager = function () {
     }.bind(this), false);
 
     this.modelManager.addItemSyncObserver("component-manager", "*", function (items) {
-      var _this16 = this;
+      var _this17 = this;
 
       var syncedComponents = items.filter(function (item) {
         return item.content_type === "SN|Component";
@@ -36758,9 +36771,9 @@ var ComponentManager = function () {
         }];
 
 
-        _this16.runWithPermissions(observer.component, requiredPermissions, observer.originalMessage.permissions, function () {
+        _this17.runWithPermissions(observer.component, requiredPermissions, observer.originalMessage.permissions, function () {
           this.sendItemsInReply(observer.component, relevantItems, observer.originalMessage);
-        }.bind(_this16));
+        }.bind(_this17));
       };
 
       var _iteratorNormalCompletion16 = true;
@@ -36795,7 +36808,7 @@ var ComponentManager = function () {
       }];
 
       var _loop2 = function _loop2(observer) {
-        _this16.runWithPermissions(observer.component, requiredContextPermissions, observer.originalMessage.permissions, function () {
+        _this17.runWithPermissions(observer.component, requiredContextPermissions, observer.originalMessage.permissions, function () {
           var _iteratorNormalCompletion18 = true;
           var _didIteratorError18 = false;
           var _iteratorError18 = undefined;
@@ -36829,7 +36842,7 @@ var ComponentManager = function () {
               }
             }
           }
-        }.bind(_this16));
+        }.bind(_this17));
       };
 
       var _iteratorNormalCompletion17 = true;
@@ -36999,7 +37012,7 @@ var ComponentManager = function () {
   }, {
     key: 'handleMessage',
     value: function handleMessage(component, message) {
-      var _this17 = this;
+      var _this18 = this;
 
       if (!component) {
         if (this.loggingEnabled) {
@@ -37106,7 +37119,7 @@ var ComponentManager = function () {
 
       var _loop3 = function _loop3(handler) {
         if (handler.areas.includes(component.area)) {
-          _this17.timeout(function () {
+          _this18.timeout(function () {
             handler.actionHandler(component, message.action, message.data);
           });
         }
@@ -39472,6 +39485,10 @@ var ExtensionManager = function () {
   }, {
     key: 'handleExtensionLoadExternalResponseItem',
     value: function handleExtensionLoadExternalResponseItem(url, externalResponseItem) {
+      // Don't allow remote response to set these flags
+      delete externalResponseItem.encrypted;
+      delete externalResponseItem.uuid;
+
       var extension = _.find(this.extensions, { url: url });
       if (extension) {
         this.updateExtensionFromRemoteResponse(extension, externalResponseItem);
@@ -39495,9 +39512,13 @@ var ExtensionManager = function () {
         extension.supported_types = response.supported_types;
       }
 
-      extension.actions = response.actions.map(function (action) {
-        return new Action(action);
-      });
+      if (response.actions) {
+        extension.actions = response.actions.map(function (action) {
+          return new Action(action);
+        });
+      } else {
+        extension.actions = [];
+      }
     }
   }, {
     key: 'refreshExtensionsFromServer',
@@ -39953,7 +39974,7 @@ angular.module('app.frontend').service('httpManager', HttpManager);
 var KeyboardManager = function () {
   KeyboardManager.$inject = ['$timeout'];
   function KeyboardManager($timeout) {
-    var _this18 = this;
+    var _this19 = this;
 
     _classCallCheck(this, KeyboardManager);
 
@@ -39963,16 +39984,16 @@ var KeyboardManager = function () {
     this.orderedContexts = ["tags", "notes", "editor"];
 
     this.registerAction("previous-context", function () {
-      var previousIndex = _this18.orderedContexts.indexOf(_this18.context) - 1;
+      var previousIndex = _this19.orderedContexts.indexOf(_this19.context) - 1;
       if (previousIndex >= 0) {
-        _this18.setContext(_this18.orderedContexts[previousIndex], 'keyboard');
+        _this19.setContext(_this19.orderedContexts[previousIndex], 'keyboard');
       }
     });
 
     this.registerAction("next-context", function () {
-      var nextIndex = _this18.orderedContexts.indexOf(_this18.context) + 1;
-      if (nextIndex < _this18.orderedContexts.length) {
-        _this18.setContext(_this18.orderedContexts[nextIndex], 'keyboard');
+      var nextIndex = _this19.orderedContexts.indexOf(_this19.context) + 1;
+      if (nextIndex < _this19.orderedContexts.length) {
+        _this19.setContext(_this19.orderedContexts[nextIndex], 'keyboard');
       }
     });
 
@@ -39982,7 +40003,7 @@ var KeyboardManager = function () {
   _createClass(KeyboardManager, [{
     key: 'registerDefaultShortcuts',
     value: function registerDefaultShortcuts() {
-      var _this19 = this;
+      var _this20 = this;
 
       var _iteratorNormalCompletion42 = true;
       var _didIteratorError42 = false;
@@ -39993,7 +40014,7 @@ var KeyboardManager = function () {
           var mapping = _step42.value;
 
           Mousetrap.bind(mapping.shortcut, function (e, command) {
-            _this19.handleKeyboardCommand(command);
+            _this20.handleKeyboardCommand(command);
             return !mapping.preventDefault;
           });
         }
@@ -40015,7 +40036,7 @@ var KeyboardManager = function () {
   }, {
     key: 'handleKeyboardCommand',
     value: function handleKeyboardCommand(shortcut) {
-      var _this20 = this;
+      var _this21 = this;
 
       var _iteratorNormalCompletion43 = true;
       var _didIteratorError43 = false;
@@ -40031,8 +40052,8 @@ var KeyboardManager = function () {
 
           if (validShortcuts.includes(shortcut) && isCorrectContext) {
             (function () {
-              var action = _this20.actionForName(mapping.action);
-              _this20.$timeout(function () {
+              var action = _this21.actionForName(mapping.action);
+              _this21.$timeout(function () {
                 action.callback();
               });
             })();
@@ -41242,7 +41263,7 @@ var SyncManager = function () {
   }, {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback, alternateUUIDs) {
-      var _this21 = this;
+      var _this22 = this;
 
       var originalItems = this.modelManager.allItems;
 
@@ -41272,7 +41293,7 @@ var SyncManager = function () {
           }
         }
 
-        _this21.writeItemsToLocalStorage(items, false, callback);
+        _this22.writeItemsToLocalStorage(items, false, callback);
       };
 
       if (alternateUUIDs) {
@@ -41281,12 +41302,12 @@ var SyncManager = function () {
         var alternateNextItem = function alternateNextItem() {
           if (index >= originalItems.length) {
             // We don't use originalItems as altnerating UUID will have deleted them.
-            block(_this21.modelManager.allItems);
+            block(_this22.modelManager.allItems);
             return;
           }
 
           var item = originalItems[index];
-          _this21.modelManager.alternateUUIDForItem(item, alternateNextItem);
+          _this22.modelManager.alternateUUIDForItem(item, alternateNextItem);
           ++index;
         };
 
@@ -41357,7 +41378,7 @@ var SyncManager = function () {
   }, {
     key: 'sync',
     value: function sync(callback) {
-      var _this22 = this;
+      var _this23 = this;
 
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
@@ -41398,9 +41419,9 @@ var SyncManager = function () {
         // for singleton items, we want to retrieve the latest information the server has before syncing,
         // to make sure we don't create more than one instance.
         var isSingleton = item.singleton();
-        var syncable = _.includes(_this22.syncableSingletons, item);
+        var syncable = _.includes(_this23.syncableSingletons, item);
         if (isSingleton && !syncable) {
-          _this22.pendingSingletons.push(item);
+          _this23.pendingSingletons.push(item);
           return false;
         }
         return true;
@@ -41519,7 +41540,7 @@ var SyncManager = function () {
   }, {
     key: 'syncPendingSingletons',
     value: function syncPendingSingletons() {
-      var _this23 = this;
+      var _this24 = this;
 
       this.syncableSingletons = [];
 
@@ -41601,8 +41622,8 @@ var SyncManager = function () {
       }
 
       var sync = function sync() {
-        _this23.pendingSingletons = [];
-        _this23.sync();
+        _this24.pendingSingletons = [];
+        _this24.sync();
       };
 
       if (toBeDeleted.length) {
