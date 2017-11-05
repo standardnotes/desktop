@@ -579,9 +579,6 @@ h2 {
   font-weight: bold;
   margin-bottom: 4px;
 }
-#footer-bar strong {
-  display: block;
-}
 #footer-bar h1 {
   font-size: 16px;
 }
@@ -827,7 +824,7 @@ a.disabled {
   padding-top: 16px;
   padding-left: 14px;
   padding-right: 14px;
-  height: 147px;
+  height: 148px;
   font-weight: normal;
   font-size: 18px;
 }
@@ -882,7 +879,7 @@ a.disabled {
   background-color: #086dd6;
 }
 .notes .scrollable {
-  height: calc(100vh - (147px + 25px));
+  height: calc(100vh - (148px + 25px));
 }
 .notes .infinite-scroll {
   overflow-x: hidden;
@@ -1154,12 +1151,14 @@ a.disabled {
   border: 1px solid #086dd6;
   border-radius: 2px;
 }
+#global-ext-menu .header {
+  padding-bottom: 12px;
+}
 #global-ext-menu ul {
   border-top: 1px solid #e9e9e9;
   border-bottom: 1px solid #e9e9e9;
   margin: 0;
   padding: 0;
-  margin-top: 12px;
 }
 #global-ext-menu ul li {
   cursor: pointer;

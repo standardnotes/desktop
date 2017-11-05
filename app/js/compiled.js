@@ -33729,7 +33729,7 @@ function parametersFromURL(url) {
 function isDesktopApplication() {
   return window && window.process && window.process.type && window.process.versions["electron"];
 }
-;angular.module('app.frontend').config(function ($locationProvider) {
+;angular.module('app.frontend').config(['$locationProvider', function ($locationProvider) {
 
   if (!isDesktopApplication()) {
     if (window.history && window.history.pushState) {
@@ -33741,8 +33741,8 @@ function isDesktopApplication() {
   } else {
     $locationProvider.html5Mode(false);
   }
-});
-;angular.module('app.frontend').directive("editorSection", function ($timeout, $sce) {
+}]);
+;angular.module('app.frontend').directive("editorSection", ['$timeout', '$sce', function ($timeout, $sce) {
   return {
     restrict: 'E',
     scope: {
@@ -33779,7 +33779,7 @@ function isDesktopApplication() {
       });
     }
   };
-}).controller('EditorCtrl', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager, themeManager, componentManager, storageManager) {
+}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', 'editorManager', 'themeManager', 'componentManager', 'storageManager', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager, themeManager, componentManager, storageManager) {
 
   this.componentManager = componentManager;
   this.componentStack = [];
@@ -34130,6 +34130,7 @@ function isDesktopApplication() {
 
   this.onNameBlur = function () {
     this.editingName = false;
+    this.updateTagsFromTagsString();
   };
 
   this.toggleFullScreen = function () {
@@ -34144,7 +34145,8 @@ function isDesktopApplication() {
   };
 
   this.deleteNote = function () {
-    if (confirm("Are you sure you want to delete this note?")) {
+    var title = this.note.safeTitle().length ? '\'' + this.note.title + '\'' : "this note";
+    if (confirm('Are you sure you want to delete ' + title + '?')) {
       this.remove()(this.note);
       this.showMenu = false;
     }
@@ -34223,9 +34225,7 @@ function isDesktopApplication() {
     this.loadTagsString();
   };
 
-  this.updateTagsFromTagsString = function ($event) {
-    $event.target.blur();
-
+  this.updateTagsFromTagsString = function () {
     var tags = this.tagsString.split("#");
     tags = _.filter(tags, function (tag) {
       return tag.length > 0;
@@ -34366,8 +34366,8 @@ function isDesktopApplication() {
       this.loadedTabListener = false;
     }.bind(this));
   };
-});
-;angular.module('app.frontend').directive("footer", function (authManager) {
+}]);
+;angular.module('app.frontend').directive("footer", ['authManager', function (authManager) {
   return {
     restrict: 'E',
     scope: {},
@@ -34389,7 +34389,7 @@ function isDesktopApplication() {
       });
     }
   };
-}).controller('FooterCtrl', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager) {
+}]).controller('FooterCtrl', ['$rootScope', 'authManager', 'modelManager', '$timeout', 'dbManager', 'syncManager', 'storageManager', 'passcodeManager', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager) {
 
   this.user = authManager.user;
 
@@ -34473,8 +34473,8 @@ function isDesktopApplication() {
     this.newUpdateAvailable = false;
     alert("A new update is ready to install. Updates address performance and security issues, as well as bug fixes and feature enhancements. Simply quit Standard Notes and re-open it for the update to be applied.");
   };
-});
-;angular.module('app.frontend').controller('HomeCtrl', function ($scope, $location, $rootScope, $timeout, modelManager, dbManager, syncManager, authManager, themeManager, passcodeManager, storageManager) {
+}]);
+;angular.module('app.frontend').controller('HomeCtrl', ['$scope', '$location', '$rootScope', '$timeout', 'modelManager', 'dbManager', 'syncManager', 'authManager', 'themeManager', 'passcodeManager', 'storageManager', function ($scope, $location, $rootScope, $timeout, modelManager, dbManager, syncManager, authManager, themeManager, passcodeManager, storageManager) {
 
   storageManager.initialize(passcodeManager.hasPasscode(), authManager.isEphemeralSession());
 
@@ -34821,7 +34821,7 @@ function isDesktopApplication() {
   if (urlParam("server")) {
     autoSignInFromParams();
   }
-});
+}]);
 ;
 var LockScreen = function () {
   function LockScreen() {
@@ -34836,7 +34836,7 @@ var LockScreen = function () {
 
   _createClass(LockScreen, [{
     key: 'controller',
-    value: function controller($scope, passcodeManager) {
+    value: ['$scope', 'passcodeManager', function controller($scope, passcodeManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -34851,7 +34851,7 @@ var LockScreen = function () {
           $scope.onSuccess()();
         });
       };
-    }
+    }]
   }]);
 
   return LockScreen;
@@ -34891,7 +34891,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
       });
     }
   };
-}).controller('NotesCtrl', function (authManager, $timeout, $rootScope, modelManager, storageManager) {
+}).controller('NotesCtrl', ['authManager', '$timeout', '$rootScope', 'modelManager', 'storageManager', function (authManager, $timeout, $rootScope, modelManager, storageManager) {
 
   this.sortBy = storageManager.getItem("sortBy") || "created_at";
   this.showArchived = storageManager.getBooleanValue("showArchived") || false;
@@ -34940,7 +34940,9 @@ angular.module('app.frontend').directive('lockScreen', function () {
     this.showMenu = false;
 
     if (this.selectedNote && this.selectedNote.dummy) {
-      _.remove(oldTag.notes, this.selectedNote);
+      if (oldTag) {
+        _.remove(oldTag.notes, this.selectedNote);
+      }
     }
 
     this.noteFilter.text = "";
@@ -35042,7 +35044,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
     this.sortBy = type;
     storageManager.setItem("sortBy", type);
   };
-});
+}]);
 ;angular.module('app.frontend').directive("tagsSection", function () {
   return {
     restrict: 'E',
@@ -35077,7 +35079,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
       });
     }
   };
-}).controller('TagsCtrl', function ($rootScope, modelManager, $timeout, componentManager) {
+}).controller('TagsCtrl', ['$rootScope', 'modelManager', '$timeout', 'componentManager', function ($rootScope, modelManager, $timeout, componentManager) {
 
   var initialLoad = true;
 
@@ -35187,7 +35189,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
     });
     return validNotes.length;
   };
-});
+}]);
 ;var AppDomain = "org.standardnotes.sn";
 var dateFormatter;
 
@@ -35319,8 +35321,8 @@ var Item = function () {
     key: 'isBeingRemovedLocally',
     value: function isBeingRemovedLocally() {}
   }, {
-    key: 'removeAllRelationships',
-    value: function removeAllRelationships() {
+    key: 'removeAndDirtyAllRelationships',
+    value: function removeAndDirtyAllRelationships() {
       // must override
       this.setDirty(true);
     }
@@ -35470,9 +35472,9 @@ var SyncAdapter = function (_Item) {
 
   _createClass(SyncAdapter, [{
     key: 'mapContentToLocalProperties',
-    value: function mapContentToLocalProperties(contentObject) {
-      _get(SyncAdapter.prototype.__proto__ || Object.getPrototypeOf(SyncAdapter.prototype), 'mapContentToLocalProperties', this).call(this, contentObject);
-      this.url = contentObject.url;
+    value: function mapContentToLocalProperties(content) {
+      _get(SyncAdapter.prototype.__proto__ || Object.getPrototypeOf(SyncAdapter.prototype), 'mapContentToLocalProperties', this).call(this, content);
+      this.url = content.url;
     }
   }, {
     key: 'structureParams',
@@ -35531,22 +35533,22 @@ var Component = function (_Item2) {
 
   _createClass(Component, [{
     key: 'mapContentToLocalProperties',
-    value: function mapContentToLocalProperties(contentObject) {
-      _get(Component.prototype.__proto__ || Object.getPrototypeOf(Component.prototype), 'mapContentToLocalProperties', this).call(this, contentObject);
-      this.url = contentObject.url;
-      this.name = contentObject.name;
+    value: function mapContentToLocalProperties(content) {
+      _get(Component.prototype.__proto__ || Object.getPrototypeOf(Component.prototype), 'mapContentToLocalProperties', this).call(this, content);
+      this.url = content.url;
+      this.name = content.name;
 
       // the location in the view this component is located in. Valid values are currently tags-list, note-tags, and editor-stack`
-      this.area = contentObject.area;
+      this.area = content.area;
 
-      this.permissions = contentObject.permissions;
-      this.active = contentObject.active;
+      this.permissions = content.permissions;
+      this.active = content.active;
 
       // custom data that a component can store in itself
-      this.componentData = contentObject.componentData || {};
+      this.componentData = content.componentData || {};
 
       // items that have requested a component to be disabled in its context
-      this.disassociatedItemIds = contentObject.disassociatedItemIds || [];
+      this.disassociatedItemIds = content.disassociatedItemIds || [];
     }
   }, {
     key: 'structureParams',
@@ -35604,13 +35606,13 @@ var Editor = function (_Item3) {
 
   _createClass(Editor, [{
     key: 'mapContentToLocalProperties',
-    value: function mapContentToLocalProperties(contentObject) {
-      _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'mapContentToLocalProperties', this).call(this, contentObject);
-      this.url = contentObject.url;
-      this.name = contentObject.name;
-      this.data = contentObject.data || {};
-      this.default = contentObject.default;
-      this.systemEditor = contentObject.systemEditor;
+    value: function mapContentToLocalProperties(content) {
+      _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'mapContentToLocalProperties', this).call(this, content);
+      this.url = content.url;
+      this.name = content.name;
+      this.data = content.data || {};
+      this.default = content.default;
+      this.systemEditor = content.systemEditor;
     }
   }, {
     key: 'structureParams',
@@ -35654,9 +35656,9 @@ var Editor = function (_Item3) {
       _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'removeItemAsRelationship', this).call(this, item);
     }
   }, {
-    key: 'removeAllRelationships',
-    value: function removeAllRelationships() {
-      _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'removeAllRelationships', this).call(this);
+    key: 'removeAndDirtyAllRelationships',
+    value: function removeAndDirtyAllRelationships() {
+      _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'removeAndDirtyAllRelationships', this).call(this);
       this.notes = [];
     }
   }, {
@@ -35803,15 +35805,19 @@ var Extension = function (_Item4) {
 
     var _this6 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
 
-    _.merge(_this6, json);
-
-    _this6.encrypted = true;
-    _this6.content_type = "Extension";
+    if (_this6.encrypted === null || _this6.encrypted === undefined) {
+      // Default to encrypted on creation.
+      _this6.encrypted = true;
+    }
 
     if (json.actions) {
       _this6.actions = json.actions.map(function (action) {
         return new Action(action);
       });
+    }
+
+    if (!_this6.actions) {
+      _this6.actions = [];
     }
     return _this6;
   }
@@ -35832,27 +35838,24 @@ var Extension = function (_Item4) {
     }
   }, {
     key: 'mapContentToLocalProperties',
-    value: function mapContentToLocalProperties(contentObject) {
-      _get(Extension.prototype.__proto__ || Object.getPrototypeOf(Extension.prototype), 'mapContentToLocalProperties', this).call(this, contentObject);
-      this.name = contentObject.name;
-      this.description = contentObject.description;
-      this.url = contentObject.url;
-      this.supported_types = contentObject.supported_types;
-      if (contentObject.actions) {
-        this.actions = contentObject.actions.map(function (action) {
+    value: function mapContentToLocalProperties(content) {
+      _get(Extension.prototype.__proto__ || Object.getPrototypeOf(Extension.prototype), 'mapContentToLocalProperties', this).call(this, content);
+      this.name = content.name;
+      this.description = content.description;
+      this.url = content.url;
+
+      if (content.encrypted !== null && content.encrypted !== undefined) {
+        this.encrypted = content.encrypted;
+      } else {
+        this.encrypted = true;
+      }
+
+      this.supported_types = content.supported_types;
+      if (content.actions) {
+        this.actions = content.actions.map(function (action) {
           return new Action(action);
         });
-      } else {
-        this.actions = [];
       }
-    }
-  }, {
-    key: 'updateFromExternalResponseItem',
-    value: function updateFromExternalResponseItem(externalResponseItem) {
-      _.merge(this, externalResponseItem);
-      this.actions = externalResponseItem.actions.map(function (action) {
-        return new Action(action);
-      });
     }
   }, {
     key: 'referenceParams',
@@ -35867,11 +35870,17 @@ var Extension = function (_Item4) {
         url: this.url,
         description: this.description,
         actions: this.actions,
-        supported_types: this.supported_types
+        supported_types: this.supported_types,
+        encrypted: this.encrypted
       };
 
       _.merge(params, _get(Extension.prototype.__proto__ || Object.getPrototypeOf(Extension.prototype), 'structureParams', this).call(this));
       return params;
+    }
+  }, {
+    key: 'content_type',
+    get: function get() {
+      return "Extension";
     }
   }]);
 
@@ -35895,10 +35904,10 @@ var Note = function (_Item5) {
 
   _createClass(Note, [{
     key: 'mapContentToLocalProperties',
-    value: function mapContentToLocalProperties(contentObject) {
-      _get(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'mapContentToLocalProperties', this).call(this, contentObject);
-      this.title = contentObject.title;
-      this.text = contentObject.text;
+    value: function mapContentToLocalProperties(content) {
+      _get(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'mapContentToLocalProperties', this).call(this, content);
+      this.title = content.title;
+      this.text = content.text;
     }
   }, {
     key: 'referenceParams',
@@ -35939,8 +35948,8 @@ var Note = function (_Item5) {
       _get(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'removeItemAsRelationship', this).call(this, item);
     }
   }, {
-    key: 'removeAllRelationships',
-    value: function removeAllRelationships() {
+    key: 'removeAndDirtyAllRelationships',
+    value: function removeAndDirtyAllRelationships() {
       this.tags.forEach(function (tag) {
         _.pull(tag.notes, this);
         tag.setDirty(true);
@@ -36059,9 +36068,9 @@ var Tag = function (_Item6) {
 
   _createClass(Tag, [{
     key: 'mapContentToLocalProperties',
-    value: function mapContentToLocalProperties(contentObject) {
-      _get(Tag.prototype.__proto__ || Object.getPrototypeOf(Tag.prototype), 'mapContentToLocalProperties', this).call(this, contentObject);
-      this.title = contentObject.title;
+    value: function mapContentToLocalProperties(content) {
+      _get(Tag.prototype.__proto__ || Object.getPrototypeOf(Tag.prototype), 'mapContentToLocalProperties', this).call(this, content);
+      this.title = content.title;
     }
   }, {
     key: 'referenceParams',
@@ -36101,8 +36110,8 @@ var Tag = function (_Item6) {
       _get(Tag.prototype.__proto__ || Object.getPrototypeOf(Tag.prototype), 'removeItemAsRelationship', this).call(this, item);
     }
   }, {
-    key: 'removeAllRelationships',
-    value: function removeAllRelationships() {
+    key: 'removeAndDirtyAllRelationships',
+    value: function removeAndDirtyAllRelationships() {
       this.notes.forEach(function (note) {
         _.pull(note.tags, this);
         note.setDirty(true);
@@ -36198,10 +36207,10 @@ var Theme = function (_Item7) {
 
   _createClass(Theme, [{
     key: 'mapContentToLocalProperties',
-    value: function mapContentToLocalProperties(contentObject) {
-      _get(Theme.prototype.__proto__ || Object.getPrototypeOf(Theme.prototype), 'mapContentToLocalProperties', this).call(this, contentObject);
-      this.url = contentObject.url;
-      this.name = contentObject.name;
+    value: function mapContentToLocalProperties(content) {
+      _get(Theme.prototype.__proto__ || Object.getPrototypeOf(Theme.prototype), 'mapContentToLocalProperties', this).call(this, content);
+      this.url = content.url;
+      this.name = content.name;
     }
   }, {
     key: 'structureParams',
@@ -36241,9 +36250,9 @@ var EncryptedStorage = function (_Item8) {
 
   _createClass(EncryptedStorage, [{
     key: 'mapContentToLocalProperties',
-    value: function mapContentToLocalProperties(contentObject) {
-      _get(EncryptedStorage.prototype.__proto__ || Object.getPrototypeOf(EncryptedStorage.prototype), 'mapContentToLocalProperties', this).call(this, contentObject);
-      this.storage = contentObject.storage;
+    value: function mapContentToLocalProperties(content) {
+      _get(EncryptedStorage.prototype.__proto__ || Object.getPrototypeOf(EncryptedStorage.prototype), 'mapContentToLocalProperties', this).call(this, content);
+      this.storage = content.storage;
     }
   }, {
     key: 'structureParams',
@@ -36345,9 +36354,9 @@ var ItemParams = function () {
     return domain;
   }
 
-  this.$get = function ($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
+  this.$get = ['$rootScope', '$timeout', 'httpManager', 'modelManager', 'dbManager', 'storageManager', function ($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
     return new AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager);
-  };
+  }];
 
   function AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
 
@@ -36383,6 +36392,9 @@ var ItemParams = function () {
         storageManager.setModelStorageMode(StorageManager.Ephemeral);
         storageManager.setItemsMode(storageManager.hasPasscode() ? StorageManager.FixedEncrypted : StorageManager.Ephemeral);
       } else {
+        storageManager.setModelStorageMode(StorageManager.Fixed);
+        storageManager.setItemsMode(storageManager.hasPasscode() ? StorageManager.FixedEncrypted : StorageManager.Fixed);
+
         storageManager.setItem("ephemeral", JSON.stringify(false), StorageManager.Fixed);
       }
     };
@@ -36486,12 +36498,8 @@ var ItemParams = function () {
           var params = { password: keys.pw, email: email };
           httpManager.postAbsolute(requestUrl, params, function (response) {
             this.setEphemeral(ephemeral);
-
             this.handleAuthResponse(response, email, url, authParams, keys);
-            storageManager.setModelStorageMode(ephemeral ? StorageManager.Ephemeral : StorageManager.Fixed);
-
             this.checkForSecurityUpdate();
-
             callback(response);
           }.bind(this), function (response) {
             console.error("Error logging in", response);
@@ -36534,10 +36542,7 @@ var ItemParams = function () {
 
         httpManager.postAbsolute(requestUrl, params, function (response) {
           this.setEphemeral(ephemeral);
-
           this.handleAuthResponse(response, email, url, authParams, keys);
-
-          storageManager.setModelStorageMode(ephemeral ? StorageManager.Ephemeral : StorageManager.Fixed);
 
           callback(response);
         }.bind(this), function (response) {
@@ -36618,6 +36623,7 @@ var ItemParams = function () {
 });
 ;
 var ComponentManager = function () {
+  ComponentManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'themeManager', '$timeout', '$compile'];
   function ComponentManager($rootScope, modelManager, syncManager, themeManager, $timeout, $compile) {
     _classCallCheck(this, ComponentManager);
 
@@ -36648,10 +36654,10 @@ var ComponentManager = function () {
       this.handleMessage(this.componentForSessionKey(event.data.sessionKey), event.data);
     }.bind(this), false);
 
-    this.modelManager.addItemSyncObserver("component-manager", "*", function (items) {
+    this.modelManager.addItemSyncObserver("component-manager", "*", function (allItems, validItems, deletedItems) {
       var _this11 = this;
 
-      var syncedComponents = items.filter(function (item) {
+      var syncedComponents = allItems.filter(function (item) {
         return item.content_type === "SN|Component";
       });
       var _iteratorNormalCompletion15 = true;
@@ -36663,7 +36669,7 @@ var ComponentManager = function () {
           var component = _step15.value;
 
           var activeComponent = _.find(this.activeComponents, { uuid: component.uuid });
-          if (component.active && !activeComponent) {
+          if (component.active && !component.deleted && !activeComponent) {
             this.activateComponent(component);
           } else if (!component.active && activeComponent) {
             this.deactivateComponent(component);
@@ -36685,7 +36691,7 @@ var ComponentManager = function () {
       }
 
       var _loop = function _loop(observer) {
-        relevantItems = items.filter(function (item) {
+        relevantItems = allItems.filter(function (item) {
           return observer.contentTypes.indexOf(item.content_type) !== -1;
         });
         requiredPermissions = [{
@@ -36745,7 +36751,7 @@ var ComponentManager = function () {
               }
               var itemInContext = handler.contextRequestHandler(observer.component);
               if (itemInContext) {
-                var matchingItem = _.find(items, { uuid: itemInContext.uuid });
+                var matchingItem = _.find(allItems, { uuid: itemInContext.uuid });
                 if (matchingItem) {
                   this.sendContextItemInReply(observer.component, matchingItem, observer.originalMessage);
                 }
@@ -37741,7 +37747,7 @@ angular.module('app.frontend').service('dbManager', DBManager);
     }
   };
 }]);
-;angular.module('app.frontend').directive('delayHide', function ($timeout) {
+;angular.module('app.frontend').directive('delayHide', ['$timeout', function ($timeout) {
   return {
     restrict: 'A',
     scope: {
@@ -37784,7 +37790,7 @@ angular.module('app.frontend').service('dbManager', DBManager);
     }
 
   };
-});
+}]);
 ;angular.module('app.frontend').directive('fileChange', function () {
   return {
     restrict: 'A',
@@ -37862,7 +37868,7 @@ var AccountMenu = function () {
 
   _createClass(AccountMenu, [{
     key: 'controller',
-    value: function controller($scope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
+    value: ['$scope', 'authManager', 'modelManager', 'syncManager', 'dbManager', 'passcodeManager', '$timeout', 'storageManager', function controller($scope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
       'ngInject';
 
       $scope.formData = { mergeLocal: true, url: syncManager.serverURL, ephemeral: false };
@@ -38094,6 +38100,12 @@ var AccountMenu = function () {
             item.setDirty(true);
             item.deleted = false;
             item.markAllReferencesDirty();
+
+            // We don't want to activate any components during import process in case of exceptions
+            // breaking up the import proccess
+            if (item.content_type == "SN|Component") {
+              item.active = false;
+            }
           });
 
           syncManager.sync(function (response) {
@@ -38392,7 +38404,7 @@ var AccountMenu = function () {
       $scope.isDesktopApplication = function () {
         return isDesktopApplication();
       };
-    }
+    }]
   }]);
 
   return AccountMenu;
@@ -38415,7 +38427,7 @@ var ContextualExtensionsMenu = function () {
 
   _createClass(ContextualExtensionsMenu, [{
     key: 'controller',
-    value: function controller($scope, modelManager, extensionManager) {
+    value: ['$scope', 'modelManager', 'extensionManager', function controller($scope, modelManager, extensionManager) {
       'ngInject';
 
       $scope.renderData = {};
@@ -38499,7 +38511,7 @@ var ContextualExtensionsMenu = function () {
 
       $scope.isActionEnabled = function (action, extension) {
         if (action.access_type) {
-          var extEncryptedAccess = extensionManager.extensionUsesEncryptedData(extension);
+          var extEncryptedAccess = extension.encrypted;
           if (action.access_type == "decrypted" && extEncryptedAccess) {
             return false;
           } else if (action.access_type == "encrypted" && !extEncryptedAccess) {
@@ -38510,9 +38522,9 @@ var ContextualExtensionsMenu = function () {
       };
 
       $scope.accessTypeForExtension = function (extension) {
-        return extensionManager.extensionUsesEncryptedData(extension) ? "encrypted" : "decrypted";
+        return extension.encrypted ? "encrypted" : "decrypted";
       };
-    }
+    }]
   }]);
 
   return ContextualExtensionsMenu;
@@ -38536,7 +38548,7 @@ var EditorMenu = function () {
 
   _createClass(EditorMenu, [{
     key: 'controller',
-    value: function controller($scope, editorManager) {
+    value: ['$scope', 'editorManager', function controller($scope, editorManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -38546,7 +38558,7 @@ var EditorMenu = function () {
         editor.conflict_of = null; // clear conflict if applicable
         $scope.callback()(editor);
       };
-    }
+    }]
   }]);
 
   return EditorMenu;
@@ -38567,7 +38579,7 @@ var GlobalExtensionsMenu = function () {
 
   _createClass(GlobalExtensionsMenu, [{
     key: 'controller',
-    value: function controller($scope, extensionManager, syncManager, modelManager, themeManager, editorManager, componentManager) {
+    value: ['$scope', 'extensionManager', 'syncManager', 'modelManager', 'themeManager', 'editorManager', 'componentManager', function controller($scope, extensionManager, syncManager, modelManager, themeManager, editorManager, componentManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -38592,7 +38604,9 @@ var GlobalExtensionsMenu = function () {
       };
 
       $scope.changeExtensionEncryptionFormat = function (encrypted, extension) {
-        extensionManager.changeExtensionEncryptionFormat(encrypted, extension);
+        extension.encrypted = encrypted;
+        extension.setDirty(true);
+        syncManager.sync();
       };
 
       $scope.deleteActionExtension = function (extension) {
@@ -38612,6 +38626,36 @@ var GlobalExtensionsMenu = function () {
           themeManager.deactivateTheme(theme);
           modelManager.setItemToBeDeleted(theme);
           syncManager.sync();
+        }
+      };
+
+      $scope.renameExtension = function (extension) {
+        extension.tempName = extension.name;
+        extension.rename = true;
+      };
+
+      $scope.submitExtensionRename = function (extension) {
+        extension.name = extension.tempName;
+        extension.tempName = null;
+        extension.setDirty(true);
+        extension.rename = false;
+        syncManager.sync();
+      };
+
+      $scope.clickedExtension = function (extension) {
+        if (extension.rename) {
+          return;
+        }
+
+        if ($scope.currentlyExpandedExtension && $scope.currentlyExpandedExtension !== extension) {
+          $scope.currentlyExpandedExtension.showDetails = false;
+          $scope.currentlyExpandedExtension.rename = false;
+        }
+
+        extension.showDetails = !extension.showDetails;
+
+        if (extension.showDetails) {
+          $scope.currentlyExpandedExtension = extension;
         }
       };
 
@@ -38768,7 +38812,7 @@ var GlobalExtensionsMenu = function () {
         editorManager.addNewEditorFromURL(link);
         completion();
       };
-    }
+    }]
   }]);
 
   return GlobalExtensionsMenu;
@@ -38856,6 +38900,7 @@ angular.module('app.frontend').directive('permissionsModal', function () {
 });
 ;
 var EditorManager = function () {
+  EditorManager.$inject = ['$rootScope', 'modelManager', 'syncManager'];
   function EditorManager($rootScope, modelManager, syncManager) {
     _classCallCheck(this, EditorManager);
 
@@ -38973,6 +39018,7 @@ var EditorManager = function () {
 angular.module('app.frontend').service('editorManager', EditorManager);
 ;
 var ExtensionManager = function () {
+  ExtensionManager.$inject = ['httpManager', 'modelManager', 'authManager', 'syncManager', 'storageManager'];
   function ExtensionManager(httpManager, modelManager, authManager, syncManager, storageManager) {
     _classCallCheck(this, ExtensionManager);
 
@@ -38980,22 +39026,17 @@ var ExtensionManager = function () {
     this.modelManager = modelManager;
     this.authManager = authManager;
     this.enabledRepeatActionUrls = JSON.parse(storageManager.getItem("enabledRepeatActionUrls")) || [];
-    this.decryptedExtensions = JSON.parse(storageManager.getItem("decryptedExtensions")) || [];
     this.syncManager = syncManager;
     this.storageManager = storageManager;
 
-    modelManager.addItemSyncObserver("extensionManager", "Extension", function (items) {
+    modelManager.addItemSyncObserver("extensionManager", "Extension", function (allItems, validItems, deletedItems) {
       var _iteratorNormalCompletion35 = true;
       var _didIteratorError35 = false;
       var _iteratorError35 = undefined;
 
       try {
-        for (var _iterator35 = items[Symbol.iterator](), _step35; !(_iteratorNormalCompletion35 = (_step35 = _iterator35.next()).done); _iteratorNormalCompletion35 = true) {
+        for (var _iterator35 = validItems[Symbol.iterator](), _step35; !(_iteratorNormalCompletion35 = (_step35 = _iterator35.next()).done); _iteratorNormalCompletion35 = true) {
           var ext = _step35.value;
-
-
-          ext.encrypted = this.extensionUsesEncryptedData(ext);
-
           var _iteratorNormalCompletion36 = true;
           var _didIteratorError36 = false;
           var _iteratorError36 = undefined;
@@ -39076,24 +39117,6 @@ var ExtensionManager = function () {
       }
     }
   }, {
-    key: 'extensionUsesEncryptedData',
-    value: function extensionUsesEncryptedData(extension) {
-      return !_.includes(this.decryptedExtensions, extension.url);
-    }
-  }, {
-    key: 'changeExtensionEncryptionFormat',
-    value: function changeExtensionEncryptionFormat(encrypted, extension) {
-      if (encrypted) {
-        _.pull(this.decryptedExtensions, extension.url);
-      } else {
-        this.decryptedExtensions.push(extension.url);
-      }
-
-      this.storageManager.setItem("decryptedExtensions", JSON.stringify(this.decryptedExtensions));
-
-      extension.encrypted = this.extensionUsesEncryptedData(extension);
-    }
-  }, {
     key: 'addExtension',
     value: function addExtension(url, callback) {
       this.retrieveExtensionFromServer(url, callback);
@@ -39109,7 +39132,6 @@ var ExtensionManager = function () {
         for (var _iterator38 = extension.actions[Symbol.iterator](), _step38; !(_iteratorNormalCompletion38 = (_step38 = _iterator38.next()).done); _iteratorNormalCompletion38 = true) {
           var action = _step38.value;
 
-          _.pull(this.decryptedExtensions, extension);
           if (action.repeat_mode) {
             if (this.isRepeatActionEnabled(action)) {
               this.disableRepeatAction(action);
@@ -39145,18 +39167,10 @@ var ExtensionManager = function () {
     value: function loadExtensionInContextOfItem(extension, item, callback) {
 
       this.httpManager.getAbsolute(extension.url, { content_type: item.content_type, item_uuid: item.uuid }, function (response) {
-        var scopedExtension = new Extension(response);
-        if (scopedExtension) {
-          _.merge(extension, scopedExtension);
-          extension.actions = scopedExtension.actions;
-          extension.encrypted = this.extensionUsesEncryptedData(extension);
-        }
-        if (callback) {
-          callback(scopedExtension);
-        }
+        this.updateExtensionFromRemoteResponse(extension, response);
+        callback && callback(extension);
       }.bind(this), function (response) {
         console.log("Error loading extension", response);
-        extension.encrypted = this.extensionUsesEncryptedData(extension);
         if (callback) {
           callback(null);
         }
@@ -39187,9 +39201,13 @@ var ExtensionManager = function () {
   }, {
     key: 'handleExtensionLoadExternalResponseItem',
     value: function handleExtensionLoadExternalResponseItem(url, externalResponseItem) {
+      // Don't allow remote response to set these flags
+      delete externalResponseItem.encrypted;
+      delete externalResponseItem.uuid;
+
       var extension = _.find(this.extensions, { url: url });
       if (extension) {
-        extension.updateFromExternalResponseItem(externalResponseItem);
+        this.updateExtensionFromRemoteResponse(extension, externalResponseItem);
       } else {
         extension = new Extension(externalResponseItem);
         extension.url = url;
@@ -39199,6 +39217,24 @@ var ExtensionManager = function () {
       }
 
       return extension;
+    }
+  }, {
+    key: 'updateExtensionFromRemoteResponse',
+    value: function updateExtensionFromRemoteResponse(extension, response) {
+      if (response.description) {
+        extension.description = response.description;
+      }
+      if (response.supported_types) {
+        extension.supported_types = response.supported_types;
+      }
+
+      if (response.actions) {
+        extension.actions = response.actions.map(function (action) {
+          return new Action(action);
+        });
+      } else {
+        extension.actions = [];
+      }
     }
   }, {
     key: 'refreshExtensionsFromServer',
@@ -39262,7 +39298,7 @@ var ExtensionManager = function () {
     key: 'executeAction',
     value: function executeAction(action, extension, item, callback) {
 
-      if (this.extensionUsesEncryptedData(extension) && this.authManager.offline()) {
+      if (extension.encrypted && this.userManager.offline()) {
         alert("To send data encrypted, you must have an encryption key, and must therefore be signed in.");
         callback(null);
         return;
@@ -39413,11 +39449,9 @@ var ExtensionManager = function () {
         return;
       }
 
-      // console.log("Successfully queued", action, this.actionQueue.length);
       this.actionQueue.push(action);
 
       setTimeout(function () {
-        // console.log("Performing queued action", action);
         this.triggerWatchAction(action, extension, changedItems);
         _.pull(this.actionQueue, action);
       }.bind(this), delay * 1000);
@@ -39437,8 +39471,6 @@ var ExtensionManager = function () {
 
       action.lastExecuted = new Date();
 
-      console.log("Performing action.");
-
       if (action.verb == "post") {
         var params = {};
         params.items = changedItems.map(function (item) {
@@ -39457,8 +39489,8 @@ var ExtensionManager = function () {
   }, {
     key: 'outgoingParamsForItem',
     value: function outgoingParamsForItem(item, extension) {
-      var keys = this.authManager.keys();
-      if (!this.extensionUsesEncryptedData(extension)) {
+      var keys = this.userManager.keys();
+      if (!extension.encrypted) {
         keys = null;
       }
       var itemParams = new ItemParams(item, keys, this.authManager.protocolVersion());
@@ -39468,8 +39500,8 @@ var ExtensionManager = function () {
     key: 'performPost',
     value: function performPost(action, extension, params, callback) {
 
-      if (this.extensionUsesEncryptedData(extension)) {
-        params.auth_params = this.authManager.getAuthParams();
+      if (extension.encrypted) {
+        params.auth_params = this.userManager.getAuthParams();
       }
 
       this.httpManager.postAbsolute(action.url, params, function (response) {
@@ -39496,16 +39528,16 @@ var ExtensionManager = function () {
 }();
 
 angular.module('app.frontend').service('extensionManager', ExtensionManager);
-;angular.module('app.frontend').filter('appDate', function ($filter) {
+;angular.module('app.frontend').filter('appDate', ['$filter', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy', 'UTC') : '';
   };
-}).filter('appDateTime', function ($filter) {
+}]).filter('appDateTime', ['$filter', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy h:mm a') : '';
   };
-});
-;angular.module('app.frontend').filter('sortBy', function ($filter) {
+}]);
+;angular.module('app.frontend').filter('sortBy', ['$filter', function ($filter) {
   return function (items, sortBy) {
     var sortValueFn = function sortValueFn(a, b) {
       var pinCheck = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
@@ -39554,7 +39586,7 @@ angular.module('app.frontend').service('extensionManager', ExtensionManager);
       return sortValueFn(a, b);
     });
   };
-});
+}]);
 ;angular.module('app.frontend').filter('startFrom', function () {
   return function (input, start) {
     return input.slice(start);
@@ -39567,6 +39599,7 @@ angular.module('app.frontend').service('extensionManager', ExtensionManager);
 }]);
 ;
 var HttpManager = function () {
+  HttpManager.$inject = ['$timeout', 'storageManager'];
   function HttpManager($timeout, storageManager) {
     _classCallCheck(this, HttpManager);
 
@@ -39655,6 +39688,7 @@ var HttpManager = function () {
 angular.module('app.frontend').service('httpManager', HttpManager);
 ;
 var ModelManager = function () {
+  ModelManager.$inject = ['storageManager'];
   function ModelManager(storageManager) {
     _classCallCheck(this, ModelManager);
 
@@ -39663,9 +39697,10 @@ var ModelManager = function () {
     this.tags = [];
     this.itemSyncObservers = [];
     this.itemChangeObservers = [];
+    this.itemsPendingRemoval = [];
     this.items = [];
     this._extensions = [];
-    this.acceptableContentTypes = ["Note", "Tag", "Extension", "SN|Editor", "SN|Theme", "SN|Component", "SF|Extension"];
+    this.acceptableContentTypes = ["Note", "Tag", "Extension", "SN|Editor", "SN|Theme", "SN|Component", "SF|Extension", "SN|UserPreferences"];
   }
 
   _createClass(ModelManager, [{
@@ -39678,7 +39713,9 @@ var ModelManager = function () {
     }
   }, {
     key: 'alternateUUIDForItem',
-    value: function alternateUUIDForItem(item, callback) {
+    value: function alternateUUIDForItem(item, callback, removeOriginal) {
+      var _this13 = this;
+
       // we need to clone this item and give it a new uuid, then delete item with old uuid from db (you can't mofidy uuid's in our indexeddb setup)
       var newItem = this.createItem(item);
 
@@ -39689,12 +39726,20 @@ var ModelManager = function () {
 
       this.informModelsOfUUIDChangeForItem(newItem, item.uuid, newItem.uuid);
 
-      this.removeItemLocally(item, function () {
-        this.addItem(newItem);
+      var block = function block() {
+        _this13.addItem(newItem);
         newItem.setDirty(true);
         newItem.markAllReferencesDirty();
         callback();
-      }.bind(this));
+      };
+
+      if (removeOriginal) {
+        this.removeItemLocally(item, function () {
+          block();
+        });
+      } else {
+        block();
+      }
     }
   }, {
     key: 'informModelsOfUUIDChangeForItem',
@@ -39767,7 +39812,7 @@ var ModelManager = function () {
     value: function mapResponseItemsToLocalModelsOmittingFields(items, omitFields) {
       var models = [],
           processedObjects = [],
-          allModels = [];
+          modelsToNotifyObserversOf = [];
 
       // first loop should add and process items
       var _iteratorNormalCompletion43 = true;
@@ -39778,18 +39823,28 @@ var ModelManager = function () {
         for (var _iterator43 = items[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
           var json_obj = _step43.value;
 
-          json_obj = _.omit(json_obj, omitFields || []);
-          var item = this.findItem(json_obj["uuid"]);
+          if ((!json_obj.content_type || !json_obj.content) && !json_obj.deleted) {
+            // An item that is not deleted should never have empty content
+            console.error("Server response item is corrupt:", json_obj);
+            continue;
+          }
 
-          _.omit(json_obj, omitFields);
+          json_obj = _.omit(json_obj, omitFields || []);
+          var item = this.findItem(json_obj.uuid);
 
           if (item) {
             item.updateFromJSON(json_obj);
           }
 
-          if (json_obj["deleted"] == true || !_.includes(this.acceptableContentTypes, json_obj["content_type"])) {
-            if (item) {
-              allModels.push(item);
+          if (this.itemsPendingRemoval.includes(json_obj.uuid)) {
+            _.pull(this.itemsPendingRemoval, json_obj.uuid);
+            continue;
+          }
+
+          var unknownContentType = !_.includes(this.acceptableContentTypes, json_obj["content_type"]);
+          if (json_obj.deleted == true || unknownContentType) {
+            if (item && !unknownContentType) {
+              modelsToNotifyObserversOf.push(item);
               this.removeItemLocally(item);
             }
             continue;
@@ -39801,7 +39856,7 @@ var ModelManager = function () {
 
           this.addItem(item);
 
-          allModels.push(item);
+          modelsToNotifyObserversOf.push(item);
           models.push(item);
           processedObjects.push(json_obj);
         }
@@ -39829,7 +39884,7 @@ var ModelManager = function () {
         }
       }
 
-      this.notifySyncObserversOfModels(allModels);
+      this.notifySyncObserversOfModels(modelsToNotifyObserversOf);
 
       return models;
     }
@@ -39844,11 +39899,42 @@ var ModelManager = function () {
         for (var _iterator44 = this.itemSyncObservers[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
           var observer = _step44.value;
 
-          var relevantItems = models.filter(function (item) {
+          var allRelevantItems = models.filter(function (item) {
             return item.content_type == observer.type || observer.type == "*";
           });
-          if (relevantItems.length > 0) {
-            observer.callback(relevantItems);
+          var validItems = [],
+              deletedItems = [];
+          var _iteratorNormalCompletion45 = true;
+          var _didIteratorError45 = false;
+          var _iteratorError45 = undefined;
+
+          try {
+            for (var _iterator45 = allRelevantItems[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
+              var item = _step45.value;
+
+              if (item.deleted) {
+                deletedItems.push(item);
+              } else {
+                validItems.push(item);
+              }
+            }
+          } catch (err) {
+            _didIteratorError45 = true;
+            _iteratorError45 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion45 && _iterator45.return) {
+                _iterator45.return();
+              }
+            } finally {
+              if (_didIteratorError45) {
+                throw _iteratorError45;
+              }
+            }
+          }
+
+          if (allRelevantItems.length > 0) {
+            observer.callback(allRelevantItems, validItems, deletedItems);
           }
         }
       } catch (err) {
@@ -39869,13 +39955,13 @@ var ModelManager = function () {
   }, {
     key: 'notifyItemChangeObserversOfModels',
     value: function notifyItemChangeObserversOfModels(models) {
-      var _iteratorNormalCompletion45 = true;
-      var _didIteratorError45 = false;
-      var _iteratorError45 = undefined;
+      var _iteratorNormalCompletion46 = true;
+      var _didIteratorError46 = false;
+      var _iteratorError46 = undefined;
 
       try {
-        for (var _iterator45 = this.itemChangeObservers[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
-          var observer = _step45.value;
+        for (var _iterator46 = this.itemChangeObservers[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
+          var observer = _step46.value;
 
           var relevantItems = models.filter(function (item) {
             return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
@@ -39886,16 +39972,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError45 = true;
-        _iteratorError45 = err;
+        _didIteratorError46 = true;
+        _iteratorError46 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion45 && _iterator45.return) {
-            _iterator45.return();
+          if (!_iteratorNormalCompletion46 && _iterator46.return) {
+            _iterator46.return();
           }
         } finally {
-          if (_didIteratorError45) {
-            throw _iteratorError45;
+          if (_didIteratorError46) {
+            throw _iteratorError46;
           }
         }
       }
@@ -39927,6 +40013,13 @@ var ModelManager = function () {
       }.bind(this));
 
       return item;
+    }
+  }, {
+    key: 'createDuplicateItem',
+    value: function createDuplicateItem(itemResponse, sourceItem) {
+      var dup = this.createItem(itemResponse);
+      this.resolveReferencesForItem(dup);
+      return dup;
     }
   }, {
     key: 'addItems',
@@ -39980,13 +40073,13 @@ var ModelManager = function () {
         return;
       }
 
-      var _iteratorNormalCompletion46 = true;
-      var _didIteratorError46 = false;
-      var _iteratorError46 = undefined;
+      var _iteratorNormalCompletion47 = true;
+      var _didIteratorError47 = false;
+      var _iteratorError47 = undefined;
 
       try {
-        for (var _iterator46 = contentObject.references[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
-          var reference = _step46.value;
+        for (var _iterator47 = contentObject.references[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
+          var reference = _step47.value;
 
           var referencedItem = this.findItem(reference.uuid);
           if (referencedItem) {
@@ -39997,16 +40090,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError46 = true;
-        _iteratorError46 = err;
+        _didIteratorError47 = true;
+        _iteratorError47 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion46 && _iterator46.return) {
-            _iterator46.return();
+          if (!_iteratorNormalCompletion47 && _iterator47.return) {
+            _iterator47.return();
           }
         } finally {
-          if (_didIteratorError46) {
-            throw _iteratorError46;
+          if (_didIteratorError47) {
+            throw _iteratorError47;
           }
         }
       }
@@ -40041,64 +40134,15 @@ var ModelManager = function () {
   }, {
     key: 'clearDirtyItems',
     value: function clearDirtyItems(items) {
-      var _iteratorNormalCompletion47 = true;
-      var _didIteratorError47 = false;
-      var _iteratorError47 = undefined;
-
-      try {
-        for (var _iterator47 = items[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
-          var item = _step47.value;
-
-          item.setDirty(false);
-        }
-      } catch (err) {
-        _didIteratorError47 = true;
-        _iteratorError47 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion47 && _iterator47.return) {
-            _iterator47.return();
-          }
-        } finally {
-          if (_didIteratorError47) {
-            throw _iteratorError47;
-          }
-        }
-      }
-    }
-  }, {
-    key: 'clearAllDirtyItems',
-    value: function clearAllDirtyItems() {
-      this.clearDirtyItems(this.getDirtyItems());
-    }
-  }, {
-    key: 'setItemToBeDeleted',
-    value: function setItemToBeDeleted(item) {
-      item.deleted = true;
-      if (!item.dummy) {
-        item.setDirty(true);
-      }
-      item.removeAllRelationships();
-    }
-
-    /* Used when changing encryption key */
-
-  }, {
-    key: 'setAllItemsDirty',
-    value: function setAllItemsDirty() {
-      var relevantItems = this.allItems.filter(function (item) {
-        return _.includes(this.acceptableContentTypes, item.content_type);
-      }.bind(this));
-
       var _iteratorNormalCompletion48 = true;
       var _didIteratorError48 = false;
       var _iteratorError48 = undefined;
 
       try {
-        for (var _iterator48 = relevantItems[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
+        for (var _iterator48 = items[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
           var item = _step48.value;
 
-          item.setDirty(true);
+          item.setDirty(false);
         }
       } catch (err) {
         _didIteratorError48 = true;
@@ -40116,11 +40160,62 @@ var ModelManager = function () {
       }
     }
   }, {
+    key: 'clearAllDirtyItems',
+    value: function clearAllDirtyItems() {
+      this.clearDirtyItems(this.getDirtyItems());
+    }
+  }, {
+    key: 'setItemToBeDeleted',
+    value: function setItemToBeDeleted(item) {
+      item.deleted = true;
+      if (!item.dummy) {
+        item.setDirty(true);
+      }
+      item.removeAndDirtyAllRelationships();
+    }
+
+    /* Used when changing encryption key */
+
+  }, {
+    key: 'setAllItemsDirty',
+    value: function setAllItemsDirty() {
+      var relevantItems = this.allItems.filter(function (item) {
+        return _.includes(this.acceptableContentTypes, item.content_type);
+      }.bind(this));
+
+      var _iteratorNormalCompletion49 = true;
+      var _didIteratorError49 = false;
+      var _iteratorError49 = undefined;
+
+      try {
+        for (var _iterator49 = relevantItems[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
+          var item = _step49.value;
+
+          item.setDirty(true);
+        }
+      } catch (err) {
+        _didIteratorError49 = true;
+        _iteratorError49 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion49 && _iterator49.return) {
+            _iterator49.return();
+          }
+        } finally {
+          if (_didIteratorError49) {
+            throw _iteratorError49;
+          }
+        }
+      }
+    }
+  }, {
     key: 'removeItemLocally',
     value: function removeItemLocally(item, callback) {
       _.pull(this.items, item);
 
       item.isBeingRemovedLocally();
+
+      this.itemsPendingRemoval.push(item.uuid);
 
       if (item.content_type == "Tag") {
         _.pull(this.tags, item);
@@ -40142,15 +40237,6 @@ var ModelManager = function () {
     value: function createRelationshipBetweenItems(itemOne, itemTwo) {
       itemOne.addItemAsRelationship(itemTwo);
       itemTwo.addItemAsRelationship(itemOne);
-
-      itemOne.setDirty(true);
-      itemTwo.setDirty(true);
-    }
-  }, {
-    key: 'removeRelationshipBetweenItems',
-    value: function removeRelationshipBetweenItems(itemOne, itemTwo) {
-      itemOne.removeItemAsRelationship(itemTwo);
-      itemTwo.removeItemAsRelationship(itemOne);
 
       itemOne.setDirty(true);
       itemTwo.setDirty(true);
@@ -40182,9 +40268,9 @@ var ModelManager = function () {
 angular.module('app.frontend').service('modelManager', ModelManager);
 ;angular.module('app.frontend').provider('passcodeManager', function () {
 
-  this.$get = function ($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
+  this.$get = ['$rootScope', '$timeout', 'modelManager', 'dbManager', 'authManager', 'storageManager', function ($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
     return new PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager);
-  };
+  }];
 
   function PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
 
@@ -40305,6 +40391,7 @@ var MemoryStorage = function () {
 }();
 
 var StorageManager = function () {
+  StorageManager.$inject = ['dbManager'];
   function StorageManager(dbManager) {
     _classCallCheck(this, StorageManager);
 
@@ -40317,11 +40404,14 @@ var StorageManager = function () {
       if (hasPasscode) {
         // We don't want to save anything in fixed storage except for actual item data (in IndexedDB)
         this.storage = this.memoryStorage;
+        this.itemsStorageMode = StorageManager.FixedEncrypted;
       } else if (ephemeral) {
         // We don't want to save anything in fixed storage as well as IndexedDB
         this.storage = this.memoryStorage;
+        this.itemsStorageMode = StorageManager.Ephemeral;
       } else {
         this.storage = localStorage;
+        this.itemsStorageMode = StorageManager.Fixed;
       }
 
       this.modelStorageMode = ephemeral ? StorageManager.Ephemeral : StorageManager.Fixed;
@@ -40338,6 +40428,7 @@ var StorageManager = function () {
           newStorage.setItem(key, this.storage.getItem(key));
         }
 
+        this.itemsStorageMode = mode;
         this.storage.clear();
         this.storage = newStorage;
 
@@ -40353,27 +40444,22 @@ var StorageManager = function () {
     key: 'getVault',
     value: function getVault(vaultKey) {
       if (vaultKey) {
-        return this.storageForVault(vaultKey);
+        if (vaultKey == StorageManager.Ephemeral || vaultKey == StorageManager.FixedEncrypted) {
+          return this.memoryStorage;
+        } else {
+          return localStorage;
+        }
       } else {
         return this.storage;
       }
     }
   }, {
-    key: 'storageForVault',
-    value: function storageForVault(vault) {
-      if (vault == StorageManager.Ephemeral || vault == StorageManager.FixedEncrypted) {
-        return this.memoryStorage;
-      } else {
-        return localStorage;
-      }
-    }
-  }, {
     key: 'setItem',
-    value: function setItem(key, value, vault) {
-      var storage = this.getVault(vault);
+    value: function setItem(key, value, vaultKey) {
+      var storage = this.getVault(vaultKey);
       storage.setItem(key, value);
 
-      if (vault === StorageManager.FixedEncrypted) {
+      if (vaultKey === StorageManager.FixedEncrypted || !vaultKey && this.itemsStorageMode === StorageManager.FixedEncrypted) {
         this.writeEncryptedStorageToDisk();
       }
     }
@@ -40427,6 +40513,7 @@ var StorageManager = function () {
       var encryptedStorage = new EncryptedStorage();
       // Copy over totality of current storage
       encryptedStorage.storage = this.storageAsHash();
+
       // Save new encrypted storage in Fixed storage
       var params = new ItemParams(encryptedStorage, this.encryptedStorageKeys);
       this.setItem("encryptedStorage", JSON.stringify(params.paramsForSync()), StorageManager.Fixed);
@@ -40438,27 +40525,27 @@ var StorageManager = function () {
       EncryptionHelper.decryptItem(stored, this.encryptedStorageKeys);
       var encryptedStorage = new EncryptedStorage(stored);
 
-      var _iteratorNormalCompletion49 = true;
-      var _didIteratorError49 = false;
-      var _iteratorError49 = undefined;
+      var _iteratorNormalCompletion50 = true;
+      var _didIteratorError50 = false;
+      var _iteratorError50 = undefined;
 
       try {
-        for (var _iterator49 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
-          var key = _step49.value;
+        for (var _iterator50 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
+          var key = _step50.value;
 
           this.setItem(key, encryptedStorage.storage[key]);
         }
       } catch (err) {
-        _didIteratorError49 = true;
-        _iteratorError49 = err;
+        _didIteratorError50 = true;
+        _iteratorError50 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion49 && _iterator49.return) {
-            _iterator49.return();
+          if (!_iteratorNormalCompletion50 && _iterator50.return) {
+            _iterator50.return();
           }
         } finally {
-          if (_didIteratorError49) {
-            throw _iteratorError49;
+          if (_didIteratorError50) {
+            throw _iteratorError50;
           }
         }
       }
@@ -40548,6 +40635,7 @@ StorageManager.Fixed = "Fixed"; // localStorage
 angular.module('app.frontend').service('storageManager', StorageManager);
 ;
 var SyncManager = function () {
+  SyncManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'dbManager', 'httpManager', '$interval', '$timeout', 'storageManager', 'passcodeManager'];
   function SyncManager($rootScope, modelManager, authManager, dbManager, httpManager, $interval, $timeout, storageManager, passcodeManager) {
     _classCallCheck(this, SyncManager);
 
@@ -40598,29 +40686,29 @@ var SyncManager = function () {
     value: function syncOffline(items, callback) {
       this.writeItemsToLocalStorage(items, true, function (responseItems) {
         // delete anything needing to be deleted
-        var _iteratorNormalCompletion50 = true;
-        var _didIteratorError50 = false;
-        var _iteratorError50 = undefined;
+        var _iteratorNormalCompletion51 = true;
+        var _didIteratorError51 = false;
+        var _iteratorError51 = undefined;
 
         try {
-          for (var _iterator50 = items[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
-            var item = _step50.value;
+          for (var _iterator51 = items[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
+            var item = _step51.value;
 
             if (item.deleted) {
               this.modelManager.removeItemLocally(item);
             }
           }
         } catch (err) {
-          _didIteratorError50 = true;
-          _iteratorError50 = err;
+          _didIteratorError51 = true;
+          _iteratorError51 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion50 && _iterator50.return) {
-              _iterator50.return();
+            if (!_iteratorNormalCompletion51 && _iterator51.return) {
+              _iterator51.return();
             }
           } finally {
-            if (_didIteratorError50) {
-              throw _iteratorError50;
+            if (_didIteratorError51) {
+              throw _iteratorError51;
             }
           }
         }
@@ -40640,37 +40728,39 @@ var SyncManager = function () {
   }, {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback, alternateUUIDs) {
-      var _this13 = this;
+      var _this14 = this;
 
-      var originalItems = this.modelManager.allItems;
+      // use a copy, as alternating uuid will affect array
+      var originalItems = this.modelManager.allItems.slice();
 
-      var block = function block(items) {
-        var _iteratorNormalCompletion51 = true;
-        var _didIteratorError51 = false;
-        var _iteratorError51 = undefined;
+      var block = function block() {
+        var allItems = _this14.modelManager.allItems;
+        var _iteratorNormalCompletion52 = true;
+        var _didIteratorError52 = false;
+        var _iteratorError52 = undefined;
 
         try {
-          for (var _iterator51 = items[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
-            var item = _step51.value;
+          for (var _iterator52 = allItems[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
+            var item = _step52.value;
 
             item.setDirty(true);
           }
         } catch (err) {
-          _didIteratorError51 = true;
-          _iteratorError51 = err;
+          _didIteratorError52 = true;
+          _iteratorError52 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion51 && _iterator51.return) {
-              _iterator51.return();
+            if (!_iteratorNormalCompletion52 && _iterator52.return) {
+              _iterator52.return();
             }
           } finally {
-            if (_didIteratorError51) {
-              throw _iteratorError51;
+            if (_didIteratorError52) {
+              throw _iteratorError52;
             }
           }
         }
 
-        _this13.writeItemsToLocalStorage(items, false, callback);
+        _this14.writeItemsToLocalStorage(allItems, false, callback);
       };
 
       if (alternateUUIDs) {
@@ -40679,18 +40769,26 @@ var SyncManager = function () {
         var alternateNextItem = function alternateNextItem() {
           if (index >= originalItems.length) {
             // We don't use originalItems as altnerating UUID will have deleted them.
-            block(_this13.modelManager.allItems);
+            block();
             return;
           }
 
           var item = originalItems[index];
-          _this13.modelManager.alternateUUIDForItem(item, alternateNextItem);
-          ++index;
+          index++;
+
+          // alternateUUIDForItem last param is a boolean that controls whether the original item
+          // should be removed locally after new item is created. We set this to true, since during sign in,
+          // all item ids are alternated, and we only want one final copy of the entire data set.
+          // Passing false can be desired sometimes, when for example the app has signed out the user,
+          // but for some reason retained their data (This happens in Firefox when using private mode).
+          // In this case, we should pass false so that both copies are kept. However, it's difficult to
+          // detect when the app has entered this state. We will just use true to remove original items for now.
+          _this14.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
         };
 
         alternateNextItem();
       } else {
-        block(originalItems);
+        block();
       }
     }
   }, {
@@ -40706,27 +40804,27 @@ var SyncManager = function () {
         allCallbacks.push(currentCallback);
       }
       if (allCallbacks.length) {
-        var _iteratorNormalCompletion52 = true;
-        var _didIteratorError52 = false;
-        var _iteratorError52 = undefined;
+        var _iteratorNormalCompletion53 = true;
+        var _didIteratorError53 = false;
+        var _iteratorError53 = undefined;
 
         try {
-          for (var _iterator52 = allCallbacks[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
-            var eachCallback = _step52.value;
+          for (var _iterator53 = allCallbacks[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
+            var eachCallback = _step53.value;
 
             eachCallback(response);
           }
         } catch (err) {
-          _didIteratorError52 = true;
-          _iteratorError52 = err;
+          _didIteratorError53 = true;
+          _iteratorError53 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion52 && _iterator52.return) {
-              _iterator52.return();
+            if (!_iteratorNormalCompletion53 && _iterator53.return) {
+              _iterator53.return();
             }
           } finally {
-            if (_didIteratorError52) {
-              throw _iteratorError52;
+            if (_didIteratorError53) {
+              throw _iteratorError53;
             }
           }
         }
@@ -40833,16 +40931,23 @@ var SyncManager = function () {
 
         this.$rootScope.$broadcast("sync:updated_token", this.syncToken);
 
+        // Map retrieved items to local data
         var retrieved = this.handleItemsResponse(response.retrieved_items, null);
+
+        // Append items to master list of retrieved items for this ongoing sync operation
         this.allRetreivedItems = this.allRetreivedItems.concat(retrieved);
 
-        // merge only metadata for saved items
+        // Merge only metadata for saved items
         // we write saved items to disk now because it clears their dirty status then saves
         // if we saved items before completion, we had have to save them as dirty and save them again on success as clean
         var omitFields = ["content", "auth_hash"];
+
+        // Map saved items to local data
         var saved = this.handleItemsResponse(response.saved_items, omitFields);
 
+        // Create copies of items or alternate their uuids if neccessary
         this.handleUnsavedItemsResponse(response.unsaved);
+
         this.writeItemsToLocalStorage(saved, false, null);
 
         this.syncStatus.syncOpInProgress = false;
@@ -40940,14 +41045,14 @@ var SyncManager = function () {
           // UUID conflicts can occur if a user attempts to
           // import an old data archive with uuids from the old account into a new account
           handled = true;
-          this.modelManager.alternateUUIDForItem(item, handleNext);
+          this.modelManager.alternateUUIDForItem(item, handleNext, true);
         } else if (error.tag === "sync_conflict") {
           // Create a new item with the same contents of this item if the contents differ
 
           // We want a new uuid for the new item. Note that this won't neccessarily adjust references.
           itemResponse.uuid = null;
 
-          var dup = this.modelManager.createItem(itemResponse);
+          var dup = this.modelManager.createDuplicateItem(itemResponse, item);
           if (!itemResponse.deleted && JSON.stringify(item.structureParams()) !== JSON.stringify(dup.structureParams())) {
             this.modelManager.addItem(dup);
             dup.conflict_of = item.uuid;
@@ -41045,6 +41150,7 @@ var SyncManager = function () {
 angular.module('app.frontend').service('syncManager', SyncManager);
 ;
 var ThemeManager = function () {
+  ThemeManager.$inject = ['modelManager', 'syncManager', '$rootScope', 'storageManager'];
   function ThemeManager(modelManager, syncManager, $rootScope, storageManager) {
     _classCallCheck(this, ThemeManager);
 
@@ -41461,19 +41567,23 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      </div>\n" +
     "    </div>\n" +
     "    <div ng-if='themeManager.themes.length &gt; 0'>\n" +
-    "      <div class='container no-bottom section-margin'>\n" +
+    "      <div class='header container section-margin'>\n" +
     "        <h2>Themes</h2>\n" +
     "      </div>\n" +
     "      <ul>\n" +
-    "        <li ng-click='theme.showDetails = !theme.showDetails' ng-repeat='theme in themeManager.themes'>\n" +
+    "        <li ng-click='clickedExtension(theme)' ng-repeat=\"theme in themeManager.themes | orderBy: 'name'\">\n" +
     "          <div class='container'>\n" +
-    "            <h3>{{theme.name}}</h3>\n" +
+    "            <h3>\n" +
+    "              <input class='bold' mb-autofocus='true' ng-if='theme.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(theme);' ng-model='theme.tempName' should-focus='true'>\n" +
+    "              <span ng-if='!theme.rename'>{{theme.name}}</span>\n" +
+    "            </h3>\n" +
     "            <a ng-click='themeManager.activateTheme(theme); $event.stopPropagation();' ng-if='!themeManager.isThemeActive(theme)'>Activate</a>\n" +
     "            <a ng-click='themeManager.deactivateTheme(theme); $event.stopPropagation();' ng-if='themeManager.isThemeActive(theme)'>Deactivate</a>\n" +
     "            <div class='mt-3' ng-if='theme.showDetails'>\n" +
     "              <div class='link-group'>\n" +
-    "                <a class='red' ng-click='deleteTheme(theme); $event.stopPropagation();'>Delete</a>\n" +
+    "                <a ng-click='renameExtension(theme); $event.stopPropagation();'>Rename</a>\n" +
     "                <a ng-click='theme.showLink = !theme.showLink; $event.stopPropagation();'>Show Link</a>\n" +
+    "                <a class='red' ng-click='deleteTheme(theme); $event.stopPropagation();'>Delete</a>\n" +
     "                <p class='small selectable wrap' ng-if='theme.showLink'>\n" +
     "                  {{theme.url}}\n" +
     "                </p>\n" +
@@ -41484,19 +41594,23 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      </ul>\n" +
     "    </div>\n" +
     "    <div ng-if='editorManager.externalEditors.length &gt; 0'>\n" +
-    "      <div class='container no-bottom section-margin'>\n" +
+    "      <div class='header container section-margin'>\n" +
     "        <h2>Editors</h2>\n" +
     "        <p style='margin-top: 3px;'>Choose \"Editor\" in the note menu to use an editor for a specific note.</p>\n" +
     "      </div>\n" +
     "      <ul>\n" +
-    "        <li ng-click='editor.showDetails = !editor.showDetails' ng-repeat='editor in editorManager.externalEditors'>\n" +
+    "        <li ng-click='clickedExtension(editor)' ng-repeat=\"editor in editorManager.externalEditors | orderBy: 'name'\">\n" +
     "          <div class='container'>\n" +
     "            <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
-    "            <h3>{{editor.name}}</h3>\n" +
+    "            <h3>\n" +
+    "              <input class='bold' mb-autofocus='true' ng-if='editor.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(editor);' ng-model='editor.tempName' should-focus='true'>\n" +
+    "              <span ng-if='!editor.rename'>{{editor.name}}</span>\n" +
+    "            </h3>\n" +
     "            <div class='mt-5' ng-if='editor.showDetails'>\n" +
     "              <div class='link-group'>\n" +
     "                <a ng-click='setDefaultEditor(editor); $event.stopPropagation();' ng-if='!editor.default'>Make Default</a>\n" +
     "                <a class='tinted' ng-click='removeDefaultEditor(editor); $event.stopPropagation();' ng-if='editor.default'>Remove as Default</a>\n" +
+    "                <a ng-click='renameExtension(editor); $event.stopPropagation();'>Rename</a>\n" +
     "                <a ng-click='editor.showUrl = !editor.showUrl; $event.stopPropagation();'>Show Link</a>\n" +
     "                <a class='red' ng-click='deleteEditor(editor); $event.stopPropagation();'>Delete</a>\n" +
     "              </div>\n" +
@@ -41507,14 +41621,17 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      </ul>\n" +
     "    </div>\n" +
     "    <div ng-if='extensionManager.extensions.length'>\n" +
-    "      <div class='container no-bottom section-margin'>\n" +
+    "      <div class='header container section-margin'>\n" +
     "        <h2>Actions</h2>\n" +
     "        <p style='margin-top: 3px;'>Choose \"Actions\" in the note editor to use installed actions.</p>\n" +
     "      </div>\n" +
     "      <ul>\n" +
-    "        <li ng-click='extension.showDetails = !extension.showDetails' ng-init='extension.formData = {}' ng-repeat=\"extension in extensionManager.extensions | orderBy: 'name'\">\n" +
+    "        <li ng-click='clickedExtension(extension)' ng-init='extension.formData = {}' ng-repeat=\"extension in extensionManager.extensions | orderBy: 'name'\">\n" +
     "          <div class='container'>\n" +
-    "            <h3>{{extension.name}}</h3>\n" +
+    "            <h3>\n" +
+    "              <input class='bold' mb-autofocus='true' ng-if='extension.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(extension);' ng-model='extension.tempName' should-focus='true'>\n" +
+    "              <span ng-if='!extension.rename'>{{extension.name}}</span>\n" +
+    "            </h3>\n" +
     "            <p class='small' ng-if='extension.description'>{{extension.description}}</p>\n" +
     "            <div ng-if='extension.showDetails'>\n" +
     "              <div class='mt-10'>\n" +
@@ -41564,29 +41681,34 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "                  </label>\n" +
     "                </li>\n" +
     "              </ul>\n" +
+    "              <a class='block mt-5' ng-click='renameExtension(extension); $event.stopPropagation();'>Rename</a>\n" +
     "              <a class='block mt-5' ng-click='extension.showURL = !extension.showURL; $event.stopPropagation();'>Show Link</a>\n" +
     "              <p class='wrap selectable small' ng-if='extension.showURL'>{{extension.url}}</p>\n" +
-    "              <a class='block mt-5' ng-click='deleteActionExtension(extension); $event.stopPropagation();'>Remove extension</a>\n" +
+    "              <a class='block mt-5' ng-click='deleteActionExtension(extension); $event.stopPropagation();'>Delete</a>\n" +
     "            </div>\n" +
     "          </div>\n" +
     "        </li>\n" +
     "      </ul>\n" +
     "    </div>\n" +
     "    <div ng-if='componentManager.components.length &gt; 0'>\n" +
-    "      <div class='container no-bottom section-margin'>\n" +
+    "      <div class='header container section-margin'>\n" +
     "        <h2>Components</h2>\n" +
     "      </div>\n" +
     "      <ul>\n" +
-    "        <li ng-click='component.showDetails = !component.showDetails' ng-repeat='component in componentManager.components'>\n" +
+    "        <li ng-click='clickedExtension(component)' ng-repeat=\"component in componentManager.components | orderBy: 'name'\">\n" +
     "          <div class='container'>\n" +
-    "            <h3>{{component.name}}</h3>\n" +
+    "            <h3>\n" +
+    "              <input class='bold' mb-autofocus='true' ng-if='component.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(component);' ng-model='component.tempName' should-focus='true'>\n" +
+    "              <span ng-if='!component.rename'>{{component.name}}</span>\n" +
+    "            </h3>\n" +
     "            <a ng-click='componentManager.activateComponent(component); $event.stopPropagation();' ng-if='!componentManager.isComponentActive(component)'>Activate</a>\n" +
     "            <a ng-click='componentManager.deactivateComponent(component); $event.stopPropagation();' ng-if='componentManager.isComponentActive(component)'>Deactivate</a>\n" +
     "            <div class='mt-3' ng-if='component.showDetails'>\n" +
     "              <div class='link-group'>\n" +
-    "                <a class='red' ng-click='deleteComponent(component); $event.stopPropagation();'>Delete</a>\n" +
+    "                <a ng-click='renameExtension(component); $event.stopPropagation();'>Rename</a>\n" +
     "                <a ng-click='component.showLink = !component.showLink; $event.stopPropagation();'>Show Link</a>\n" +
     "                <a ng-click='revokePermissions(component); $event.stopPropagation();' ng-if='component.permissions.length'>Revoke Permissions</a>\n" +
+    "                <a class='red' ng-click='deleteComponent(component); $event.stopPropagation();'>Delete</a>\n" +
     "                <p class='small selectable wrap' ng-if='component.showLink'>\n" +
     "                  {{component.url}}\n" +
     "                </p>\n" +
@@ -41597,7 +41719,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      </ul>\n" +
     "    </div>\n" +
     "    <div ng-if='serverExtensions.length &gt; 0'>\n" +
-    "      <div class='container no-bottom section-margin'>\n" +
+    "      <div class='header container section-margin'>\n" +
     "        <h2>Server Extensions</h2>\n" +
     "      </div>\n" +
     "      <ul>\n" +
@@ -41630,7 +41752,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 
 
   $templateCache.put('frontend/directives/panel-resizer.html',
-    "<div style='width: 10px; height: 100%; background-color: red; cursor: col-resize;'></div>\n"
+    "<div class='panel-resizer-column'></div>\n"
   );
 
 
@@ -41750,7 +41872,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    <iframe frameBorder='0' id='editor-iframe' ng-if='ctrl.editor &amp;&amp; !ctrl.editor.systemEditor' ng-src='{{ctrl.editor.url | trusted}}' style='width: 100%;'>\n" +
     "      Loading\n" +
     "    </iframe>\n" +
-    "    <textarea class='editable' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.editor || ctrl.editor.systemEditor' ng-model='ctrl.note.text'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
+    "    <textarea class='editable' dir='auto' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.editor || ctrl.editor.systemEditor' ng-model='ctrl.note.text'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
     "  </div>\n" +
     "  <section class='section' ng-if='ctrl.note.errorDecrypting'>\n" +
     "    <p class='medium-padding' style='padding-top: 0 !important;'>There was an error decrypting this item. Ensure you are running the latest version of this app, then sign out and sign back in to try again.</p>\n" +
@@ -41787,18 +41909,18 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      <span class='tinted normal'>New update downloaded. Installs on app restart.</span>\n" +
     "    </div>\n" +
     "    <div class='footer-bar-link' style='margin-right: 5px;'>\n" +
-    "      <div ng-if='ctrl.lastSyncDate' style='float: left; font-weight: normal; margin-right: 8px;'>\n" +
+    "      <span ng-if='ctrl.lastSyncDate' style='float: left; font-weight: normal; margin-right: 8px;'>\n" +
     "        <span ng-if='!ctrl.isRefreshing'>\n" +
     "          Last refreshed {{ctrl.lastSyncDate | appDateTime}}\n" +
     "        </span>\n" +
     "        <span ng-if='ctrl.isRefreshing'>\n" +
     "          <div class='spinner' style='margin-top: 2px;'></div>\n" +
     "        </span>\n" +
-    "      </div>\n" +
+    "      </span>\n" +
     "      <strong ng-if='ctrl.offline'>Offline</strong>\n" +
     "      <a ng-click='ctrl.refreshData()' ng-if='!ctrl.offline'>Refresh</a>\n" +
     "      <span ng-if='ctrl.hasPasscode()'>\n" +
-    "        <i class='icon ion-locked' ng-click='ctrl.lockApp()'></i>\n" +
+    "        <i class='icon ion-locked' ng-click='ctrl.lockApp()' ng-if='ctrl.hasPasscode()'></i>\n" +
     "      </span>\n" +
     "    </div>\n" +
     "  </div>\n" +
@@ -41891,7 +42013,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    </div>\n" +
     "    <div class='scrollable'>\n" +
     "      <div can-load='true' class='infinite-scroll' infinite-scroll='ctrl.paginate()' threshold='200'>\n" +
-    "        <div class='note' ng-class=\"{'selected' : ctrl.selectedNote == note}\" ng-click='ctrl.selectNote(note)' ng-repeat='note in (ctrl.sortedNotes = (ctrl.tag.notes | filter: ctrl.filterNotes | sortBy: ctrl.sortBy| limitTo:ctrl.notesToDisplay))'>\n" +
+    "        <div class='note' ng-class=\"{'selected' : ctrl.selectedNote == note}\" ng-click='ctrl.selectNote(note)' ng-repeat='note in (ctrl.sortedNotes = (ctrl.tag.notes | filter: ctrl.filterNotes | sortBy: ctrl.sortBy| limitTo:ctrl.notesToDisplay)) track by note.uuid'>\n" +
     "          <strong class='red medium' ng-if='note.conflict_of'>Conflicted copy</strong>\n" +
     "          <strong class='red medium' ng-if='note.errorDecrypting'>Error decrypting</strong>\n" +
     "          <div class='pinned tinted' ng-class=\"{'tinted-selected' : ctrl.selectedNote == note}\" ng-if='note.pinned'>\n" +
@@ -41938,12 +42060,13 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "          <div class='count'>{{ctrl.noteCount(ctrl.allTag)}}</div>\n" +
     "        </div>\n" +
     "      </div>\n" +
-    "      <div class='tag' ng-class=\"{'selected' : ctrl.selectedTag == tag}\" ng-click='ctrl.selectTag(tag)' ng-repeat='tag in ctrl.tags'>\n" +
+    "      <div class='tag' ng-class=\"{'selected' : ctrl.selectedTag == tag}\" ng-click='ctrl.selectTag(tag)' ng-repeat='tag in ctrl.tags track by tag.uuid'>\n" +
     "        <div class='info'>\n" +
     "          <input class='title' mb-autofocus='true' ng-attr-id='tag-{{tag.uuid}}' ng-blur='ctrl.saveTag($event, tag)' ng-change='ctrl.tagTitleDidChange(tag)' ng-click='ctrl.selectTag(tag)' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTag($event, tag)' ng-model='tag.title' should-focus='ctrl.newTag || ctrl.editingTag == tag' spellcheck='false'>\n" +
     "          <div class='count'>{{ctrl.noteCount(tag)}}</div>\n" +
     "        </div>\n" +
     "        <div class='red small bold' ng-if='tag.conflict_of'>Conflicted copy</div>\n" +
+    "        <div class='red small bold' ng-if='tag.errorDecrypting'>Error decrypting</div>\n" +
     "        <div class='menu' ng-if='ctrl.selectedTag == tag'>\n" +
     "          <a class='item' ng-click='ctrl.selectedRenameTag($event, tag)' ng-if='!ctrl.editingTag'>Rename</a>\n" +
     "          <a class='item' ng-click='ctrl.saveTag($event, tag)' ng-if='ctrl.editingTag'>Save</a>\n" +
