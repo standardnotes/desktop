@@ -15,7 +15,7 @@ class ArchiveManager {
       if(data) {
         this.writeDataToFile(data);
       } else {
-        console.log("Empty data, not writing.");
+        console.log("Empty data, not writing backup file.");
       }
     });
 
@@ -58,9 +58,9 @@ class ArchiveManager {
 
     fs.writeFile(filePath, data, (err) => {
         if(err){
-          console.log("An error ocurred creating the file "+ err.message)
+          console.log("An error ocurred saving backup file: " + err.message)
         } else {
-          console.log("The file has been succesfully saved");
+          console.log("Data backup succesfully saved.");
         }
     });
   }

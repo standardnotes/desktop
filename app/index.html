@@ -33,7 +33,6 @@
         ipcRenderer.on('download-backup', function (event, message) {
           var desktopManager = angular.element(document).injector().get('desktopManager');
           let data = desktopManager.desktop_requestBackupFile();
-          console.log("Got data", data);
           event.sender.send('data-archive', data);
         });
 
@@ -73,12 +72,10 @@
       angular.element(document).ready(function () {
         var desktopManager = angular.element(document).injector().get('desktopManager');
         desktopManager.desktop_setInitialDataLoadHandler(() => {
-          console.log("Iniitial Data Loaded");
           ipcRenderer.send("initial-data-loaded");
         })
 
         desktopManager.desktop_setMajorDataChangeHandler(() => {
-          console.log("Major Data Change");
           ipcRenderer.send("major-data-change");
         })
       });
