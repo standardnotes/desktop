@@ -3,7 +3,7 @@
   "main": "./app/index.js",
   "devDependencies": {
     "electron": "1.7.9",
-    "electron-builder": "^19.37.2"
+    "electron-builder": "^19.45.0"
   },
   "build": {
     "appId": "org.standardnotes.standardnotes",
