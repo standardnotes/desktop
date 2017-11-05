@@ -1,7 +1,9 @@
 {
   "name": "standard-notes",
-  "main": "./app/index.js",
+  "main": "./app/dist/index.js",
   "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1",
     "electron": "1.7.9",
     "electron-builder": "^19.45.0"
   },
@@ -29,7 +31,9 @@
     "build-beta": "electron-builder -mwl --x64 --ia32 --publish=always --em.productName='Standard Notes (Beta)' --em.appId=org.standardnotes.standardnotes.beta",
     "distwin": "build -w --x64 --ia32",
     "distmac": "build -m",
-    "start": "electron . --enable-logging --icon _icon/icon.png",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+
+    "build": "rimraf dist/ && babel ./app --out-dir app/dist/ --ignore ./app/compiled,./app/assets,./app/stylesheets,./app/dist,./node_modules,./.babelrc,./package.json,./npm-debug.log --copy-files",
+    "start": "npm run build && electron . --enable-logging --icon _icon/icon.png"
   }
 }

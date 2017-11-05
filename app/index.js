@@ -1,4 +1,4 @@
-const {app, Menu, BrowserWindow, dialog} = require('electron')
+const {app, Menu, BrowserWindow, dialog, ipcMain} = require('electron');
 app.setName('Standard Notes');
 
 const path = require('path')
@@ -6,6 +6,17 @@ const {autoUpdater} = require("electron-updater")
 const url = require('url')
 const windowStateKeeper = require('electron-window-state')
 const shell = require('electron').shell;
+
+import menuManager from './javascripts/menuManager.js'
+import archiveManager from './javascripts/archiveManager.js';
+
+ipcMain.on('initial-data-loaded', () => {
+  archiveManager.beginBackups();
+});
+
+ipcMain.on('major-data-change', () => {
+  archiveManager.performBackup();
+})
 
 const isDev = require('electron-is-dev');
 
@@ -52,6 +63,8 @@ function createWindow () {
     'minHeight': 400,
     show: false,
   })
+
+  archiveManager.setWindow(win);
 
   // Register listeners on the window, so we can update the state
   // automatically (the listeners will be removed when the window
@@ -126,7 +139,7 @@ app.on('activate', function() {
   }
   checkForUpdates()
 
-  win.webContents.send("window-activated")
+  win.webContents.send("window-activated");
 });
 
 app.on('ready', function(){
@@ -137,207 +150,5 @@ app.on('ready', function(){
     win.focus();
   }
 
-  loadMenu();
+  menuManager.loadMenu(win, archiveManager);
 })
-
-
-function loadMenu() {
-
-  const template = [
-    {
-      label: 'Edit',
-      submenu: [
-        {
-          role: 'undo'
-        },
-        {
-          role: 'redo'
-        },
-        {
-          type: 'separator'
-        },
-        {
-          role: 'cut'
-        },
-        {
-          role: 'copy'
-        },
-        {
-          role: 'paste'
-        },
-        {
-          role: 'pasteandmatchstyle'
-        },
-        {
-          role: 'selectall'
-        }
-      ]
-    },
-
-    {
-      label: 'View',
-      submenu: [
-        {
-          role: 'reload'
-        },
-        {
-          role: 'toggledevtools'
-        },
-        {
-          type: 'separator'
-        },
-        {
-          role: 'resetzoom'
-        },
-        {
-          role: 'zoomin'
-        },
-        {
-          role: 'zoomout'
-        },
-        {
-          type: 'separator'
-        },
-        {
-          role: 'togglefullscreen'
-        },
-        {
-          visible: process.platform === 'darwin' ? false : true,
-          label: 'Hide Menu Bar',
-          accelerator: 'Alt + m',
-          click() {
-            if (win.isMenuBarVisible(true)) {
-              win.setMenuBarVisibility(false)
-            } else {
-              win.setMenuBarVisibility(true)
-            }
-          }
-        }
-      ]
-    },
-    {
-      role: 'window',
-      submenu: [
-        {
-          role: 'minimize'
-        },
-        {
-          role: 'close'
-        }
-      ]
-    },
-    {
-      role: 'help',
-      submenu: [
-        {
-          label: 'GitHub',
-          click () { shell.openExternal('https://github.com/standardnotes') }
-        },
-        {
-          label: 'Slack',
-          click () { shell.openExternal('https://standardnotes.org/slack') }
-        },
-        {
-          label: 'Website',
-          click () { shell.openExternal('https://standardnotes.org') }
-        },
-        {
-          label: 'Support',
-          click () { shell.openExternal('mailto:hello@standardnotes.org') }
-        },
-        {
-          label: 'Clear Cache and Reload',
-          click () {
-            win.webContents.session.clearCache(function(){
-              win.reload();
-            });
-           }
-        },
-        {
-          label: 'Version: ' + app.getVersion(),
-          click () { shell.openExternal('https://github.com/standardnotes/desktop/releases') }
-        }
-      ]
-    }
-  ]
-
-  if (process.platform === 'darwin') {
-    template.unshift({
-      label: app.getName(),
-      submenu: [
-        {
-          role: 'about'
-        },
-        {
-          type: 'separator'
-        },
-        {
-          role: 'services',
-          submenu: []
-        },
-        {
-          type: 'separator'
-        },
-        {
-          role: 'hide'
-        },
-        {
-          role: 'hideothers'
-        },
-        {
-          role: 'unhide'
-        },
-        {
-          type: 'separator'
-        },
-        {
-          role: 'quit'
-        }
-      ]
-    })
-    // Edit menu.
-    template[1].submenu.push(
-      {
-        type: 'separator'
-      },
-      {
-        label: 'Speech',
-        submenu: [
-          {
-            role: 'startspeaking'
-          },
-          {
-            role: 'stopspeaking'
-          }
-        ]
-      }
-    )
-    // Window menu.
-    template[3].submenu = [
-      {
-        label: 'Close',
-        accelerator: 'CmdOrCtrl+W',
-        role: 'close'
-      },
-      {
-        label: 'Minimize',
-        accelerator: 'CmdOrCtrl+M',
-        role: 'minimize'
-      },
-      {
-        label: 'Zoom',
-        role: 'zoom'
-      },
-      {
-        type: 'separator'
-      },
-      {
-        label: 'Bring All to Front',
-        role: 'front'
-      }
-    ]
-  }
-
-  var menu = Menu.buildFromTemplate(template)
-  Menu.setApplicationMenu(menu)
-}
