@@ -53,6 +53,8 @@ function createWindow () {
     defaultHeight: 800
   })
 
+  let iconLocation = path.join(__dirname, '/icon/Icon-512x512.png');
+
   // Create the window using the state information
   win = new BrowserWindow({
     'x': winState.x,
@@ -62,6 +64,7 @@ function createWindow () {
     'minWidth': 600,
     'minHeight': 400,
     show: false,
+    icon: iconLocation
   })
 
   archiveManager.setWindow(win);

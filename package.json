@@ -13,7 +13,8 @@
         "compiled/**/*",
         "dist/**/*",
         "stylesheets/**/*",
-        "assets/**/*"
+        "assets/**/*",
+        "icon/**/*"
       ],
     "mac": {
       "category": "public.app-category.productivity"
