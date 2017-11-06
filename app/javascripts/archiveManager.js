@@ -12,11 +12,7 @@ class ArchiveManager {
 
   constructor() {
     ipcMain.on('data-archive', (event, data) => {
-      if(data) {
-        this.writeDataToFile(data);
-      } else {
-        console.log("Empty data, not writing backup file.");
-      }
+      this.writeDataToFile(data);
     });
 
     this.backupsLocation = store.get("backupsLocation");
@@ -45,9 +41,17 @@ class ArchiveManager {
   }
 
   writeDataToFile(data) {
+    // We want to create this directory, even if data is empty,
+    // just so it's there and the user can open it.
     let dir = this.getBackupsLocation();
     if (!fs.existsSync(dir)){
       fs.mkdirSync(dir);
+    }
+
+    // Return on empty after creating directory
+    if(!data) {
+      console.log("Empty data, not writing backup file.");
+      return;
     }
 
     var find = ':';

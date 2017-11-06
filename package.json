@@ -9,6 +9,12 @@
   },
   "build": {
     "appId": "org.standardnotes.standardnotes",
+    "files": [
+        "compiled/**/*",
+        "dist/**/*",
+        "stylesheets/**/*",
+        "assets/**/*"
+      ],
     "mac": {
       "category": "public.app-category.productivity"
     },
@@ -23,17 +29,19 @@
   },
   "scripts": {
     "pack": "build --dir",
-    "dist": "electron-builder -mwl --x64 --ia32",
-    "dist-win": "electron-builder -w --x64 --ia32",
-    "mac": "build -m",
-    "release": "electron-builder -mwl --x64 --ia32",
-    "build-linux": "electron-builder -l --x64 --ia32",
-    "build-beta": "electron-builder -mwl --x64 --ia32 --publish=always --em.productName='Standard Notes (Beta)' --em.appId=org.standardnotes.standardnotes.beta",
-    "distwin": "build -w --x64 --ia32",
-    "distmac": "build -m",
+
+    "release": "npm run build && electron-builder -mwl --x64 --ia32",
+
+    "build-linux": "npm run build && electron-builder -l --x64 --ia32",
+    "build-beta": "npm run build && electron-builder -mwl --x64 --ia32 --publish=always --em.productName='Standard Notes (Beta)' --em.appId=org.standardnotes.standardnotes.beta",
+
+    "dist": "npm run build && electron-builder -mwl --x64 --ia32",
+    "dist-win": "npm run build && electron-builder -w --x64 --ia32",
+    "dist-mac": "npm run build && electron-builder -m --x64 --ia32",
+
     "postinstall": "electron-builder install-app-deps",
 
-    "build": "rimraf dist/ && babel ./app --out-dir app/dist/ --ignore ./app/compiled,./app/assets,./app/stylesheets,./app/dist,./node_modules,./.babelrc,./package.json,./npm-debug.log --copy-files",
+    "build": "rimraf app/dist/ && babel ./app --out-dir app/dist/ --ignore ./app/compiled,./app/assets,./app/stylesheets,./app/dist,./node_modules,./.babelrc,./package.json,./npm-debug.log --copy-files",
     "start": "npm run build && electron . --enable-logging --icon _icon/icon.png"
   }
 }

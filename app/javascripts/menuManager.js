@@ -94,6 +94,8 @@ class MenuManager {
             archiveManager.changeBackupsLocation();
           }},
           {label: 'Open Backups Location', click() {
+            // Todo: Upgrade to Electron 1.8.1 when it is released to fix issue where opened
+            // window is not focused: https://github.com/electron/electron/issues/10477
              shell.openItem(archiveManager.getBackupsLocation());
           }}
         ]
