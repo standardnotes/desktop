@@ -33731,7 +33731,7 @@ function parametersFromURL(url) {
 function isDesktopApplication() {
   return window && window.process && window.process.type && window.process.versions["electron"];
 }
-;angular.module('app.frontend').config(function ($locationProvider) {
+;angular.module('app.frontend').config(['$locationProvider', function ($locationProvider) {
 
   if (!isDesktopApplication()) {
     if (window.history && window.history.pushState) {
@@ -33743,8 +33743,8 @@ function isDesktopApplication() {
   } else {
     $locationProvider.html5Mode(false);
   }
-});
-;angular.module('app.frontend').directive("editorSection", function ($timeout, $sce) {
+}]);
+;angular.module('app.frontend').directive("editorSection", ['$timeout', '$sce', function ($timeout, $sce) {
   return {
     restrict: 'E',
     scope: {
@@ -33781,7 +33781,7 @@ function isDesktopApplication() {
       });
     }
   };
-}).controller('EditorCtrl', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager, themeManager, componentManager, storageManager) {
+}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', 'editorManager', 'themeManager', 'componentManager', 'storageManager', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager, themeManager, componentManager, storageManager) {
 
   this.componentManager = componentManager;
   this.componentStack = [];
@@ -34368,8 +34368,8 @@ function isDesktopApplication() {
       this.loadedTabListener = false;
     }.bind(this));
   };
-});
-;angular.module('app.frontend').directive("footer", function (authManager) {
+}]);
+;angular.module('app.frontend').directive("footer", ['authManager', function (authManager) {
   return {
     restrict: 'E',
     scope: {},
@@ -34391,7 +34391,7 @@ function isDesktopApplication() {
       });
     }
   };
-}).controller('FooterCtrl', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager) {
+}]).controller('FooterCtrl', ['$rootScope', 'authManager', 'modelManager', '$timeout', 'dbManager', 'syncManager', 'storageManager', 'passcodeManager', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager) {
 
   this.user = authManager.user;
 
@@ -34475,8 +34475,8 @@ function isDesktopApplication() {
     this.newUpdateAvailable = false;
     alert("A new update is ready to install. Updates address performance and security issues, as well as bug fixes and feature enhancements. Simply quit Standard Notes and re-open it for the update to be applied.");
   };
-});
-;angular.module('app.frontend').controller('HomeCtrl', function ($scope, $location, $rootScope, $timeout, modelManager, dbManager, syncManager, authManager, themeManager, passcodeManager, storageManager) {
+}]);
+;angular.module('app.frontend').controller('HomeCtrl', ['$scope', '$location', '$rootScope', '$timeout', 'modelManager', 'dbManager', 'syncManager', 'authManager', 'themeManager', 'passcodeManager', 'storageManager', function ($scope, $location, $rootScope, $timeout, modelManager, dbManager, syncManager, authManager, themeManager, passcodeManager, storageManager) {
 
   storageManager.initialize(passcodeManager.hasPasscode(), authManager.isEphemeralSession());
 
@@ -34825,7 +34825,7 @@ function isDesktopApplication() {
   if (urlParam("server")) {
     autoSignInFromParams();
   }
-});
+}]);
 ;
 var LockScreen = function () {
   function LockScreen() {
@@ -34840,7 +34840,7 @@ var LockScreen = function () {
 
   _createClass(LockScreen, [{
     key: 'controller',
-    value: function controller($scope, passcodeManager) {
+    value: ['$scope', 'passcodeManager', function controller($scope, passcodeManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -34855,7 +34855,7 @@ var LockScreen = function () {
           $scope.onSuccess()();
         });
       };
-    }
+    }]
   }]);
 
   return LockScreen;
@@ -34895,7 +34895,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
       });
     }
   };
-}).controller('NotesCtrl', function (authManager, $timeout, $rootScope, modelManager, storageManager) {
+}).controller('NotesCtrl', ['authManager', '$timeout', '$rootScope', 'modelManager', 'storageManager', function (authManager, $timeout, $rootScope, modelManager, storageManager) {
 
   this.sortBy = storageManager.getItem("sortBy") || "created_at";
   this.showArchived = storageManager.getBooleanValue("showArchived") || false;
@@ -35048,7 +35048,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
     this.sortBy = type;
     storageManager.setItem("sortBy", type);
   };
-});
+}]);
 ;angular.module('app.frontend').directive("tagsSection", function () {
   return {
     restrict: 'E',
@@ -35083,7 +35083,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
       });
     }
   };
-}).controller('TagsCtrl', function ($rootScope, modelManager, $timeout, componentManager) {
+}).controller('TagsCtrl', ['$rootScope', 'modelManager', '$timeout', 'componentManager', function ($rootScope, modelManager, $timeout, componentManager) {
 
   var initialLoad = true;
 
@@ -35193,7 +35193,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
     });
     return validNotes.length;
   };
-});
+}]);
 ;var AppDomain = "org.standardnotes.sn";
 var dateFormatter;
 
@@ -36358,9 +36358,9 @@ var ItemParams = function () {
     return domain;
   }
 
-  this.$get = function ($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
+  this.$get = ['$rootScope', '$timeout', 'httpManager', 'modelManager', 'dbManager', 'storageManager', function ($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
     return new AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager);
-  };
+  }];
 
   function AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
 
@@ -36627,6 +36627,7 @@ var ItemParams = function () {
 });
 ;
 var ComponentManager = function () {
+  ComponentManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'themeManager', '$timeout', '$compile'];
   function ComponentManager($rootScope, modelManager, syncManager, themeManager, $timeout, $compile) {
     _classCallCheck(this, ComponentManager);
 
@@ -37714,11 +37715,13 @@ angular.module('app.frontend').service('dbManager', DBManager);
 ; // An interface used by the Desktop app to interact with SN
 
 var DesktopManager = function () {
-  function DesktopManager($rootScope, modelManager, authManager) {
+  DesktopManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'passcodeManager'];
+  function DesktopManager($rootScope, modelManager, authManager, passcodeManager) {
     var _this13 = this;
 
     _classCallCheck(this, DesktopManager);
 
+    this.passcodeManager = passcodeManager;
     this.modelManager = modelManager;
     this.authManager = authManager;
     this.$rootScope = $rootScope;
@@ -37748,7 +37751,18 @@ var DesktopManager = function () {
   }, {
     key: 'desktop_requestBackupFile',
     value: function desktop_requestBackupFile() {
-      var data = this.modelManager.getAllItemsJSONData(this.authManager.keys(), this.authManager.getAuthParams(), this.authManager.protocolVersion(), true /* return null on empty */
+      var keys, authParams, protocolVersion;
+      if (this.authManager.offline() && this.passcodeManager.hasPasscode()) {
+        keys = this.passcodeManager.keys();
+        authParams = this.passcodeManager.passcodeAuthParams();
+        protocolVersion = authParams.version;
+      } else {
+        keys = this.authManager.keys();
+        authParams = this.authManager.getAuthParams();
+        protocolVersion = this.authManager.protocolVersion();
+      }
+
+      var data = this.modelManager.getAllItemsJSONData(keys, authParams, protocolVersion, true /* return null on empty */
       );
       return data;
     }
@@ -37802,7 +37816,7 @@ angular.module('app.frontend').service('desktopManager', DesktopManager);
     }
   };
 }]);
-;angular.module('app.frontend').directive('delayHide', function ($timeout) {
+;angular.module('app.frontend').directive('delayHide', ['$timeout', function ($timeout) {
   return {
     restrict: 'A',
     scope: {
@@ -37845,7 +37859,7 @@ angular.module('app.frontend').service('desktopManager', DesktopManager);
     }
 
   };
-});
+}]);
 ;angular.module('app.frontend').directive('fileChange', function () {
   return {
     restrict: 'A',
@@ -37923,12 +37937,16 @@ var AccountMenu = function () {
 
   _createClass(AccountMenu, [{
     key: 'controller',
-    value: function controller($scope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
+    value: ['$scope', '$rootScope', 'authManager', 'modelManager', 'syncManager', 'dbManager', 'passcodeManager', '$timeout', 'storageManager', function controller($scope, $rootScope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
       'ngInject';
 
       $scope.formData = { mergeLocal: true, url: syncManager.serverURL, ephemeral: false };
       $scope.user = authManager.user;
       $scope.server = syncManager.serverURL;
+
+      $scope.encryptedBackupsAvailable = function () {
+        return authManager.user || passcodeManager.hasPasscode();
+      };
 
       $scope.syncStatus = syncManager.syncStatus;
 
@@ -38068,6 +38086,9 @@ var AccountMenu = function () {
           syncManager.markAllItemsDirtyAndSaveOffline(function () {
             block();
           }, true);
+
+          // Allows desktop to make backup file
+          $rootScope.$broadcast("major-data-change");
         } else {
           modelManager.resetLocalMemory();
           storageManager.clearAllModels(function () {
@@ -38089,7 +38110,7 @@ var AccountMenu = function () {
 
       /* Import/Export */
 
-      $scope.archiveFormData = { encrypted: $scope.user ? true : false };
+      $scope.archiveFormData = { encrypted: $scope.encryptedBackupsAvailable() ? true : false };
       $scope.user = authManager.user;
 
       $scope.submitImportPassword = function () {
@@ -38275,8 +38296,19 @@ var AccountMenu = function () {
 
       $scope.downloadDataArchive = function () {
         // download in Standard File format
-        var keys = $scope.archiveFormData.encrypted ? authManager.keys() : null;
-        var data = $scope.itemsData(keys);
+        var keys, authParams, protocolVersion;
+        if ($scope.archiveFormData.encrypted) {
+          if (authManager.offline() && passcodeManager.hasPasscode()) {
+            keys = passcodeManager.keys();
+            authParams = passcodeManager.passcodeAuthParams();
+            protocolVersion = authParams.version;
+          } else {
+            keys = authManager.keys();
+            authParams = authManager.getAuthParams();
+            protocolVersion = authManager.protocolVersion();
+          }
+        }
+        var data = $scope.itemsData(keys, authParams, protocolVersion);
         downloadData(data, 'SN Archive - ' + new Date() + '.txt');
 
         // download as zipped plain text files
@@ -38286,8 +38318,8 @@ var AccountMenu = function () {
         }
       };
 
-      $scope.itemsData = function (keys) {
-        var data = modelManager.getAllItemsJSONData(keys, authManager.getAuthParams(), authManager.protocolVersion());
+      $scope.itemsData = function (keys, authParams, protocolVersion) {
+        var data = modelManager.getAllItemsJSONData(keys, authParams, protocolVersion);
         var blobData = new Blob([data], { type: 'text/json' });
         return blobData;
       };
@@ -38426,6 +38458,8 @@ var AccountMenu = function () {
 
             if (offline) {
               syncManager.markAllItemsDirtyAndSaveOffline();
+              // Allows desktop to make backup file
+              $rootScope.$broadcast("major-data-change");
             }
           });
         });
@@ -38439,8 +38473,12 @@ var AccountMenu = function () {
         }
         if (confirm(message)) {
           passcodeManager.clearPasscode();
+
           if (authManager.offline()) {
             syncManager.markAllItemsDirtyAndSaveOffline();
+            // Don't create backup here, as if the user is temporarily removing the passcode to change it,
+            // we don't want to write unencrypted data to disk.
+            // $rootScope.$broadcast("major-data-change");
           }
         }
       };
@@ -38448,7 +38486,7 @@ var AccountMenu = function () {
       $scope.isDesktopApplication = function () {
         return isDesktopApplication();
       };
-    }
+    }]
   }]);
 
   return AccountMenu;
@@ -38471,7 +38509,7 @@ var ContextualExtensionsMenu = function () {
 
   _createClass(ContextualExtensionsMenu, [{
     key: 'controller',
-    value: function controller($scope, modelManager, extensionManager) {
+    value: ['$scope', 'modelManager', 'extensionManager', function controller($scope, modelManager, extensionManager) {
       'ngInject';
 
       $scope.renderData = {};
@@ -38568,7 +38606,7 @@ var ContextualExtensionsMenu = function () {
       $scope.accessTypeForExtension = function (extension) {
         return extension.encrypted ? "encrypted" : "decrypted";
       };
-    }
+    }]
   }]);
 
   return ContextualExtensionsMenu;
@@ -38592,7 +38630,7 @@ var EditorMenu = function () {
 
   _createClass(EditorMenu, [{
     key: 'controller',
-    value: function controller($scope, editorManager) {
+    value: ['$scope', 'editorManager', function controller($scope, editorManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -38602,7 +38640,7 @@ var EditorMenu = function () {
         editor.conflict_of = null; // clear conflict if applicable
         $scope.callback()(editor);
       };
-    }
+    }]
   }]);
 
   return EditorMenu;
@@ -38623,7 +38661,7 @@ var GlobalExtensionsMenu = function () {
 
   _createClass(GlobalExtensionsMenu, [{
     key: 'controller',
-    value: function controller($scope, extensionManager, syncManager, modelManager, themeManager, editorManager, componentManager) {
+    value: ['$scope', 'extensionManager', 'syncManager', 'modelManager', 'themeManager', 'editorManager', 'componentManager', function controller($scope, extensionManager, syncManager, modelManager, themeManager, editorManager, componentManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -38856,7 +38894,7 @@ var GlobalExtensionsMenu = function () {
         editorManager.addNewEditorFromURL(link);
         completion();
       };
-    }
+    }]
   }]);
 
   return GlobalExtensionsMenu;
@@ -38944,6 +38982,7 @@ angular.module('app.frontend').directive('permissionsModal', function () {
 });
 ;
 var EditorManager = function () {
+  EditorManager.$inject = ['$rootScope', 'modelManager', 'syncManager'];
   function EditorManager($rootScope, modelManager, syncManager) {
     _classCallCheck(this, EditorManager);
 
@@ -39061,6 +39100,7 @@ var EditorManager = function () {
 angular.module('app.frontend').service('editorManager', EditorManager);
 ;
 var ExtensionManager = function () {
+  ExtensionManager.$inject = ['httpManager', 'modelManager', 'authManager', 'syncManager', 'storageManager'];
   function ExtensionManager(httpManager, modelManager, authManager, syncManager, storageManager) {
     _classCallCheck(this, ExtensionManager);
 
@@ -39570,16 +39610,16 @@ var ExtensionManager = function () {
 }();
 
 angular.module('app.frontend').service('extensionManager', ExtensionManager);
-;angular.module('app.frontend').filter('appDate', function ($filter) {
+;angular.module('app.frontend').filter('appDate', ['$filter', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy', 'UTC') : '';
   };
-}).filter('appDateTime', function ($filter) {
+}]).filter('appDateTime', ['$filter', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy h:mm a') : '';
   };
-});
-;angular.module('app.frontend').filter('sortBy', function ($filter) {
+}]);
+;angular.module('app.frontend').filter('sortBy', ['$filter', function ($filter) {
   return function (items, sortBy) {
     var sortValueFn = function sortValueFn(a, b) {
       var pinCheck = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
@@ -39628,7 +39668,7 @@ angular.module('app.frontend').service('extensionManager', ExtensionManager);
       return sortValueFn(a, b);
     });
   };
-});
+}]);
 ;angular.module('app.frontend').filter('startFrom', function () {
   return function (input, start) {
     return input.slice(start);
@@ -39641,6 +39681,7 @@ angular.module('app.frontend').service('extensionManager', ExtensionManager);
 }]);
 ;
 var HttpManager = function () {
+  HttpManager.$inject = ['$timeout', 'storageManager'];
   function HttpManager($timeout, storageManager) {
     _classCallCheck(this, HttpManager);
 
@@ -39729,6 +39770,7 @@ var HttpManager = function () {
 angular.module('app.frontend').service('httpManager', HttpManager);
 ;
 var ModelManager = function () {
+  ModelManager.$inject = ['storageManager'];
   function ModelManager(storageManager) {
     _classCallCheck(this, ModelManager);
 
@@ -40334,9 +40376,9 @@ var ModelManager = function () {
 angular.module('app.frontend').service('modelManager', ModelManager);
 ;angular.module('app.frontend').provider('passcodeManager', function () {
 
-  this.$get = function ($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
+  this.$get = ['$rootScope', '$timeout', 'modelManager', 'dbManager', 'authManager', 'storageManager', function ($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
     return new PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager);
-  };
+  }];
 
   function PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
 
@@ -40355,8 +40397,12 @@ angular.module('app.frontend').service('modelManager', ModelManager);
       return this._keys;
     };
 
+    this.passcodeAuthParams = function () {
+      return JSON.parse(storageManager.getItem("offlineParams", StorageManager.Fixed));
+    };
+
     this.unlock = function (passcode, callback) {
-      var params = JSON.parse(storageManager.getItem("offlineParams", StorageManager.Fixed));
+      var params = this.passcodeAuthParams();
       Neeto.crypto.computeEncryptionKeysForUser(_.merge({ password: passcode }, params), function (keys) {
         if (keys.pw !== params.hash) {
           callback(false);
@@ -40373,7 +40419,7 @@ angular.module('app.frontend').service('modelManager', ModelManager);
     this.setPasscode = function (passcode, callback) {
       var cost = Neeto.crypto.defaultPasswordGenerationCost();
       var salt = Neeto.crypto.generateRandomKey(512);
-      var defaultParams = { pw_cost: cost, pw_salt: salt };
+      var defaultParams = { pw_cost: cost, pw_salt: salt, version: "002" };
 
       Neeto.crypto.computeEncryptionKeysForUser(_.merge({ password: passcode }, defaultParams), function (keys) {
         defaultParams.hash = keys.pw;
@@ -40457,6 +40503,7 @@ var MemoryStorage = function () {
 }();
 
 var StorageManager = function () {
+  StorageManager.$inject = ['dbManager'];
   function StorageManager(dbManager) {
     _classCallCheck(this, StorageManager);
 
@@ -40700,6 +40747,7 @@ StorageManager.Fixed = "Fixed"; // localStorage
 angular.module('app.frontend').service('storageManager', StorageManager);
 ;
 var SyncManager = function () {
+  SyncManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'dbManager', 'httpManager', '$interval', '$timeout', 'storageManager', 'passcodeManager'];
   function SyncManager($rootScope, modelManager, authManager, dbManager, httpManager, $interval, $timeout, storageManager, passcodeManager) {
     _classCallCheck(this, SyncManager);
 
@@ -41223,6 +41271,7 @@ var SyncManager = function () {
 angular.module('app.frontend').service('syncManager', SyncManager);
 ;
 var ThemeManager = function () {
+  ThemeManager.$inject = ['modelManager', 'syncManager', '$rootScope', 'storageManager'];
   function ThemeManager(modelManager, syncManager, $rootScope, storageManager) {
     _classCallCheck(this, ThemeManager);
 
@@ -41503,8 +41552,8 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    </div>\n" +
     "    <div class='mt-25' ng-if='!importData.loading'>\n" +
     "      <h4>Data Archives</h4>\n" +
-    "      <div class='mt-5' ng-if='user'>\n" +
-    "        <label class='normal inline' ng-if='user'>\n" +
+    "      <div class='mt-5' ng-if='encryptedBackupsAvailable()'>\n" +
+    "        <label class='normal inline'>\n" +
     "          <input ng-change='archiveFormData.encrypted = true' ng-model='archiveFormData.encrypted' ng-value='true' type='radio'>\n" +
     "          Encrypted\n" +
     "        </label>\n" +
@@ -41513,7 +41562,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "          Decrypted\n" +
     "        </label>\n" +
     "      </div>\n" +
-    "      <a class='block mt-5' ng-class=\"{'mt-5' : !user}\" ng-click='downloadDataArchive()'>Export Data Archive</a>\n" +
+    "      <a class='block mt-5' ng-class=\"{'mt-5' : !user}\" ng-click='downloadDataArchive()'>Download Data Archive</a>\n" +
     "      <label class='block mt-5'>\n" +
     "        <input file-change='-&gt;' handler='importFileSelected(files)' style='display: none;' type='file'>\n" +
     "        <div class='fake-link tinted'>Import Data from Archive</div>\n" +
