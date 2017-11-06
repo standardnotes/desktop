@@ -10,7 +10,9 @@
     <script>
       try {
         const {ipcRenderer} = require('electron');
+        window.ipcRenderer = ipcRenderer;
 
+        // https://github.com/electron/electron/blob/master/docs/faq.md#i-can-not-use-jqueryrequirejsmeteorangularjs-in-electron
         window.nodeRequire = require;
         delete window.require;
         delete window.exports;
@@ -25,6 +27,13 @@
         ipcRenderer.on('window-activated', function (event, message) {
           var syncManager = angular.element(document).injector().get('syncManager');
           syncManager.sync();
+        });
+
+        // Download data archive
+        ipcRenderer.on('download-backup', function (event, message) {
+          var desktopManager = angular.element(document).injector().get('desktopManager');
+          let data = desktopManager.desktop_requestBackupFile();
+          event.sender.send('data-archive', data);
         });
 
         const {remote} = window.nodeRequire('electron')
@@ -44,20 +53,33 @@
 
       // load zip library (for exporting items as zip)
       var scriptTag = document.createElement('script');
-      scriptTag.src = "./js/zip/zip.js";
+      scriptTag.src = "../compiled/zip/zip.js";
       scriptTag.async = true;
       var headTag = document.getElementsByTagName('head')[0];
       headTag.appendChild(scriptTag);
       scriptTag.onload = function() {
-        zip.workerScriptsPath = "js/zip/";
+        zip.workerScriptsPath = "../compiled/zip/";
       }
 
       window._default_sf_server = "https://sync.standardnotes.org";
 
     </script>
 
-    <script src="./js/compiled.js" debug="false"></script>
-    <link rel="stylesheet" media="all" href="./stylesheets/app.css" debug="false" />
+    <script src="../compiled/compiled.js" debug="false"></script>
+    <link rel="stylesheet" media="all" href="../stylesheets/app.css" debug="false" />
+
+    <script>
+      angular.element(document).ready(function () {
+        var desktopManager = angular.element(document).injector().get('desktopManager');
+        desktopManager.desktop_setInitialDataLoadHandler(() => {
+          ipcRenderer.send("initial-data-loaded");
+        })
+
+        desktopManager.desktop_setMajorDataChangeHandler(() => {
+          ipcRenderer.send("major-data-change");
+        })
+      });
+    </script>
 
     <style>
     .editor-content .editable {

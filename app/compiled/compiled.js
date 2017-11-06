@@ -33488,6 +33488,8 @@ var EncryptionHelper = function () {
       var content = Neeto.crypto.decryptText(itemParams, true);
       if (!content) {
         item.errorDecrypting = true;
+      } else {
+        item.errorDecrypting = false;
       }
       item.content = content;
     }
@@ -34528,6 +34530,8 @@ function isDesktopApplication() {
       $scope.allTag.didLoad = true;
       themeManager.activateInitialTheme();
       $scope.$apply();
+
+      $rootScope.$broadcast("initial-data-loaded");
 
       syncManager.sync(null);
       // refresh every 30s
@@ -37708,6 +37712,71 @@ var DBManager = function () {
 }();
 
 angular.module('app.frontend').service('dbManager', DBManager);
+; // An interface used by the Desktop app to interact with SN
+
+var DesktopManager = function () {
+  DesktopManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'passcodeManager'];
+  function DesktopManager($rootScope, modelManager, authManager, passcodeManager) {
+    var _this13 = this;
+
+    _classCallCheck(this, DesktopManager);
+
+    this.passcodeManager = passcodeManager;
+    this.modelManager = modelManager;
+    this.authManager = authManager;
+    this.$rootScope = $rootScope;
+
+    $rootScope.$on("initial-data-loaded", function () {
+      _this13.dataLoaded = true;
+      if (_this13.dataLoadHandler) {
+        _this13.dataLoadHandler();
+      }
+    });
+
+    $rootScope.$on("major-data-change", function () {
+      if (_this13.majorDataChangeHandler) {
+        _this13.majorDataChangeHandler();
+      }
+    });
+  }
+
+  _createClass(DesktopManager, [{
+    key: 'desktop_setInitialDataLoadHandler',
+    value: function desktop_setInitialDataLoadHandler(handler) {
+      this.dataLoadHandler = handler;
+      if (this.dataLoaded) {
+        this.dataLoadHandler();
+      }
+    }
+  }, {
+    key: 'desktop_requestBackupFile',
+    value: function desktop_requestBackupFile() {
+      var keys, authParams, protocolVersion;
+      if (this.authManager.offline() && this.passcodeManager.hasPasscode()) {
+        keys = this.passcodeManager.keys();
+        authParams = this.passcodeManager.passcodeAuthParams();
+        protocolVersion = authParams.version;
+      } else {
+        keys = this.authManager.keys();
+        authParams = this.authManager.getAuthParams();
+        protocolVersion = this.authManager.protocolVersion();
+      }
+
+      var data = this.modelManager.getAllItemsJSONData(keys, authParams, protocolVersion, true /* return null on empty */
+      );
+      return data;
+    }
+  }, {
+    key: 'desktop_setMajorDataChangeHandler',
+    value: function desktop_setMajorDataChangeHandler(handler) {
+      this.majorDataChangeHandler = handler;
+    }
+  }]);
+
+  return DesktopManager;
+}();
+
+angular.module('app.frontend').service('desktopManager', DesktopManager);
 ;angular.module('app.frontend').directive('mbAutofocus', ['$timeout', function ($timeout) {
   return {
     restrict: 'A',
@@ -37868,12 +37937,16 @@ var AccountMenu = function () {
 
   _createClass(AccountMenu, [{
     key: 'controller',
-    value: ['$scope', 'authManager', 'modelManager', 'syncManager', 'dbManager', 'passcodeManager', '$timeout', 'storageManager', function controller($scope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
+    value: ['$scope', '$rootScope', 'authManager', 'modelManager', 'syncManager', 'dbManager', 'passcodeManager', '$timeout', 'storageManager', function controller($scope, $rootScope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
       'ngInject';
 
       $scope.formData = { mergeLocal: true, url: syncManager.serverURL, ephemeral: false };
       $scope.user = authManager.user;
       $scope.server = syncManager.serverURL;
+
+      $scope.encryptedBackupsAvailable = function () {
+        return authManager.user || passcodeManager.hasPasscode();
+      };
 
       $scope.syncStatus = syncManager.syncStatus;
 
@@ -38013,6 +38086,9 @@ var AccountMenu = function () {
           syncManager.markAllItemsDirtyAndSaveOffline(function () {
             block();
           }, true);
+
+          // Allows desktop to make backup file
+          $rootScope.$broadcast("major-data-change");
         } else {
           modelManager.resetLocalMemory();
           storageManager.clearAllModels(function () {
@@ -38034,7 +38110,7 @@ var AccountMenu = function () {
 
       /* Import/Export */
 
-      $scope.archiveFormData = { encrypted: $scope.user ? true : false };
+      $scope.archiveFormData = { encrypted: $scope.encryptedBackupsAvailable() ? true : false };
       $scope.user = authManager.user;
 
       $scope.submitImportPassword = function () {
@@ -38220,8 +38296,19 @@ var AccountMenu = function () {
 
       $scope.downloadDataArchive = function () {
         // download in Standard File format
-        var keys = $scope.archiveFormData.encrypted ? authManager.keys() : null;
-        var data = $scope.itemsData(keys);
+        var keys, authParams, protocolVersion;
+        if ($scope.archiveFormData.encrypted) {
+          if (authManager.offline() && passcodeManager.hasPasscode()) {
+            keys = passcodeManager.keys();
+            authParams = passcodeManager.passcodeAuthParams();
+            protocolVersion = authParams.version;
+          } else {
+            keys = authManager.keys();
+            authParams = authManager.getAuthParams();
+            protocolVersion = authManager.protocolVersion();
+          }
+        }
+        var data = $scope.itemsData(keys, authParams, protocolVersion);
         downloadData(data, 'SN Archive - ' + new Date() + '.txt');
 
         // download as zipped plain text files
@@ -38231,21 +38318,10 @@ var AccountMenu = function () {
         }
       };
 
-      $scope.itemsData = function (keys) {
-        var items = _.map(modelManager.allItems, function (item) {
-          var itemParams = new ItemParams(item, keys, authManager.protocolVersion());
-          return itemParams.paramsForExportFile();
-        }.bind(this));
-
-        var data = { items: items };
-
-        if (keys) {
-          // auth params are only needed when encrypted with a standard file key
-          data["auth_params"] = authManager.getAuthParams();
-        }
-
-        var data = new Blob([JSON.stringify(data, null, 2 /* pretty print */)], { type: 'text/json' });
-        return data;
+      $scope.itemsData = function (keys, authParams, protocolVersion) {
+        var data = modelManager.getAllItemsJSONData(keys, authParams, protocolVersion);
+        var blobData = new Blob([data], { type: 'text/json' });
+        return blobData;
       };
 
       // Advanced
@@ -38382,6 +38458,8 @@ var AccountMenu = function () {
 
             if (offline) {
               syncManager.markAllItemsDirtyAndSaveOffline();
+              // Allows desktop to make backup file
+              $rootScope.$broadcast("major-data-change");
             }
           });
         });
@@ -38395,8 +38473,12 @@ var AccountMenu = function () {
         }
         if (confirm(message)) {
           passcodeManager.clearPasscode();
+
           if (authManager.offline()) {
             syncManager.markAllItemsDirtyAndSaveOffline();
+            // Don't create backup here, as if the user is temporarily removing the passcode to change it,
+            // we don't want to write unencrypted data to disk.
+            // $rootScope.$broadcast("major-data-change");
           }
         }
       };
@@ -39714,7 +39796,7 @@ var ModelManager = function () {
   }, {
     key: 'alternateUUIDForItem',
     value: function alternateUUIDForItem(item, callback, removeOriginal) {
-      var _this13 = this;
+      var _this14 = this;
 
       // we need to clone this item and give it a new uuid, then delete item with old uuid from db (you can't mofidy uuid's in our indexeddb setup)
       var newItem = this.createItem(item);
@@ -39727,7 +39809,7 @@ var ModelManager = function () {
       this.informModelsOfUUIDChangeForItem(newItem, item.uuid, newItem.uuid);
 
       var block = function block() {
-        _this13.addItem(newItem);
+        _this14.addItem(newItem);
         newItem.setDirty(true);
         newItem.markAllReferencesDirty();
         callback();
@@ -39823,7 +39905,7 @@ var ModelManager = function () {
         for (var _iterator43 = items[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
           var json_obj = _step43.value;
 
-          if ((!json_obj.content_type || !json_obj.content) && !json_obj.deleted) {
+          if ((!json_obj.content_type || !json_obj.content) && !json_obj.deleted && !json_obj.errorDecrypting) {
             // An item that is not deleted should never have empty content
             console.error("Server response item is corrupt:", json_obj);
             continue;
@@ -40241,6 +40323,32 @@ var ModelManager = function () {
       itemOne.setDirty(true);
       itemTwo.setDirty(true);
     }
+
+    /*
+    Archives
+    */
+
+  }, {
+    key: 'getAllItemsJSONData',
+    value: function getAllItemsJSONData(keys, authParams, protocolVersion, returnNullIfEmpty) {
+      var items = _.map(this.allItems, function (item) {
+        var itemParams = new ItemParams(item, keys, protocolVersion);
+        return itemParams.paramsForExportFile();
+      });
+
+      if (returnNullIfEmpty && items.length == 0) {
+        return null;
+      }
+
+      var data = { items: items };
+
+      if (keys) {
+        // auth params are only needed when encrypted with a standard file key
+        data["auth_params"] = authParams;
+      }
+
+      return JSON.stringify(data, null, 2 /* pretty print */);
+    }
   }, {
     key: 'allItems',
     get: function get() {
@@ -40289,8 +40397,12 @@ angular.module('app.frontend').service('modelManager', ModelManager);
       return this._keys;
     };
 
+    this.passcodeAuthParams = function () {
+      return JSON.parse(storageManager.getItem("offlineParams", StorageManager.Fixed));
+    };
+
     this.unlock = function (passcode, callback) {
-      var params = JSON.parse(storageManager.getItem("offlineParams", StorageManager.Fixed));
+      var params = this.passcodeAuthParams();
       Neeto.crypto.computeEncryptionKeysForUser(_.merge({ password: passcode }, params), function (keys) {
         if (keys.pw !== params.hash) {
           callback(false);
@@ -40307,7 +40419,7 @@ angular.module('app.frontend').service('modelManager', ModelManager);
     this.setPasscode = function (passcode, callback) {
       var cost = Neeto.crypto.defaultPasswordGenerationCost();
       var salt = Neeto.crypto.generateRandomKey(512);
-      var defaultParams = { pw_cost: cost, pw_salt: salt };
+      var defaultParams = { pw_cost: cost, pw_salt: salt, version: "002" };
 
       Neeto.crypto.computeEncryptionKeysForUser(_.merge({ password: passcode }, defaultParams), function (keys) {
         defaultParams.hash = keys.pw;
@@ -40728,13 +40840,13 @@ var SyncManager = function () {
   }, {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback, alternateUUIDs) {
-      var _this14 = this;
+      var _this15 = this;
 
       // use a copy, as alternating uuid will affect array
       var originalItems = this.modelManager.allItems.slice();
 
       var block = function block() {
-        var allItems = _this14.modelManager.allItems;
+        var allItems = _this15.modelManager.allItems;
         var _iteratorNormalCompletion52 = true;
         var _didIteratorError52 = false;
         var _iteratorError52 = undefined;
@@ -40760,7 +40872,7 @@ var SyncManager = function () {
           }
         }
 
-        _this14.writeItemsToLocalStorage(allItems, false, callback);
+        _this15.writeItemsToLocalStorage(allItems, false, callback);
       };
 
       if (alternateUUIDs) {
@@ -40783,7 +40895,7 @@ var SyncManager = function () {
           // but for some reason retained their data (This happens in Firefox when using private mode).
           // In this case, we should pass false so that both copies are kept. However, it's difficult to
           // detect when the app has entered this state. We will just use true to remove original items for now.
-          _this14.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
+          _this15.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
         };
 
         alternateNextItem();
@@ -40946,7 +41058,8 @@ var SyncManager = function () {
         var saved = this.handleItemsResponse(response.saved_items, omitFields);
 
         // Create copies of items or alternate their uuids if neccessary
-        this.handleUnsavedItemsResponse(response.unsaved);
+        var unsaved = response.unsaved;
+        this.handleUnsavedItemsResponse(unsaved);
 
         this.writeItemsToLocalStorage(saved, false, null);
 
@@ -40970,6 +41083,14 @@ var SyncManager = function () {
           }.bind(this), 10); // wait 10ms to allow UI to update
         } else {
           this.writeItemsToLocalStorage(this.allRetreivedItems, false, null);
+
+          // The number of changed items that constitute a major change
+          // This is used by the desktop app to create backups
+          var majorDataChangeThreshold = 5;
+          if (this.allRetreivedItems.length >= majorDataChangeThreshold || saved.length >= majorDataChangeThreshold || unsaved.length >= majorDataChangeThreshold) {
+            this.$rootScope.$broadcast("major-data-change");
+          }
+
           this.allRetreivedItems = [];
 
           this.callQueuedCallbacksAndCurrent(callback, response);
@@ -41431,8 +41552,8 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    </div>\n" +
     "    <div class='mt-25' ng-if='!importData.loading'>\n" +
     "      <h4>Data Archives</h4>\n" +
-    "      <div class='mt-5' ng-if='user'>\n" +
-    "        <label class='normal inline' ng-if='user'>\n" +
+    "      <div class='mt-5' ng-if='encryptedBackupsAvailable()'>\n" +
+    "        <label class='normal inline'>\n" +
     "          <input ng-change='archiveFormData.encrypted = true' ng-model='archiveFormData.encrypted' ng-value='true' type='radio'>\n" +
     "          Encrypted\n" +
     "        </label>\n" +
@@ -41441,7 +41562,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "          Decrypted\n" +
     "        </label>\n" +
     "      </div>\n" +
-    "      <a class='block mt-5' ng-class=\"{'mt-5' : !user}\" ng-click='downloadDataArchive()'>Export Data Archive</a>\n" +
+    "      <a class='block mt-5' ng-class=\"{'mt-5' : !user}\" ng-click='downloadDataArchive()'>Download Data Archive</a>\n" +
     "      <label class='block mt-5'>\n" +
     "        <input file-change='-&gt;' handler='importFileSelected(files)' style='display: none;' type='file'>\n" +
     "        <div class='fake-link tinted'>Import Data from Archive</div>\n" +
