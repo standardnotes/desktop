@@ -33765,30 +33765,12 @@ function isDesktopApplication() {
           ctrl.noteDidChange(note, oldNote);
         }
       });
-
-      scope.$watch('ctrl.note.text', function (newText) {
-        if (!ctrl.note) {
-          return;
-        }
-
-        // ignore this change if it originated from here
-        if (ctrl.changingTextFromEditor) {
-          ctrl.changingTextFromEditor = false;
-          return;
-        }
-
-        ctrl.postNoteToExternalEditor(ctrl.note);
-      });
     }
   };
-}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', 'editorManager', 'themeManager', 'componentManager', 'storageManager', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, editorManager, themeManager, componentManager, storageManager) {
+}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', 'themeManager', 'componentManager', 'storageManager', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, themeManager, componentManager, storageManager) {
 
   this.componentManager = componentManager;
   this.componentStack = [];
-
-  $rootScope.$on("theme-changed", function () {
-    this.postThemeToExternalEditor();
-  }.bind(this));
 
   $rootScope.$on("sync:taking-too-long", function () {
     this.syncTakingTooLong = true;
@@ -33802,103 +33784,60 @@ function isDesktopApplication() {
     this.loadTagsString();
   }.bind(this));
 
-  componentManager.registerHandler({ identifier: "editor", areas: ["note-tags", "editor-stack"], activationHandler: function (component) {
-
-      if (!component.active) {
-        return;
-      }
-
-      if (component.area === "note-tags") {
-        this.tagsComponent = component;
-      } else {
-        // stack
-        if (!_.find(this.componentStack, component)) {
-          this.componentStack.push(component);
-        }
-      }
-
-      $timeout(function () {
-        var iframe = componentManager.iframeForComponent(component);
-        if (iframe) {
-          iframe.onload = function () {
-            componentManager.registerComponentWindow(component, iframe.contentWindow);
-          }.bind(this);
-        }
-      }.bind(this));
-    }.bind(this), contextRequestHandler: function (component) {
-      return this.note;
-    }.bind(this), actionHandler: function (component, action, data) {
-      if (action === "set-size") {
-        var setSize = function setSize(element, size) {
-          var widthString = typeof size.width === 'string' ? size.width : data.width + 'px';
-          var heightString = typeof size.height === 'string' ? size.height : data.height + 'px';
-          element.setAttribute("style", 'width:' + widthString + '; height:' + heightString + '; ');
-        };
-
-        if (data.type === "content") {
-          var iframe = componentManager.iframeForComponent(component);
-          var width = data.width;
-          var height = data.height;
-          iframe.width = width;
-          iframe.height = height;
-
-          setSize(iframe, data);
-        } else {
-          if (component.area == "note-tags") {
-            var container = document.getElementById("note-tags-component-container");
-            setSize(container, data);
-          } else {
-            var container = document.getElementById("component-" + component.uuid);
-            setSize(container, data);
-          }
-        }
-      } else if (action === "associate-item") {
-        if (data.item.content_type == "Tag") {
-          var tag = modelManager.findItem(data.item.uuid);
-          this.addTag(tag);
-        }
-      } else if (action === "deassociate-item") {
-        var tag = modelManager.findItem(data.item.uuid);
-        this.removeTag(tag);
-      }
-    }.bind(this) });
-
-  window.addEventListener("message", function (event) {
-    if (event.data.status) {
-      this.postNoteToExternalEditor();
-    } else if (!event.data.api) {
-      // console.log("Received message", event.data);
-      var id = event.data.id;
-      var text = event.data.text;
-      var data = event.data.data;
-
-      if (this.note.uuid === id) {
-        // to ignore $watch events
-        this.changingTextFromEditor = true;
-        this.note.text = text;
-        if (data) {
-          var changesMade = this.editor.setData(id, data);
-          if (changesMade) {
-            this.editor.setDirty(true);
-          }
-        }
-        this.changesMade();
-      }
-    }
-  }.bind(this), false);
-
   this.noteDidChange = function (note, oldNote) {
     this.setNote(note, oldNote);
+    this.reloadComponentContext();
+  };
+
+  this.setNote = function (note, oldNote) {
+    this.showExtensions = false;
+    this.showMenu = false;
+    this.loadTagsString();
+
+    var associatedEditor = this.editorForNote(note);
+    if (this.editorComponent && this.editorComponent != associatedEditor) {
+      // Deactivate old editor
+      componentManager.deactivateComponent(this.editorComponent);
+    }
+
+    // Activate new editor if it's different from the one currently activated
+    if (associatedEditor && associatedEditor != this.editorComponent) {
+      this.enableComponent(associatedEditor);
+    }
+
+    this.editorComponent = associatedEditor;
+
+    this.noteReady = true;
+
+    if (note.safeText().length == 0 && note.dummy) {
+      this.focusTitle(100);
+    }
+
+    if (oldNote && oldNote != note) {
+      if (oldNote.hasChanges) {
+        this.save()(oldNote, null);
+      } else if (oldNote.dummy) {
+        this.remove()(oldNote);
+      }
+    }
+  };
+
+  this.editorForNote = function (note) {
+    var editors = componentManager.componentsForArea("editor-editor");
     var _iteratorNormalCompletion2 = true;
     var _didIteratorError2 = false;
     var _iteratorError2 = undefined;
 
     try {
-      for (var _iterator2 = this.componentStack[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-        var component = _step2.value;
+      for (var _iterator2 = editors[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+        var editor = _step2.value;
 
-        componentManager.setEventFlowForComponent(component, component.isActiveForItem(this.note));
+        if (editor.isActiveForItem(note)) {
+          return editor;
+        }
       }
+
+      // No editor found for note. Use default editor, if note does not prefer system editor
     } catch (err) {
       _didIteratorError2 = true;
       _iteratorError2 = err;
@@ -33914,135 +33853,37 @@ function isDesktopApplication() {
       }
     }
 
-    componentManager.contextItemDidChangeInArea("note-tags");
-    componentManager.contextItemDidChangeInArea("editor-stack");
-  };
-
-  this.setNote = function (note, oldNote) {
-    var currentEditor = this.editor;
-    this.editor = null;
-    this.showExtensions = false;
-    this.showMenu = false;
-    this.loadTagsString();
-
-    var setEditor = function (editor) {
-      this.editor = editor;
-      this.postNoteToExternalEditor();
-      this.noteReady = true;
-    }.bind(this);
-
-    var editor = this.editorForNote(note);
-    if (editor && !editor.systemEditor) {
-      // setting note to not ready will remove the editor from view in a flash,
-      // so we only want to do this if switching between external editors
-      this.noteReady = false;
-    }
-    if (editor) {
-      if (currentEditor !== editor) {
-        // switch after timeout, so that note data isnt posted to current editor
-        $timeout(function () {
-          setEditor(editor);
-        }.bind(this));
-      } else {
-        // switch immediately
-        setEditor(editor);
-      }
-    } else {
-      this.editor = null;
-      this.noteReady = true;
-    }
-
-    if (note.safeText().length == 0 && note.dummy) {
-      this.focusTitle(100);
-    }
-
-    if (oldNote && oldNote != note) {
-      if (oldNote.hasChanges) {
-        this.save()(oldNote, null);
-      } else if (oldNote.dummy) {
-        this.remove()(oldNote);
-      }
+    if (!note.getAppDataItem("prefersPlainEditor")) {
+      return editors.filter(function (e) {
+        return e.isDefaultEditor();
+      })[0];
     }
   };
 
-  this.selectedEditor = function (editor) {
+  this.selectedEditor = function (editorComponent) {
     this.showEditorMenu = false;
 
-    if (this.editor && editor !== this.editor) {
-      this.editor.removeItemAsRelationship(this.note);
-      this.editor.setDirty(true);
+    if (this.editorComponent && this.editorComponent !== editorComponent) {
+      // This disassociates the editor from the note, but the component itself still needs to be deactivated
+      this.disableComponentForCurrentItem(this.editorComponent);
+      // Now deactivate the component
+      componentManager.deactivateComponent(this.editorComponent);
     }
 
-    editor.addItemAsRelationship(this.note);
-    editor.setDirty(true);
+    if (editorComponent) {
+      this.note.setAppDataItem("prefersPlainEditor", false);
+      this.note.setDirty(true);
+      this.enableComponent(editorComponent);
+      this.associateComponentWithCurrentItem(editorComponent);
+    } else {
+      // Note prefers plain editor
+      this.note.setAppDataItem("prefersPlainEditor", true);
+      this.note.setDirty(true);
+      syncManager.sync();
+    }
 
-    syncManager.sync();
-
-    this.editor = editor;
+    this.editorComponent = editorComponent;
   }.bind(this);
-
-  this.editorForNote = function (note) {
-    var editors = modelManager.itemsForContentType("SN|Editor");
-    var _iteratorNormalCompletion3 = true;
-    var _didIteratorError3 = false;
-    var _iteratorError3 = undefined;
-
-    try {
-      for (var _iterator3 = editors[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-        var editor = _step3.value;
-
-        if (_.includes(editor.notes, note)) {
-          return editor;
-        }
-      }
-    } catch (err) {
-      _didIteratorError3 = true;
-      _iteratorError3 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion3 && _iterator3.return) {
-          _iterator3.return();
-        }
-      } finally {
-        if (_didIteratorError3) {
-          throw _iteratorError3;
-        }
-      }
-    }
-
-    return _.find(editors, { default: true });
-  };
-
-  this.postDataToExternalEditor = function (data) {
-    var externalEditorElement = document.getElementById("editor-iframe");
-    if (externalEditorElement) {
-      externalEditorElement.contentWindow.postMessage(data, '*');
-    }
-  };
-
-  function themeData() {
-    return {
-      themes: [themeManager.currentTheme ? themeManager.currentTheme.url : null]
-    };
-  }
-
-  this.postThemeToExternalEditor = function () {
-    this.postDataToExternalEditor(themeData());
-  };
-
-  this.postNoteToExternalEditor = function () {
-    if (!this.editor) {
-      return;
-    }
-
-    var data = {
-      text: this.note.text,
-      data: this.editor.dataForKey(this.note.uuid),
-      id: this.note.uuid
-    };
-    _.merge(data, themeData());
-    this.postDataToExternalEditor(data);
-  };
 
   this.hasAvailableExtensions = function () {
     return extensionManager.extensionsInContextOfItem(this.note).length > 0;
@@ -34076,20 +33917,16 @@ function isDesktopApplication() {
       if (success) {
         if (statusTimeout) $timeout.cancel(statusTimeout);
         statusTimeout = $timeout(function () {
-          var status = "All changes saved";
-          if (authManager.offline()) {
-            status += " (offline)";
-          }
           this.saveError = false;
           this.syncTakingTooLong = false;
-          this.noteStatus = $sce.trustAsHtml(status);
+          this.showAllChangesSavedStatus();
         }.bind(this), 200);
       } else {
         if (statusTimeout) $timeout.cancel(statusTimeout);
         statusTimeout = $timeout(function () {
           this.saveError = true;
           this.syncTakingTooLong = false;
-          this.noteStatus = $sce.trustAsHtml("Error syncing<br>(changes saved offline)");
+          this.showErrorStatus();
         }.bind(this), 200);
       }
     }.bind(this));
@@ -34109,9 +33946,25 @@ function isDesktopApplication() {
     if (saveTimeout) $timeout.cancel(saveTimeout);
     if (statusTimeout) $timeout.cancel(statusTimeout);
     saveTimeout = $timeout(function () {
-      this.noteStatus = $sce.trustAsHtml("Saving...");
+      this.showSavingStatus();
       this.saveNote();
     }.bind(this), 275);
+  };
+
+  this.showSavingStatus = function () {
+    this.noteStatus = $sce.trustAsHtml("Saving...");
+  };
+
+  this.showAllChangesSavedStatus = function () {
+    var status = "All changes saved";
+    if (authManager.offline()) {
+      status += " (offline)";
+    }
+    this.noteStatus = $sce.trustAsHtml(status);
+  };
+
+  this.showErrorStatus = function () {
+    this.noteStatus = $sce.trustAsHtml("Error syncing<br>(changes saved offline)");
   };
 
   this.contentChanged = function () {
@@ -34168,7 +34021,6 @@ function isDesktopApplication() {
   };
 
   this.clickedEditNote = function () {
-    this.editorMode = 'edit';
     this.focusEditor(100);
   };
 
@@ -34178,27 +34030,27 @@ function isDesktopApplication() {
 
   this.loadTagsString = function () {
     var string = "";
-    var _iteratorNormalCompletion4 = true;
-    var _didIteratorError4 = false;
-    var _iteratorError4 = undefined;
+    var _iteratorNormalCompletion3 = true;
+    var _didIteratorError3 = false;
+    var _iteratorError3 = undefined;
 
     try {
-      for (var _iterator4 = this.note.tags[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-        var tag = _step4.value;
+      for (var _iterator3 = this.note.tags[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+        var tag = _step3.value;
 
         string += "#" + tag.title + " ";
       }
     } catch (err) {
-      _didIteratorError4 = true;
-      _iteratorError4 = err;
+      _didIteratorError3 = true;
+      _iteratorError3 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion4 && _iterator4.return) {
-          _iterator4.return();
+        if (!_iteratorNormalCompletion3 && _iterator3.return) {
+          _iterator3.return();
         }
       } finally {
-        if (_didIteratorError4) {
-          throw _iteratorError4;
+        if (_didIteratorError3) {
+          throw _iteratorError3;
         }
       }
     }
@@ -34244,18 +34096,145 @@ function isDesktopApplication() {
   Components
   */
 
-  var alertKey = "displayed-component-disable-alert";
+  componentManager.registerHandler({ identifier: "editor", areas: ["note-tags", "editor-stack", "editor-editor"], activationHandler: function (component) {
 
-  this.disableComponent = function (component) {
-    componentManager.disableComponentForItem(component, this.note);
-    componentManager.setEventFlowForComponent(component, false);
-    if (!storageManager.getItem(alertKey)) {
+      if (component.area === "note-tags") {
+        // Autocomplete Tags
+        this.tagsComponent = component.active ? component : null;
+      } else if (component.area == "editor-stack") {
+        // Stack
+        if (component.active) {
+          if (!_.find(this.componentStack, component)) {
+            this.componentStack.push(component);
+          }
+        } else {
+          _.pull(this.componentStack, component);
+        }
+      } else {
+        // Editor
+        if (component.active && this.note && component.isActiveForItem(this.note)) {
+          this.editorComponent = component;
+        } else {
+          this.editorComponent = null;
+        }
+      }
+
+      if (component.active) {
+        $timeout(function () {
+          var iframe = componentManager.iframeForComponent(component);
+          if (iframe) {
+            iframe.onload = function () {
+              componentManager.registerComponentWindow(component, iframe.contentWindow);
+            }.bind(this);
+          }
+        }.bind(this));
+      }
+    }.bind(this), contextRequestHandler: function (component) {
+      return this.note;
+    }.bind(this), actionHandler: function (component, action, data) {
+      if (action === "set-size") {
+        var setSize = function setSize(element, size) {
+          var widthString = typeof size.width === 'string' ? size.width : data.width + 'px';
+          var heightString = typeof size.height === 'string' ? size.height : data.height + 'px';
+          element.setAttribute("style", 'width:' + widthString + '; height:' + heightString + '; ');
+        };
+
+        if (data.type === "content") {
+          var iframe = componentManager.iframeForComponent(component);
+          var width = data.width;
+          var height = data.height;
+          iframe.width = width;
+          iframe.height = height;
+
+          setSize(iframe, data);
+        } else {
+          if (component.area == "note-tags") {
+            var container = document.getElementById("note-tags-component-container");
+            setSize(container, data);
+          } else {
+            var container = document.getElementById("component-" + component.uuid);
+            setSize(container, data);
+          }
+        }
+      } else if (action === "associate-item") {
+        if (data.item.content_type == "Tag") {
+          var tag = modelManager.findItem(data.item.uuid);
+          this.addTag(tag);
+        }
+      } else if (action === "deassociate-item") {
+        var tag = modelManager.findItem(data.item.uuid);
+        this.removeTag(tag);
+      } else if (action === "save-items" || action === "save-success" || action == "save-error") {
+        if (data.items.map(function (item) {
+          return item.uuid;
+        }).includes(this.note.uuid)) {
+
+          if (action == "save-items") {
+            if (this.componentSaveTimeout) $timeout.cancel(this.componentSaveTimeout);
+            this.componentSaveTimeout = $timeout(this.showSavingStatus.bind(this), 10);
+          } else {
+            if (this.componentStatusTimeout) $timeout.cancel(this.componentStatusTimeout);
+            if (action == "save-success") {
+              this.componentStatusTimeout = $timeout(this.showAllChangesSavedStatus.bind(this), 400);
+            } else {
+              this.componentStatusTimeout = $timeout(this.showErrorStatus.bind(this), 400);
+            }
+          }
+        }
+      }
+    }.bind(this) });
+
+  this.reloadComponentContext = function () {
+    var _iteratorNormalCompletion4 = true;
+    var _didIteratorError4 = false;
+    var _iteratorError4 = undefined;
+
+    try {
+      for (var _iterator4 = this.componentStack[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+        var component = _step4.value;
+
+        componentManager.setEventFlowForComponent(component, component.isActiveForItem(this.note));
+      }
+    } catch (err) {
+      _didIteratorError4 = true;
+      _iteratorError4 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion4 && _iterator4.return) {
+          _iterator4.return();
+        }
+      } finally {
+        if (_didIteratorError4) {
+          throw _iteratorError4;
+        }
+      }
+    }
+
+    componentManager.contextItemDidChangeInArea("note-tags");
+    componentManager.contextItemDidChangeInArea("editor-stack");
+    componentManager.contextItemDidChangeInArea("editor-editor");
+  };
+
+  this.enableComponent = function (component) {
+    componentManager.activateComponent(component);
+    componentManager.setEventFlowForComponent(component, 1);
+  };
+
+  this.associateComponentWithCurrentItem = function (component) {
+    componentManager.associateComponentWithItem(component, this.note);
+  };
+
+  var alertKey = "displayed-component-disable-alert";
+  this.disableComponentForCurrentItem = function (component, showAlert) {
+    componentManager.disassociateComponentWithItem(component, this.note);
+    componentManager.setEventFlowForComponent(component, 0);
+    if (showAlert && !storageManager.getItem(alertKey)) {
       alert("This component will be disabled for this note. You can re-enable this component in the 'Menu' of the editor pane.");
       storageManager.setItem(alertKey, true);
     }
   };
 
-  this.hasDisabledComponents = function () {
+  this.hasDisabledStackComponents = function () {
     var _iteratorNormalCompletion5 = true;
     var _didIteratorError5 = false;
     var _iteratorError5 = undefined;
@@ -34286,7 +34265,7 @@ function isDesktopApplication() {
     return false;
   };
 
-  this.restoreDisabledComponents = function () {
+  this.restoreDisabledStackComponents = function () {
     var relevantComponents = this.componentStack.filter(function (component) {
       return component.ignoreEvents;
     });
@@ -34476,7 +34455,7 @@ function isDesktopApplication() {
     alert("A new update is ready to install. Updates address performance and security issues, as well as bug fixes and feature enhancements. Simply quit Standard Notes and re-open it for the update to be applied.");
   };
 }]);
-;angular.module('app.frontend').controller('HomeCtrl', ['$scope', '$location', '$rootScope', '$timeout', 'modelManager', 'dbManager', 'syncManager', 'authManager', 'themeManager', 'passcodeManager', 'storageManager', function ($scope, $location, $rootScope, $timeout, modelManager, dbManager, syncManager, authManager, themeManager, passcodeManager, storageManager) {
+;angular.module('app.frontend').controller('HomeCtrl', ['$scope', '$location', '$rootScope', '$timeout', 'modelManager', 'dbManager', 'syncManager', 'authManager', 'themeManager', 'passcodeManager', 'storageManager', 'migrationManager', function ($scope, $location, $rootScope, $timeout, modelManager, dbManager, syncManager, authManager, themeManager, passcodeManager, storageManager, migrationManager) {
 
   storageManager.initialize(passcodeManager.hasPasscode(), authManager.isEphemeralSession());
 
@@ -34913,9 +34892,11 @@ angular.module('app.frontend').directive('lockScreen', function () {
     this.selectFirstNote(false);
   }.bind(this));
 
-  this.notesToDisplay = 20;
+  this.DefaultNotesToDisplayValue = 20;
+
+  this.notesToDisplay = this.DefaultNotesToDisplayValue;
   this.paginate = function () {
-    this.notesToDisplay += 20;
+    this.notesToDisplay += this.DefaultNotesToDisplayValue;
   };
 
   this.optionsSubtitle = function () {
@@ -34941,6 +34922,14 @@ angular.module('app.frontend').directive('lockScreen', function () {
   };
 
   this.tagDidChange = function (tag, oldTag) {
+    var scrollable = document.getElementById("notes-scrollable");
+    if (scrollable) {
+      scrollable.scrollTop = 0;
+      scrollable.scrollLeft = 0;
+    }
+
+    this.notesToDisplay = this.DefaultNotesToDisplayValue;
+
     this.showMenu = false;
 
     if (this.selectedNote && this.selectedNote.dummy) {
@@ -35365,24 +35354,34 @@ var Item = function () {
     */
 
   }, {
-    key: 'setAppDataItem',
-    value: function setAppDataItem(key, value) {
-      var data = this.appData[AppDomain];
+    key: 'setDomainDataItem',
+    value: function setDomainDataItem(key, value, domain) {
+      var data = this.appData[domain];
       if (!data) {
         data = {};
       }
       data[key] = value;
-      this.appData[AppDomain] = data;
+      this.appData[domain] = data;
     }
   }, {
-    key: 'getAppDataItem',
-    value: function getAppDataItem(key) {
-      var data = this.appData[AppDomain];
+    key: 'getDomainDataItem',
+    value: function getDomainDataItem(key, domain) {
+      var data = this.appData[domain];
       if (data) {
         return data[key];
       } else {
         return null;
       }
+    }
+  }, {
+    key: 'setAppDataItem',
+    value: function setAppDataItem(key, value) {
+      this.setDomainDataItem(key, value, AppDomain);
+    }
+  }, {
+    key: 'getAppDataItem',
+    value: function getAppDataItem(key) {
+      return this.getDomainDataItem(key, AppDomain);
     }
   }, {
     key: 'createdAtString',
@@ -35532,6 +35531,10 @@ var Component = function (_Item2) {
     if (!_this4.disassociatedItemIds) {
       _this4.disassociatedItemIds = [];
     }
+
+    if (!_this4.associatedItemIds) {
+      _this4.associatedItemIds = [];
+    }
     return _this4;
   }
 
@@ -35553,6 +35556,9 @@ var Component = function (_Item2) {
 
       // items that have requested a component to be disabled in its context
       this.disassociatedItemIds = content.disassociatedItemIds || [];
+
+      // items that have requested a component to be enabled in its context
+      this.associatedItemIds = content.associatedItemIds || [];
     }
   }, {
     key: 'structureParams',
@@ -35564,7 +35570,8 @@ var Component = function (_Item2) {
         permissions: this.permissions,
         active: this.active,
         componentData: this.componentData,
-        disassociatedItemIds: this.disassociatedItemIds
+        disassociatedItemIds: this.disassociatedItemIds,
+        associatedItemIds: this.associatedItemIds
       };
 
       _.merge(params, _get(Component.prototype.__proto__ || Object.getPrototypeOf(Component.prototype), 'structureParams', this).call(this));
@@ -35576,14 +35583,49 @@ var Component = function (_Item2) {
       return { uuid: this.uuid };
     }
   }, {
+    key: 'isEditor',
+    value: function isEditor() {
+      return this.area == "editor-editor";
+    }
+  }, {
+    key: 'isDefaultEditor',
+    value: function isDefaultEditor() {
+      return this.getAppDataItem("defaultEditor") == true;
+    }
+
+    /*
+      An associative component depends on being explicitly activated for a given item, compared to a dissaciative component,
+      which is enabled by default in areas unrelated to a certain item.
+     */
+
+  }, {
+    key: 'isAssociative',
+    value: function isAssociative() {
+      return Component.associativeAreas().includes(this.area);
+    }
+  }, {
+    key: 'associateWithItem',
+    value: function associateWithItem(item) {
+      this.associatedItemIds.push(item.uuid);
+    }
+  }, {
     key: 'isActiveForItem',
     value: function isActiveForItem(item) {
-      return this.disassociatedItemIds.indexOf(item.uuid) === -1;
+      if (this.isAssociative()) {
+        return this.associatedItemIds.indexOf(item.uuid) !== -1;
+      } else {
+        return this.disassociatedItemIds.indexOf(item.uuid) === -1;
+      }
     }
   }, {
     key: 'content_type',
     get: function get() {
       return "SN|Component";
+    }
+  }], [{
+    key: 'associativeAreas',
+    value: function associativeAreas() {
+      return ["editor-editor"];
     }
   }]);
 
@@ -36625,7 +36667,9 @@ var ItemParams = function () {
     };
   }
 });
-;
+; /* This domain will be used to save context item client data */
+var ClientDataDomain = "org.standardnotes.sn.components";
+
 var ComponentManager = function () {
   ComponentManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'themeManager', '$timeout', '$compile'];
   function ComponentManager($rootScope, modelManager, syncManager, themeManager, $timeout, $compile) {
@@ -36658,8 +36702,16 @@ var ComponentManager = function () {
       this.handleMessage(this.componentForSessionKey(event.data.sessionKey), event.data);
     }.bind(this), false);
 
-    this.modelManager.addItemSyncObserver("component-manager", "*", function (allItems, validItems, deletedItems) {
+    this.modelManager.addItemSyncObserver("component-manager", "*", function (allItems, validItems, deletedItems, source) {
       var _this11 = this;
+
+      /* If the source of these new or updated items is from a Component itself saving items, we don't need to notify
+        components again of the same item. Regarding notifying other components than the issuing component, other mapping sources
+        will take care of that, like ModelManager.MappingSourceRemoteSaved
+       */
+      if (source == ModelManager.MappingSourceComponentRetrieved) {
+        return;
+      }
 
       var syncedComponents = allItems.filter(function (item) {
         return item.content_type === "SN|Component";
@@ -36750,14 +36802,14 @@ var ComponentManager = function () {
             for (var _iterator18 = this.handlers[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
               var handler = _step18.value;
 
-              if (handler.areas.includes(observer.component.area) === false) {
+              if (!handler.areas.includes(observer.component.area)) {
                 continue;
               }
               var itemInContext = handler.contextRequestHandler(observer.component);
               if (itemInContext) {
                 var matchingItem = _.find(allItems, { uuid: itemInContext.uuid });
                 if (matchingItem) {
-                  this.sendContextItemInReply(observer.component, matchingItem, observer.originalMessage);
+                  this.sendContextItemInReply(observer.component, matchingItem, observer.originalMessage, source);
                 }
               }
             }
@@ -36906,17 +36958,31 @@ var ComponentManager = function () {
     }
   }, {
     key: 'jsonForItem',
-    value: function jsonForItem(item) {
+    value: function jsonForItem(item, component, source) {
       var params = { uuid: item.uuid, content_type: item.content_type, created_at: item.created_at, updated_at: item.updated_at, deleted: item.deleted };
       params.content = item.createContentJSONFromProperties();
+      params.clientData = item.getDomainDataItem(component.url, ClientDataDomain) || {};
+
+      /* This means the this function is being triggered through a remote Saving response, which should not update
+        actual local content values. The reason is, Save responses may be delayed, and a user may have changed some values
+        in between the Save was initiated, and the time it completes. So we only want to update actual content values (and not just metadata)
+        when its another source, like ModelManager.MappingSourceRemoteRetrieved.
+       */
+      if (source && source == ModelManager.MappingSourceRemoteSaved) {
+        params.isMetadataUpdate = true;
+      }
+      this.removePrivatePropertiesFromResponseItems([params]);
       return params;
     }
   }, {
     key: 'sendItemsInReply',
-    value: function sendItemsInReply(component, items, message) {
+    value: function sendItemsInReply(component, items, message, source) {
+      if (this.loggingEnabled) {
+        console.log("Web|componentManager|sendItemsInReply", component, items, message);
+      };
       var response = { items: {} };
       var mapped = items.map(function (item) {
-        return this.jsonForItem(item);
+        return this.jsonForItem(item, component, source);
       }.bind(this));
 
       response.items = mapped;
@@ -36924,16 +36990,26 @@ var ComponentManager = function () {
     }
   }, {
     key: 'sendContextItemInReply',
-    value: function sendContextItemInReply(component, item, originalMessage) {
-      var response = { item: this.jsonForItem(item) };
+    value: function sendContextItemInReply(component, item, originalMessage, source) {
+      if (this.loggingEnabled) {
+        console.log("Web|componentManager|sendContextItemInReply", component, item, originalMessage);
+      };
+      var response = { item: this.jsonForItem(item, component, source) };
       this.replyToMessage(component, originalMessage, response);
     }
   }, {
-    key: 'componentsForStack',
-    value: function componentsForStack(stack) {
+    key: 'componentsForArea',
+    value: function componentsForArea(area) {
       return this.components.filter(function (component) {
-        return component.area === stack;
+        return component.area === area;
       });
+    }
+  }, {
+    key: 'componentForUrl',
+    value: function componentForUrl(url) {
+      return this.components.filter(function (component) {
+        return component.url === url;
+      })[0];
     }
   }, {
     key: 'componentForSessionKey',
@@ -36965,6 +37041,8 @@ var ComponentManager = function () {
       create-item
       delete-items
       set-component-data
+      save-context-client-data
+      get-context-client-data
       */
 
       if (message.action === "stream-items") {
@@ -37008,15 +37086,27 @@ var ComponentManager = function () {
           this.syncManager.sync();
         }
       } else if (message.action === "create-item") {
-        var item = this.modelManager.createItem(message.data.item);
+        var responseItem = message.data.item;
+        this.removePrivatePropertiesFromResponseItems([responseItem]);
+        var item = this.modelManager.createItem(responseItem);
+        if (responseItem.clientData) {
+          item.setDomainDataItem(component.url, responseItem.clientData, ClientDataDomain);
+        }
         this.modelManager.addItem(item);
         this.modelManager.resolveReferencesForItem(item);
         item.setDirty(true);
         this.syncManager.sync();
-        this.replyToMessage(component, message, { item: this.jsonForItem(item) });
+        this.replyToMessage(component, message, { item: this.jsonForItem(item, component) });
       } else if (message.action === "save-items") {
         var responseItems = message.data.items;
-        var localItems = this.modelManager.mapResponseItemsToLocalModels(responseItems);
+
+        this.removePrivatePropertiesFromResponseItems(responseItems);
+
+        /*
+          We map the items here because modelManager is what updates the UI. If you were to instead get the items directly,
+          this would update them server side via sync, but would never make its way back to the UI.
+         */
+        var localItems = this.modelManager.mapResponseItemsToLocalModels(responseItems, ModelManager.MappingSourceComponentRetrieved);
 
         var _iteratorNormalCompletion23 = true;
         var _didIteratorError23 = false;
@@ -37028,6 +37118,9 @@ var ComponentManager = function () {
 
             var responseItem = _.find(responseItems, { uuid: item.uuid });
             _.merge(item.content, responseItem.content);
+            if (responseItem.clientData) {
+              item.setDomainDataItem(component.url, responseItem.clientData, ClientDataDomain);
+            }
             item.setDirty(true);
           }
         } catch (err) {
@@ -37045,7 +37138,12 @@ var ComponentManager = function () {
           }
         }
 
-        this.syncManager.sync();
+        this.syncManager.sync(function (response) {
+          // Allow handlers to be notified when a save begins and ends, to update the UI
+          var saveMessage = Object.assign({}, message);
+          saveMessage.action = response && response.error ? "save-error" : "save-success";
+          _this12.handleMessage(component, saveMessage);
+        });
       }
 
       var _loop3 = function _loop3(handler) {
@@ -37082,6 +37180,64 @@ var ComponentManager = function () {
       }
     }
   }, {
+    key: 'removePrivatePropertiesFromResponseItems',
+    value: function removePrivatePropertiesFromResponseItems(responseItems) {
+      // Don't allow component to overwrite these properties.
+      var privateProperties = ["appData"];
+      var _iteratorNormalCompletion25 = true;
+      var _didIteratorError25 = false;
+      var _iteratorError25 = undefined;
+
+      try {
+        for (var _iterator25 = responseItems[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
+          var responseItem = _step25.value;
+
+
+          // Do not pass in actual items here, otherwise that would be destructive.
+          // Instead, generic JS/JSON objects should be passed.
+          console.assert(typeof responseItem.setDirty !== 'function');
+
+          var _iteratorNormalCompletion26 = true;
+          var _didIteratorError26 = false;
+          var _iteratorError26 = undefined;
+
+          try {
+            for (var _iterator26 = privateProperties[Symbol.iterator](), _step26; !(_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done); _iteratorNormalCompletion26 = true) {
+              var prop = _step26.value;
+
+              delete responseItem[prop];
+            }
+          } catch (err) {
+            _didIteratorError26 = true;
+            _iteratorError26 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion26 && _iterator26.return) {
+                _iterator26.return();
+              }
+            } finally {
+              if (_didIteratorError26) {
+                throw _iteratorError26;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        _didIteratorError25 = true;
+        _iteratorError25 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion25 && _iterator25.return) {
+            _iterator25.return();
+          }
+        } finally {
+          if (_didIteratorError25) {
+            throw _iteratorError25;
+          }
+        }
+      }
+    }
+  }, {
     key: 'handleStreamItemsMessage',
     value: function handleStreamItemsMessage(component, message) {
       var requiredPermissions = [{
@@ -37102,27 +37258,27 @@ var ComponentManager = function () {
 
         // push immediately now
         var items = [];
-        var _iteratorNormalCompletion25 = true;
-        var _didIteratorError25 = false;
-        var _iteratorError25 = undefined;
+        var _iteratorNormalCompletion27 = true;
+        var _didIteratorError27 = false;
+        var _iteratorError27 = undefined;
 
         try {
-          for (var _iterator25 = message.data.content_types[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
-            var contentType = _step25.value;
+          for (var _iterator27 = message.data.content_types[Symbol.iterator](), _step27; !(_iteratorNormalCompletion27 = (_step27 = _iterator27.next()).done); _iteratorNormalCompletion27 = true) {
+            var contentType = _step27.value;
 
             items = items.concat(this.modelManager.itemsForContentType(contentType));
           }
         } catch (err) {
-          _didIteratorError25 = true;
-          _iteratorError25 = err;
+          _didIteratorError27 = true;
+          _iteratorError27 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion25 && _iterator25.return) {
-              _iterator25.return();
+            if (!_iteratorNormalCompletion27 && _iterator27.return) {
+              _iterator27.return();
             }
           } finally {
-            if (_didIteratorError25) {
-              throw _iteratorError25;
+            if (_didIteratorError27) {
+              throw _iteratorError27;
             }
           }
         }
@@ -37149,13 +37305,13 @@ var ComponentManager = function () {
         }
 
         // push immediately now
-        var _iteratorNormalCompletion26 = true;
-        var _didIteratorError26 = false;
-        var _iteratorError26 = undefined;
+        var _iteratorNormalCompletion28 = true;
+        var _didIteratorError28 = false;
+        var _iteratorError28 = undefined;
 
         try {
-          for (var _iterator26 = this.handlers[Symbol.iterator](), _step26; !(_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done); _iteratorNormalCompletion26 = true) {
-            var handler = _step26.value;
+          for (var _iterator28 = this.handlers[Symbol.iterator](), _step28; !(_iteratorNormalCompletion28 = (_step28 = _iterator28.next()).done); _iteratorNormalCompletion28 = true) {
+            var handler = _step28.value;
 
             if (handler.areas.includes(component.area) === false) {
               continue;
@@ -37164,16 +37320,16 @@ var ComponentManager = function () {
             this.sendContextItemInReply(component, itemInContext, message);
           }
         } catch (err) {
-          _didIteratorError26 = true;
-          _iteratorError26 = err;
+          _didIteratorError28 = true;
+          _iteratorError28 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion26 && _iterator26.return) {
-              _iterator26.return();
+            if (!_iteratorNormalCompletion28 && _iterator28.return) {
+              _iterator28.return();
             }
           } finally {
-            if (_didIteratorError26) {
-              throw _iteratorError26;
+            if (_didIteratorError28) {
+              throw _iteratorError28;
             }
           }
         }
@@ -37187,13 +37343,13 @@ var ComponentManager = function () {
 
       var requestedMatchesRequired = true;
 
-      var _iteratorNormalCompletion27 = true;
-      var _didIteratorError27 = false;
-      var _iteratorError27 = undefined;
+      var _iteratorNormalCompletion29 = true;
+      var _didIteratorError29 = false;
+      var _iteratorError29 = undefined;
 
       try {
-        for (var _iterator27 = requiredPermissions[Symbol.iterator](), _step27; !(_iteratorNormalCompletion27 = (_step27 = _iterator27.next()).done); _iteratorNormalCompletion27 = true) {
-          var required = _step27.value;
+        for (var _iterator29 = requiredPermissions[Symbol.iterator](), _step29; !(_iteratorNormalCompletion29 = (_step29 = _iterator29.next()).done); _iteratorNormalCompletion29 = true) {
+          var required = _step29.value;
 
           var matching = _.find(requestedPermissions, required);
           if (!matching) {
@@ -37202,16 +37358,16 @@ var ComponentManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError27 = true;
-        _iteratorError27 = err;
+        _didIteratorError29 = true;
+        _iteratorError29 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion27 && _iterator27.return) {
-            _iterator27.return();
+          if (!_iteratorNormalCompletion29 && _iterator29.return) {
+            _iterator29.return();
           }
         } finally {
-          if (_didIteratorError27) {
-            throw _iteratorError27;
+          if (_didIteratorError29) {
+            throw _iteratorError29;
           }
         }
       }
@@ -37257,29 +37413,29 @@ var ComponentManager = function () {
           this.syncManager.sync();
         }
 
-        var _iteratorNormalCompletion28 = true;
-        var _didIteratorError28 = false;
-        var _iteratorError28 = undefined;
+        var _iteratorNormalCompletion30 = true;
+        var _didIteratorError30 = false;
+        var _iteratorError30 = undefined;
 
         try {
-          for (var _iterator28 = this.permissionDialogs[Symbol.iterator](), _step28; !(_iteratorNormalCompletion28 = (_step28 = _iterator28.next()).done); _iteratorNormalCompletion28 = true) {
-            var existing = _step28.value;
+          for (var _iterator30 = this.permissionDialogs[Symbol.iterator](), _step30; !(_iteratorNormalCompletion30 = (_step30 = _iterator30.next()).done); _iteratorNormalCompletion30 = true) {
+            var existing = _step30.value;
 
             if (existing.component === component && existing.actionBlock) {
               existing.actionBlock(approved);
             }
           }
         } catch (err) {
-          _didIteratorError28 = true;
-          _iteratorError28 = err;
+          _didIteratorError30 = true;
+          _iteratorError30 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion28 && _iterator28.return) {
-              _iterator28.return();
+            if (!_iteratorNormalCompletion30 && _iterator30.return) {
+              _iterator30.return();
             }
           } finally {
-            if (_didIteratorError28) {
-              throw _iteratorError28;
+            if (_didIteratorError30) {
+              throw _iteratorError30;
             }
           }
         }
@@ -37314,9 +37470,12 @@ var ComponentManager = function () {
     value: function sendMessageToComponent(component, message) {
       if (component.ignoreEvents && message.action !== "component-registered") {
         if (this.loggingEnabled) {
-          console.log("Component disabled for current item, not sending any messages.");
+          console.log("Component disabled for current item, not sending any messages.", component.name);
         }
         return;
+      }
+      if (this.loggingEnabled) {
+        console.log("Web|sendMessageToComponent", component, message);
       }
       component.window.postMessage(message, "*");
     }
@@ -37342,29 +37501,29 @@ var ComponentManager = function () {
       var didChange = component.active != true;
 
       component.active = true;
-      var _iteratorNormalCompletion29 = true;
-      var _didIteratorError29 = false;
-      var _iteratorError29 = undefined;
+      var _iteratorNormalCompletion31 = true;
+      var _didIteratorError31 = false;
+      var _iteratorError31 = undefined;
 
       try {
-        for (var _iterator29 = this.handlers[Symbol.iterator](), _step29; !(_iteratorNormalCompletion29 = (_step29 = _iterator29.next()).done); _iteratorNormalCompletion29 = true) {
-          var handler = _step29.value;
+        for (var _iterator31 = this.handlers[Symbol.iterator](), _step31; !(_iteratorNormalCompletion31 = (_step31 = _iterator31.next()).done); _iteratorNormalCompletion31 = true) {
+          var handler = _step31.value;
 
           if (handler.areas.includes(component.area)) {
             handler.activationHandler(component);
           }
         }
       } catch (err) {
-        _didIteratorError29 = true;
-        _iteratorError29 = err;
+        _didIteratorError31 = true;
+        _iteratorError31 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion29 && _iterator29.return) {
-            _iterator29.return();
+          if (!_iteratorNormalCompletion31 && _iterator31.return) {
+            _iterator31.return();
           }
         } finally {
-          if (_didIteratorError29) {
-            throw _iteratorError29;
+          if (_didIteratorError31) {
+            throw _iteratorError31;
           }
         }
       }
@@ -37374,7 +37533,9 @@ var ComponentManager = function () {
         this.syncManager.sync();
       }
 
-      this.activeComponents.push(component);
+      if (!this.activeComponents.includes(component)) {
+        this.activeComponents.push(component);
+      }
     }
   }, {
     key: 'registerHandler',
@@ -37387,6 +37548,15 @@ var ComponentManager = function () {
   }, {
     key: 'registerComponentWindow',
     value: function registerComponentWindow(component, componentWindow) {
+      if (component.window === componentWindow) {
+        if (this.loggingEnabled) {
+          console.log("Web|componentManager", "attempting to re-register same component window.");
+        }
+      }
+
+      if (this.loggingEnabled) {
+        console.log("Web|componentManager|registerComponentWindow", component);
+      }
       component.window = componentWindow;
       component.sessionKey = Neeto.crypto.generateUUID();
       this.sendMessageToComponent(component, { action: "component-registered", sessionKey: component.sessionKey, componentData: component.componentData });
@@ -37399,29 +37569,29 @@ var ComponentManager = function () {
       component.active = false;
       component.sessionKey = null;
 
-      var _iteratorNormalCompletion30 = true;
-      var _didIteratorError30 = false;
-      var _iteratorError30 = undefined;
+      var _iteratorNormalCompletion32 = true;
+      var _didIteratorError32 = false;
+      var _iteratorError32 = undefined;
 
       try {
-        for (var _iterator30 = this.handlers[Symbol.iterator](), _step30; !(_iteratorNormalCompletion30 = (_step30 = _iterator30.next()).done); _iteratorNormalCompletion30 = true) {
-          var handler = _step30.value;
+        for (var _iterator32 = this.handlers[Symbol.iterator](), _step32; !(_iteratorNormalCompletion32 = (_step32 = _iterator32.next()).done); _iteratorNormalCompletion32 = true) {
+          var handler = _step32.value;
 
           if (handler.areas.includes(component.area)) {
             handler.activationHandler(component);
           }
         }
       } catch (err) {
-        _didIteratorError30 = true;
-        _iteratorError30 = err;
+        _didIteratorError32 = true;
+        _iteratorError32 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion30 && _iterator30.return) {
-            _iterator30.return();
+          if (!_iteratorNormalCompletion32 && _iterator32.return) {
+            _iterator32.return();
           }
         } finally {
-          if (_didIteratorError30) {
-            throw _iteratorError30;
+          if (_didIteratorError32) {
+            throw _iteratorError32;
           }
         }
       }
@@ -37453,40 +37623,58 @@ var ComponentManager = function () {
       return component.active;
     }
   }, {
-    key: 'disableComponentForItem',
-    value: function disableComponentForItem(component, item) {
+    key: 'disassociateComponentWithItem',
+    value: function disassociateComponentWithItem(component, item) {
+      _.pull(component.associatedItemIds, item.uuid);
+
       if (component.disassociatedItemIds.indexOf(item.uuid) !== -1) {
         return;
       }
+
       component.disassociatedItemIds.push(item.uuid);
+
+      component.setDirty(true);
+      this.syncManager.sync();
+    }
+  }, {
+    key: 'associateComponentWithItem',
+    value: function associateComponentWithItem(component, item) {
+      _.pull(component.disassociatedItemIds, item.uuid);
+
+      if (component.associatedItemIds.includes(item.uuid)) {
+        return;
+      }
+
+      component.associatedItemIds.push(item.uuid);
+
       component.setDirty(true);
       this.syncManager.sync();
     }
   }, {
     key: 'enableComponentsForItem',
     value: function enableComponentsForItem(components, item) {
-      var _iteratorNormalCompletion31 = true;
-      var _didIteratorError31 = false;
-      var _iteratorError31 = undefined;
+      var _iteratorNormalCompletion33 = true;
+      var _didIteratorError33 = false;
+      var _iteratorError33 = undefined;
 
       try {
-        for (var _iterator31 = components[Symbol.iterator](), _step31; !(_iteratorNormalCompletion31 = (_step31 = _iterator31.next()).done); _iteratorNormalCompletion31 = true) {
-          var component = _step31.value;
+        for (var _iterator33 = components[Symbol.iterator](), _step33; !(_iteratorNormalCompletion33 = (_step33 = _iterator33.next()).done); _iteratorNormalCompletion33 = true) {
+          var component = _step33.value;
 
           _.pull(component.disassociatedItemIds, item.uuid);
           component.setDirty(true);
         }
       } catch (err) {
-        _didIteratorError31 = true;
-        _iteratorError31 = err;
+        _didIteratorError33 = true;
+        _iteratorError33 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion31 && _iterator31.return) {
-            _iterator31.return();
+          if (!_iteratorNormalCompletion33 && _iterator33.return) {
+            _iterator33.return();
           }
         } finally {
-          if (_didIteratorError31) {
-            throw _iteratorError31;
+          if (_didIteratorError33) {
+            throw _iteratorError33;
           }
         }
       }
@@ -37501,13 +37689,13 @@ var ComponentManager = function () {
   }, {
     key: 'iframeForComponent',
     value: function iframeForComponent(component) {
-      var _iteratorNormalCompletion32 = true;
-      var _didIteratorError32 = false;
-      var _iteratorError32 = undefined;
+      var _iteratorNormalCompletion34 = true;
+      var _didIteratorError34 = false;
+      var _iteratorError34 = undefined;
 
       try {
-        for (var _iterator32 = document.getElementsByTagName("iframe")[Symbol.iterator](), _step32; !(_iteratorNormalCompletion32 = (_step32 = _iterator32.next()).done); _iteratorNormalCompletion32 = true) {
-          var frame = _step32.value;
+        for (var _iterator34 = document.getElementsByTagName("iframe")[Symbol.iterator](), _step34; !(_iteratorNormalCompletion34 = (_step34 = _iterator34.next()).done); _iteratorNormalCompletion34 = true) {
+          var frame = _step34.value;
 
           var componentId = frame.dataset.componentId;
           if (componentId === component.uuid) {
@@ -37515,16 +37703,16 @@ var ComponentManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError32 = true;
-        _iteratorError32 = err;
+        _didIteratorError34 = true;
+        _iteratorError34 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion32 && _iterator32.return) {
-            _iterator32.return();
+          if (!_iteratorNormalCompletion34 && _iterator34.return) {
+            _iterator34.return();
           }
         } finally {
-          if (_didIteratorError32) {
-            throw _iteratorError32;
+          if (_didIteratorError34) {
+            throw _iteratorError34;
           }
         }
       }
@@ -38171,7 +38359,7 @@ var AccountMenu = function () {
 
       $scope.importJSONData = function (data, password, callback) {
         var onDataReady = function (errorCount) {
-          var items = modelManager.mapResponseItemsToLocalModels(data.items);
+          var items = modelManager.mapResponseItemsToLocalModels(data.items, ModelManager.MappingSourceFileImport);
           items.forEach(function (item) {
             item.setDirty(true);
             item.deleted = false;
@@ -38527,27 +38715,27 @@ var ContextualExtensionsMenu = function () {
         });
       };
 
-      var _iteratorNormalCompletion33 = true;
-      var _didIteratorError33 = false;
-      var _iteratorError33 = undefined;
+      var _iteratorNormalCompletion35 = true;
+      var _didIteratorError35 = false;
+      var _iteratorError35 = undefined;
 
       try {
-        for (var _iterator33 = $scope.extensions[Symbol.iterator](), _step33; !(_iteratorNormalCompletion33 = (_step33 = _iterator33.next()).done); _iteratorNormalCompletion33 = true) {
-          var ext = _step33.value;
+        for (var _iterator35 = $scope.extensions[Symbol.iterator](), _step35; !(_iteratorNormalCompletion35 = (_step35 = _iterator35.next()).done); _iteratorNormalCompletion35 = true) {
+          var ext = _step35.value;
 
           _loop4(ext);
         }
       } catch (err) {
-        _didIteratorError33 = true;
-        _iteratorError33 = err;
+        _didIteratorError35 = true;
+        _iteratorError35 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion33 && _iterator33.return) {
-            _iterator33.return();
+          if (!_iteratorNormalCompletion35 && _iterator35.return) {
+            _iterator35.return();
           }
         } finally {
-          if (_didIteratorError33) {
-            throw _iteratorError33;
+          if (_didIteratorError35) {
+            throw _iteratorError35;
           }
         }
       }
@@ -38630,14 +38818,17 @@ var EditorMenu = function () {
 
   _createClass(EditorMenu, [{
     key: 'controller',
-    value: ['$scope', 'editorManager', function controller($scope, editorManager) {
+    value: ['$scope', 'componentManager', function controller($scope, componentManager) {
       'ngInject';
 
       $scope.formData = {};
-      $scope.editorManager = editorManager;
+
+      $scope.editors = componentManager.componentsForArea("editor-editor");
 
       $scope.selectEditor = function ($event, editor) {
-        editor.conflict_of = null; // clear conflict if applicable
+        if (editor) {
+          editor.conflict_of = null; // clear conflict if applicable
+        }
         $scope.callback()(editor);
       };
     }]
@@ -38661,14 +38852,13 @@ var GlobalExtensionsMenu = function () {
 
   _createClass(GlobalExtensionsMenu, [{
     key: 'controller',
-    value: ['$scope', 'extensionManager', 'syncManager', 'modelManager', 'themeManager', 'editorManager', 'componentManager', function controller($scope, extensionManager, syncManager, modelManager, themeManager, editorManager, componentManager) {
+    value: ['$scope', 'extensionManager', 'syncManager', 'modelManager', 'themeManager', 'componentManager', function controller($scope, extensionManager, syncManager, modelManager, themeManager, componentManager) {
       'ngInject';
 
       $scope.formData = {};
 
       $scope.extensionManager = extensionManager;
       $scope.themeManager = themeManager;
-      $scope.editorManager = editorManager;
       $scope.componentManager = componentManager;
 
       $scope.serverExtensions = modelManager.itemsForContentType("SF|Extension");
@@ -38773,22 +38963,6 @@ var GlobalExtensionsMenu = function () {
         }
       };
 
-      // Editors
-
-      $scope.deleteEditor = function (editor) {
-        if (confirm("Are you sure you want to delete this editor?")) {
-          editorManager.deleteEditor(editor);
-        }
-      };
-
-      $scope.setDefaultEditor = function (editor) {
-        editorManager.setDefaultEditor(editor);
-      };
-
-      $scope.removeDefaultEditor = function (editor) {
-        editorManager.removeDefaultEditor(editor);
-      };
-
       // Components
 
       $scope.revokePermissions = function (component) {
@@ -38801,6 +38975,25 @@ var GlobalExtensionsMenu = function () {
         if (confirm("Are you sure you want to delete this component?")) {
           componentManager.deleteComponent(component);
         }
+      };
+
+      $scope.makeEditorDefault = function (component) {
+        var currentDefault = componentManager.componentsForArea("editor-editor").filter(function (e) {
+          return e.isDefaultEditor();
+        })[0];
+        if (currentDefault) {
+          currentDefault.setAppDataItem("defaultEditor", false);
+          currentDefault.setDirty(true);
+        }
+        component.setAppDataItem("defaultEditor", true);
+        component.setDirty(true);
+        syncManager.sync();
+      };
+
+      $scope.removeEditorDefault = function (component) {
+        component.setAppDataItem("defaultEditor", false);
+        component.setDirty(true);
+        syncManager.sync();
       };
 
       // Installation
@@ -38818,13 +39011,13 @@ var GlobalExtensionsMenu = function () {
         };
 
         var links = fullLink.split(",");
-        var _iteratorNormalCompletion34 = true;
-        var _didIteratorError34 = false;
-        var _iteratorError34 = undefined;
+        var _iteratorNormalCompletion36 = true;
+        var _didIteratorError36 = false;
+        var _iteratorError36 = undefined;
 
         try {
-          for (var _iterator34 = links[Symbol.iterator](), _step34; !(_iteratorNormalCompletion34 = (_step34 = _iterator34.next()).done); _iteratorNormalCompletion34 = true) {
-            var link = _step34.value;
+          for (var _iterator36 = links[Symbol.iterator](), _step36; !(_iteratorNormalCompletion36 = (_step36 = _iterator36.next()).done); _iteratorNormalCompletion36 = true) {
+            var link = _step36.value;
 
             var type = getParameterByName("type", link);
 
@@ -38841,16 +39034,16 @@ var GlobalExtensionsMenu = function () {
             }
           }
         } catch (err) {
-          _didIteratorError34 = true;
-          _iteratorError34 = err;
+          _didIteratorError36 = true;
+          _iteratorError36 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion34 && _iterator34.return) {
-              _iterator34.return();
+            if (!_iteratorNormalCompletion36 && _iterator36.return) {
+              _iterator36.return();
             }
           } finally {
-            if (_didIteratorError34) {
-              throw _iteratorError34;
+            if (_didIteratorError36) {
+              throw _iteratorError36;
             }
           }
         }
@@ -38888,11 +39081,6 @@ var GlobalExtensionsMenu = function () {
             }
           });
         }
-      };
-
-      $scope.handleEditorLink = function (link, completion) {
-        editorManager.addNewEditorFromURL(link);
-        completion();
       };
     }]
   }]);
@@ -38966,7 +39154,8 @@ var PermissionsModal = function () {
         } else if (permission.name === "stream-context-item") {
           var mapping = {
             "editor-stack": "working note",
-            "note-tags": "working note"
+            "note-tags": "working note",
+            "editor-editor": "working note"
           };
           return "Access to " + mapping[$scope.component.area];
         }
@@ -38981,124 +39170,6 @@ angular.module('app.frontend').directive('permissionsModal', function () {
   return new PermissionsModal();
 });
 ;
-var EditorManager = function () {
-  EditorManager.$inject = ['$rootScope', 'modelManager', 'syncManager'];
-  function EditorManager($rootScope, modelManager, syncManager) {
-    _classCallCheck(this, EditorManager);
-
-    this.syncManager = syncManager;
-    this.modelManager = modelManager;
-
-    this.editorType = "SN|Editor";
-    this._systemEditor = {
-      systemEditor: true,
-      name: "Plain"
-    };
-
-    $rootScope.$on("sync:completed", function () {
-      // we want to wait for sync completion before creating a syncable system editor
-      // we need to sync the system editor so that we can assign note preferences to it
-      // that is, when a user selects Plain for a note, we need to remember that
-      if (this.systemEditor.uuid) {
-        return;
-      }
-
-      var liveSysEditor = _.find(this.allEditors, { systemEditor: true });
-      if (liveSysEditor) {
-        this._systemEditor = liveSysEditor;
-      } else {
-        this._systemEditor = modelManager.createItem({
-          content_type: this.editorType,
-          systemEditor: true,
-          name: "Plain"
-        });
-        modelManager.addItem(this._systemEditor);
-        this._systemEditor.setDirty(true);
-        syncManager.sync();
-      }
-    }.bind(this));
-  }
-
-  _createClass(EditorManager, [{
-    key: 'editorForUrl',
-    value: function editorForUrl(url) {
-      return this.externalEditors.filter(function (editor) {
-        return editor.url == url;
-      })[0];
-    }
-  }, {
-    key: 'setDefaultEditor',
-    value: function setDefaultEditor(editor) {
-      var defaultEditor = this.defaultEditor;
-      if (defaultEditor) {
-        defaultEditor.default = false;
-        defaultEditor.setDirty(true);
-      }
-      editor.default = true;
-      editor.setDirty(true);
-      this.syncManager.sync();
-    }
-  }, {
-    key: 'removeDefaultEditor',
-    value: function removeDefaultEditor(editor) {
-      editor.default = false;
-      editor.setDirty(true);
-      this.syncManager.sync();
-    }
-  }, {
-    key: 'addNewEditorFromURL',
-    value: function addNewEditorFromURL(url) {
-      var name = getParameterByName("name", url);
-      var editor = this.modelManager.createItem({
-        content_type: this.editorType,
-        url: url,
-        name: name
-      });
-
-      this.modelManager.addItem(editor);
-      editor.setDirty(true);
-      this.syncManager.sync();
-    }
-  }, {
-    key: 'deleteEditor',
-    value: function deleteEditor(editor) {
-      this.modelManager.setItemToBeDeleted(editor);
-      this.syncManager.sync();
-    }
-  }, {
-    key: 'allEditors',
-    get: function get() {
-      return this.modelManager.itemsForContentType(this.editorType);
-    }
-  }, {
-    key: 'externalEditors',
-    get: function get() {
-      return this.allEditors.filter(function (editor) {
-        return !editor.systemEditor;
-      });
-    }
-  }, {
-    key: 'systemEditors',
-    get: function get() {
-      return [this.systemEditor];
-    }
-  }, {
-    key: 'systemEditor',
-    get: function get() {
-      return this._systemEditor;
-    }
-  }, {
-    key: 'defaultEditor',
-    get: function get() {
-      return _.find(this.externalEditors, { default: true });
-    }
-  }]);
-
-  return EditorManager;
-}();
-
-angular.module('app.frontend').service('editorManager', EditorManager);
-;
 var ExtensionManager = function () {
   ExtensionManager.$inject = ['httpManager', 'modelManager', 'authManager', 'syncManager', 'storageManager'];
   function ExtensionManager(httpManager, modelManager, authManager, syncManager, storageManager) {
@@ -39112,51 +39183,51 @@ var ExtensionManager = function () {
     this.storageManager = storageManager;
 
     modelManager.addItemSyncObserver("extensionManager", "Extension", function (allItems, validItems, deletedItems) {
-      var _iteratorNormalCompletion35 = true;
-      var _didIteratorError35 = false;
-      var _iteratorError35 = undefined;
+      var _iteratorNormalCompletion37 = true;
+      var _didIteratorError37 = false;
+      var _iteratorError37 = undefined;
 
       try {
-        for (var _iterator35 = validItems[Symbol.iterator](), _step35; !(_iteratorNormalCompletion35 = (_step35 = _iterator35.next()).done); _iteratorNormalCompletion35 = true) {
-          var ext = _step35.value;
-          var _iteratorNormalCompletion36 = true;
-          var _didIteratorError36 = false;
-          var _iteratorError36 = undefined;
+        for (var _iterator37 = validItems[Symbol.iterator](), _step37; !(_iteratorNormalCompletion37 = (_step37 = _iterator37.next()).done); _iteratorNormalCompletion37 = true) {
+          var ext = _step37.value;
+          var _iteratorNormalCompletion38 = true;
+          var _didIteratorError38 = false;
+          var _iteratorError38 = undefined;
 
           try {
-            for (var _iterator36 = ext.actions[Symbol.iterator](), _step36; !(_iteratorNormalCompletion36 = (_step36 = _iterator36.next()).done); _iteratorNormalCompletion36 = true) {
-              var action = _step36.value;
+            for (var _iterator38 = ext.actions[Symbol.iterator](), _step38; !(_iteratorNormalCompletion38 = (_step38 = _iterator38.next()).done); _iteratorNormalCompletion38 = true) {
+              var action = _step38.value;
 
               if (_.includes(this.enabledRepeatActionUrls, action.url)) {
                 this.enableRepeatAction(action, ext);
               }
             }
           } catch (err) {
-            _didIteratorError36 = true;
-            _iteratorError36 = err;
+            _didIteratorError38 = true;
+            _iteratorError38 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion36 && _iterator36.return) {
-                _iterator36.return();
+              if (!_iteratorNormalCompletion38 && _iterator38.return) {
+                _iterator38.return();
               }
             } finally {
-              if (_didIteratorError36) {
-                throw _iteratorError36;
+              if (_didIteratorError38) {
+                throw _iteratorError38;
               }
             }
           }
         }
       } catch (err) {
-        _didIteratorError35 = true;
-        _iteratorError35 = err;
+        _didIteratorError37 = true;
+        _iteratorError37 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion35 && _iterator35.return) {
-            _iterator35.return();
+          if (!_iteratorNormalCompletion37 && _iterator37.return) {
+            _iterator37.return();
           }
         } finally {
-          if (_didIteratorError35) {
-            throw _iteratorError35;
+          if (_didIteratorError37) {
+            throw _iteratorError37;
           }
         }
       }
@@ -39173,27 +39244,27 @@ var ExtensionManager = function () {
   }, {
     key: 'actionWithURL',
     value: function actionWithURL(url) {
-      var _iteratorNormalCompletion37 = true;
-      var _didIteratorError37 = false;
-      var _iteratorError37 = undefined;
+      var _iteratorNormalCompletion39 = true;
+      var _didIteratorError39 = false;
+      var _iteratorError39 = undefined;
 
       try {
-        for (var _iterator37 = this.extensions[Symbol.iterator](), _step37; !(_iteratorNormalCompletion37 = (_step37 = _iterator37.next()).done); _iteratorNormalCompletion37 = true) {
-          var extension = _step37.value;
+        for (var _iterator39 = this.extensions[Symbol.iterator](), _step39; !(_iteratorNormalCompletion39 = (_step39 = _iterator39.next()).done); _iteratorNormalCompletion39 = true) {
+          var extension = _step39.value;
 
           return _.find(extension.actions, { url: url });
         }
       } catch (err) {
-        _didIteratorError37 = true;
-        _iteratorError37 = err;
+        _didIteratorError39 = true;
+        _iteratorError39 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion37 && _iterator37.return) {
-            _iterator37.return();
+          if (!_iteratorNormalCompletion39 && _iterator39.return) {
+            _iterator39.return();
           }
         } finally {
-          if (_didIteratorError37) {
-            throw _iteratorError37;
+          if (_didIteratorError39) {
+            throw _iteratorError39;
           }
         }
       }
@@ -39206,13 +39277,13 @@ var ExtensionManager = function () {
   }, {
     key: 'deleteExtension',
     value: function deleteExtension(extension) {
-      var _iteratorNormalCompletion38 = true;
-      var _didIteratorError38 = false;
-      var _iteratorError38 = undefined;
+      var _iteratorNormalCompletion40 = true;
+      var _didIteratorError40 = false;
+      var _iteratorError40 = undefined;
 
       try {
-        for (var _iterator38 = extension.actions[Symbol.iterator](), _step38; !(_iteratorNormalCompletion38 = (_step38 = _iterator38.next()).done); _iteratorNormalCompletion38 = true) {
-          var action = _step38.value;
+        for (var _iterator40 = extension.actions[Symbol.iterator](), _step40; !(_iteratorNormalCompletion40 = (_step40 = _iterator40.next()).done); _iteratorNormalCompletion40 = true) {
+          var action = _step40.value;
 
           if (action.repeat_mode) {
             if (this.isRepeatActionEnabled(action)) {
@@ -39221,16 +39292,16 @@ var ExtensionManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError38 = true;
-        _iteratorError38 = err;
+        _didIteratorError40 = true;
+        _iteratorError40 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion38 && _iterator38.return) {
-            _iterator38.return();
+          if (!_iteratorNormalCompletion40 && _iterator40.return) {
+            _iterator40.return();
           }
         } finally {
-          if (_didIteratorError38) {
-            throw _iteratorError38;
+          if (_didIteratorError40) {
+            throw _iteratorError40;
           }
         }
       }
@@ -39321,13 +39392,13 @@ var ExtensionManager = function () {
   }, {
     key: 'refreshExtensionsFromServer',
     value: function refreshExtensionsFromServer() {
-      var _iteratorNormalCompletion39 = true;
-      var _didIteratorError39 = false;
-      var _iteratorError39 = undefined;
+      var _iteratorNormalCompletion41 = true;
+      var _didIteratorError41 = false;
+      var _iteratorError41 = undefined;
 
       try {
-        for (var _iterator39 = this.enabledRepeatActionUrls[Symbol.iterator](), _step39; !(_iteratorNormalCompletion39 = (_step39 = _iterator39.next()).done); _iteratorNormalCompletion39 = true) {
-          var url = _step39.value;
+        for (var _iterator41 = this.enabledRepeatActionUrls[Symbol.iterator](), _step41; !(_iteratorNormalCompletion41 = (_step41 = _iterator41.next()).done); _iteratorNormalCompletion41 = true) {
+          var url = _step41.value;
 
           var action = this.actionWithURL(url);
           if (action) {
@@ -39335,43 +39406,43 @@ var ExtensionManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError39 = true;
-        _iteratorError39 = err;
+        _didIteratorError41 = true;
+        _iteratorError41 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion39 && _iterator39.return) {
-            _iterator39.return();
+          if (!_iteratorNormalCompletion41 && _iterator41.return) {
+            _iterator41.return();
           }
         } finally {
-          if (_didIteratorError39) {
-            throw _iteratorError39;
+          if (_didIteratorError41) {
+            throw _iteratorError41;
           }
         }
       }
 
-      var _iteratorNormalCompletion40 = true;
-      var _didIteratorError40 = false;
-      var _iteratorError40 = undefined;
+      var _iteratorNormalCompletion42 = true;
+      var _didIteratorError42 = false;
+      var _iteratorError42 = undefined;
 
       try {
-        for (var _iterator40 = this.extensions[Symbol.iterator](), _step40; !(_iteratorNormalCompletion40 = (_step40 = _iterator40.next()).done); _iteratorNormalCompletion40 = true) {
-          var ext = _step40.value;
+        for (var _iterator42 = this.extensions[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
+          var ext = _step42.value;
 
           this.retrieveExtensionFromServer(ext.url, function (extension) {
             extension.setDirty(true);
           });
         }
       } catch (err) {
-        _didIteratorError40 = true;
-        _iteratorError40 = err;
+        _didIteratorError42 = true;
+        _iteratorError42 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion40 && _iterator40.return) {
-            _iterator40.return();
+          if (!_iteratorNormalCompletion42 && _iterator42.return) {
+            _iterator42.return();
           }
         } finally {
-          if (_didIteratorError40) {
-            throw _iteratorError40;
+          if (_didIteratorError42) {
+            throw _iteratorError42;
           }
         }
       }
@@ -39401,28 +39472,28 @@ var ExtensionManager = function () {
               action.error = false;
               var items = response.items || [response.item];
               EncryptionHelper.decryptMultipleItems(items, this.authManager.keys());
-              items = this.modelManager.mapResponseItemsToLocalModels(items);
-              var _iteratorNormalCompletion41 = true;
-              var _didIteratorError41 = false;
-              var _iteratorError41 = undefined;
+              items = this.modelManager.mapResponseItemsToLocalModels(items, ModelManager.MappingSourceRemoteActionRetrieved);
+              var _iteratorNormalCompletion43 = true;
+              var _didIteratorError43 = false;
+              var _iteratorError43 = undefined;
 
               try {
-                for (var _iterator41 = items[Symbol.iterator](), _step41; !(_iteratorNormalCompletion41 = (_step41 = _iterator41.next()).done); _iteratorNormalCompletion41 = true) {
-                  var item = _step41.value;
+                for (var _iterator43 = items[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
+                  var item = _step43.value;
 
                   item.setDirty(true);
                 }
               } catch (err) {
-                _didIteratorError41 = true;
-                _iteratorError41 = err;
+                _didIteratorError43 = true;
+                _iteratorError43 = err;
               } finally {
                 try {
-                  if (!_iteratorNormalCompletion41 && _iterator41.return) {
-                    _iterator41.return();
+                  if (!_iteratorNormalCompletion43 && _iterator43.return) {
+                    _iterator43.return();
                   }
                 } finally {
-                  if (_didIteratorError41) {
-                    throw _iteratorError41;
+                  if (_didIteratorError43) {
+                    throw _iteratorError43;
                   }
                 }
               }
@@ -39769,10 +39840,153 @@ var HttpManager = function () {
 
 angular.module('app.frontend').service('httpManager', HttpManager);
 ;
+var MigrationManager = function () {
+  MigrationManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'componentManager'];
+  function MigrationManager($rootScope, modelManager, syncManager, componentManager) {
+    var _this14 = this;
+
+    _classCallCheck(this, MigrationManager);
+
+    this.$rootScope = $rootScope;
+    this.modelManager = modelManager;
+    this.syncManager = syncManager;
+    this.componentManager = componentManager;
+
+    this.migrators = [];
+
+    this.addEditorToComponentMigrator();
+
+    this.modelManager.addItemSyncObserver("migration-manager", "*", function (allItems, validItems, deletedItems) {
+      var _iteratorNormalCompletion44 = true;
+      var _didIteratorError44 = false;
+      var _iteratorError44 = undefined;
+
+      try {
+        for (var _iterator44 = _this14.migrators[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
+          var migrator = _step44.value;
+
+          var items = allItems.filter(function (item) {
+            return item.content_type == migrator.content_type;
+          });
+          if (items.length > 0) {
+            migrator.handler(items);
+          }
+        }
+      } catch (err) {
+        _didIteratorError44 = true;
+        _iteratorError44 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion44 && _iterator44.return) {
+            _iterator44.return();
+          }
+        } finally {
+          if (_didIteratorError44) {
+            throw _iteratorError44;
+          }
+        }
+      }
+    });
+  }
+
+  /*
+  Migrate SN|Editor to SN|Component. Editors are deprecated as of November 2017. Editors using old APIs must
+  convert to using the new component API.
+  */
+
+  _createClass(MigrationManager, [{
+    key: 'addEditorToComponentMigrator',
+    value: function addEditorToComponentMigrator() {
+      var _this15 = this;
+
+      this.migrators.push({
+        content_type: "SN|Editor",
+
+        handler: function handler(editors) {
+          // Convert editors to components
+          var _iteratorNormalCompletion45 = true;
+          var _didIteratorError45 = false;
+          var _iteratorError45 = undefined;
+
+          try {
+            for (var _iterator45 = editors[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
+              var editor = _step45.value;
+
+              // If there's already a component for this url, then skip this editor
+              if (editor.url && !_this15.componentManager.componentForUrl(editor.url)) {
+                var component = _this15.modelManager.createItem({
+                  content_type: "SN|Component",
+                  url: editor.url,
+                  name: editor.name,
+                  area: "editor-editor"
+                });
+                component.setAppDataItem("data", editor.data);
+                component.setDirty(true);
+                _this15.modelManager.addItem(component);
+              }
+            }
+          } catch (err) {
+            _didIteratorError45 = true;
+            _iteratorError45 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion45 && _iterator45.return) {
+                _iterator45.return();
+              }
+            } finally {
+              if (_didIteratorError45) {
+                throw _iteratorError45;
+              }
+            }
+          }
+
+          var _iteratorNormalCompletion46 = true;
+          var _didIteratorError46 = false;
+          var _iteratorError46 = undefined;
+
+          try {
+            for (var _iterator46 = editors[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
+              var _editor = _step46.value;
+
+              _this15.modelManager.setItemToBeDeleted(_editor);
+            }
+          } catch (err) {
+            _didIteratorError46 = true;
+            _iteratorError46 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion46 && _iterator46.return) {
+                _iterator46.return();
+              }
+            } finally {
+              if (_didIteratorError46) {
+                throw _iteratorError46;
+              }
+            }
+          }
+
+          _this15.syncManager.sync();
+        }
+      });
+    }
+  }]);
+
+  return MigrationManager;
+}();
+
+angular.module('app.frontend').service('migrationManager', MigrationManager);
+;
 var ModelManager = function () {
   ModelManager.$inject = ['storageManager'];
   function ModelManager(storageManager) {
     _classCallCheck(this, ModelManager);
+
+    ModelManager.MappingSourceRemoteRetrieved = "MappingSourceRemoteRetrieved";
+    ModelManager.MappingSourceRemoteSaved = "MappingSourceRemoteSaved";
+    ModelManager.MappingSourceLocalRetrieved = "MappingSourceLocalRetrieved";
+    ModelManager.MappingSourceComponentRetrieved = "MappingSourceComponentRetrieved";
+    ModelManager.MappingSourceRemoteActionRetrieved = "MappingSourceRemoteActionRetrieved"; /* aciton-based Extensions like note history */
+    ModelManager.MappingSourceFileImport = "MappingSourceFileImport";
 
     this.storageManager = storageManager;
     this.notes = [];
@@ -39796,7 +40010,7 @@ var ModelManager = function () {
   }, {
     key: 'alternateUUIDForItem',
     value: function alternateUUIDForItem(item, callback, removeOriginal) {
-      var _this14 = this;
+      var _this16 = this;
 
       // we need to clone this item and give it a new uuid, then delete item with old uuid from db (you can't mofidy uuid's in our indexeddb setup)
       var newItem = this.createItem(item);
@@ -39809,7 +40023,7 @@ var ModelManager = function () {
       this.informModelsOfUUIDChangeForItem(newItem, item.uuid, newItem.uuid);
 
       var block = function block() {
-        _this14.addItem(newItem);
+        _this16.addItem(newItem);
         newItem.setDirty(true);
         newItem.markAllReferencesDirty();
         callback();
@@ -39830,27 +40044,27 @@ var ModelManager = function () {
       // for example, editors have a one way relationship with notes. When a note changes its UUID, it has no way to inform the editor
       // to update its relationships
 
-      var _iteratorNormalCompletion42 = true;
-      var _didIteratorError42 = false;
-      var _iteratorError42 = undefined;
+      var _iteratorNormalCompletion47 = true;
+      var _didIteratorError47 = false;
+      var _iteratorError47 = undefined;
 
       try {
-        for (var _iterator42 = this.items[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
-          var model = _step42.value;
+        for (var _iterator47 = this.items[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
+          var model = _step47.value;
 
           model.potentialItemOfInterestHasChangedItsUUID(newItem, oldUUID, newUUID);
         }
       } catch (err) {
-        _didIteratorError42 = true;
-        _iteratorError42 = err;
+        _didIteratorError47 = true;
+        _iteratorError47 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion42 && _iterator42.return) {
-            _iterator42.return();
+          if (!_iteratorNormalCompletion47 && _iterator47.return) {
+            _iterator47.return();
           }
         } finally {
-          if (_didIteratorError42) {
-            throw _iteratorError42;
+          if (_didIteratorError47) {
+            throw _iteratorError47;
           }
         }
       }
@@ -39886,24 +40100,24 @@ var ModelManager = function () {
     }
   }, {
     key: 'mapResponseItemsToLocalModels',
-    value: function mapResponseItemsToLocalModels(items) {
-      return this.mapResponseItemsToLocalModelsOmittingFields(items, null);
+    value: function mapResponseItemsToLocalModels(items, source) {
+      return this.mapResponseItemsToLocalModelsOmittingFields(items, null, source);
     }
   }, {
     key: 'mapResponseItemsToLocalModelsOmittingFields',
-    value: function mapResponseItemsToLocalModelsOmittingFields(items, omitFields) {
+    value: function mapResponseItemsToLocalModelsOmittingFields(items, omitFields, source) {
       var models = [],
           processedObjects = [],
           modelsToNotifyObserversOf = [];
 
       // first loop should add and process items
-      var _iteratorNormalCompletion43 = true;
-      var _didIteratorError43 = false;
-      var _iteratorError43 = undefined;
+      var _iteratorNormalCompletion48 = true;
+      var _didIteratorError48 = false;
+      var _iteratorError48 = undefined;
 
       try {
-        for (var _iterator43 = items[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
-          var json_obj = _step43.value;
+        for (var _iterator48 = items[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
+          var json_obj = _step48.value;
 
           if ((!json_obj.content_type || !json_obj.content) && !json_obj.deleted && !json_obj.errorDecrypting) {
             // An item that is not deleted should never have empty content
@@ -39945,16 +40159,16 @@ var ModelManager = function () {
 
         // second loop should process references
       } catch (err) {
-        _didIteratorError43 = true;
-        _iteratorError43 = err;
+        _didIteratorError48 = true;
+        _iteratorError48 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion43 && _iterator43.return) {
-            _iterator43.return();
+          if (!_iteratorNormalCompletion48 && _iterator48.return) {
+            _iterator48.return();
           }
         } finally {
-          if (_didIteratorError43) {
-            throw _iteratorError43;
+          if (_didIteratorError48) {
+            throw _iteratorError48;
           }
         }
       }
@@ -39966,33 +40180,33 @@ var ModelManager = function () {
         }
       }
 
-      this.notifySyncObserversOfModels(modelsToNotifyObserversOf);
+      this.notifySyncObserversOfModels(modelsToNotifyObserversOf, source);
 
       return models;
     }
   }, {
     key: 'notifySyncObserversOfModels',
-    value: function notifySyncObserversOfModels(models) {
-      var _iteratorNormalCompletion44 = true;
-      var _didIteratorError44 = false;
-      var _iteratorError44 = undefined;
+    value: function notifySyncObserversOfModels(models, source) {
+      var _iteratorNormalCompletion49 = true;
+      var _didIteratorError49 = false;
+      var _iteratorError49 = undefined;
 
       try {
-        for (var _iterator44 = this.itemSyncObservers[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
-          var observer = _step44.value;
+        for (var _iterator49 = this.itemSyncObservers[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
+          var observer = _step49.value;
 
           var allRelevantItems = models.filter(function (item) {
             return item.content_type == observer.type || observer.type == "*";
           });
           var validItems = [],
               deletedItems = [];
-          var _iteratorNormalCompletion45 = true;
-          var _didIteratorError45 = false;
-          var _iteratorError45 = undefined;
+          var _iteratorNormalCompletion50 = true;
+          var _didIteratorError50 = false;
+          var _iteratorError50 = undefined;
 
           try {
-            for (var _iterator45 = allRelevantItems[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
-              var item = _step45.value;
+            for (var _iterator50 = allRelevantItems[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
+              var item = _step50.value;
 
               if (item.deleted) {
                 deletedItems.push(item);
@@ -40001,35 +40215,35 @@ var ModelManager = function () {
               }
             }
           } catch (err) {
-            _didIteratorError45 = true;
-            _iteratorError45 = err;
+            _didIteratorError50 = true;
+            _iteratorError50 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion45 && _iterator45.return) {
-                _iterator45.return();
+              if (!_iteratorNormalCompletion50 && _iterator50.return) {
+                _iterator50.return();
               }
             } finally {
-              if (_didIteratorError45) {
-                throw _iteratorError45;
+              if (_didIteratorError50) {
+                throw _iteratorError50;
               }
             }
           }
 
           if (allRelevantItems.length > 0) {
-            observer.callback(allRelevantItems, validItems, deletedItems);
+            observer.callback(allRelevantItems, validItems, deletedItems, source);
           }
         }
       } catch (err) {
-        _didIteratorError44 = true;
-        _iteratorError44 = err;
+        _didIteratorError49 = true;
+        _iteratorError49 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion44 && _iterator44.return) {
-            _iterator44.return();
+          if (!_iteratorNormalCompletion49 && _iterator49.return) {
+            _iterator49.return();
           }
         } finally {
-          if (_didIteratorError44) {
-            throw _iteratorError44;
+          if (_didIteratorError49) {
+            throw _iteratorError49;
           }
         }
       }
@@ -40037,13 +40251,13 @@ var ModelManager = function () {
   }, {
     key: 'notifyItemChangeObserversOfModels',
     value: function notifyItemChangeObserversOfModels(models) {
-      var _iteratorNormalCompletion46 = true;
-      var _didIteratorError46 = false;
-      var _iteratorError46 = undefined;
+      var _iteratorNormalCompletion51 = true;
+      var _didIteratorError51 = false;
+      var _iteratorError51 = undefined;
 
       try {
-        for (var _iterator46 = this.itemChangeObservers[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
-          var observer = _step46.value;
+        for (var _iterator51 = this.itemChangeObservers[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
+          var observer = _step51.value;
 
           var relevantItems = models.filter(function (item) {
             return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
@@ -40054,16 +40268,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError46 = true;
-        _iteratorError46 = err;
+        _didIteratorError51 = true;
+        _iteratorError51 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion46 && _iterator46.return) {
-            _iterator46.return();
+          if (!_iteratorNormalCompletion51 && _iterator51.return) {
+            _iterator51.return();
           }
         } finally {
-          if (_didIteratorError46) {
-            throw _iteratorError46;
+          if (_didIteratorError51) {
+            throw _iteratorError51;
           }
         }
       }
@@ -40155,13 +40369,13 @@ var ModelManager = function () {
         return;
       }
 
-      var _iteratorNormalCompletion47 = true;
-      var _didIteratorError47 = false;
-      var _iteratorError47 = undefined;
+      var _iteratorNormalCompletion52 = true;
+      var _didIteratorError52 = false;
+      var _iteratorError52 = undefined;
 
       try {
-        for (var _iterator47 = contentObject.references[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
-          var reference = _step47.value;
+        for (var _iterator52 = contentObject.references[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
+          var reference = _step52.value;
 
           var referencedItem = this.findItem(reference.uuid);
           if (referencedItem) {
@@ -40172,16 +40386,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError47 = true;
-        _iteratorError47 = err;
+        _didIteratorError52 = true;
+        _iteratorError52 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion47 && _iterator47.return) {
-            _iterator47.return();
+          if (!_iteratorNormalCompletion52 && _iterator52.return) {
+            _iterator52.return();
           }
         } finally {
-          if (_didIteratorError47) {
-            throw _iteratorError47;
+          if (_didIteratorError52) {
+            throw _iteratorError52;
           }
         }
       }
@@ -40209,34 +40423,35 @@ var ModelManager = function () {
   }, {
     key: 'getDirtyItems',
     value: function getDirtyItems() {
+      // Items that have errorDecrypting should never be synced back up to the server
       return this.items.filter(function (item) {
-        return item.dirty == true && !item.dummy;
+        return item.dirty == true && !item.dummy && !item.errorDecrypting;
       });
     }
   }, {
     key: 'clearDirtyItems',
     value: function clearDirtyItems(items) {
-      var _iteratorNormalCompletion48 = true;
-      var _didIteratorError48 = false;
-      var _iteratorError48 = undefined;
+      var _iteratorNormalCompletion53 = true;
+      var _didIteratorError53 = false;
+      var _iteratorError53 = undefined;
 
       try {
-        for (var _iterator48 = items[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
-          var item = _step48.value;
+        for (var _iterator53 = items[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
+          var item = _step53.value;
 
           item.setDirty(false);
         }
       } catch (err) {
-        _didIteratorError48 = true;
-        _iteratorError48 = err;
+        _didIteratorError53 = true;
+        _iteratorError53 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion48 && _iterator48.return) {
-            _iterator48.return();
+          if (!_iteratorNormalCompletion53 && _iterator53.return) {
+            _iterator53.return();
           }
         } finally {
-          if (_didIteratorError48) {
-            throw _iteratorError48;
+          if (_didIteratorError53) {
+            throw _iteratorError53;
           }
         }
       }
@@ -40265,27 +40480,27 @@ var ModelManager = function () {
         return _.includes(this.acceptableContentTypes, item.content_type);
       }.bind(this));
 
-      var _iteratorNormalCompletion49 = true;
-      var _didIteratorError49 = false;
-      var _iteratorError49 = undefined;
+      var _iteratorNormalCompletion54 = true;
+      var _didIteratorError54 = false;
+      var _iteratorError54 = undefined;
 
       try {
-        for (var _iterator49 = relevantItems[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
-          var item = _step49.value;
+        for (var _iterator54 = relevantItems[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
+          var item = _step54.value;
 
           item.setDirty(true);
         }
       } catch (err) {
-        _didIteratorError49 = true;
-        _iteratorError49 = err;
+        _didIteratorError54 = true;
+        _iteratorError54 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion49 && _iterator49.return) {
-            _iterator49.return();
+          if (!_iteratorNormalCompletion54 && _iterator54.return) {
+            _iterator54.return();
           }
         } finally {
-          if (_didIteratorError49) {
-            throw _iteratorError49;
+          if (_didIteratorError54) {
+            throw _iteratorError54;
           }
         }
       }
@@ -40637,27 +40852,27 @@ var StorageManager = function () {
       EncryptionHelper.decryptItem(stored, this.encryptedStorageKeys);
       var encryptedStorage = new EncryptedStorage(stored);
 
-      var _iteratorNormalCompletion50 = true;
-      var _didIteratorError50 = false;
-      var _iteratorError50 = undefined;
+      var _iteratorNormalCompletion55 = true;
+      var _didIteratorError55 = false;
+      var _iteratorError55 = undefined;
 
       try {
-        for (var _iterator50 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
-          var key = _step50.value;
+        for (var _iterator55 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step55; !(_iteratorNormalCompletion55 = (_step55 = _iterator55.next()).done); _iteratorNormalCompletion55 = true) {
+          var key = _step55.value;
 
           this.setItem(key, encryptedStorage.storage[key]);
         }
       } catch (err) {
-        _didIteratorError50 = true;
-        _iteratorError50 = err;
+        _didIteratorError55 = true;
+        _iteratorError55 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion50 && _iterator50.return) {
-            _iterator50.return();
+          if (!_iteratorNormalCompletion55 && _iterator55.return) {
+            _iterator55.return();
           }
         } finally {
-          if (_didIteratorError50) {
-            throw _iteratorError50;
+          if (_didIteratorError55) {
+            throw _iteratorError55;
           }
         }
       }
@@ -40788,7 +41003,7 @@ var SyncManager = function () {
     key: 'loadLocalItems',
     value: function loadLocalItems(callback) {
       var params = this.storageManager.getAllModels(function (items) {
-        var items = this.handleItemsResponse(items, null);
+        var items = this.handleItemsResponse(items, null, ModelManager.MappingSourceLocalRetrieved);
         Item.sortItemsByDate(items);
         callback(items);
       }.bind(this));
@@ -40798,29 +41013,29 @@ var SyncManager = function () {
     value: function syncOffline(items, callback) {
       this.writeItemsToLocalStorage(items, true, function (responseItems) {
         // delete anything needing to be deleted
-        var _iteratorNormalCompletion51 = true;
-        var _didIteratorError51 = false;
-        var _iteratorError51 = undefined;
+        var _iteratorNormalCompletion56 = true;
+        var _didIteratorError56 = false;
+        var _iteratorError56 = undefined;
 
         try {
-          for (var _iterator51 = items[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
-            var item = _step51.value;
+          for (var _iterator56 = items[Symbol.iterator](), _step56; !(_iteratorNormalCompletion56 = (_step56 = _iterator56.next()).done); _iteratorNormalCompletion56 = true) {
+            var item = _step56.value;
 
             if (item.deleted) {
               this.modelManager.removeItemLocally(item);
             }
           }
         } catch (err) {
-          _didIteratorError51 = true;
-          _iteratorError51 = err;
+          _didIteratorError56 = true;
+          _iteratorError56 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion51 && _iterator51.return) {
-              _iterator51.return();
+            if (!_iteratorNormalCompletion56 && _iterator56.return) {
+              _iterator56.return();
             }
           } finally {
-            if (_didIteratorError51) {
-              throw _iteratorError51;
+            if (_didIteratorError56) {
+              throw _iteratorError56;
             }
           }
         }
@@ -40840,39 +41055,39 @@ var SyncManager = function () {
   }, {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback, alternateUUIDs) {
-      var _this15 = this;
+      var _this17 = this;
 
       // use a copy, as alternating uuid will affect array
       var originalItems = this.modelManager.allItems.slice();
 
       var block = function block() {
-        var allItems = _this15.modelManager.allItems;
-        var _iteratorNormalCompletion52 = true;
-        var _didIteratorError52 = false;
-        var _iteratorError52 = undefined;
+        var allItems = _this17.modelManager.allItems;
+        var _iteratorNormalCompletion57 = true;
+        var _didIteratorError57 = false;
+        var _iteratorError57 = undefined;
 
         try {
-          for (var _iterator52 = allItems[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
-            var item = _step52.value;
+          for (var _iterator57 = allItems[Symbol.iterator](), _step57; !(_iteratorNormalCompletion57 = (_step57 = _iterator57.next()).done); _iteratorNormalCompletion57 = true) {
+            var item = _step57.value;
 
             item.setDirty(true);
           }
         } catch (err) {
-          _didIteratorError52 = true;
-          _iteratorError52 = err;
+          _didIteratorError57 = true;
+          _iteratorError57 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion52 && _iterator52.return) {
-              _iterator52.return();
+            if (!_iteratorNormalCompletion57 && _iterator57.return) {
+              _iterator57.return();
             }
           } finally {
-            if (_didIteratorError52) {
-              throw _iteratorError52;
+            if (_didIteratorError57) {
+              throw _iteratorError57;
             }
           }
         }
 
-        _this15.writeItemsToLocalStorage(allItems, false, callback);
+        _this17.writeItemsToLocalStorage(allItems, false, callback);
       };
 
       if (alternateUUIDs) {
@@ -40895,7 +41110,7 @@ var SyncManager = function () {
           // but for some reason retained their data (This happens in Firefox when using private mode).
           // In this case, we should pass false so that both copies are kept. However, it's difficult to
           // detect when the app has entered this state. We will just use true to remove original items for now.
-          _this15.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
+          _this17.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
         };
 
         alternateNextItem();
@@ -40916,27 +41131,27 @@ var SyncManager = function () {
         allCallbacks.push(currentCallback);
       }
       if (allCallbacks.length) {
-        var _iteratorNormalCompletion53 = true;
-        var _didIteratorError53 = false;
-        var _iteratorError53 = undefined;
+        var _iteratorNormalCompletion58 = true;
+        var _didIteratorError58 = false;
+        var _iteratorError58 = undefined;
 
         try {
-          for (var _iterator53 = allCallbacks[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
-            var eachCallback = _step53.value;
+          for (var _iterator58 = allCallbacks[Symbol.iterator](), _step58; !(_iteratorNormalCompletion58 = (_step58 = _iterator58.next()).done); _iteratorNormalCompletion58 = true) {
+            var eachCallback = _step58.value;
 
             eachCallback(response);
           }
         } catch (err) {
-          _didIteratorError53 = true;
-          _iteratorError53 = err;
+          _didIteratorError58 = true;
+          _iteratorError58 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion53 && _iterator53.return) {
-              _iterator53.return();
+            if (!_iteratorNormalCompletion58 && _iterator58.return) {
+              _iterator58.return();
             }
           } finally {
-            if (_didIteratorError53) {
-              throw _iteratorError53;
+            if (_didIteratorError58) {
+              throw _iteratorError58;
             }
           }
         }
@@ -41044,7 +41259,7 @@ var SyncManager = function () {
         this.$rootScope.$broadcast("sync:updated_token", this.syncToken);
 
         // Map retrieved items to local data
-        var retrieved = this.handleItemsResponse(response.retrieved_items, null);
+        var retrieved = this.handleItemsResponse(response.retrieved_items, null, ModelManager.MappingSourceRemoteRetrieved);
 
         // Append items to master list of retrieved items for this ongoing sync operation
         this.allRetreivedItems = this.allRetreivedItems.concat(retrieved);
@@ -41055,7 +41270,7 @@ var SyncManager = function () {
         var omitFields = ["content", "auth_hash"];
 
         // Map saved items to local data
-        var saved = this.handleItemsResponse(response.saved_items, omitFields);
+        var saved = this.handleItemsResponse(response.saved_items, omitFields, ModelManager.MappingSourceRemoteSaved);
 
         // Create copies of items or alternate their uuids if neccessary
         var unsaved = response.unsaved;
@@ -41126,10 +41341,10 @@ var SyncManager = function () {
     }
   }, {
     key: 'handleItemsResponse',
-    value: function handleItemsResponse(responseItems, omitFields) {
+    value: function handleItemsResponse(responseItems, omitFields, source) {
       var keys = this.authManager.keys() || this.passcodeManager.keys();
       EncryptionHelper.decryptMultipleItems(responseItems, keys);
-      var items = this.modelManager.mapResponseItemsToLocalModelsOmittingFields(responseItems, omitFields);
+      var items = this.modelManager.mapResponseItemsToLocalModelsOmittingFields(responseItems, omitFields, source);
       return items;
     }
   }, {
@@ -41637,25 +41852,25 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
   $templateCache.put('frontend/directives/editor-menu.html',
     "<ul class='dropdown-menu sectioned-menu'>\n" +
     "  <div class='header'>\n" +
-    "    <div class='title'>System Editors</div>\n" +
+    "    <div class='title'>System Editor</div>\n" +
     "  </div>\n" +
     "  <ul>\n" +
-    "    <li class='menu-item' ng-click='selectEditor($event, editor)' ng-repeat='editor in editorManager.systemEditors'>\n" +
-    "      <span class='pull-left mr-10' ng-if='selectedEditor === editor'>✓</span>\n" +
-    "      <label class='menu-item-title pull-left'>{{editor.name}}</label>\n" +
+    "    <li class='menu-item' ng-click='selectEditor($event, null)'>\n" +
+    "      <span class='pull-left mr-10' ng-if='selectedEditor == null'>✓</span>\n" +
+    "      <label class='menu-item-title pull-left'>Plain</label>\n" +
     "    </li>\n" +
     "  </ul>\n" +
-    "  <div ng-if='editorManager.externalEditors.length &gt; 0'>\n" +
+    "  <div ng-if='editors.length &gt; 0'>\n" +
     "    <div class='header'>\n" +
     "      <div class='title'>External Editors</div>\n" +
     "      <div class='subtitle'>Can access your current note decrypted.</div>\n" +
     "    </div>\n" +
     "    <ul>\n" +
-    "      <li class='menu-item' ng-click='selectEditor($event, editor)' ng-repeat='editor in editorManager.externalEditors'>\n" +
+    "      <li class='menu-item' ng-click='selectEditor($event, editor)' ng-repeat='editor in editors'>\n" +
     "        <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
     "        <label class='menu-item-title'>\n" +
+    "          <span class='inline tinted mr-10' ng-if='selectedEditor === editor'>✓</span>\n" +
     "          {{editor.name}}\n" +
-    "          <span class='inline tinted' ng-if='selectedEditor === editor' style='margin-left: 8px;'>✓</span>\n" +
     "        </label>\n" +
     "      </li>\n" +
     "    </ul>\n" +
@@ -41672,7 +41887,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        <h1 class='tinted pull-left'>Extensions</h1>\n" +
     "        <a class='block pull-right dashboard-link' href='https://dashboard.standardnotes.org' target='_blank'>Open Dashboard</a>\n" +
     "      </div>\n" +
-    "      <div class='clear' ng-if='!extensionManager.extensions.length &amp;&amp; !themeManager.themes.length &amp;&amp; !editorManager.externalEditors.length'>\n" +
+    "      <div class='clear' ng-if='!extensionManager.extensions.length &amp;&amp; !themeManager.themes.length &amp;&amp; !componentManager.components.length'>\n" +
     "        <p>Customize your experience with editors, themes, and actions.</p>\n" +
     "        <div class='tinted-box mt-10'>\n" +
     "          <h3>Available as part of the Extended subscription.</h3>\n" +
@@ -41709,33 +41924,6 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "                  {{theme.url}}\n" +
     "                </p>\n" +
     "              </div>\n" +
-    "            </div>\n" +
-    "          </div>\n" +
-    "        </li>\n" +
-    "      </ul>\n" +
-    "    </div>\n" +
-    "    <div ng-if='editorManager.externalEditors.length &gt; 0'>\n" +
-    "      <div class='header container section-margin'>\n" +
-    "        <h2>Editors</h2>\n" +
-    "        <p style='margin-top: 3px;'>Choose \"Editor\" in the note menu to use an editor for a specific note.</p>\n" +
-    "      </div>\n" +
-    "      <ul>\n" +
-    "        <li ng-click='clickedExtension(editor)' ng-repeat=\"editor in editorManager.externalEditors | orderBy: 'name'\">\n" +
-    "          <div class='container'>\n" +
-    "            <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
-    "            <h3>\n" +
-    "              <input class='bold' mb-autofocus='true' ng-if='editor.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(editor);' ng-model='editor.tempName' should-focus='true'>\n" +
-    "              <span ng-if='!editor.rename'>{{editor.name}}</span>\n" +
-    "            </h3>\n" +
-    "            <div class='mt-5' ng-if='editor.showDetails'>\n" +
-    "              <div class='link-group'>\n" +
-    "                <a ng-click='setDefaultEditor(editor); $event.stopPropagation();' ng-if='!editor.default'>Make Default</a>\n" +
-    "                <a class='tinted' ng-click='removeDefaultEditor(editor); $event.stopPropagation();' ng-if='editor.default'>Remove as Default</a>\n" +
-    "                <a ng-click='renameExtension(editor); $event.stopPropagation();'>Rename</a>\n" +
-    "                <a ng-click='editor.showUrl = !editor.showUrl; $event.stopPropagation();'>Show Link</a>\n" +
-    "                <a class='red' ng-click='deleteEditor(editor); $event.stopPropagation();'>Delete</a>\n" +
-    "              </div>\n" +
-    "              <div class='wrap mt-5 selectable' ng-if='editor.showUrl'>{{editor.url}}</div>\n" +
     "            </div>\n" +
     "          </div>\n" +
     "        </li>\n" +
@@ -41822,8 +42010,14 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "              <input class='bold' mb-autofocus='true' ng-if='component.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(component);' ng-model='component.tempName' should-focus='true'>\n" +
     "              <span ng-if='!component.rename'>{{component.name}}</span>\n" +
     "            </h3>\n" +
-    "            <a ng-click='componentManager.activateComponent(component); $event.stopPropagation();' ng-if='!componentManager.isComponentActive(component)'>Activate</a>\n" +
-    "            <a ng-click='componentManager.deactivateComponent(component); $event.stopPropagation();' ng-if='componentManager.isComponentActive(component)'>Deactivate</a>\n" +
+    "            <div ng-if='component.isEditor()'>\n" +
+    "              <a ng-click='makeEditorDefault(component); $event.stopPropagation();' ng-if='!component.isDefaultEditor()'>Make Default</a>\n" +
+    "              <a ng-click='removeEditorDefault(component); $event.stopPropagation();' ng-if='component.isDefaultEditor()'>Remove Default</a>\n" +
+    "            </div>\n" +
+    "            <div ng-if='!component.isEditor()'>\n" +
+    "              <a ng-click='componentManager.activateComponent(component); $event.stopPropagation();' ng-if='!componentManager.isComponentActive(component)'>Activate</a>\n" +
+    "              <a ng-click='componentManager.deactivateComponent(component); $event.stopPropagation();' ng-if='componentManager.isComponentActive(component)'>Deactivate</a>\n" +
+    "            </div>\n" +
     "            <div class='mt-3' ng-if='component.showDetails'>\n" +
     "              <div class='link-group'>\n" +
     "                <a ng-click='renameExtension(component); $event.stopPropagation();'>Rename</a>\n" +
@@ -41975,14 +42169,14 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "            Toggle Fullscreen\n" +
     "          </label>\n" +
     "        </li>\n" +
-    "        <li ng-if='ctrl.hasDisabledComponents()'>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.restoreDisabledComponents()'>Restore Disabled Components</label>\n" +
+    "        <li ng-if='ctrl.hasDisabledStackComponents()'>\n" +
+    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.restoreDisabledStackComponents()'>Restore Disabled Components</label>\n" +
     "        </li>\n" +
     "      </ul>\n" +
     "    </li>\n" +
     "    <li click-outside='ctrl.showEditorMenu = false;' is-open='ctrl.showEditorMenu' ng-class=\"{'selected' : ctrl.showEditorMenu}\">\n" +
     "      <label ng-click='ctrl.showEditorMenu = !ctrl.showEditorMenu; ctrl.showMenu = false; ctrl.showExtensions = false;'>Editor</label>\n" +
-    "      <editor-menu callback='ctrl.selectedEditor' ng-if='ctrl.showEditorMenu' selected-editor='ctrl.editor'></editor-menu>\n" +
+    "      <editor-menu callback='ctrl.selectedEditor' ng-if='ctrl.showEditorMenu' selected-editor='ctrl.editorComponent'></editor-menu>\n" +
     "    </li>\n" +
     "    <li click-outside='ctrl.showExtensions = false;' is-open='ctrl.showExtensions' ng-class=\"{'selected' : ctrl.showExtensions}\" ng-if='ctrl.hasAvailableExtensions()'>\n" +
     "      <label ng-click='ctrl.showExtensions = !ctrl.showExtensions; ctrl.showMenu = false; ctrl.showEditorMenu = false;'>Actions</label>\n" +
@@ -41990,17 +42184,17 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    </li>\n" +
     "  </ul>\n" +
     "  <div class='editor-content' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.noteReady &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
-    "    <iframe frameBorder='0' id='editor-iframe' ng-if='ctrl.editor &amp;&amp; !ctrl.editor.systemEditor' ng-src='{{ctrl.editor.url | trusted}}' style='width: 100%;'>\n" +
+    "    <iframe data-component-id='{{ctrl.editorComponent.uuid}}' frameBorder='0' id='editor-iframe' ng-if='ctrl.editorComponent &amp;&amp; ctrl.editorComponent.active' ng-src='{{ctrl.editorComponent.url | trusted}}' style='width: 100%;'>\n" +
     "      Loading\n" +
     "    </iframe>\n" +
-    "    <textarea class='editable' dir='auto' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.editor || ctrl.editor.systemEditor' ng-model='ctrl.note.text'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
+    "    <textarea class='editable' dir='auto' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.editorComponent' ng-model='ctrl.note.text'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
     "  </div>\n" +
     "  <section class='section' ng-if='ctrl.note.errorDecrypting'>\n" +
     "    <p class='medium-padding' style='padding-top: 0 !important;'>There was an error decrypting this item. Ensure you are running the latest version of this app, then sign out and sign back in to try again.</p>\n" +
     "  </section>\n" +
     "  <div id='editor-pane-component-stack'>\n" +
     "    <div class='component component-stack-border' id=\"{{'component-' + component.uuid}}\" ng-if='component.active' ng-mouseleave='component.showExit = false' ng-mouseover='component.showExit = true' ng-repeat='component in ctrl.componentStack' ng-show='!component.ignoreEvents'>\n" +
-    "      <div class='exit-button body-text-color' ng-click='ctrl.disableComponent(component)' ng-if='component.showExit'>×</div>\n" +
+    "      <div class='exit-button body-text-color' ng-click='ctrl.disableComponentForCurrentItem(component, true)' ng-if='component.showExit'>×</div>\n" +
     "      <iframe data-component-id='{{component.uuid}}' frameBorder='0' id='note-tags-iframe' ng-src='{{component.url | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-modals'></iframe>\n" +
     "    </div>\n" +
     "  </div>\n" +
@@ -42133,7 +42327,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      </ul>\n" +
     "    </div>\n" +
     "    <div class='scrollable'>\n" +
-    "      <div can-load='true' class='infinite-scroll' infinite-scroll='ctrl.paginate()' threshold='200'>\n" +
+    "      <div can-load='true' class='infinite-scroll' id='notes-scrollable' infinite-scroll='ctrl.paginate()' threshold='200'>\n" +
     "        <div class='note' ng-class=\"{'selected' : ctrl.selectedNote == note}\" ng-click='ctrl.selectNote(note)' ng-repeat='note in (ctrl.sortedNotes = (ctrl.tag.notes | filter: ctrl.filterNotes | sortBy: ctrl.sortBy| limitTo:ctrl.notesToDisplay)) track by note.uuid'>\n" +
     "          <strong class='red medium' ng-if='note.conflict_of'>Conflicted copy</strong>\n" +
     "          <strong class='red medium' ng-if='note.errorDecrypting'>Error decrypting</strong>\n" +

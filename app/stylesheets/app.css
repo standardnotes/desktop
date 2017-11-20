@@ -551,7 +551,8 @@ h2 {
   position: relative;
   width: 100%;
   padding: 5px;
-  background-color: #d8d7d9;
+  background-color: #f1f1f1;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
   height: 25px;
   max-height: 25px;
   z-index: 100;
