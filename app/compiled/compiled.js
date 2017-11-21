@@ -40130,6 +40130,8 @@ var ModelManager = function () {
 
           if (item) {
             item.updateFromJSON(json_obj);
+            // If an item goes through mapping, it can no longer be a dummy.
+            item.dummy = false;
           }
 
           if (this.itemsPendingRemoval.includes(json_obj.uuid)) {

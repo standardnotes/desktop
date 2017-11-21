@@ -1,7 +1,7 @@
 {
   "name": "standard-notes",
   "main": "./app/dist/index.js",
-  "version": "2.0.4",
+  "version": "2.0.41",
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-preset-es2015": "^6.24.1",
@@ -11,12 +11,12 @@
   "build": {
     "appId": "org.standardnotes.standardnotes",
     "files": [
-        "compiled/**/*",
-        "dist/**/*",
-        "stylesheets/**/*",
-        "assets/**/*",
-        "icon/**/*"
-      ],
+      "compiled/**/*",
+      "dist/**/*",
+      "stylesheets/**/*",
+      "assets/**/*",
+      "icon/**/*"
+    ],
     "mac": {
       "category": "public.app-category.productivity"
     },
@@ -31,18 +31,13 @@
   },
   "scripts": {
     "pack": "build --dir",
-
     "release": "npm run build && electron-builder -mwl --x64 --ia32",
-
     "build-linux": "npm run build && electron-builder -l --x64 --ia32",
     "build-beta": "npm run build && electron-builder -mwl --x64 --ia32 --publish=always --em.productName='Standard Notes (Beta)' --em.appId=org.standardnotes.standardnotes.beta",
-
     "dist": "npm run build && electron-builder -mwl --x64 --ia32",
     "dist-win": "npm run build && electron-builder -w --x64 --ia32",
     "dist-mac": "npm run build && electron-builder -m --x64 --ia32",
-
     "postinstall": "electron-builder install-app-deps",
-
     "build": "rimraf app/dist/ && babel ./app --out-dir app/dist/ --ignore ./app/compiled,./app/assets,./app/stylesheets,./app/dist,./node_modules,./.babelrc,./package.json,./npm-debug.log --copy-files",
     "start": "npm run build && electron . --enable-logging --icon _icon/icon.png"
   }
