@@ -33790,24 +33790,38 @@ function isDesktopApplication() {
   };
 
   this.setNote = function (note, oldNote) {
+    var _this3 = this;
+
     this.showExtensions = false;
     this.showMenu = false;
     this.loadTagsString();
 
     var associatedEditor = this.editorForNote(note);
+    if (associatedEditor) {
+      // setting note to not ready will remove the editor from view in a flash,
+      // so we only want to do this if switching between external editors
+      this.noteReady = false;
+    } else {
+      this.noteReady = true;
+    }
+
     if (this.editorComponent && this.editorComponent != associatedEditor) {
       // Deactivate old editor
       componentManager.deactivateComponent(this.editorComponent);
+      this.editorComponent = null;
     }
 
     // Activate new editor if it's different from the one currently activated
     if (associatedEditor && associatedEditor != this.editorComponent) {
-      this.enableComponent(associatedEditor);
+      // switch after timeout, so that note data isnt posted to current editor
+      $timeout(function () {
+        _this3.enableComponent(associatedEditor);
+        _this3.editorComponent = associatedEditor;
+        _this3.noteReady = true;
+      });
+    } else {
+      this.noteReady = true;
     }
-
-    this.editorComponent = associatedEditor;
-
-    this.noteReady = true;
 
     if (note.safeText().length == 0 && note.dummy) {
       this.focusTitle(100);
@@ -35522,20 +35536,20 @@ var Component = function (_Item2) {
   function Component(json_obj) {
     _classCallCheck(this, Component);
 
-    var _this4 = _possibleConstructorReturn(this, (Component.__proto__ || Object.getPrototypeOf(Component)).call(this, json_obj));
+    var _this5 = _possibleConstructorReturn(this, (Component.__proto__ || Object.getPrototypeOf(Component)).call(this, json_obj));
 
-    if (!_this4.componentData) {
-      _this4.componentData = {};
+    if (!_this5.componentData) {
+      _this5.componentData = {};
     }
 
-    if (!_this4.disassociatedItemIds) {
-      _this4.disassociatedItemIds = [];
+    if (!_this5.disassociatedItemIds) {
+      _this5.disassociatedItemIds = [];
     }
 
-    if (!_this4.associatedItemIds) {
-      _this4.associatedItemIds = [];
+    if (!_this5.associatedItemIds) {
+      _this5.associatedItemIds = [];
     }
-    return _this4;
+    return _this5;
   }
 
   _createClass(Component, [{
@@ -35639,15 +35653,15 @@ var Editor = function (_Item3) {
   function Editor(json_obj) {
     _classCallCheck(this, Editor);
 
-    var _this5 = _possibleConstructorReturn(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, json_obj));
+    var _this6 = _possibleConstructorReturn(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, json_obj));
 
-    if (!_this5.notes) {
-      _this5.notes = [];
+    if (!_this6.notes) {
+      _this6.notes = [];
     }
-    if (!_this5.data) {
-      _this5.data = {};
+    if (!_this6.data) {
+      _this6.data = {};
     }
-    return _this5;
+    return _this6;
   }
 
   _createClass(Editor, [{
@@ -35849,23 +35863,23 @@ var Extension = function (_Item4) {
   function Extension(json) {
     _classCallCheck(this, Extension);
 
-    var _this6 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
+    var _this7 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
 
-    if (_this6.encrypted === null || _this6.encrypted === undefined) {
+    if (_this7.encrypted === null || _this7.encrypted === undefined) {
       // Default to encrypted on creation.
-      _this6.encrypted = true;
+      _this7.encrypted = true;
     }
 
     if (json.actions) {
-      _this6.actions = json.actions.map(function (action) {
+      _this7.actions = json.actions.map(function (action) {
         return new Action(action);
       });
     }
 
-    if (!_this6.actions) {
-      _this6.actions = [];
+    if (!_this7.actions) {
+      _this7.actions = [];
     }
-    return _this6;
+    return _this7;
   }
 
   _createClass(Extension, [{
@@ -35940,12 +35954,12 @@ var Note = function (_Item5) {
   function Note(json_obj) {
     _classCallCheck(this, Note);
 
-    var _this7 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
+    var _this8 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
 
-    if (!_this7.tags) {
-      _this7.tags = [];
+    if (!_this8.tags) {
+      _this8.tags = [];
     }
-    return _this7;
+    return _this8;
   }
 
   _createClass(Note, [{
@@ -36104,12 +36118,12 @@ var Tag = function (_Item6) {
   function Tag(json_obj) {
     _classCallCheck(this, Tag);
 
-    var _this8 = _possibleConstructorReturn(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
+    var _this9 = _possibleConstructorReturn(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
 
-    if (!_this8.notes) {
-      _this8.notes = [];
+    if (!_this9.notes) {
+      _this9.notes = [];
     }
-    return _this8;
+    return _this9;
   }
 
   _createClass(Tag, [{
@@ -36703,7 +36717,7 @@ var ComponentManager = function () {
     }.bind(this), false);
 
     this.modelManager.addItemSyncObserver("component-manager", "*", function (allItems, validItems, deletedItems, source) {
-      var _this11 = this;
+      var _this12 = this;
 
       /* If the source of these new or updated items is from a Component itself saving items, we don't need to notify
         components again of the same item. Regarding notifying other components than the issuing component, other mapping sources
@@ -36756,9 +36770,9 @@ var ComponentManager = function () {
         }];
 
 
-        _this11.runWithPermissions(observer.component, requiredPermissions, observer.originalMessage.permissions, function () {
+        _this12.runWithPermissions(observer.component, requiredPermissions, observer.originalMessage.permissions, function () {
           this.sendItemsInReply(observer.component, relevantItems, observer.originalMessage);
-        }.bind(_this11));
+        }.bind(_this12));
       };
 
       var _iteratorNormalCompletion16 = true;
@@ -36793,7 +36807,7 @@ var ComponentManager = function () {
       }];
 
       var _loop2 = function _loop2(observer) {
-        _this11.runWithPermissions(observer.component, requiredContextPermissions, observer.originalMessage.permissions, function () {
+        _this12.runWithPermissions(observer.component, requiredContextPermissions, observer.originalMessage.permissions, function () {
           var _iteratorNormalCompletion18 = true;
           var _didIteratorError18 = false;
           var _iteratorError18 = undefined;
@@ -36827,7 +36841,7 @@ var ComponentManager = function () {
               }
             }
           }
-        }.bind(_this11));
+        }.bind(_this12));
       };
 
       var _iteratorNormalCompletion17 = true;
@@ -37019,7 +37033,7 @@ var ComponentManager = function () {
   }, {
     key: 'handleMessage',
     value: function handleMessage(component, message) {
-      var _this12 = this;
+      var _this13 = this;
 
       if (!component) {
         if (this.loggingEnabled) {
@@ -37142,13 +37156,13 @@ var ComponentManager = function () {
           // Allow handlers to be notified when a save begins and ends, to update the UI
           var saveMessage = Object.assign({}, message);
           saveMessage.action = response && response.error ? "save-error" : "save-success";
-          _this12.handleMessage(component, saveMessage);
+          _this13.handleMessage(component, saveMessage);
         });
       }
 
       var _loop3 = function _loop3(handler) {
         if (handler.areas.includes(component.area)) {
-          _this12.timeout(function () {
+          _this13.timeout(function () {
             handler.actionHandler(component, message.action, message.data);
           });
         }
@@ -37905,7 +37919,7 @@ angular.module('app.frontend').service('dbManager', DBManager);
 var DesktopManager = function () {
   DesktopManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'passcodeManager'];
   function DesktopManager($rootScope, modelManager, authManager, passcodeManager) {
-    var _this13 = this;
+    var _this14 = this;
 
     _classCallCheck(this, DesktopManager);
 
@@ -37915,15 +37929,15 @@ var DesktopManager = function () {
     this.$rootScope = $rootScope;
 
     $rootScope.$on("initial-data-loaded", function () {
-      _this13.dataLoaded = true;
-      if (_this13.dataLoadHandler) {
-        _this13.dataLoadHandler();
+      _this14.dataLoaded = true;
+      if (_this14.dataLoadHandler) {
+        _this14.dataLoadHandler();
       }
     });
 
     $rootScope.$on("major-data-change", function () {
-      if (_this13.majorDataChangeHandler) {
-        _this13.majorDataChangeHandler();
+      if (_this14.majorDataChangeHandler) {
+        _this14.majorDataChangeHandler();
       }
     });
   }
@@ -39843,7 +39857,7 @@ angular.module('app.frontend').service('httpManager', HttpManager);
 var MigrationManager = function () {
   MigrationManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'componentManager'];
   function MigrationManager($rootScope, modelManager, syncManager, componentManager) {
-    var _this14 = this;
+    var _this15 = this;
 
     _classCallCheck(this, MigrationManager);
 
@@ -39862,7 +39876,7 @@ var MigrationManager = function () {
       var _iteratorError44 = undefined;
 
       try {
-        for (var _iterator44 = _this14.migrators[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
+        for (var _iterator44 = _this15.migrators[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
           var migrator = _step44.value;
 
           var items = allItems.filter(function (item) {
@@ -39897,7 +39911,7 @@ var MigrationManager = function () {
   _createClass(MigrationManager, [{
     key: 'addEditorToComponentMigrator',
     value: function addEditorToComponentMigrator() {
-      var _this15 = this;
+      var _this16 = this;
 
       this.migrators.push({
         content_type: "SN|Editor",
@@ -39913,8 +39927,8 @@ var MigrationManager = function () {
               var editor = _step45.value;
 
               // If there's already a component for this url, then skip this editor
-              if (editor.url && !_this15.componentManager.componentForUrl(editor.url)) {
-                var component = _this15.modelManager.createItem({
+              if (editor.url && !_this16.componentManager.componentForUrl(editor.url)) {
+                var component = _this16.modelManager.createItem({
                   content_type: "SN|Component",
                   url: editor.url,
                   name: editor.name,
@@ -39922,7 +39936,7 @@ var MigrationManager = function () {
                 });
                 component.setAppDataItem("data", editor.data);
                 component.setDirty(true);
-                _this15.modelManager.addItem(component);
+                _this16.modelManager.addItem(component);
               }
             }
           } catch (err) {
@@ -39948,7 +39962,7 @@ var MigrationManager = function () {
             for (var _iterator46 = editors[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
               var _editor = _step46.value;
 
-              _this15.modelManager.setItemToBeDeleted(_editor);
+              _this16.modelManager.setItemToBeDeleted(_editor);
             }
           } catch (err) {
             _didIteratorError46 = true;
@@ -39965,7 +39979,7 @@ var MigrationManager = function () {
             }
           }
 
-          _this15.syncManager.sync();
+          _this16.syncManager.sync();
         }
       });
     }
@@ -40010,7 +40024,7 @@ var ModelManager = function () {
   }, {
     key: 'alternateUUIDForItem',
     value: function alternateUUIDForItem(item, callback, removeOriginal) {
-      var _this16 = this;
+      var _this17 = this;
 
       // we need to clone this item and give it a new uuid, then delete item with old uuid from db (you can't mofidy uuid's in our indexeddb setup)
       var newItem = this.createItem(item);
@@ -40023,7 +40037,7 @@ var ModelManager = function () {
       this.informModelsOfUUIDChangeForItem(newItem, item.uuid, newItem.uuid);
 
       var block = function block() {
-        _this16.addItem(newItem);
+        _this17.addItem(newItem);
         newItem.setDirty(true);
         newItem.markAllReferencesDirty();
         callback();
@@ -41057,13 +41071,13 @@ var SyncManager = function () {
   }, {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback, alternateUUIDs) {
-      var _this17 = this;
+      var _this18 = this;
 
       // use a copy, as alternating uuid will affect array
       var originalItems = this.modelManager.allItems.slice();
 
       var block = function block() {
-        var allItems = _this17.modelManager.allItems;
+        var allItems = _this18.modelManager.allItems;
         var _iteratorNormalCompletion57 = true;
         var _didIteratorError57 = false;
         var _iteratorError57 = undefined;
@@ -41089,7 +41103,7 @@ var SyncManager = function () {
           }
         }
 
-        _this17.writeItemsToLocalStorage(allItems, false, callback);
+        _this18.writeItemsToLocalStorage(allItems, false, callback);
       };
 
       if (alternateUUIDs) {
@@ -41112,7 +41126,7 @@ var SyncManager = function () {
           // but for some reason retained their data (This happens in Firefox when using private mode).
           // In this case, we should pass false so that both copies are kept. However, it's difficult to
           // detect when the app has entered this state. We will just use true to remove original items for now.
-          _this17.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
+          _this18.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
         };
 
         alternateNextItem();
