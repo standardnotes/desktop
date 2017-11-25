@@ -1,6 +1,6 @@
 @charset "UTF-8";
 .selectable {
-  user-select: all;
+  user-select: text !important;
 }
 
 .clear {
@@ -722,6 +722,7 @@ a.disabled {
   max-width: 180px;
   min-width: 100px;
   width: 180px;
+  user-select: none;
 }
 .tags #tags-title-bar {
   color: black;
@@ -819,6 +820,7 @@ a.disabled {
   flex: 1 20%;
   max-width: 350px;
   min-width: 170px;
+  user-select: none;
 }
 .notes #notes-title-bar {
   color: rgba(0, 0, 0, 0.4);
@@ -1182,6 +1184,7 @@ ul.section-menu-bar {
   padding-top: 0px;
   padding-left: 6px;
   padding-right: 21px;
+  user-select: none;
   background-color: #f1f1f1;
   color: black;
   height: 28px;

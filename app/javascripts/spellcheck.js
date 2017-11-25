@@ -1,4 +1,5 @@
-// Original Source: https://github.com/WhisperSystems/Signal-Desktop/blob/development/js/spell_check.js
+// Original Source:
+// https://github.com/WhisperSystems/Signal-Desktop/blob/development/js/spell_check.js
 
 (function () {
   var electron = require('electron');
@@ -118,6 +119,7 @@
   window.addEventListener('contextmenu', function(e) {
     // Only show the context menu in text editors.
     if (!e.target.closest('textarea, input, [contenteditable="true"]')) {
+      console.log("Not text area, returning");
       return;
     }
 
