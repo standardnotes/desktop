@@ -6,7 +6,10 @@
     "babel-cli": "^6.26.0",
     "babel-preset-es2015": "^6.24.1",
     "electron": "1.7.9",
-    "electron-builder": "^19.45.0"
+    "electron-builder": "^19.45.0",
+    "electron-rebuild": "^1.6.0",
+    "spellchecker": "^3.4.4",
+    "electron-editor-context-menu": "^1.1.1"
   },
   "build": {
     "appId": "org.standardnotes.standardnotes",

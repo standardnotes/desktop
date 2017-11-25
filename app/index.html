@@ -10,6 +10,7 @@
     <script>
       try {
         const {ipcRenderer} = require('electron');
+        require("./javascripts/spellcheck.js")
         window.ipcRenderer = ipcRenderer;
 
         // https://github.com/electron/electron/blob/master/docs/faq.md#i-can-not-use-jqueryrequirejsmeteorangularjs-in-electron
@@ -35,17 +36,6 @@
           let data = desktopManager.desktop_requestBackupFile();
           event.sender.send('data-archive', data);
         });
-
-        const {remote} = window.nodeRequire('electron')
-        const {Menu, MenuItem} = remote
-
-        window.addEventListener('contextmenu', (e) => {
-          e.preventDefault();
-          var mainMenu = Menu.getApplicationMenu().items.filter(function(item){
-            return item.label == "Edit";
-          })[0].submenu;
-          mainMenu.popup(remote.getCurrentWindow());
-        }, false);
       }
       catch (e) {
         console.log(e);
