@@ -40,6 +40,7 @@
     "dist": "npm run build && electron-builder -mwl --x64 --ia32",
     "dist-win": "npm run build && electron-builder -w --x64 --ia32",
     "dist-mac": "npm run build && electron-builder -m --x64 --ia32",
+    "dist-linux": "npm run build && electron-builder -l --x64 --ia32",
     "postinstall": "electron-builder install-app-deps",
     "build": "rimraf app/dist/ && babel ./app --out-dir app/dist/ --ignore ./app/compiled,./app/assets,./app/stylesheets,./app/dist,./node_modules,./.babelrc,./package.json,./npm-debug.log --copy-files",
     "start": "npm run build && electron . --enable-logging --icon _icon/icon.png"
