@@ -119,7 +119,6 @@
   window.addEventListener('contextmenu', function(e) {
     // Only show the context menu in text editors.
     if (!e.target.closest('textarea, input, [contenteditable="true"]')) {
-      console.log("Not text area, returning");
       return;
     }
 
