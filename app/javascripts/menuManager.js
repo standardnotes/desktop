@@ -1,5 +1,6 @@
 const shell = require('electron').shell;
 const {app, Menu} = require('electron');
+const path = require('path')
 
 class MenuManager {
 
@@ -118,6 +119,14 @@ class MenuManager {
           {
             label: 'Support',
             click () { shell.openExternal('mailto:hello@standardnotes.org') }
+          },
+          {
+            label: 'Open Application Data Directory',
+            click () {
+              const appName = app.getName();
+              const getAppPath = path.join(app.getPath('appData'), appName);
+              shell.openItem(getAppPath);
+             }
           },
           {
             label: 'Clear Cache and Reload',

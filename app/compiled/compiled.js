@@ -38285,18 +38285,26 @@ var AccountMenu = function () {
         };
 
         if ($scope.formData.mergeLocal) {
-          syncManager.markAllItemsDirtyAndSaveOffline(function () {
-            block();
-          }, true);
-
           // Allows desktop to make backup file
           $rootScope.$broadcast("major-data-change");
+          $scope.clearDatabaseAndRewriteAllItems(true, block);
         } else {
           modelManager.resetLocalMemory();
           storageManager.clearAllModels(function () {
             block();
           });
         }
+      };
+
+      // Allows indexeddb unencrypted logs to be deleted
+      // clearAllModels will remove data from backing store, but not from working memory
+      // See: https://github.com/standardnotes/desktop/issues/131
+      $scope.clearDatabaseAndRewriteAllItems = function (alternateUuids, callback) {
+        storageManager.clearAllModels(function () {
+          syncManager.markAllItemsDirtyAndSaveOffline(function () {
+            callback && callback();
+          }, alternateUuids);
+        });
       };
 
       $scope.destroyLocalData = function () {
@@ -38659,9 +38667,9 @@ var AccountMenu = function () {
             }, 10);
 
             if (offline) {
-              syncManager.markAllItemsDirtyAndSaveOffline();
               // Allows desktop to make backup file
               $rootScope.$broadcast("major-data-change");
+              $scope.clearDatabaseAndRewriteAllItems(false);
             }
           });
         });
