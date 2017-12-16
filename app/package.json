@@ -3,7 +3,7 @@
   "productName": "Standard Notes",
   "description": "A simple and private place for your notes, thoughts, and life's work.",
   "author": "Standard Notes <hello@standardnotes.org>",
-  "version": "2.0.43-beta1",
+  "version": "2.0.43-beta2",
   "main": "./dist/index.js",
   "dependencies": {
     "electron-editor-context-menu": "^1.1.1",
