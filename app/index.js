@@ -64,7 +64,8 @@ function createWindow () {
     'minWidth': 600,
     'minHeight': 400,
     show: false,
-    icon: iconLocation
+    icon: iconLocation,
+    titleBarStyle: 'hiddenInset'
   })
 
   archiveManager.setWindow(win);

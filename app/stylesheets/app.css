@@ -729,6 +729,7 @@ a.disabled {
   max-width: 180px;
   min-width: 100px;
   width: 180px;
+  background-color: #f6f6f6;
   user-select: none;
 }
 .tags #tags-title-bar {

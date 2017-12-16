@@ -69,13 +69,29 @@
           ipcRenderer.send("major-data-change");
         })
       });
+
+      // For Mac inset window
+      if(process.platform == "darwin") {
+        var sheet = window.document.styleSheets[0];
+        sheet.insertRule('.tags { padding-top: 22px; }', sheet.cssRules.length);
+      }
+      
     </script>
 
     <style>
-    .editor-content .editable {
-      font-family: Menlo, Consolas, 'DejaVu Sans Mono', monospace;
-      font-size: 16px;
-    }
+      .editor-content .editable {
+        font-family: Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+        font-size: 16px;
+      }
+
+      /* Required for BrowserWindow titleBarStyle: 'hiddenInset' */
+      .tags, #notes-title-bar, #editor-title-bar {
+        -webkit-app-region: drag;
+      }
+
+      input {
+        -webkit-app-region: no-drag;
+      }
     </style>
 
   </head>
