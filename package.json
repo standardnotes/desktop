@@ -42,5 +42,9 @@
     "postinstall": "electron-builder install-app-deps",
     "build": "rimraf app/dist/ && babel ./app --out-dir app/dist/ --ignore ./app/compiled,./app/assets,./app/stylesheets,./app/dist,./node_modules,./.babelrc,./package.json,./npm-debug.log --copy-files",
     "start": "npm run build && electron . --enable-logging --icon _icon/icon.png"
+  },
+  "dependencies": {
+    "adm-zip": "^0.4.7",
+    "request": "^2.83.0"
   }
 }

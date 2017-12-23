@@ -33731,7 +33731,7 @@ function parametersFromURL(url) {
 function isDesktopApplication() {
   return window && window.process && window.process.type && window.process.versions["electron"];
 }
-;angular.module('app.frontend').config(['$locationProvider', function ($locationProvider) {
+;angular.module('app.frontend').config(function ($locationProvider) {
 
   if (!isDesktopApplication()) {
     if (window.history && window.history.pushState) {
@@ -33743,8 +33743,8 @@ function isDesktopApplication() {
   } else {
     $locationProvider.html5Mode(false);
   }
-}]);
-;angular.module('app.frontend').directive("editorSection", ['$timeout', '$sce', function ($timeout, $sce) {
+});
+;angular.module('app.frontend').directive("editorSection", function ($timeout, $sce) {
   return {
     restrict: 'E',
     scope: {
@@ -33767,7 +33767,7 @@ function isDesktopApplication() {
       });
     }
   };
-}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', 'themeManager', 'componentManager', 'storageManager', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, themeManager, componentManager, storageManager) {
+}).controller('EditorCtrl', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, themeManager, componentManager, storageManager) {
 
   this.componentManager = componentManager;
   this.componentStack = [];
@@ -34361,8 +34361,8 @@ function isDesktopApplication() {
       this.loadedTabListener = false;
     }.bind(this));
   };
-}]);
-;angular.module('app.frontend').directive("footer", ['authManager', function (authManager) {
+});
+;angular.module('app.frontend').directive("footer", function (authManager) {
   return {
     restrict: 'E',
     scope: {},
@@ -34384,7 +34384,7 @@ function isDesktopApplication() {
       });
     }
   };
-}]).controller('FooterCtrl', ['$rootScope', 'authManager', 'modelManager', '$timeout', 'dbManager', 'syncManager', 'storageManager', 'passcodeManager', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager) {
+}).controller('FooterCtrl', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager) {
 
   this.user = authManager.user;
 
@@ -34468,8 +34468,8 @@ function isDesktopApplication() {
     this.newUpdateAvailable = false;
     alert("A new update is ready to install. Updates address performance and security issues, as well as bug fixes and feature enhancements. Simply quit Standard Notes and re-open it for the update to be applied.");
   };
-}]);
-;angular.module('app.frontend').controller('HomeCtrl', ['$scope', '$location', '$rootScope', '$timeout', 'modelManager', 'dbManager', 'syncManager', 'authManager', 'themeManager', 'passcodeManager', 'storageManager', 'migrationManager', function ($scope, $location, $rootScope, $timeout, modelManager, dbManager, syncManager, authManager, themeManager, passcodeManager, storageManager, migrationManager) {
+});
+;angular.module('app.frontend').controller('HomeCtrl', function ($scope, $location, $rootScope, $timeout, modelManager, dbManager, syncManager, authManager, themeManager, passcodeManager, storageManager, migrationManager) {
 
   storageManager.initialize(passcodeManager.hasPasscode(), authManager.isEphemeralSession());
 
@@ -34818,7 +34818,7 @@ function isDesktopApplication() {
   if (urlParam("server")) {
     autoSignInFromParams();
   }
-}]);
+});
 ;
 var LockScreen = function () {
   function LockScreen() {
@@ -34833,7 +34833,7 @@ var LockScreen = function () {
 
   _createClass(LockScreen, [{
     key: 'controller',
-    value: ['$scope', 'passcodeManager', function controller($scope, passcodeManager) {
+    value: function controller($scope, passcodeManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -34848,7 +34848,7 @@ var LockScreen = function () {
           $scope.onSuccess()();
         });
       };
-    }]
+    }
   }]);
 
   return LockScreen;
@@ -34888,7 +34888,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
       });
     }
   };
-}).controller('NotesCtrl', ['authManager', '$timeout', '$rootScope', 'modelManager', 'storageManager', function (authManager, $timeout, $rootScope, modelManager, storageManager) {
+}).controller('NotesCtrl', function (authManager, $timeout, $rootScope, modelManager, storageManager) {
 
   this.sortBy = storageManager.getItem("sortBy") || "created_at";
   this.showArchived = storageManager.getBooleanValue("showArchived") || false;
@@ -35051,7 +35051,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
     this.sortBy = type;
     storageManager.setItem("sortBy", type);
   };
-}]);
+});
 ;angular.module('app.frontend').directive("tagsSection", function () {
   return {
     restrict: 'E',
@@ -35086,9 +35086,11 @@ angular.module('app.frontend').directive('lockScreen', function () {
       });
     }
   };
-}).controller('TagsCtrl', ['$rootScope', 'modelManager', '$timeout', 'componentManager', function ($rootScope, modelManager, $timeout, componentManager) {
+}).controller('TagsCtrl', function ($rootScope, modelManager, $timeout, componentManager) {
 
   var initialLoad = true;
+
+  this.componentManager = componentManager;
 
   componentManager.registerHandler({ identifier: "tags", areas: ["tags-list"], activationHandler: function (component) {
       this.component = component;
@@ -35196,7 +35198,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
     });
     return validNotes.length;
   };
-}]);
+});
 ;var AppDomain = "org.standardnotes.sn";
 var dateFormatter;
 
@@ -35559,11 +35561,14 @@ var Component = function (_Item2) {
       this.url = content.url;
       this.name = content.name;
 
+      this.package_info = content.package_info;
+
       // the location in the view this component is located in. Valid values are currently tags-list, note-tags, and editor-stack`
       this.area = content.area;
 
       this.permissions = content.permissions;
       this.active = content.active;
+      this.local = content.local;
 
       // custom data that a component can store in itself
       this.componentData = content.componentData || {};
@@ -35581,8 +35586,10 @@ var Component = function (_Item2) {
         url: this.url,
         name: this.name,
         area: this.area,
+        package_info: this.package_info,
         permissions: this.permissions,
         active: this.active,
+        local: this.local,
         componentData: this.componentData,
         disassociatedItemIds: this.disassociatedItemIds,
         associatedItemIds: this.associatedItemIds
@@ -36271,13 +36278,15 @@ var Theme = function (_Item7) {
       _get(Theme.prototype.__proto__ || Object.getPrototypeOf(Theme.prototype), 'mapContentToLocalProperties', this).call(this, content);
       this.url = content.url;
       this.name = content.name;
+      this.local = content.local;
     }
   }, {
     key: 'structureParams',
     value: function structureParams() {
       var params = {
         url: this.url,
-        name: this.name
+        name: this.name,
+        local: this.local
       };
 
       _.merge(params, _get(Theme.prototype.__proto__ || Object.getPrototypeOf(Theme.prototype), 'structureParams', this).call(this));
@@ -36414,9 +36423,9 @@ var ItemParams = function () {
     return domain;
   }
 
-  this.$get = ['$rootScope', '$timeout', 'httpManager', 'modelManager', 'dbManager', 'storageManager', function ($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
+  this.$get = function ($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
     return new AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager);
-  }];
+  };
 
   function AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
 
@@ -36685,8 +36694,7 @@ var ItemParams = function () {
 var ClientDataDomain = "org.standardnotes.sn.components";
 
 var ComponentManager = function () {
-  ComponentManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'themeManager', '$timeout', '$compile'];
-  function ComponentManager($rootScope, modelManager, syncManager, themeManager, $timeout, $compile) {
+  function ComponentManager($rootScope, modelManager, syncManager, desktopManager, themeManager, $timeout, $compile) {
     _classCallCheck(this, ComponentManager);
 
     this.$compile = $compile;
@@ -36694,6 +36702,7 @@ var ComponentManager = function () {
     this.modelManager = modelManager;
     this.syncManager = syncManager;
     this.themeManager = themeManager;
+    this.desktopManager = desktopManager;
     this.timeout = $timeout;
     this.streamObservers = [];
     this.contextStreamObservers = [];
@@ -36730,6 +36739,10 @@ var ComponentManager = function () {
       var syncedComponents = allItems.filter(function (item) {
         return item.content_type === "SN|Component";
       });
+
+      // Ensure any component in our data is installed by the system
+      this.desktopManager.syncComponentsInstallation(syncedComponents);
+
       var _iteratorNormalCompletion15 = true;
       var _didIteratorError15 = false;
       var _iteratorError15 = undefined;
@@ -37044,19 +37057,20 @@ var ComponentManager = function () {
 
       /**
       Possible Messages:
-      set-size
-      stream-items
-      stream-context-item
-      save-items
-      select-item
-      associate-item
-      deassociate-item
-      clear-selection
-      create-item
-      delete-items
-      set-component-data
-      save-context-client-data
-      get-context-client-data
+        set-size
+        stream-items
+        stream-context-item
+        save-items
+        select-item
+        associate-item
+        deassociate-item
+        clear-selection
+        create-item
+        delete-items
+        set-component-data
+        save-context-client-data
+        get-context-client-data
+        install-local-component
       */
 
       if (message.action === "stream-items") {
@@ -37157,6 +37171,15 @@ var ComponentManager = function () {
           var saveMessage = Object.assign({}, message);
           saveMessage.action = response && response.error ? "save-error" : "save-success";
           _this13.handleMessage(component, saveMessage);
+        });
+      } else if (message.action === "install-local-component") {
+        console.log("Received install-local-component event");
+        this.desktopManager.installOfflineComponentFromData(message.data, function (response) {
+          console.log("componentManager: installed component:", response);
+          var component = _this13.modelManager.mapResponseItemsToLocalModels([response], ModelManager.MappingSourceComponentRetrieved)[0];
+          // Save updated URL
+          component.setDirty(true);
+          _this13.syncManager.sync();
         });
       }
 
@@ -37701,6 +37724,15 @@ var ComponentManager = function () {
       component.ignoreEvents = !on;
     }
   }, {
+    key: 'urlForComponent',
+    value: function urlForComponent(component) {
+      if (isDesktopApplication() && component.local && component.url.startsWith("sn://")) {
+        return component.url.replace("sn://", this.desktopManager.getApplicationDataPath() + "/");
+      } else {
+        return component.url;
+      }
+    }
+  }, {
     key: 'iframeForComponent',
     value: function iframeForComponent(component) {
       var _iteratorNormalCompletion34 = true;
@@ -37917,7 +37949,6 @@ angular.module('app.frontend').service('dbManager', DBManager);
 ; // An interface used by the Desktop app to interact with SN
 
 var DesktopManager = function () {
-  DesktopManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'passcodeManager'];
   function DesktopManager($rootScope, modelManager, authManager, passcodeManager) {
     var _this14 = this;
 
@@ -37927,6 +37958,8 @@ var DesktopManager = function () {
     this.modelManager = modelManager;
     this.authManager = authManager;
     this.$rootScope = $rootScope;
+
+    this.isDesktop = isDesktopApplication();
 
     $rootScope.$on("initial-data-loaded", function () {
       _this14.dataLoaded = true;
@@ -37942,7 +37975,65 @@ var DesktopManager = function () {
     });
   }
 
+  /* Can handle components and themes */
+
+
   _createClass(DesktopManager, [{
+    key: 'installOfflineComponentFromData',
+    value: function installOfflineComponentFromData(componentData, callback) {
+      this.componentInstallationHandler(componentData, function (installedComponent) {
+        componentData.content.url = installedComponent.content.url;
+        componentData.content.local = true;
+        callback(componentData);
+      });
+    }
+  }, {
+    key: 'getApplicationDataPath',
+    value: function getApplicationDataPath() {
+      console.assert(this.applicationDataPath, "applicationDataPath is null");
+      return this.applicationDataPath;
+    }
+
+    /* Sending a component in its raw state is really slow for the desktop app */
+
+  }, {
+    key: 'convertComponentForTransmission',
+    value: function convertComponentForTransmission(component) {
+      return new ItemParams(component).paramsForExportFile();
+    }
+
+    // All `components` should be installed
+
+  }, {
+    key: 'syncComponentsInstallation',
+    value: function syncComponentsInstallation(components) {
+      var _this15 = this;
+
+      if (!this.isDesktop) return;
+      var data = components.map(function (component) {
+        return _this15.convertComponentForTransmission(component);
+      });
+      this.installationSyncHandler(data);
+    }
+
+    /* Used to resolve "sn://" */
+
+  }, {
+    key: 'desktop_setApplicationDataPath',
+    value: function desktop_setApplicationDataPath(path) {
+      this.applicationDataPath = path;
+    }
+  }, {
+    key: 'desktop_setComponentInstallationSyncHandler',
+    value: function desktop_setComponentInstallationSyncHandler(handler) {
+      this.installationSyncHandler = handler;
+    }
+  }, {
+    key: 'desktop_setOfflineComponentInstallationHandler',
+    value: function desktop_setOfflineComponentInstallationHandler(handler) {
+      this.componentInstallationHandler = handler;
+    }
+  }, {
     key: 'desktop_setInitialDataLoadHandler',
     value: function desktop_setInitialDataLoadHandler(handler) {
       this.dataLoadHandler = handler;
@@ -38018,7 +38109,7 @@ angular.module('app.frontend').service('desktopManager', DesktopManager);
     }
   };
 }]);
-;angular.module('app.frontend').directive('delayHide', ['$timeout', function ($timeout) {
+;angular.module('app.frontend').directive('delayHide', function ($timeout) {
   return {
     restrict: 'A',
     scope: {
@@ -38061,7 +38152,7 @@ angular.module('app.frontend').service('desktopManager', DesktopManager);
     }
 
   };
-}]);
+});
 ;angular.module('app.frontend').directive('fileChange', function () {
   return {
     restrict: 'A',
@@ -38139,7 +38230,7 @@ var AccountMenu = function () {
 
   _createClass(AccountMenu, [{
     key: 'controller',
-    value: ['$scope', '$rootScope', 'authManager', 'modelManager', 'syncManager', 'dbManager', 'passcodeManager', '$timeout', 'storageManager', function controller($scope, $rootScope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
+    value: function controller($scope, $rootScope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
       'ngInject';
 
       $scope.formData = { mergeLocal: true, url: syncManager.serverURL, ephemeral: false };
@@ -38696,7 +38787,7 @@ var AccountMenu = function () {
       $scope.isDesktopApplication = function () {
         return isDesktopApplication();
       };
-    }]
+    }
   }]);
 
   return AccountMenu;
@@ -38719,7 +38810,7 @@ var ContextualExtensionsMenu = function () {
 
   _createClass(ContextualExtensionsMenu, [{
     key: 'controller',
-    value: ['$scope', 'modelManager', 'extensionManager', function controller($scope, modelManager, extensionManager) {
+    value: function controller($scope, modelManager, extensionManager) {
       'ngInject';
 
       $scope.renderData = {};
@@ -38816,7 +38907,7 @@ var ContextualExtensionsMenu = function () {
       $scope.accessTypeForExtension = function (extension) {
         return extension.encrypted ? "encrypted" : "decrypted";
       };
-    }]
+    }
   }]);
 
   return ContextualExtensionsMenu;
@@ -38840,20 +38931,26 @@ var EditorMenu = function () {
 
   _createClass(EditorMenu, [{
     key: 'controller',
-    value: ['$scope', 'componentManager', function controller($scope, componentManager) {
+    value: function controller($scope, componentManager) {
       'ngInject';
 
       $scope.formData = {};
 
       $scope.editors = componentManager.componentsForArea("editor-editor");
 
+      $scope.isDesktop = isDesktopApplication();
+
       $scope.selectEditor = function ($event, editor) {
         if (editor) {
           editor.conflict_of = null; // clear conflict if applicable
         }
+        if (editor.local && !isDesktopApplication()) {
+          alert("This editor is installed ");
+          return;
+        }
         $scope.callback()(editor);
       };
-    }]
+    }
   }]);
 
   return EditorMenu;
@@ -38874,7 +38971,7 @@ var GlobalExtensionsMenu = function () {
 
   _createClass(GlobalExtensionsMenu, [{
     key: 'controller',
-    value: ['$scope', 'extensionManager', 'syncManager', 'modelManager', 'themeManager', 'componentManager', function controller($scope, extensionManager, syncManager, modelManager, themeManager, componentManager) {
+    value: function controller($scope, extensionManager, syncManager, modelManager, themeManager, componentManager, packageManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -39051,6 +39148,8 @@ var GlobalExtensionsMenu = function () {
               $scope.handleThemeLink(link, completion);
             } else if (type == "component") {
               $scope.handleComponentLink(link, completion);
+            } else if (type == "package") {
+              $scope.handlePackageLink(link, completion);
             } else {
               $scope.handleActionLink(link, completion);
             }
@@ -39069,6 +39168,10 @@ var GlobalExtensionsMenu = function () {
             }
           }
         }
+      };
+
+      $scope.handlePackageLink = function (link, completion) {
+        packageManager.installPackage(link, completion);
       };
 
       $scope.handleSyncAdapterLink = function (link, completion) {
@@ -39104,7 +39207,7 @@ var GlobalExtensionsMenu = function () {
           });
         }
       };
-    }]
+    }
   }]);
 
   return GlobalExtensionsMenu;
@@ -39192,8 +39295,83 @@ angular.module('app.frontend').directive('permissionsModal', function () {
   return new PermissionsModal();
 });
 ;
+var RoomBar = function () {
+  function RoomBar() {
+    _classCallCheck(this, RoomBar);
+
+    this.restrict = "E";
+    this.templateUrl = "frontend/directives/room-bar.html";
+    this.scope = {};
+  }
+
+  _createClass(RoomBar, [{
+    key: 'controller',
+    value: function controller($rootScope, $scope, desktopManager, syncManager, modelManager, componentManager, $timeout) {
+      'ngInject';
+
+      $scope.componentManager = componentManager;
+
+      $rootScope.$on("initial-data-loaded", function () {
+        $timeout(function () {
+          $scope.rooms = componentManager.componentsForArea("rooms");
+          console.log("Rooms:", $scope.rooms);
+        });
+      });
+
+      componentManager.registerHandler({ identifier: "roomBar", areas: ["rooms"], activationHandler: function (component) {
+          if (component.active) {
+            $timeout(function () {
+              var iframe = componentManager.iframeForComponent(component);
+              if (iframe) {
+                iframe.onload = function () {
+                  componentManager.registerComponentWindow(component, iframe.contentWindow);
+                }.bind(this);
+              }
+            }.bind(this));
+          }
+        }.bind(this), actionHandler: function (component, action, data) {
+          if (action === "set-size") {
+            console.log("Set size event", data);
+            var setSize = function setSize(element, size) {
+              var widthString = typeof size.width === 'string' ? size.width : data.width + 'px';
+              var heightString = typeof size.height === 'string' ? size.height : data.height + 'px';
+              element.setAttribute("style", 'width:' + widthString + '; height:' + heightString + '; ');
+            };
+
+            if (data.type === "content") {
+              var iframe = componentManager.iframeForComponent(component);
+              var width = data.width;
+              var height = data.height;
+              iframe.width = width;
+              iframe.height = height;
+
+              setSize(iframe, data);
+            } else {
+              var container = document.getElementById("room-" + component.uuid);
+              setSize(container, data);
+            }
+          }
+        }.bind(this) });
+
+      $scope.selectRoom = function (room) {
+        room.show = !room.show;
+        if (room.show) {
+          this.componentManager.activateComponent(room);
+        } else {
+          this.componentManager.deactivateComponent(room);
+        }
+      };
+    }
+  }]);
+
+  return RoomBar;
+}();
+
+angular.module('app.frontend').directive('roomBar', function () {
+  return new RoomBar();
+});
+;
 var ExtensionManager = function () {
-  ExtensionManager.$inject = ['httpManager', 'modelManager', 'authManager', 'syncManager', 'storageManager'];
   function ExtensionManager(httpManager, modelManager, authManager, syncManager, storageManager) {
     _classCallCheck(this, ExtensionManager);
 
@@ -39703,16 +39881,16 @@ var ExtensionManager = function () {
 }();
 
 angular.module('app.frontend').service('extensionManager', ExtensionManager);
-;angular.module('app.frontend').filter('appDate', ['$filter', function ($filter) {
+;angular.module('app.frontend').filter('appDate', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy', 'UTC') : '';
   };
-}]).filter('appDateTime', ['$filter', function ($filter) {
+}).filter('appDateTime', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy h:mm a') : '';
   };
-}]);
-;angular.module('app.frontend').filter('sortBy', ['$filter', function ($filter) {
+});
+;angular.module('app.frontend').filter('sortBy', function ($filter) {
   return function (items, sortBy) {
     var sortValueFn = function sortValueFn(a, b) {
       var pinCheck = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
@@ -39761,7 +39939,7 @@ angular.module('app.frontend').service('extensionManager', ExtensionManager);
       return sortValueFn(a, b);
     });
   };
-}]);
+});
 ;angular.module('app.frontend').filter('startFrom', function () {
   return function (input, start) {
     return input.slice(start);
@@ -39774,7 +39952,6 @@ angular.module('app.frontend').service('extensionManager', ExtensionManager);
 }]);
 ;
 var HttpManager = function () {
-  HttpManager.$inject = ['$timeout', 'storageManager'];
   function HttpManager($timeout, storageManager) {
     _classCallCheck(this, HttpManager);
 
@@ -39863,9 +40040,8 @@ var HttpManager = function () {
 angular.module('app.frontend').service('httpManager', HttpManager);
 ;
 var MigrationManager = function () {
-  MigrationManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'componentManager'];
   function MigrationManager($rootScope, modelManager, syncManager, componentManager) {
-    var _this15 = this;
+    var _this16 = this;
 
     _classCallCheck(this, MigrationManager);
 
@@ -39884,7 +40060,7 @@ var MigrationManager = function () {
       var _iteratorError44 = undefined;
 
       try {
-        for (var _iterator44 = _this15.migrators[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
+        for (var _iterator44 = _this16.migrators[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
           var migrator = _step44.value;
 
           var items = allItems.filter(function (item) {
@@ -39919,7 +40095,7 @@ var MigrationManager = function () {
   _createClass(MigrationManager, [{
     key: 'addEditorToComponentMigrator',
     value: function addEditorToComponentMigrator() {
-      var _this16 = this;
+      var _this17 = this;
 
       this.migrators.push({
         content_type: "SN|Editor",
@@ -39935,8 +40111,8 @@ var MigrationManager = function () {
               var editor = _step45.value;
 
               // If there's already a component for this url, then skip this editor
-              if (editor.url && !_this16.componentManager.componentForUrl(editor.url)) {
-                var component = _this16.modelManager.createItem({
+              if (editor.url && !_this17.componentManager.componentForUrl(editor.url)) {
+                var component = _this17.modelManager.createItem({
                   content_type: "SN|Component",
                   url: editor.url,
                   name: editor.name,
@@ -39944,7 +40120,7 @@ var MigrationManager = function () {
                 });
                 component.setAppDataItem("data", editor.data);
                 component.setDirty(true);
-                _this16.modelManager.addItem(component);
+                _this17.modelManager.addItem(component);
               }
             }
           } catch (err) {
@@ -39970,7 +40146,7 @@ var MigrationManager = function () {
             for (var _iterator46 = editors[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
               var _editor = _step46.value;
 
-              _this16.modelManager.setItemToBeDeleted(_editor);
+              _this17.modelManager.setItemToBeDeleted(_editor);
             }
           } catch (err) {
             _didIteratorError46 = true;
@@ -39987,7 +40163,7 @@ var MigrationManager = function () {
             }
           }
 
-          _this16.syncManager.sync();
+          _this17.syncManager.sync();
         }
       });
     }
@@ -39999,7 +40175,6 @@ var MigrationManager = function () {
 angular.module('app.frontend').service('migrationManager', MigrationManager);
 ;
 var ModelManager = function () {
-  ModelManager.$inject = ['storageManager'];
   function ModelManager(storageManager) {
     _classCallCheck(this, ModelManager);
 
@@ -40032,7 +40207,7 @@ var ModelManager = function () {
   }, {
     key: 'alternateUUIDForItem',
     value: function alternateUUIDForItem(item, callback, removeOriginal) {
-      var _this17 = this;
+      var _this18 = this;
 
       // we need to clone this item and give it a new uuid, then delete item with old uuid from db (you can't mofidy uuid's in our indexeddb setup)
       var newItem = this.createItem(item);
@@ -40045,7 +40220,7 @@ var ModelManager = function () {
       this.informModelsOfUUIDChangeForItem(newItem, item.uuid, newItem.uuid);
 
       var block = function block() {
-        _this17.addItem(newItem);
+        _this18.addItem(newItem);
         newItem.setDirty(true);
         newItem.markAllReferencesDirty();
         callback();
@@ -40613,11 +40788,50 @@ var ModelManager = function () {
 }();
 
 angular.module('app.frontend').service('modelManager', ModelManager);
+;
+var PackageManager = function () {
+  function PackageManager(httpManager, modelManager, syncManager) {
+    _classCallCheck(this, PackageManager);
+
+    this.httpManager = httpManager;
+    this.modelManager = modelManager;
+    this.syncManager = syncManager;
+  }
+
+  _createClass(PackageManager, [{
+    key: 'installPackage',
+    value: function installPackage(url, callback) {
+      this.httpManager.getAbsolute(url, {}, function (aPackage) {
+        console.log("Got package data", aPackage);
+        if ((typeof aPackage === 'undefined' ? 'undefined' : _typeof(aPackage)) !== 'object') {
+          callback(null);
+          return;
+        }
+
+        var assembled = this.modelManager.createItem(aPackage);
+        this.modelManager.addItem(assembled);
+        assembled.setDirty(true);
+        this.syncManager.sync();
+
+        console.log("Created assembled", assembled);
+
+        callback && callback(assembled);
+      }.bind(this), function (response) {
+        console.error("Error retrieving package", response);
+        callback(null);
+      });
+    }
+  }]);
+
+  return PackageManager;
+}();
+
+angular.module('app.frontend').service('packageManager', PackageManager);
 ;angular.module('app.frontend').provider('passcodeManager', function () {
 
-  this.$get = ['$rootScope', '$timeout', 'modelManager', 'dbManager', 'authManager', 'storageManager', function ($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
+  this.$get = function ($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
     return new PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager);
-  }];
+  };
 
   function PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
 
@@ -40742,7 +40956,6 @@ var MemoryStorage = function () {
 }();
 
 var StorageManager = function () {
-  StorageManager.$inject = ['dbManager'];
   function StorageManager(dbManager) {
     _classCallCheck(this, StorageManager);
 
@@ -40986,7 +41199,6 @@ StorageManager.Fixed = "Fixed"; // localStorage
 angular.module('app.frontend').service('storageManager', StorageManager);
 ;
 var SyncManager = function () {
-  SyncManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'dbManager', 'httpManager', '$interval', '$timeout', 'storageManager', 'passcodeManager'];
   function SyncManager($rootScope, modelManager, authManager, dbManager, httpManager, $interval, $timeout, storageManager, passcodeManager) {
     _classCallCheck(this, SyncManager);
 
@@ -41079,13 +41291,13 @@ var SyncManager = function () {
   }, {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback, alternateUUIDs) {
-      var _this18 = this;
+      var _this19 = this;
 
       // use a copy, as alternating uuid will affect array
       var originalItems = this.modelManager.allItems.slice();
 
       var block = function block() {
-        var allItems = _this18.modelManager.allItems;
+        var allItems = _this19.modelManager.allItems;
         var _iteratorNormalCompletion57 = true;
         var _didIteratorError57 = false;
         var _iteratorError57 = undefined;
@@ -41111,7 +41323,7 @@ var SyncManager = function () {
           }
         }
 
-        _this18.writeItemsToLocalStorage(allItems, false, callback);
+        _this19.writeItemsToLocalStorage(allItems, false, callback);
       };
 
       if (alternateUUIDs) {
@@ -41134,7 +41346,7 @@ var SyncManager = function () {
           // but for some reason retained their data (This happens in Firefox when using private mode).
           // In this case, we should pass false so that both copies are kept. However, it's difficult to
           // detect when the app has entered this state. We will just use true to remove original items for now.
-          _this18.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
+          _this19.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
         };
 
         alternateNextItem();
@@ -41510,7 +41722,6 @@ var SyncManager = function () {
 angular.module('app.frontend').service('syncManager', SyncManager);
 ;
 var ThemeManager = function () {
-  ThemeManager.$inject = ['modelManager', 'syncManager', '$rootScope', 'storageManager'];
   function ThemeManager(modelManager, syncManager, $rootScope, storageManager) {
     _classCallCheck(this, ThemeManager);
 
@@ -41887,7 +42098,6 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "  <div ng-if='editors.length &gt; 0'>\n" +
     "    <div class='header'>\n" +
     "      <div class='title'>External Editors</div>\n" +
-    "      <div class='subtitle'>Can access your current note decrypted.</div>\n" +
     "    </div>\n" +
     "    <ul>\n" +
     "      <li class='menu-item' ng-click='selectEditor($event, editor)' ng-repeat='editor in editors'>\n" +
@@ -41896,6 +42106,10 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "          <span class='inline tinted mr-10' ng-if='selectedEditor === editor'>✓</span>\n" +
     "          {{editor.name}}\n" +
     "        </label>\n" +
+    "        <div class='sublabel' ng-if='editor.local'>\n" +
+    "          Locally Installed\n" +
+    "        </div>\n" +
+    "        <div class='sublabel faded' ng-if='editor.local &amp;&amp; !isDesktop'>Unavailable in Web Browser</div>\n" +
     "      </li>\n" +
     "    </ul>\n" +
     "  </div>\n" +
@@ -42123,6 +42337,16 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
   );
 
 
+  $templateCache.put('frontend/directives/room-bar.html',
+    "<div class='room-item' ng-click='selectRoom(room)' ng-repeat='room in rooms'>\n" +
+    "  <span>{{room.name}}</span>\n" +
+    "  <div class='room-container panel-right' ng-attr-id='room-{{room.uuid}}' ng-if='room.show &amp;&amp; room.active'>\n" +
+    "    <iframe class='room-iframe' data-component-id='{{room.uuid}}' frameBorder='0' ng-src='{{componentManager.urlForComponent(room) | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-modals'></iframe>\n" +
+    "  </div>\n" +
+    "</div>\n"
+  );
+
+
   $templateCache.put('frontend/directives/security-update-modal.html',
     "<div class='background' ng-click='dismiss()'></div>\n" +
     "<div class='content'>\n" +
@@ -42160,7 +42384,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    <div id='save-status' ng-bind-html='ctrl.noteStatus' ng-class=\"{'red bold': ctrl.saveError, 'orange bold': ctrl.syncTakingTooLong}\"></div>\n" +
     "    <div class='editor-tags'>\n" +
     "      <div id='note-tags-component-container' ng-if='ctrl.tagsComponent &amp;&amp; ctrl.tagsComponent.active'>\n" +
-    "        <iframe data-component-id='{{ctrl.tagsComponent.uuid}}' frameBorder='0' id='note-tags-iframe' ng-src='{{ctrl.tagsComponent.url | trusted}}' sandbox='allow-scripts'></iframe>\n" +
+    "        <iframe data-component-id='{{ctrl.tagsComponent.uuid}}' frameBorder='0' id='note-tags-iframe' ng-src='{{ctrl.componentManager.urlForComponent(ctrl.tagsComponent) | trusted}}' sandbox='allow-scripts'></iframe>\n" +
     "      </div>\n" +
     "      <input class='tags-input' ng-blur='ctrl.updateTagsFromTagsString($event, ctrl.tagsString)' ng-if='!(ctrl.tagsComponent &amp;&amp; ctrl.tagsComponent.active)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur();' ng-model='ctrl.tagsString' placeholder='#tags' type='text'>\n" +
     "    </div>\n" +
@@ -42208,7 +42432,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "    </li>\n" +
     "  </ul>\n" +
     "  <div class='editor-content' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.noteReady &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
-    "    <iframe data-component-id='{{ctrl.editorComponent.uuid}}' frameBorder='0' id='editor-iframe' ng-if='ctrl.editorComponent &amp;&amp; ctrl.editorComponent.active' ng-src='{{ctrl.editorComponent.url | trusted}}' style='width: 100%;'>\n" +
+    "    <iframe data-component-id='{{ctrl.editorComponent.uuid}}' frameBorder='0' id='editor-iframe' ng-if='ctrl.editorComponent &amp;&amp; ctrl.editorComponent.active' ng-src='{{ctrl.componentManager.urlForComponent(ctrl.editorComponent) | trusted}}' style='width: 100%;'>\n" +
     "      Loading\n" +
     "    </iframe>\n" +
     "    <textarea class='editable' dir='auto' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.editorComponent' ng-model='ctrl.note.text'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
@@ -42219,7 +42443,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "  <div id='editor-pane-component-stack'>\n" +
     "    <div class='component component-stack-border' id=\"{{'component-' + component.uuid}}\" ng-if='component.active' ng-mouseleave='component.showExit = false' ng-mouseover='component.showExit = true' ng-repeat='component in ctrl.componentStack' ng-show='!component.ignoreEvents'>\n" +
     "      <div class='exit-button body-text-color' ng-click='ctrl.disableComponentForCurrentItem(component, true)' ng-if='component.showExit'>×</div>\n" +
-    "      <iframe data-component-id='{{component.uuid}}' frameBorder='0' id='note-tags-iframe' ng-src='{{component.url | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-modals'></iframe>\n" +
+    "      <iframe data-component-id='{{component.uuid}}' frameBorder='0' id='note-tags-iframe' ng-src='{{ctrl.componentManager.urlForComponent(component) | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-modals'></iframe>\n" +
     "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
@@ -42242,6 +42466,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        Help\n" +
     "      </a>\n" +
     "    </div>\n" +
+    "    <room-bar id='room-bar'></room-bar>\n" +
     "  </div>\n" +
     "  <div class='pull-right'>\n" +
     "    <div class='footer-bar-link' ng-click='ctrl.clickedNewUpdateAnnouncement()' ng-if='ctrl.newUpdateAvailable'>\n" +
@@ -42386,7 +42611,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 
   $templateCache.put('frontend/tags.html',
     "<div class='section tags' id='tags-column'>\n" +
-    "  <iframe frameBorder='0' id='tags-list-iframe' ng-if='ctrl.component &amp;&amp; ctrl.component.active' ng-src='{{ctrl.component.url | trusted}}' sandbox='allow-scripts' style='width: 100%; height: 100%;'></iframe>\n" +
+    "  <iframe frameBorder='0' id='tags-list-iframe' ng-if='ctrl.component &amp;&amp; ctrl.component.active' ng-src='{{ctrl.componentManager.urlForComponent(ctrl.component) | trusted}}' sandbox='allow-scripts' style='width: 100%; height: 100%;'></iframe>\n" +
     "  <div class='content' id='tags-content' ng-if='!(ctrl.component &amp;&amp; ctrl.component.active)'>\n" +
     "    <div class='section-title-bar' id='tags-title-bar'>\n" +
     "      <div class='title'>Tags</div>\n" +

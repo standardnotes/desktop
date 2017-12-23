@@ -11,7 +11,7 @@
       try {
         const {ipcRenderer} = require('electron');
         window.ipcRenderer = ipcRenderer;
-        require("./javascripts/spellcheck.js")
+        require("./javascripts/render/spellcheck.js")
 
         // https://github.com/electron/electron/blob/master/docs/faq.md#i-can-not-use-jqueryrequirejsmeteorangularjs-in-electron
         window.nodeRequire = require;
@@ -59,8 +59,41 @@
     <link rel="stylesheet" media="all" href="../stylesheets/app.css" debug="false" />
 
     <script>
+      const {app} = require('electron').remote;
+      var userDataPath = app.getPath('userData');
+
       angular.element(document).ready(function () {
         var desktopManager = angular.element(document).injector().get('desktopManager');
+
+        let packageCallbacks = [];
+
+        ipcRenderer.on('install-component-complete', function (event, component) {
+          console.log('install-component-complete', component.content.url);
+          var callback = packageCallbacks.filter((cb) => {return cb.id == component.uuid})[0];
+          callback.callback(component);
+          packageCallbacks.splice(packageCallbacks.indexOf(callback), 1);
+        });
+
+        console.log("Desktop: setting app data path");
+        console.log(userDataPath);
+
+        desktopManager.desktop_setComponentInstallationSyncHandler((components) => {
+          console.log("Syncing components");
+          ipcRenderer.send("sync-components", components);
+        })
+
+        desktopManager.desktop_setApplicationDataPath(userDataPath);
+
+        desktopManager.desktop_setOfflineComponentInstallationHandler((component, callback) => {
+          // Install package
+          // let installedPackage = packageManager.installPackage(component);
+          packageCallbacks.push({
+            id: component.uuid,
+            callback: callback
+          })
+          ipcRenderer.send("install-component", component);
+        });
+
         desktopManager.desktop_setInitialDataLoadHandler(() => {
           ipcRenderer.send("initial-data-loaded");
         })
@@ -75,7 +108,7 @@
         var sheet = window.document.styleSheets[0];
         sheet.insertRule('.tags { padding-top: 22px; }', sheet.cssRules.length);
       }
-      
+
     </script>
 
     <style>

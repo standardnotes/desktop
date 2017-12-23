@@ -121,11 +121,10 @@ class MenuManager {
             click () { shell.openExternal('mailto:hello@standardnotes.org') }
           },
           {
-            label: 'Open Application Data Directory',
+            label: 'Open Data Directory',
             click () {
-              const appName = app.getName();
-              const getAppPath = path.join(app.getPath('appData'), appName);
-              shell.openItem(getAppPath);
+              var userDataPath = app.getPath('userData');
+              shell.openItem(userDataPath);
              }
           },
           {

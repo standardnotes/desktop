@@ -612,6 +612,36 @@ h2 {
 #footer-bar input {
   border-radius: 0px;
 }
+#footer-bar #room-bar {
+  display: inline-block;
+  border-left: 1px solid gray;
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-left: 5px;
+  position: relative;
+}
+#footer-bar #room-bar .room-item {
+  display: inline-block;
+  position: relative;
+}
+#footer-bar #room-bar .room-item .room-container {
+  max-height: 85vh;
+  position: absolute;
+  right: 0px;
+  bottom: 20px;
+  min-width: 300px;
+  z-index: 1000;
+  margin-top: 15px;
+  box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+  border: none;
+  cursor: default;
+  overflow: auto;
+  background-color: white;
+}
+#footer-bar #room-bar .room-item .room-iframe {
+  width: 100%;
+  height: 100%;
+}
 
 #footer-bar .footer-bar-link {
   font-size: 11px;

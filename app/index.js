@@ -7,8 +7,9 @@ const url = require('url')
 const windowStateKeeper = require('electron-window-state')
 const shell = require('electron').shell;
 
-import menuManager from './javascripts/menuManager.js'
-import archiveManager from './javascripts/archiveManager.js';
+import menuManager from './javascripts/main/menuManager.js'
+import archiveManager from './javascripts/main/archiveManager.js';
+import packageManager from './javascripts/main/packageManager.js';
 
 ipcMain.on('initial-data-loaded', () => {
   archiveManager.beginBackups();
@@ -69,6 +70,7 @@ function createWindow () {
   })
 
   archiveManager.setWindow(win);
+  packageManager.setWindow(win);
 
   // Register listeners on the window, so we can update the state
   // automatically (the listeners will be removed when the window
