@@ -6,6 +6,7 @@ var https = require('https');
 var request = require("request");
 var appPath = app.getPath('userData');
 var AdmZip = require('adm-zip');
+var compareVersions = require('compare-versions');
 
 class PackageManager {
 
@@ -59,15 +60,41 @@ class PackageManager {
     // the filesystem and see if that component is installed. If not, install it.
 
     for(let component of components) {
-      if(!component.content.package_info) { continue; }
+      if(!component.content.package_info || !component.content.local) { continue; }
 
       let paths = this.pathsForComponent(component);
       fs.stat(paths.absolutePath, (err, stats) => {
         if(err && err.code === 'ENOENT') {
           this.installComponent(component);
+        } else if(component.content.autoupdate) {
+          // Check for updates
+          this.checkForUpdate(component);
         }
       })
     }
+  }
+
+  checkForUpdate(component) {
+    var latestURL = component.content.package_info.latest_url;
+    if(!latestURL) {
+      console.log("No latest url, skipping update", component);
+      return;
+    }
+    console.log("Checking for update for", component);
+    request.get(latestURL, (error, response, body) => {
+        console.log(response.statusCode) // 200
+        console.log("Latest response", body);
+        var body = JSON.parse(body);
+        if(compareVersions(body.version, component.content.package_info.version) == 1) {
+          // Latest version is greater than installed version
+          console.log("Downloading new version", body.download_url);
+          component.content.package_info.download_url = body.download_url;
+          component.content.package_info.version = body.version;
+          this.installComponent(component, (component) => {
+            this.window.webContents.send("update-component-complete", component);
+          });
+        }
+      })
   }
 
   downloadFile(url, filePath, callback) {
@@ -88,7 +115,7 @@ class PackageManager {
       }
 
       var zip = new AdmZip(filePath);
-      zip.extractAllTo(dest);
+      zip.extractAllTo(dest, true /*overwrite*/);
       fs.unlink(filePath);
       callback();
     });

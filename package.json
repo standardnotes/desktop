@@ -45,6 +45,7 @@
   },
   "dependencies": {
     "adm-zip": "^0.4.7",
+    "compare-versions": "^3.1.0",
     "request": "^2.83.0"
   }
 }
