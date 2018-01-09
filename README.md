@@ -1,13 +1,23 @@
 This application makes use of the core JS/CSS/HTML code found in the [web repo](https://github.com/standardnotes/web). For issues related to the actual app experience, please post issues in the web repo.
 
+## Building
+
 Build for all platforms:
 ```
-electron-packager . "Standard Notes" --platform=all --icon=icon/icon --overwrite --osx-sign='Mac Developer ID Application: xxx' --out=dist
+electron-packager . "Standard Notes" \
+  --platform=all \
+  --icon=icon/icon \
+  --overwrite \
+  --osx-sign='Mac Developer ID Application: xxx' \
+  --out=dist
 ```
 
-### Linux users: to run an AppImage file, simply:
+## Installation
 
-chmod a+x standard-notes---.AppImage
+On Linux, download the latest AppImage from the [Releases](https://github.com/standardnotes/desktop/releases/latest) page, and give it executable permission.
+
+Standard Notes is also available on the AUR as [sn-bin](https://aur.archlinux.org/packages/sn-bin/)!
+
 
 ## License
 
