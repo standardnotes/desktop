@@ -14,7 +14,9 @@ electron-packager . "Standard Notes" \
 
 ## Installation
 
-On Linux, download the latest AppImage from the [Releases](https://github.com/standardnotes/desktop/releases/latest) page, and give it executable permission.
+On Linux, download the latest AppImage from the [Releases](https://github.com/standardnotes/desktop/releases/latest) page, and give it executable permission:
+
+`chmod u+x standard-notes*.AppImage`
 
 Standard Notes is also available on the AUR as [sn-bin](https://aur.archlinux.org/packages/sn-bin/)!
 
