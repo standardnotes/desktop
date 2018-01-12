@@ -18,8 +18,11 @@ On Linux, download the latest AppImage from the [Releases](https://github.com/st
 
 `chmod u+x standard-notes*.AppImage`
 
-Standard Notes is also unofficially available on the AUR as [sn-bin](https://aur.archlinux.org/packages/sn-bin/), which is currently maintained by [JoshuaRLi](https://github.com/JoshuaRLi).
+## Alternative Downloads
 
+The Standard Notes desktop client is also available through a variety of package managers:
+
+* [unofficial] **AUR:** [sn-bin](https://aur.archlinux.org/packages/sn-bin/), currently maintained by [JoshuaRLi](https://github.com/JoshuaRLi)
 
 ## License
 
