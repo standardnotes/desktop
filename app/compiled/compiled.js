@@ -33731,7 +33731,18 @@ function parametersFromURL(url) {
 function isDesktopApplication() {
   return window && window.process && window.process.type && window.process.versions["electron"];
 }
-;angular.module('app.frontend').config(function ($locationProvider) {
+
+function isMacApplication() {
+  return window && window.process && window.process.type && window.process.platform == "darwin";
+}
+
+Array.prototype.containsSubset = function (array) {
+  var _this3 = this;
+
+  return !array.some(function (val) {
+    return _this3.indexOf(val) === -1;
+  });
+};angular.module('app.frontend').config(['$locationProvider', function ($locationProvider) {
 
   if (!isDesktopApplication()) {
     if (window.history && window.history.pushState) {
@@ -33743,8 +33754,8 @@ function isDesktopApplication() {
   } else {
     $locationProvider.html5Mode(false);
   }
-});
-;angular.module('app.frontend').directive("editorSection", function ($timeout, $sce) {
+}]);
+;angular.module('app.frontend').directive("editorSection", ['$timeout', '$sce', function ($timeout, $sce) {
   return {
     restrict: 'E',
     scope: {
@@ -33767,7 +33778,8 @@ function isDesktopApplication() {
       });
     }
   };
-}).controller('EditorCtrl', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, themeManager, componentManager, storageManager) {
+}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'extensionManager', 'syncManager', 'modelManager', 'themeManager', 'componentManager', 'storageManager', function ($sce, $timeout, authManager, $rootScope, extensionManager, syncManager, modelManager, themeManager, componentManager, storageManager) {
+  var _this6 = this;
 
   this.componentManager = componentManager;
   this.componentStack = [];
@@ -33790,37 +33802,36 @@ function isDesktopApplication() {
   };
 
   this.setNote = function (note, oldNote) {
-    var _this3 = this;
+    var _this4 = this;
 
     this.showExtensions = false;
     this.showMenu = false;
     this.loadTagsString();
 
+    var onReady = function onReady() {
+      _this4.noteReady = true;
+      $timeout(function () {
+        _this4.loadPreferences();
+      });
+    };
+
     var associatedEditor = this.editorForNote(note);
-    if (associatedEditor) {
+    if (associatedEditor && associatedEditor != this.selectedEditor) {
       // setting note to not ready will remove the editor from view in a flash,
       // so we only want to do this if switching between external editors
       this.noteReady = false;
-    } else {
-      this.noteReady = true;
-    }
-
-    if (this.editorComponent && this.editorComponent != associatedEditor) {
-      // Deactivate old editor
-      componentManager.deactivateComponent(this.editorComponent);
-      this.editorComponent = null;
-    }
-
-    // Activate new editor if it's different from the one currently activated
-    if (associatedEditor && associatedEditor != this.editorComponent) {
       // switch after timeout, so that note data isnt posted to current editor
       $timeout(function () {
-        _this3.enableComponent(associatedEditor);
-        _this3.editorComponent = associatedEditor;
-        _this3.noteReady = true;
+        _this4.selectedEditor = associatedEditor;
+        onReady();
       });
+    } else if (associatedEditor) {
+      // Same editor as currently active
+      onReady();
     } else {
-      this.noteReady = true;
+      // No editor
+      this.selectedEditor = null;
+      onReady();
     }
 
     if (note.safeText().length == 0 && note.dummy) {
@@ -33874,29 +33885,48 @@ function isDesktopApplication() {
     }
   };
 
-  this.selectedEditor = function (editorComponent) {
-    this.showEditorMenu = false;
+  this.onEditorMenuClick = function () {
+    // App bar menu item click
+    this.showEditorMenu = !this.showEditorMenu;
+    this.showMenu = false;
+    this.showExtensions = false;
+  };
 
-    if (this.editorComponent && this.editorComponent !== editorComponent) {
-      // This disassociates the editor from the note, but the component itself still needs to be deactivated
-      this.disableComponentForCurrentItem(this.editorComponent);
-      // Now deactivate the component
-      componentManager.deactivateComponent(this.editorComponent);
+  this.editorMenuOnSelect = function (component) {
+    var _this5 = this;
+
+    if (!component || component.area == "editor-editor") {
+      // if plain editor or other editor
+      this.showEditorMenu = false;
+      var editor = component;
+      if (this.selectedEditor && editor !== this.selectedEditor) {
+        this.disassociateComponentWithCurrentNote(this.selectedEditor);
+      }
+      if (editor) {
+        if (this.note.getAppDataItem("prefersPlainEditor") == true) {
+          this.note.setAppDataItem("prefersPlainEditor", false);
+          this.note.setDirty(true);
+        }
+        this.associateComponentWithCurrentNote(editor);
+      } else {
+        // Note prefers plain editor
+        if (!this.note.getAppDataItem("prefersPlainEditor")) {
+          this.note.setAppDataItem("prefersPlainEditor", true);
+          this.note.setDirty(true);
+        }
+        $timeout(function () {
+          _this5.reloadFont();
+        });
+      }
+
+      this.selectedEditor = editor;
+    } else if (component.area == "editor-stack") {
+      // If component stack item
+      this.toggleStackComponentForCurrentItem(component);
     }
 
-    if (editorComponent) {
-      this.note.setAppDataItem("prefersPlainEditor", false);
-      this.note.setDirty(true);
-      this.enableComponent(editorComponent);
-      this.associateComponentWithCurrentItem(editorComponent);
-    } else {
-      // Note prefers plain editor
-      this.note.setAppDataItem("prefersPlainEditor", true);
-      this.note.setDirty(true);
-      syncManager.sync();
-    }
-
-    this.editorComponent = editorComponent;
+    // Lots of dirtying can happen above, so we'll sync
+    syncManager.sync();
   }.bind(this);
 
   this.hasAvailableExtensions = function () {
@@ -33999,7 +34029,6 @@ function isDesktopApplication() {
 
   this.onNameBlur = function () {
     this.editingName = false;
-    this.updateTagsFromTagsString();
   };
 
   this.toggleFullScreen = function () {
@@ -34106,6 +34135,74 @@ function isDesktopApplication() {
     this.updateTags()(this.note, tags);
   };
 
+  /* Resizability */
+
+  this.resizeControl = {};
+
+  this.onPanelResizeFinish = function (width, left, isMaxWidth) {
+    if (isMaxWidth) {
+      authManager.setUserPrefValue("editorWidth", null);
+    } else {
+      if (width !== undefined && width !== null) {
+        authManager.setUserPrefValue("editorWidth", width);
+      }
+    }
+
+    if (left !== undefined && left !== null) {
+      authManager.setUserPrefValue("editorLeft", left);
+    }
+    authManager.syncUserPreferences();
+  };
+
+  $rootScope.$on("user-preferences-changed", function () {
+    _this6.loadPreferences();
+  });
+
+  this.loadPreferences = function () {
+    this.monospaceFont = authManager.getUserPrefValue("monospaceFont", "monospace");
+
+    if (!document.getElementById("editor-content")) {
+      // Elements have not yet loaded due to ng-if around wrapper
+      return;
+    }
+
+    this.reloadFont();
+
+    var width = authManager.getUserPrefValue("editorWidth", null);
+    if (width !== null) {
+      this.resizeControl.setWidth(width);
+    }
+
+    var left = authManager.getUserPrefValue("editorLeft", null);
+    if (left !== null) {
+      this.resizeControl.setLeft(left);
+    }
+  };
+
+  this.reloadFont = function () {
+    var editable = document.getElementById("note-text-editor");
+
+    if (!editable) {
+      return;
+    }
+
+    if (this.monospaceFont) {
+      if (isMacApplication()) {
+        editable.style.fontFamily = "Menlo, Consolas, 'DejaVu Sans Mono', monospace";
+      } else {
+        editable.style.fontFamily = "monospace";
+      }
+    } else {
+      editable.style.fontFamily = "inherit";
+    }
+  };
+
+  this.toggleKey = function (key) {
+    this[key] = !this[key];
+    authManager.setUserPrefValue(key, this[key], true);
+    this.reloadFont();
+  };
+
   /*
   Components
   */
@@ -34126,22 +34223,11 @@ function isDesktopApplication() {
         }
       } else {
         // Editor
-        if (component.active && this.note && component.isActiveForItem(this.note)) {
-          this.editorComponent = component;
+        if (component.active && this.note && (component.isActiveForItem(this.note) || component.isDefaultEditor())) {
+          this.selectedEditor = component;
         } else {
-          this.editorComponent = null;
+          this.selectedEditor = null;
         }
-      }
-
-      if (component.active) {
-        $timeout(function () {
-          var iframe = componentManager.iframeForComponent(component);
-          if (iframe) {
-            iframe.onload = function () {
-              componentManager.registerComponentWindow(component, iframe.contentWindow);
-            }.bind(this);
-          }
-        }.bind(this));
       }
     }.bind(this), contextRequestHandler: function (component) {
       return this.note;
@@ -34153,20 +34239,9 @@ function isDesktopApplication() {
           element.setAttribute("style", 'width:' + widthString + '; height:' + heightString + '; ');
         };
 
-        if (data.type === "content") {
-          var iframe = componentManager.iframeForComponent(component);
-          var width = data.width;
-          var height = data.height;
-          iframe.width = width;
-          iframe.height = height;
-
-          setSize(iframe, data);
-        } else {
+        if (data.type == "container") {
           if (component.area == "note-tags") {
             var container = document.getElementById("note-tags-component-container");
-            setSize(container, data);
-          } else {
-            var container = document.getElementById("component-" + component.uuid);
             setSize(container, data);
           }
         }
@@ -34199,15 +34274,29 @@ function isDesktopApplication() {
     }.bind(this) });
 
   this.reloadComponentContext = function () {
+    componentManager.contextItemDidChangeInArea("note-tags");
+    componentManager.contextItemDidChangeInArea("editor-stack");
+    componentManager.contextItemDidChangeInArea("editor-editor");
+
+    var stack = componentManager.componentsForArea("editor-stack");
     var _iteratorNormalCompletion4 = true;
     var _didIteratorError4 = false;
     var _iteratorError4 = undefined;
 
     try {
-      for (var _iterator4 = this.componentStack[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+      for (var _iterator4 = stack[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
         var component = _step4.value;
 
-        componentManager.setEventFlowForComponent(component, component.isActiveForItem(this.note));
+        var activeForItem = component.isActiveForItem(this.note);
+        if (activeForItem) {
+          if (!component.active) {
+            componentManager.activateComponent(component);
+          }
+        } else {
+          if (component.active) {
+            componentManager.deactivateComponent(component);
+          }
+        }
       }
     } catch (err) {
       _didIteratorError4 = true;
@@ -34223,94 +34312,46 @@ function isDesktopApplication() {
         }
       }
     }
-
-    componentManager.contextItemDidChangeInArea("note-tags");
-    componentManager.contextItemDidChangeInArea("editor-stack");
-    componentManager.contextItemDidChangeInArea("editor-editor");
   };
 
-  this.enableComponent = function (component) {
-    componentManager.activateComponent(component);
-    componentManager.setEventFlowForComponent(component, 1);
-  };
-
-  this.associateComponentWithCurrentItem = function (component) {
-    componentManager.associateComponentWithItem(component, this.note);
-  };
-
-  var alertKey = "displayed-component-disable-alert";
-  this.disableComponentForCurrentItem = function (component, showAlert) {
-    componentManager.disassociateComponentWithItem(component, this.note);
-    componentManager.setEventFlowForComponent(component, 0);
-    if (showAlert && !storageManager.getItem(alertKey)) {
-      alert("This component will be disabled for this note. You can re-enable this component in the 'Menu' of the editor pane.");
-      storageManager.setItem(alertKey, true);
+  this.toggleStackComponentForCurrentItem = function (component) {
+    if (component.isActiveForItem(this.note)) {
+      componentManager.deactivateComponent(component);
+      this.disassociateComponentWithCurrentNote(component);
+    } else {
+      componentManager.activateComponent(component);
+      componentManager.contextItemDidChangeInArea("editor-stack");
+      this.associateComponentWithCurrentNote(component);
     }
   };
 
-  this.hasDisabledStackComponents = function () {
-    var _iteratorNormalCompletion5 = true;
-    var _didIteratorError5 = false;
-    var _iteratorError5 = undefined;
+  this.disassociateComponentWithCurrentNote = function (component) {
+    var _this7 = this;
 
-    try {
-      for (var _iterator5 = this.componentStack[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-        var component = _step5.value;
-
-        if (component.ignoreEvents) {
-          return true;
-        }
-      }
-    } catch (err) {
-      _didIteratorError5 = true;
-      _iteratorError5 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion5 && _iterator5.return) {
-          _iterator5.return();
-        }
-      } finally {
-        if (_didIteratorError5) {
-          throw _iteratorError5;
-        }
-      }
-    }
-
-    return false;
-  };
-
-  this.restoreDisabledStackComponents = function () {
-    var relevantComponents = this.componentStack.filter(function (component) {
-      return component.ignoreEvents;
+    component.associatedItemIds = component.associatedItemIds.filter(function (id) {
+      return id !== _this7.note.uuid;
     });
 
-    componentManager.enableComponentsForItem(relevantComponents, this.note);
-
-    var _iteratorNormalCompletion6 = true;
-    var _didIteratorError6 = false;
-    var _iteratorError6 = undefined;
-
-    try {
-      for (var _iterator6 = relevantComponents[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-        var component = _step6.value;
-
-        componentManager.setEventFlowForComponent(component, true);
-        componentManager.contextItemDidChangeInArea("editor-stack");
-      }
-    } catch (err) {
-      _didIteratorError6 = true;
-      _iteratorError6 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion6 && _iterator6.return) {
-          _iterator6.return();
-        }
-      } finally {
-        if (_didIteratorError6) {
-          throw _iteratorError6;
-        }
-      }
+    // Only disassociative components should modify the disassociatedItemIds
+    if (!component.isAssociative() && !component.disassociatedItemIds.includes(this.note.uuid)) {
+      component.disassociatedItemIds.push(this.note.uuid);
     }
+
+    component.setDirty(true);
+  };
+
+  this.associateComponentWithCurrentNote = function (component) {
+    var _this8 = this;
+
+    component.disassociatedItemIds = component.disassociatedItemIds.filter(function (id) {
+      return id !== _this8.note.uuid;
+    });
+
+    if (component.isAssociative() && !component.associatedItemIds.includes(this.note.uuid)) {
+      component.associatedItemIds.push(this.note.uuid);
+    }
+
+    component.setDirty(true);
   };
 
   /*
@@ -34361,8 +34402,8 @@ function isDesktopApplication() {
       this.loadedTabListener = false;
     }.bind(this));
   };
-});
-;angular.module('app.frontend').directive("footer", function (authManager) {
+}]);
+;angular.module('app.frontend').directive("footer", ['authManager', function (authManager) {
   return {
     restrict: 'E',
     scope: {},
@@ -34384,7 +34425,8 @@ function isDesktopApplication() {
       });
     }
   };
-}).controller('FooterCtrl', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager) {
+}]).controller('FooterCtrl', ['$rootScope', 'authManager', 'modelManager', '$timeout', 'dbManager', 'syncManager', 'storageManager', 'passcodeManager', 'componentManager', 'singletonManager', 'packageManager', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager, componentManager, singletonManager, packageManager) {
+  var _this9 = this;
 
   this.user = authManager.user;
 
@@ -34406,25 +34448,16 @@ function isDesktopApplication() {
     this.showAccountMenu = false;
   }.bind(this);
 
+  this.closeAccountMenu = function () {
+    _this9.showAccountMenu = false;
+  };
+
   this.accountMenuPressed = function () {
-    this.serverData = {};
     this.showAccountMenu = !this.showAccountMenu;
-    this.showFaq = false;
-    this.showNewPasswordForm = false;
-    this.showExtensionsMenu = false;
-    this.showIOMenu = false;
   };
 
   this.toggleExtensions = function () {
-    this.showAccountMenu = false;
-    this.showIOMenu = false;
     this.showExtensionsMenu = !this.showExtensionsMenu;
-  };
-
-  this.toggleIO = function () {
-    this.showIOMenu = !this.showIOMenu;
-    this.showExtensionsMenu = false;
-    this.showAccountMenu = false;
   };
 
   this.hasPasscode = function () {
@@ -34468,13 +34501,70 @@ function isDesktopApplication() {
     this.newUpdateAvailable = false;
     alert("A new update is ready to install. Updates address performance and security issues, as well as bug fixes and feature enhancements. Simply quit Standard Notes and re-open it for the update to be applied.");
   };
-});
-;angular.module('app.frontend').controller('HomeCtrl', function ($scope, $location, $rootScope, $timeout, modelManager, dbManager, syncManager, authManager, themeManager, passcodeManager, storageManager, migrationManager) {
+
+  /* Rooms */
+
+  this.componentManager = componentManager;
+  this.rooms = [];
+
+  modelManager.addItemSyncObserver("room-bar", "SN|Component", function (allItems, validItems, deletedItems, source) {
+    var incomingRooms = allItems.filter(function (candidate) {
+      return candidate.area == "rooms";
+    });
+    _this9.rooms = _.uniq(_this9.rooms.concat(incomingRooms)).filter(function (candidate) {
+      return !candidate.deleted;
+    });
+  });
+
+  componentManager.registerHandler({ identifier: "roomBar", areas: ["rooms"], activationHandler: function activationHandler(component) {
+      if (component.active) {
+        // Show room, if it was not activated manually (in the event of event from componentManager)
+        if (!component.showRoom) {
+          _this9.selectRoom(component);
+        }
+        $timeout(function () {
+          var lastSize = component.getRoomLastSize();
+          if (lastSize) {
+            componentManager.handleSetSizeEvent(component, lastSize);
+          }
+        });
+      }
+    }, actionHandler: function actionHandler(component, action, data) {
+      if (action == "set-size") {
+        component.setRoomLastSize(data);
+      }
+    } });
+
+  this.selectRoom = function (room) {
+
+    // Allows us to send messages to component modal directive
+    if (!room.directiveController) {
+      room.directiveController = { onDismiss: function onDismiss() {
+          room.showRoom = false;
+        } };
+    }
+
+    // Make sure to call dismiss() before setting new showRoom value
+    // This way the directive stays alive long enough to deactivate the associated component
+    // (The directive's life is at the mercy of "ng-if" => "room.showRoom")
+    if (room.showRoom) {
+      room.directiveController.dismiss(function () {});
+    } else {
+      room.showRoom = true;
+    }
+  };
+}]);
+;angular.module('app.frontend').controller('HomeCtrl', ['$scope', '$location', '$rootScope', '$timeout', 'modelManager', 'dbManager', 'syncManager', 'authManager', 'themeManager', 'passcodeManager', 'storageManager', 'migrationManager', function ($scope, $location, $rootScope, $timeout, modelManager, dbManager, syncManager, authManager, themeManager, passcodeManager, storageManager, migrationManager) {
 
   storageManager.initialize(passcodeManager.hasPasscode(), authManager.isEphemeralSession());
 
   $scope.onUpdateAvailable = function (version) {
     $rootScope.$broadcast('new-update-available', version);
+  };
+
+  /* Used to avoid circular dependencies where syncManager cannot be imported but rootScope can */
+  $rootScope.sync = function () {
+    syncManager.sync();
   };
 
   $rootScope.lockApplication = function () {
@@ -34554,17 +34644,73 @@ function isDesktopApplication() {
 
   $scope.updateTagsForNote = function (note, stringTags) {
     var toRemove = [];
+    var _iteratorNormalCompletion5 = true;
+    var _didIteratorError5 = false;
+    var _iteratorError5 = undefined;
+
+    try {
+      for (var _iterator5 = note.tags[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+        var tag = _step5.value;
+
+        if (stringTags.indexOf(tag.title) === -1) {
+          // remove this tag
+          toRemove.push(tag);
+        }
+      }
+    } catch (err) {
+      _didIteratorError5 = true;
+      _iteratorError5 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion5 && _iterator5.return) {
+          _iterator5.return();
+        }
+      } finally {
+        if (_didIteratorError5) {
+          throw _iteratorError5;
+        }
+      }
+    }
+
+    var _iteratorNormalCompletion6 = true;
+    var _didIteratorError6 = false;
+    var _iteratorError6 = undefined;
+
+    try {
+      for (var _iterator6 = toRemove[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+        var tagToRemove = _step6.value;
+
+        note.removeItemAsRelationship(tagToRemove);
+        tagToRemove.removeItemAsRelationship(note);
+        tagToRemove.setDirty(true);
+      }
+    } catch (err) {
+      _didIteratorError6 = true;
+      _iteratorError6 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion6 && _iterator6.return) {
+          _iterator6.return();
+        }
+      } finally {
+        if (_didIteratorError6) {
+          throw _iteratorError6;
+        }
+      }
+    }
+
+    var tags = [];
     var _iteratorNormalCompletion7 = true;
     var _didIteratorError7 = false;
     var _iteratorError7 = undefined;
 
     try {
-      for (var _iterator7 = note.tags[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-        var tag = _step7.value;
+      for (var _iterator7 = stringTags[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+        var tagString = _step7.value;
 
-        if (stringTags.indexOf(tag.title) === -1) {
-          // remove this tag
-          toRemove.push(tag);
+        var existingRelationship = _.find(note.tags, { title: tagString });
+        if (!existingRelationship) {
+          tags.push(modelManager.findOrCreateTagByTitle(tagString));
         }
       }
     } catch (err) {
@@ -34587,12 +34733,10 @@ function isDesktopApplication() {
     var _iteratorError8 = undefined;
 
     try {
-      for (var _iterator8 = toRemove[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-        var tagToRemove = _step8.value;
+      for (var _iterator8 = tags[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+        var tag = _step8.value;
 
-        note.removeItemAsRelationship(tagToRemove);
-        tagToRemove.removeItemAsRelationship(note);
-        tagToRemove.setDirty(true);
+        modelManager.createRelationshipBetweenItems(note, tag);
       }
     } catch (err) {
       _didIteratorError8 = true;
@@ -34605,60 +34749,6 @@ function isDesktopApplication() {
       } finally {
         if (_didIteratorError8) {
           throw _iteratorError8;
-        }
-      }
-    }
-
-    var tags = [];
-    var _iteratorNormalCompletion9 = true;
-    var _didIteratorError9 = false;
-    var _iteratorError9 = undefined;
-
-    try {
-      for (var _iterator9 = stringTags[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-        var tagString = _step9.value;
-
-        var existingRelationship = _.find(note.tags, { title: tagString });
-        if (!existingRelationship) {
-          tags.push(modelManager.findOrCreateTagByTitle(tagString));
-        }
-      }
-    } catch (err) {
-      _didIteratorError9 = true;
-      _iteratorError9 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion9 && _iterator9.return) {
-          _iterator9.return();
-        }
-      } finally {
-        if (_didIteratorError9) {
-          throw _iteratorError9;
-        }
-      }
-    }
-
-    var _iteratorNormalCompletion10 = true;
-    var _didIteratorError10 = false;
-    var _iteratorError10 = undefined;
-
-    try {
-      for (var _iterator10 = tags[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-        var tag = _step10.value;
-
-        modelManager.createRelationshipBetweenItems(note, tag);
-      }
-    } catch (err) {
-      _didIteratorError10 = true;
-      _iteratorError10 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion10 && _iterator10.return) {
-          _iterator10.return();
-        }
-      } finally {
-        if (_didIteratorError10) {
-          throw _iteratorError10;
         }
       }
     }
@@ -34818,7 +34908,7 @@ function isDesktopApplication() {
   if (urlParam("server")) {
     autoSignInFromParams();
   }
-});
+}]);
 ;
 var LockScreen = function () {
   function LockScreen() {
@@ -34833,7 +34923,7 @@ var LockScreen = function () {
 
   _createClass(LockScreen, [{
     key: 'controller',
-    value: function controller($scope, passcodeManager) {
+    value: ['$scope', 'passcodeManager', function controller($scope, passcodeManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -34848,7 +34938,7 @@ var LockScreen = function () {
           $scope.onSuccess()();
         });
       };
-    }
+    }]
   }]);
 
   return LockScreen;
@@ -34888,23 +34978,63 @@ angular.module('app.frontend').directive('lockScreen', function () {
       });
     }
   };
-}).controller('NotesCtrl', function (authManager, $timeout, $rootScope, modelManager, storageManager) {
+}).controller('NotesCtrl', ['authManager', '$timeout', '$rootScope', 'modelManager', 'storageManager', function (authManager, $timeout, $rootScope, modelManager, storageManager) {
+  var _this10 = this;
 
-  this.sortBy = storageManager.getItem("sortBy") || "created_at";
-  this.showArchived = storageManager.getBooleanValue("showArchived") || false;
-  this.sortDescending = this.sortBy != "title";
+  this.panelController = {};
+
+  $rootScope.$on("user-preferences-changed", function () {
+    _this10.loadPreferences();
+  });
+
+  this.loadPreferences = function () {
+    this.sortBy = authManager.getUserPrefValue("sortBy", "created_at");
+    this.sortDescending = this.sortBy != "title";
+
+    this.showArchived = authManager.getUserPrefValue("showArchived", false);
+    this.hidePinned = authManager.getUserPrefValue("hidePinned", false);
+    this.hideNotePreview = authManager.getUserPrefValue("hideNotePreview", false);
+    this.hideDate = authManager.getUserPrefValue("hideDate", false);
+    this.hideTags = authManager.getUserPrefValue("hideTags", false);
+
+    var width = authManager.getUserPrefValue("notesPanelWidth");
+    if (width) {
+      this.panelController.setWidth(width);
+    }
+  };
+
+  this.loadPreferences();
+
+  this.onPanelResize = function (newWidth) {
+    authManager.setUserPrefValue("notesPanelWidth", newWidth);
+    authManager.syncUserPreferences();
+  };
+
+  angular.element(document).ready(function () {
+    _this10.loadPreferences();
+  });
 
   $rootScope.$on("editorFocused", function () {
     this.showMenu = false;
   }.bind(this));
 
   $rootScope.$on("noteDeleted", function () {
-    this.selectFirstNote(false);
+    $timeout(this.onNoteRemoval.bind(this));
   }.bind(this));
 
   $rootScope.$on("noteArchived", function () {
-    this.selectFirstNote(false);
+    $timeout(this.onNoteRemoval.bind(this));
   }.bind(this));
+
+  // When a note is removed from the list
+  this.onNoteRemoval = function () {
+    var visibleNotes = this.visibleNotes();
+    if (this.selectedIndex < visibleNotes.length) {
+      this.selectNote(visibleNotes[this.selectedIndex]);
+    } else {
+      this.selectNote(visibleNotes[visibleNotes.length - 1]);
+    }
+  };
 
   this.DefaultNotesToDisplayValue = 20;
 
@@ -34913,26 +35043,41 @@ angular.module('app.frontend').directive('lockScreen', function () {
     this.notesToDisplay += this.DefaultNotesToDisplayValue;
   };
 
+  this.panelTitle = function () {
+    if (this.noteFilter.text.length) {
+      return this.tag.notes.filter(function (i) {
+        return i.visible;
+      }).length + ' search results';
+    } else if (this.tag) {
+      return this.tag.title + ' notes';
+    }
+  };
+
   this.optionsSubtitle = function () {
-    var base = "Sorting by";
+    var base = "";
     if (this.sortBy == "created_at") {
-      base += " date added";
+      base += " Date Added";
     } else if (this.sortBy == "updated_at") {
-      base += " date modifed";
+      base += " Date Modifed";
     } else if (this.sortBy == "title") {
-      base += " title";
+      base += " Title";
     }
 
     if (this.showArchived && (!this.tag || !this.tag.archiveTag)) {
-      base += " | Including archived";
+      base += " | + Archived";
+    }
+
+    if (this.hidePinned) {
+      base += " | – Pinned";
     }
 
     return base;
   };
 
-  this.toggleShowArchived = function () {
-    this.showArchived = !this.showArchived;
-    storageManager.setBooleanValue("showArchived", this.showArchived);
+  this.toggleKey = function (key) {
+    this[key] = !this[key];
+    authManager.setUserPrefValue(key, this[key]);
+    authManager.syncUserPreferences();
   };
 
   this.tagDidChange = function (tag, oldTag) {
@@ -34965,10 +35110,14 @@ angular.module('app.frontend').directive('lockScreen', function () {
     this.selectFirstNote(createNew);
   };
 
-  this.selectFirstNote = function (createNew) {
-    var visibleNotes = this.sortedNotes.filter(function (note) {
+  this.visibleNotes = function () {
+    return this.sortedNotes.filter(function (note) {
       return note.visible;
     });
+  };
+
+  this.selectFirstNote = function (createNew) {
+    var visibleNotes = this.visibleNotes();
 
     if (visibleNotes.length > 0) {
       this.selectNote(visibleNotes[0]);
@@ -34978,6 +35127,9 @@ angular.module('app.frontend').directive('lockScreen', function () {
   };
 
   this.selectNote = function (note) {
+    if (!note) {
+      return;
+    }
     this.selectedNote = note;
     note.conflict_of = null; // clear conflict
     this.selectionMade()(note);
@@ -34999,7 +35151,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
       return note.visible;
     }
 
-    if (note.archived && !this.showArchived) {
+    if (note.archived && !this.showArchived || note.pinned && this.hidePinned) {
       note.visible = false;
       return note.visible;
     }
@@ -35049,9 +35201,10 @@ angular.module('app.frontend').directive('lockScreen', function () {
 
   this.setSortBy = function (type) {
     this.sortBy = type;
-    storageManager.setItem("sortBy", type);
+    authManager.setUserPrefValue("sortBy", this.sortBy);
+    authManager.syncUserPreferences();
   };
-});
+}]);
 ;angular.module('app.frontend').directive("tagsSection", function () {
   return {
     restrict: 'E',
@@ -35086,27 +35239,38 @@ angular.module('app.frontend').directive('lockScreen', function () {
       });
     }
   };
-}).controller('TagsCtrl', function ($rootScope, modelManager, $timeout, componentManager) {
+}).controller('TagsCtrl', ['$rootScope', 'modelManager', '$timeout', 'componentManager', 'authManager', function ($rootScope, modelManager, $timeout, componentManager, authManager) {
+  var _this11 = this;
 
   var initialLoad = true;
+
+  this.panelController = {};
+
+  $rootScope.$on("user-preferences-changed", function () {
+    _this11.loadPreferences();
+  });
+
+  this.loadPreferences = function () {
+    var width = authManager.getUserPrefValue("tagsPanelWidth");
+    if (width) {
+      this.panelController.setWidth(width);
+    }
+  };
+
+  this.loadPreferences();
+
+  this.onPanelResize = function (newWidth) {
+    authManager.setUserPrefValue("tagsPanelWidth", newWidth);
+    authManager.syncUserPreferences();
+  };
 
   this.componentManager = componentManager;
 
   componentManager.registerHandler({ identifier: "tags", areas: ["tags-list"], activationHandler: function (component) {
       this.component = component;
-
-      if (component.active) {
-        $timeout(function () {
-          var iframe = document.getElementById("tags-list-iframe");
-          iframe.onload = function () {
-            componentManager.registerComponentWindow(this.component, iframe.contentWindow);
-          }.bind(this);
-        }.bind(this));
-      }
     }.bind(this), contextRequestHandler: function (component) {
       return null;
     }.bind(this), actionHandler: function (component, action, data) {
-
       if (action === "select-item") {
         var tag = modelManager.findItem(data.item.uuid);
         if (tag) {
@@ -35198,7 +35362,7 @@ angular.module('app.frontend').directive('lockScreen', function () {
     });
     return validNotes.length;
   };
-});
+}]);
 ;var AppDomain = "org.standardnotes.sn";
 var dateFormatter;
 
@@ -35265,27 +35429,27 @@ var Item = function () {
   }, {
     key: 'notifyObserversOfChange',
     value: function notifyObserversOfChange() {
-      var _iteratorNormalCompletion11 = true;
-      var _didIteratorError11 = false;
-      var _iteratorError11 = undefined;
+      var _iteratorNormalCompletion9 = true;
+      var _didIteratorError9 = false;
+      var _iteratorError9 = undefined;
 
       try {
-        for (var _iterator11 = this.observers[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-          var observer = _step11.value;
+        for (var _iterator9 = this.observers[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+          var observer = _step9.value;
 
           observer.callback(this);
         }
       } catch (err) {
-        _didIteratorError11 = true;
-        _iteratorError11 = err;
+        _didIteratorError9 = true;
+        _iteratorError9 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion11 && _iterator11.return) {
-            _iterator11.return();
+          if (!_iteratorNormalCompletion9 && _iterator9.return) {
+            _iterator9.return();
           }
         } finally {
-          if (_didIteratorError11) {
-            throw _iteratorError11;
+          if (_didIteratorError9) {
+            throw _iteratorError9;
           }
         }
       }
@@ -35579,28 +35743,35 @@ var Component = function (_Item3) {
   function Component(json_obj) {
     _classCallCheck(this, Component);
 
-    var _this6 = _possibleConstructorReturn(this, (Component.__proto__ || Object.getPrototypeOf(Component)).call(this, json_obj));
+    var _this14 = _possibleConstructorReturn(this, (Component.__proto__ || Object.getPrototypeOf(Component)).call(this, json_obj));
 
-    if (!_this6.componentData) {
-      _this6.componentData = {};
+    if (!_this14.componentData) {
+      _this14.componentData = {};
     }
 
-    if (!_this6.disassociatedItemIds) {
-      _this6.disassociatedItemIds = [];
+    if (!_this14.disassociatedItemIds) {
+      _this14.disassociatedItemIds = [];
     }
 
-    if (!_this6.associatedItemIds) {
-      _this6.associatedItemIds = [];
+    if (!_this14.associatedItemIds) {
+      _this14.associatedItemIds = [];
     }
-    return _this6;
+    return _this14;
   }
 
   _createClass(Component, [{
     key: 'mapContentToLocalProperties',
     value: function mapContentToLocalProperties(content) {
       _get(Component.prototype.__proto__ || Object.getPrototypeOf(Component.prototype), 'mapContentToLocalProperties', this).call(this, content);
+      /* Legacy */
       this.url = content.url;
+      /* New */
+      this.local_url = content.local_url;
+      this.hosted_url = content.hosted_url;
+      this.offlineOnly = content.offlineOnly;
+
       this.name = content.name;
+      this.autoupdateDisabled = content.autoupdateDisabled;
 
       this.package_info = content.package_info;
 
@@ -35609,7 +35780,6 @@ var Component = function (_Item3) {
 
       this.permissions = content.permissions;
       this.active = content.active;
-      this.local = content.local;
 
       // custom data that a component can store in itself
       this.componentData = content.componentData || {};
@@ -35625,12 +35795,15 @@ var Component = function (_Item3) {
     value: function structureParams() {
       var params = {
         url: this.url,
+        hosted_url: this.hosted_url,
+        local_url: this.local_url,
+        offlineOnly: this.offlineOnly,
         name: this.name,
         area: this.area,
         package_info: this.package_info,
         permissions: this.permissions,
         active: this.active,
-        local: this.local,
+        autoupdateDisabled: this.autoupdateDisabled,
         componentData: this.componentData,
         disassociatedItemIds: this.disassociatedItemIds,
         associatedItemIds: this.associatedItemIds
@@ -35653,6 +35826,16 @@ var Component = function (_Item3) {
     key: 'isDefaultEditor',
     value: function isDefaultEditor() {
       return this.getAppDataItem("defaultEditor") == true;
+    }
+  }, {
+    key: 'setRoomLastSize',
+    value: function setRoomLastSize(size) {
+      this.setAppDataItem("lastRoomSize", size);
+    }
+  }, {
+    key: 'getRoomLastSize',
+    value: function getRoomLastSize() {
+      return this.getAppDataItem("lastRoomSize");
     }
 
     /*
@@ -35701,15 +35884,15 @@ var Editor = function (_Item4) {
   function Editor(json_obj) {
     _classCallCheck(this, Editor);
 
-    var _this7 = _possibleConstructorReturn(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, json_obj));
+    var _this15 = _possibleConstructorReturn(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, json_obj));
 
-    if (!_this7.notes) {
-      _this7.notes = [];
+    if (!_this15.notes) {
+      _this15.notes = [];
     }
-    if (!_this7.data) {
-      _this7.data = {};
+    if (!_this15.data) {
+      _this15.data = {};
     }
-    return _this7;
+    return _this15;
   }
 
   _createClass(Editor, [{
@@ -35849,13 +36032,13 @@ var Action = function () {
 
       var permission = this.permissions.charAt(0).toUpperCase() + this.permissions.slice(1); // capitalize first letter
       permission += ": ";
-      var _iteratorNormalCompletion12 = true;
-      var _didIteratorError12 = false;
-      var _iteratorError12 = undefined;
+      var _iteratorNormalCompletion10 = true;
+      var _didIteratorError10 = false;
+      var _iteratorError10 = undefined;
 
       try {
-        for (var _iterator12 = this.content_types[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-          var contentType = _step12.value;
+        for (var _iterator10 = this.content_types[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+          var contentType = _step10.value;
 
           if (contentType == "*") {
             permission += "All items";
@@ -35866,16 +36049,16 @@ var Action = function () {
           permission += " ";
         }
       } catch (err) {
-        _didIteratorError12 = true;
-        _iteratorError12 = err;
+        _didIteratorError10 = true;
+        _iteratorError10 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion12 && _iterator12.return) {
-            _iterator12.return();
+          if (!_iteratorNormalCompletion10 && _iterator10.return) {
+            _iterator10.return();
           }
         } finally {
-          if (_didIteratorError12) {
-            throw _iteratorError12;
+          if (_didIteratorError10) {
+            throw _iteratorError10;
           }
         }
       }
@@ -35911,23 +36094,23 @@ var Extension = function (_Item5) {
   function Extension(json) {
     _classCallCheck(this, Extension);
 
-    var _this8 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
+    var _this16 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
 
-    if (_this8.encrypted === null || _this8.encrypted === undefined) {
+    if (_this16.encrypted === null || _this16.encrypted === undefined) {
       // Default to encrypted on creation.
-      _this8.encrypted = true;
+      _this16.encrypted = true;
     }
 
     if (json.actions) {
-      _this8.actions = json.actions.map(function (action) {
+      _this16.actions = json.actions.map(function (action) {
         return new Action(action);
       });
     }
 
-    if (!_this8.actions) {
-      _this8.actions = [];
+    if (!_this16.actions) {
+      _this16.actions = [];
     }
-    return _this8;
+    return _this16;
   }
 
   _createClass(Extension, [{
@@ -36002,12 +36185,12 @@ var Note = function (_Item6) {
   function Note(json_obj) {
     _classCallCheck(this, Note);
 
-    var _this9 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
+    var _this17 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
 
-    if (!_this9.tags) {
-      _this9.tags = [];
+    if (!_this17.tags) {
+      _this17.tags = [];
     }
-    return _this9;
+    return _this17;
   }
 
   _createClass(Note, [{
@@ -36090,28 +36273,28 @@ var Note = function (_Item6) {
   }, {
     key: 'informReferencesOfUUIDChange',
     value: function informReferencesOfUUIDChange(oldUUID, newUUID) {
-      var _iteratorNormalCompletion13 = true;
-      var _didIteratorError13 = false;
-      var _iteratorError13 = undefined;
+      var _iteratorNormalCompletion11 = true;
+      var _didIteratorError11 = false;
+      var _iteratorError11 = undefined;
 
       try {
-        for (var _iterator13 = this.tags[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-          var tag = _step13.value;
+        for (var _iterator11 = this.tags[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+          var tag = _step11.value;
 
           _.pull(tag.notes, { uuid: oldUUID });
           tag.notes.push(this);
         }
       } catch (err) {
-        _didIteratorError13 = true;
-        _iteratorError13 = err;
+        _didIteratorError11 = true;
+        _iteratorError11 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion13 && _iterator13.return) {
-            _iterator13.return();
+          if (!_iteratorNormalCompletion11 && _iterator11.return) {
+            _iterator11.return();
           }
         } finally {
-          if (_didIteratorError13) {
-            throw _iteratorError13;
+          if (_didIteratorError11) {
+            throw _iteratorError11;
           }
         }
       }
@@ -36166,12 +36349,12 @@ var Tag = function (_Item7) {
   function Tag(json_obj) {
     _classCallCheck(this, Tag);
 
-    var _this10 = _possibleConstructorReturn(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
+    var _this18 = _possibleConstructorReturn(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
 
-    if (!_this10.notes) {
-      _this10.notes = [];
+    if (!_this18.notes) {
+      _this18.notes = [];
     }
-    return _this10;
+    return _this18;
   }
 
   _createClass(Tag, [{
@@ -36251,28 +36434,28 @@ var Tag = function (_Item7) {
   }, {
     key: 'informReferencesOfUUIDChange',
     value: function informReferencesOfUUIDChange(oldUUID, newUUID) {
-      var _iteratorNormalCompletion14 = true;
-      var _didIteratorError14 = false;
-      var _iteratorError14 = undefined;
+      var _iteratorNormalCompletion12 = true;
+      var _didIteratorError12 = false;
+      var _iteratorError12 = undefined;
 
       try {
-        for (var _iterator14 = this.notes[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-          var note = _step14.value;
+        for (var _iterator12 = this.notes[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+          var note = _step12.value;
 
           _.pull(note.tags, { uuid: oldUUID });
           note.tags.push(this);
         }
       } catch (err) {
-        _didIteratorError14 = true;
-        _iteratorError14 = err;
+        _didIteratorError12 = true;
+        _iteratorError12 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion14 && _iterator14.return) {
-            _iterator14.return();
+          if (!_iteratorNormalCompletion12 && _iterator12.return) {
+            _iterator12.return();
           }
         } finally {
-          if (_didIteratorError14) {
-            throw _iteratorError14;
+          if (_didIteratorError12) {
+            throw _iteratorError12;
           }
         }
       }
@@ -36304,41 +36487,19 @@ var Tag = function (_Item7) {
 }(Item);
 
 ;
-var Theme = function (_Item8) {
-  _inherits(Theme, _Item8);
+var Theme = function (_Component) {
+  _inherits(Theme, _Component);
 
   function Theme(json_obj) {
     _classCallCheck(this, Theme);
 
-    return _possibleConstructorReturn(this, (Theme.__proto__ || Object.getPrototypeOf(Theme)).call(this, json_obj));
+    var _this19 = _possibleConstructorReturn(this, (Theme.__proto__ || Object.getPrototypeOf(Theme)).call(this, json_obj));
+
+    _this19.area = "themes";
+    return _this19;
   }
 
   _createClass(Theme, [{
-    key: 'mapContentToLocalProperties',
-    value: function mapContentToLocalProperties(content) {
-      _get(Theme.prototype.__proto__ || Object.getPrototypeOf(Theme.prototype), 'mapContentToLocalProperties', this).call(this, content);
-      this.url = content.url;
-      this.name = content.name;
-      this.local = content.local;
-    }
-  }, {
-    key: 'structureParams',
-    value: function structureParams() {
-      var params = {
-        url: this.url,
-        name: this.name,
-        local: this.local
-      };
-
-      _.merge(params, _get(Theme.prototype.__proto__ || Object.getPrototypeOf(Theme.prototype), 'structureParams', this).call(this));
-      return params;
-    }
-  }, {
-    key: 'toJSON',
-    value: function toJSON() {
-      return { uuid: this.uuid };
-    }
-  }, {
     key: 'content_type',
     get: function get() {
       return "SN|Theme";
@@ -36346,11 +36507,11 @@ var Theme = function (_Item8) {
   }]);
 
   return Theme;
-}(Item);
+}(Component);
 
 ;
-var EncryptedStorage = function (_Item9) {
-  _inherits(EncryptedStorage, _Item9);
+var EncryptedStorage = function (_Item8) {
+  _inherits(EncryptedStorage, _Item8);
 
   function EncryptedStorage(json_obj) {
     _classCallCheck(this, EncryptedStorage);
@@ -36401,10 +36562,14 @@ var ItemParams = function () {
 
   _createClass(ItemParams, [{
     key: 'paramsForExportFile',
-    value: function paramsForExportFile() {
+    value: function paramsForExportFile(includeDeleted) {
       this.additionalFields = ["updated_at"];
       this.forExportFile = true;
-      return _.omit(this.__params(), ["deleted"]);
+      if (includeDeleted) {
+        return this.__params();
+      } else {
+        return _.omit(this.__params(), ["deleted"]);
+      }
     }
   }, {
     key: 'paramsForExtension',
@@ -36464,11 +36629,12 @@ var ItemParams = function () {
     return domain;
   }
 
-  this.$get = function ($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
-    return new AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager);
-  };
+  this.$get = ['$rootScope', '$timeout', 'httpManager', 'modelManager', 'dbManager', 'storageManager', 'singletonManager', function ($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager, singletonManager) {
+    return new AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager, singletonManager);
+  }];
 
-  function AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager) {
+  function AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager, singletonManager) {
+    var _this21 = this;
 
     this.loadInitialData = function () {
       var userData = storageManager.getItem("user");
@@ -36742,20 +36908,65 @@ var ItemParams = function () {
       this.user = null;
       this._authParams = null;
     };
+
+    /* User Preferences */
+
+    var prefsContentType = "SN|UserPreferences";
+
+    singletonManager.registerSingleton({ content_type: prefsContentType }, function (resolvedSingleton) {
+      _this21.userPreferences = resolvedSingleton;
+      _this21.userPreferencesDidChange();
+    }, function (valueCallback) {
+      // Safe to create. Create and return object.
+      var prefs = new Item({ content_type: prefsContentType });
+      modelManager.addItem(prefs);
+      prefs.setDirty(true);
+      $rootScope.sync();
+      valueCallback(prefs);
+    });
+
+    this.userPreferencesDidChange = function () {
+      $rootScope.$broadcast("user-preferences-changed");
+    };
+
+    this.syncUserPreferences = function () {
+      this.userPreferences.setDirty(true);
+      $rootScope.sync();
+    };
+
+    this.getUserPrefValue = function (key, defaultValue) {
+      if (!this.userPreferences) {
+        return;
+      }
+      var value = this.userPreferences.getAppDataItem(key);
+      return value !== undefined && value != null ? value : defaultValue;
+    };
+
+    this.setUserPrefValue = function (key, value, sync) {
+      if (!this.userPreferences) {
+        console.log("Prefs are null, not setting value", key);return;
+      }
+      this.userPreferences.setAppDataItem(key, value);
+      if (sync) {
+        this.syncUserPreferences();
+      }
+    };
   }
 });
 ; /* This domain will be used to save context item client data */
 var ClientDataDomain = "org.standardnotes.sn.components";
 
 var ComponentManager = function () {
-  function ComponentManager($rootScope, modelManager, syncManager, desktopManager, themeManager, $timeout, $compile) {
+  ComponentManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'desktopManager', 'sysExtManager', '$timeout', '$compile'];
+  function ComponentManager($rootScope, modelManager, syncManager, desktopManager, sysExtManager, $timeout, $compile) {
+    var _this22 = this;
+
     _classCallCheck(this, ComponentManager);
 
     this.$compile = $compile;
     this.$rootScope = $rootScope;
     this.modelManager = modelManager;
     this.syncManager = syncManager;
-    this.themeManager = themeManager;
     this.desktopManager = desktopManager;
     this.timeout = $timeout;
     this.streamObservers = [];
@@ -36768,9 +36979,9 @@ var ComponentManager = function () {
 
     this.handlers = [];
 
-    $rootScope.$on("theme-changed", function () {
-      this.postThemeToComponents();
-    }.bind(this));
+    // $rootScope.$on("theme-changed", function(){
+    //   this.postThemeToAllComponents();
+    // }.bind(this))
 
     window.addEventListener("message", function (event) {
       if (this.loggingEnabled) {
@@ -36780,7 +36991,6 @@ var ComponentManager = function () {
     }.bind(this), false);
 
     this.modelManager.addItemSyncObserver("component-manager", "*", function (allItems, validItems, deletedItems, source) {
-      var _this13 = this;
 
       /* If the source of these new or updated items is from a Component itself saving items, we don't need to notify
         components again of the same item. Regarding notifying other components than the issuing component, other mapping sources
@@ -36791,44 +37001,43 @@ var ComponentManager = function () {
       }
 
       var syncedComponents = allItems.filter(function (item) {
-        return item.content_type === "SN|Component";
+        return item.content_type === "SN|Component" || item.content_type == "SN|Theme";
       });
 
       /* We only want to sync if the item source is Retrieved, not MappingSourceRemoteSaved to avoid
         recursion caused by the component being modified and saved after it is updated.
       */
       if (syncedComponents.length > 0 && source != ModelManager.MappingSourceRemoteSaved) {
-        console.log("Web, Syncing Components", syncedComponents, "source", source);
         // Ensure any component in our data is installed by the system
-        this.desktopManager.syncComponentsInstallation(syncedComponents);
+        _this22.desktopManager.syncComponentsInstallation(syncedComponents);
       }
 
-      var _iteratorNormalCompletion15 = true;
-      var _didIteratorError15 = false;
-      var _iteratorError15 = undefined;
+      var _iteratorNormalCompletion13 = true;
+      var _didIteratorError13 = false;
+      var _iteratorError13 = undefined;
 
       try {
-        for (var _iterator15 = syncedComponents[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-          var component = _step15.value;
+        for (var _iterator13 = syncedComponents[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+          var component = _step13.value;
 
-          var activeComponent = _.find(this.activeComponents, { uuid: component.uuid });
+          var activeComponent = _.find(_this22.activeComponents, { uuid: component.uuid });
           if (component.active && !component.deleted && !activeComponent) {
-            this.activateComponent(component);
+            _this22.activateComponent(component);
           } else if (!component.active && activeComponent) {
-            this.deactivateComponent(component);
+            _this22.deactivateComponent(component);
           }
         }
       } catch (err) {
-        _didIteratorError15 = true;
-        _iteratorError15 = err;
+        _didIteratorError13 = true;
+        _iteratorError13 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion15 && _iterator15.return) {
-            _iterator15.return();
+          if (!_iteratorNormalCompletion13 && _iterator13.return) {
+            _iterator13.return();
           }
         } finally {
-          if (_didIteratorError15) {
-            throw _iteratorError15;
+          if (_didIteratorError13) {
+            throw _iteratorError13;
           }
         }
       }
@@ -36849,18 +37058,19 @@ var ComponentManager = function () {
         }];
 
 
-        _this13.runWithPermissions(observer.component, requiredPermissions, observer.originalMessage.permissions, function () {
-          this.sendItemsInReply(observer.component, relevantItems, observer.originalMessage);
-        }.bind(_this13));
+        _this22.runWithPermissions(observer.component, requiredPermissions, function () {
+          console.log("Stream observer, sending items", relevantItems);
+          _this22.sendItemsInReply(observer.component, relevantItems, observer.originalMessage);
+        });
       };
 
-      var _iteratorNormalCompletion16 = true;
-      var _didIteratorError16 = false;
-      var _iteratorError16 = undefined;
+      var _iteratorNormalCompletion14 = true;
+      var _didIteratorError14 = false;
+      var _iteratorError14 = undefined;
 
       try {
-        for (var _iterator16 = this.streamObservers[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-          var observer = _step16.value;
+        for (var _iterator14 = _this22.streamObservers[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+          var observer = _step14.value;
           var relevantItems;
           var requiredPermissions;
 
@@ -36869,16 +37079,16 @@ var ComponentManager = function () {
           if (_ret === 'continue') continue;
         }
       } catch (err) {
-        _didIteratorError16 = true;
-        _iteratorError16 = err;
+        _didIteratorError14 = true;
+        _iteratorError14 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion16 && _iterator16.return) {
-            _iterator16.return();
+          if (!_iteratorNormalCompletion14 && _iterator14.return) {
+            _iterator14.return();
           }
         } finally {
-          if (_didIteratorError16) {
-            throw _iteratorError16;
+          if (_didIteratorError14) {
+            throw _iteratorError14;
           }
         }
       }
@@ -36888,52 +37098,91 @@ var ComponentManager = function () {
       }];
 
       var _loop2 = function _loop2(observer) {
-        _this13.runWithPermissions(observer.component, requiredContextPermissions, observer.originalMessage.permissions, function () {
-          var _iteratorNormalCompletion18 = true;
-          var _didIteratorError18 = false;
-          var _iteratorError18 = undefined;
+        var _iteratorNormalCompletion16 = true;
+        var _didIteratorError16 = false;
+        var _iteratorError16 = undefined;
 
-          try {
-            for (var _iterator18 = this.handlers[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
-              var handler = _step18.value;
+        try {
+          for (var _iterator16 = _this22.handlers[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+            var handler = _step16.value;
 
-              if (!handler.areas.includes(observer.component.area)) {
-                continue;
-              }
-              var itemInContext = handler.contextRequestHandler(observer.component);
+            if (!handler.areas.includes(observer.component.area) && !handler.areas.includes("*")) {
+              continue;
+            }
+            if (handler.contextRequestHandler) {
+              itemInContext = handler.contextRequestHandler(observer.component);
+
               if (itemInContext) {
-                var matchingItem = _.find(allItems, { uuid: itemInContext.uuid });
+                matchingItem = _.find(allItems, { uuid: itemInContext.uuid });
+
                 if (matchingItem) {
-                  this.sendContextItemInReply(observer.component, matchingItem, observer.originalMessage, source);
+                  _this22.runWithPermissions(observer.component, requiredContextPermissions, function () {
+                    _this22.sendContextItemInReply(observer.component, matchingItem, observer.originalMessage, source);
+                  });
                 }
               }
             }
-          } catch (err) {
-            _didIteratorError18 = true;
-            _iteratorError18 = err;
+          }
+        } catch (err) {
+          _didIteratorError16 = true;
+          _iteratorError16 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion16 && _iterator16.return) {
+              _iterator16.return();
+            }
           } finally {
-            try {
-              if (!_iteratorNormalCompletion18 && _iterator18.return) {
-                _iterator18.return();
-              }
-            } finally {
-              if (_didIteratorError18) {
-                throw _iteratorError18;
-              }
+            if (_didIteratorError16) {
+              throw _iteratorError16;
             }
           }
-        }.bind(_this13));
+        }
       };
 
+      var _iteratorNormalCompletion15 = true;
+      var _didIteratorError15 = false;
+      var _iteratorError15 = undefined;
+
+      try {
+        for (var _iterator15 = _this22.contextStreamObservers[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+          var observer = _step15.value;
+          var itemInContext;
+          var matchingItem;
+
+          _loop2(observer);
+        }
+      } catch (err) {
+        _didIteratorError15 = true;
+        _iteratorError15 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion15 && _iterator15.return) {
+            _iterator15.return();
+          }
+        } finally {
+          if (_didIteratorError15) {
+            throw _iteratorError15;
+          }
+        }
+      }
+    });
+  }
+
+  _createClass(ComponentManager, [{
+    key: 'postThemeToAllComponents',
+    value: function postThemeToAllComponents() {
       var _iteratorNormalCompletion17 = true;
       var _didIteratorError17 = false;
       var _iteratorError17 = undefined;
 
       try {
-        for (var _iterator17 = this.contextStreamObservers[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
-          var observer = _step17.value;
+        for (var _iterator17 = this.components[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+          var component = _step17.value;
 
-          _loop2(observer);
+          if (component.area == "themes" || !component.active || !component.window) {
+            continue;
+          }
+          this.postThemeToComponent(component);
         }
       } catch (err) {
         _didIteratorError17 = true;
@@ -36949,45 +37198,20 @@ var ComponentManager = function () {
           }
         }
       }
-    }.bind(this));
-  }
-
-  _createClass(ComponentManager, [{
-    key: 'postThemeToComponents',
-    value: function postThemeToComponents() {
-      var _iteratorNormalCompletion19 = true;
-      var _didIteratorError19 = false;
-      var _iteratorError19 = undefined;
-
-      try {
-        for (var _iterator19 = this.components[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
-          var component = _step19.value;
-
-          if (!component.active || !component.window) {
-            continue;
-          }
-          this.postThemeToComponent(component);
-        }
-      } catch (err) {
-        _didIteratorError19 = true;
-        _iteratorError19 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion19 && _iterator19.return) {
-            _iterator19.return();
-          }
-        } finally {
-          if (_didIteratorError19) {
-            throw _iteratorError19;
-          }
-        }
-      }
+    }
+  }, {
+    key: 'getActiveTheme',
+    value: function getActiveTheme() {
+      return this.componentsForArea("themes").find(function (theme) {
+        return theme.active;
+      });
     }
   }, {
     key: 'postThemeToComponent',
     value: function postThemeToComponent(component) {
+      var activeTheme = this.getActiveTheme();
       var data = {
-        themes: [this.themeManager.currentTheme ? this.themeManager.currentTheme.url : null]
+        themes: [activeTheme ? this.urlForComponent(activeTheme) : null]
       };
 
       this.sendMessageToComponent(component, { action: "themes", data: data });
@@ -36995,58 +37219,60 @@ var ComponentManager = function () {
   }, {
     key: 'contextItemDidChangeInArea',
     value: function contextItemDidChangeInArea(area) {
-      var _iteratorNormalCompletion20 = true;
-      var _didIteratorError20 = false;
-      var _iteratorError20 = undefined;
+      var _iteratorNormalCompletion18 = true;
+      var _didIteratorError18 = false;
+      var _iteratorError18 = undefined;
 
       try {
-        for (var _iterator20 = this.handlers[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
-          var handler = _step20.value;
+        for (var _iterator18 = this.handlers[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
+          var handler = _step18.value;
 
-          if (handler.areas.includes(area) === false) {
+          if (handler.areas.includes(area) === false && !handler.areas.includes("*")) {
             continue;
           }
           var observers = this.contextStreamObservers.filter(function (observer) {
             return observer.component.area === area;
           });
 
-          var _iteratorNormalCompletion21 = true;
-          var _didIteratorError21 = false;
-          var _iteratorError21 = undefined;
+          var _iteratorNormalCompletion19 = true;
+          var _didIteratorError19 = false;
+          var _iteratorError19 = undefined;
 
           try {
-            for (var _iterator21 = observers[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
-              var observer = _step21.value;
+            for (var _iterator19 = observers[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
+              var observer = _step19.value;
 
-              var itemInContext = handler.contextRequestHandler(observer.component);
-              this.sendContextItemInReply(observer.component, itemInContext, observer.originalMessage);
+              if (handler.contextRequestHandler) {
+                var itemInContext = handler.contextRequestHandler(observer.component);
+                this.sendContextItemInReply(observer.component, itemInContext, observer.originalMessage);
+              }
             }
           } catch (err) {
-            _didIteratorError21 = true;
-            _iteratorError21 = err;
+            _didIteratorError19 = true;
+            _iteratorError19 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion21 && _iterator21.return) {
-                _iterator21.return();
+              if (!_iteratorNormalCompletion19 && _iterator19.return) {
+                _iterator19.return();
               }
             } finally {
-              if (_didIteratorError21) {
-                throw _iteratorError21;
+              if (_didIteratorError19) {
+                throw _iteratorError19;
               }
             }
           }
         }
       } catch (err) {
-        _didIteratorError20 = true;
-        _iteratorError20 = err;
+        _didIteratorError18 = true;
+        _iteratorError18 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion20 && _iterator20.return) {
-            _iterator20.return();
+          if (!_iteratorNormalCompletion18 && _iterator18.return) {
+            _iterator18.return();
           }
         } finally {
-          if (_didIteratorError20) {
-            throw _iteratorError20;
+          if (_didIteratorError18) {
+            throw _iteratorError18;
           }
         }
       }
@@ -37056,7 +37282,8 @@ var ComponentManager = function () {
     value: function jsonForItem(item, component, source) {
       var params = { uuid: item.uuid, content_type: item.content_type, created_at: item.created_at, updated_at: item.updated_at, deleted: item.deleted };
       params.content = item.createContentJSONFromProperties();
-      params.clientData = item.getDomainDataItem(component.url, ClientDataDomain) || {};
+      /* Legacy is using component.url key, so if it's present, use it, otherwise use uuid */
+      params.clientData = item.getDomainDataItem(component.url || component.uuid, ClientDataDomain) || {};
 
       /* This means the this function is being triggered through a remote Saving response, which should not update
         actual local content values. The reason is, Save responses may be delayed, and a user may have changed some values
@@ -37100,10 +37327,19 @@ var ComponentManager = function () {
       });
     }
   }, {
+    key: 'urlForComponent',
+    value: function urlForComponent(component) {
+      if (component.offlineOnly || isDesktopApplication() && component.local_url) {
+        return component.local_url.replace("sn://", this.desktopManager.getApplicationDataPath() + "/");
+      } else {
+        return component.url || component.hosted_url;
+      }
+    }
+  }, {
     key: 'componentForUrl',
     value: function componentForUrl(url) {
       return this.components.filter(function (component) {
-        return component.url === url;
+        return component.url === url || component.hosted_url === url;
       })[0];
     }
   }, {
@@ -37114,7 +37350,7 @@ var ComponentManager = function () {
   }, {
     key: 'handleMessage',
     value: function handleMessage(component, message) {
-      var _this14 = this;
+      var _this23 = this;
 
       if (!component) {
         if (this.loggingEnabled) {
@@ -37139,7 +37375,7 @@ var ComponentManager = function () {
         save-context-client-data
         get-context-client-data
         install-local-component
-        open-component
+        toggle-activate-component
       */
 
       if (message.action === "stream-items") {
@@ -37147,23 +37383,83 @@ var ComponentManager = function () {
       } else if (message.action === "stream-context-item") {
         this.handleStreamContextItemMessage(component, message);
       } else if (message.action === "set-component-data") {
-        component.componentData = message.data.componentData;
-        component.setDirty(true);
-        this.syncManager.sync();
+        this.handleSetComponentDataMessage(component, message);
       } else if (message.action === "delete-items") {
-        var items = message.data.items;
-        var noun = items.length == 1 ? "item" : "items";
-        if (confirm('Are you sure you want to delete ' + items.length + ' ' + noun + '?')) {
+        this.handleDeleteItemsMessage(component, message);
+      } else if (message.action === "create-item") {
+        this.handleCreateItemMessage(component, message);
+      } else if (message.action === "save-items") {
+        this.handleSaveItemsMessage(component, message);
+      } else if (message.action === "toggle-activate-component") {
+        var componentToToggle = this.modelManager.findItem(message.data.uuid);
+        this.handleToggleComponentMessage(component, componentToToggle, message);
+      }
+
+      // Notify observers
+
+      var _loop3 = function _loop3(handler) {
+        if (handler.areas.includes(component.area) || handler.areas.includes("*")) {
+          _this23.timeout(function () {
+            handler.actionHandler(component, message.action, message.data);
+          });
+        }
+      };
+
+      var _iteratorNormalCompletion20 = true;
+      var _didIteratorError20 = false;
+      var _iteratorError20 = undefined;
+
+      try {
+        for (var _iterator20 = this.handlers[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
+          var handler = _step20.value;
+
+          _loop3(handler);
+        }
+      } catch (err) {
+        _didIteratorError20 = true;
+        _iteratorError20 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion20 && _iterator20.return) {
+            _iterator20.return();
+          }
+        } finally {
+          if (_didIteratorError20) {
+            throw _iteratorError20;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'removePrivatePropertiesFromResponseItems',
+    value: function removePrivatePropertiesFromResponseItems(responseItems, includeUrls) {
+      // Don't allow component to overwrite these properties.
+      var privateProperties = ["appData", "autoupdateDisabled", "permissions", "active", "encrypted"];
+      if (includeUrls) {
+        privateProperties = privateProperties.concat(["url", "hosted_url", "local_url"]);
+      }
+      var _iteratorNormalCompletion21 = true;
+      var _didIteratorError21 = false;
+      var _iteratorError21 = undefined;
+
+      try {
+        for (var _iterator21 = responseItems[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
+          var responseItem = _step21.value;
+
+
+          // Do not pass in actual items here, otherwise that would be destructive.
+          // Instead, generic JS/JSON objects should be passed.
+          console.assert(typeof responseItem.setDirty !== 'function');
+
           var _iteratorNormalCompletion22 = true;
           var _didIteratorError22 = false;
           var _iteratorError22 = undefined;
 
           try {
-            for (var _iterator22 = items[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
-              var item = _step22.value;
+            for (var _iterator22 = privateProperties[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
+              var prop = _step22.value;
 
-              var model = this.modelManager.findItem(item.uuid);
-              this.modelManager.setItemToBeDeleted(model);
+              delete responseItem[prop];
             }
           } catch (err) {
             _didIteratorError22 = true;
@@ -37179,46 +37475,54 @@ var ComponentManager = function () {
               }
             }
           }
-
-          this.syncManager.sync();
         }
-      } else if (message.action === "create-item") {
-        var responseItem = message.data.item;
-        this.removePrivatePropertiesFromResponseItems([responseItem]);
-        var item = this.modelManager.createItem(responseItem);
-        if (responseItem.clientData) {
-          item.setDomainDataItem(component.url, responseItem.clientData, ClientDataDomain);
+      } catch (err) {
+        _didIteratorError21 = true;
+        _iteratorError21 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion21 && _iterator21.return) {
+            _iterator21.return();
+          }
+        } finally {
+          if (_didIteratorError21) {
+            throw _iteratorError21;
+          }
         }
-        this.modelManager.addItem(item);
-        this.modelManager.resolveReferencesForItem(item);
-        item.setDirty(true);
-        this.syncManager.sync();
-        this.replyToMessage(component, message, { item: this.jsonForItem(item, component) });
-      } else if (message.action === "save-items") {
-        var responseItems = message.data.items;
+      }
+    }
+  }, {
+    key: 'handleStreamItemsMessage',
+    value: function handleStreamItemsMessage(component, message) {
+      var _this24 = this;
 
-        this.removePrivatePropertiesFromResponseItems(responseItems);
+      var requiredPermissions = [{
+        name: "stream-items",
+        content_types: message.data.content_types.sort()
+      }];
 
-        /*
-          We map the items here because modelManager is what updates the UI. If you were to instead get the items directly,
-          this would update them server side via sync, but would never make its way back to the UI.
-         */
-        var localItems = this.modelManager.mapResponseItemsToLocalModels(responseItems, ModelManager.MappingSourceComponentRetrieved);
+      this.runWithPermissions(component, requiredPermissions, function () {
+        if (!_.find(_this24.streamObservers, { identifier: component.uuid })) {
+          // for pushing laster as changes come in
+          _this24.streamObservers.push({
+            identifier: component.uuid,
+            component: component,
+            originalMessage: message,
+            contentTypes: message.data.content_types
+          });
+        }
 
+        // push immediately now
+        var items = [];
         var _iteratorNormalCompletion23 = true;
         var _didIteratorError23 = false;
         var _iteratorError23 = undefined;
 
         try {
-          for (var _iterator23 = localItems[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
-            var item = _step23.value;
+          for (var _iterator23 = message.data.content_types[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
+            var contentType = _step23.value;
 
-            var responseItem = _.find(responseItems, { uuid: item.uuid });
-            _.merge(item.content, responseItem.content);
-            if (responseItem.clientData) {
-              item.setDomainDataItem(component.url, responseItem.clientData, ClientDataDomain);
-            }
-            item.setDirty(true);
+            items = items.concat(_this24.modelManager.itemsForContentType(contentType));
           }
         } catch (err) {
           _didIteratorError23 = true;
@@ -37235,100 +37539,72 @@ var ComponentManager = function () {
           }
         }
 
-        this.syncManager.sync(function (response) {
-          // Allow handlers to be notified when a save begins and ends, to update the UI
-          var saveMessage = Object.assign({}, message);
-          saveMessage.action = response && response.error ? "save-error" : "save-success";
-          _this14.handleMessage(component, saveMessage);
-        });
-      } else if (message.action === "install-local-component") {
-        console.log("Received install-local-component event");
-        this.desktopManager.installOfflineComponentFromData(message.data, function (response) {
-          console.log("componentManager: installed component:", response);
-          var component = _this14.modelManager.mapResponseItemsToLocalModels([response], ModelManager.MappingSourceComponentRetrieved)[0];
-          // Save updated URL
-          component.setDirty(true);
-          _this14.syncManager.sync();
-        });
-      } else if (message.action === "open-component") {
-        var openComponent = this.modelManager.findItem(message.data.uuid);
-        console.log("Received open-component event", openComponent);
-        this.openModalComponent(openComponent);
-      }
-
-      var _loop3 = function _loop3(handler) {
-        if (handler.areas.includes(component.area)) {
-          _this14.timeout(function () {
-            handler.actionHandler(component, message.action, message.data);
-          });
-        }
-      };
-
-      var _iteratorNormalCompletion24 = true;
-      var _didIteratorError24 = false;
-      var _iteratorError24 = undefined;
-
-      try {
-        for (var _iterator24 = this.handlers[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
-          var handler = _step24.value;
-
-          _loop3(handler);
-        }
-      } catch (err) {
-        _didIteratorError24 = true;
-        _iteratorError24 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion24 && _iterator24.return) {
-            _iterator24.return();
-          }
-        } finally {
-          if (_didIteratorError24) {
-            throw _iteratorError24;
-          }
-        }
-      }
+        _this24.sendItemsInReply(component, items, message);
+      });
     }
   }, {
-    key: 'removePrivatePropertiesFromResponseItems',
-    value: function removePrivatePropertiesFromResponseItems(responseItems) {
-      // Don't allow component to overwrite these properties.
-      var privateProperties = ["appData"];
+    key: 'handleStreamContextItemMessage',
+    value: function handleStreamContextItemMessage(component, message) {
+
+      var requiredPermissions = [{
+        name: "stream-context-item"
+      }];
+
+      this.runWithPermissions(component, requiredPermissions, function () {
+        if (!_.find(this.contextStreamObservers, { identifier: component.uuid })) {
+          // for pushing laster as changes come in
+          this.contextStreamObservers.push({
+            identifier: component.uuid,
+            component: component,
+            originalMessage: message
+          });
+        }
+
+        // push immediately now
+        var _iteratorNormalCompletion24 = true;
+        var _didIteratorError24 = false;
+        var _iteratorError24 = undefined;
+
+        try {
+          for (var _iterator24 = this.handlersForArea(component.area)[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
+            var handler = _step24.value;
+
+            if (handler.contextRequestHandler) {
+              var itemInContext = handler.contextRequestHandler(component);
+              this.sendContextItemInReply(component, itemInContext, message);
+            }
+          }
+        } catch (err) {
+          _didIteratorError24 = true;
+          _iteratorError24 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion24 && _iterator24.return) {
+              _iterator24.return();
+            }
+          } finally {
+            if (_didIteratorError24) {
+              throw _iteratorError24;
+            }
+          }
+        }
+      }.bind(this));
+    }
+  }, {
+    key: 'isItemWithinComponentContextJurisdiction',
+    value: function isItemWithinComponentContextJurisdiction(item, component) {
       var _iteratorNormalCompletion25 = true;
       var _didIteratorError25 = false;
       var _iteratorError25 = undefined;
 
       try {
-        for (var _iterator25 = responseItems[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
-          var responseItem = _step25.value;
+        for (var _iterator25 = this.handlersForArea(component.area)[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
+          var handler = _step25.value;
 
-
-          // Do not pass in actual items here, otherwise that would be destructive.
-          // Instead, generic JS/JSON objects should be passed.
-          console.assert(typeof responseItem.setDirty !== 'function');
-
-          var _iteratorNormalCompletion26 = true;
-          var _didIteratorError26 = false;
-          var _iteratorError26 = undefined;
-
-          try {
-            for (var _iterator26 = privateProperties[Symbol.iterator](), _step26; !(_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done); _iteratorNormalCompletion26 = true) {
-              var prop = _step26.value;
-
-              delete responseItem[prop];
-            }
-          } catch (err) {
-            _didIteratorError26 = true;
-            _iteratorError26 = err;
-          } finally {
-            try {
-              if (!_iteratorNormalCompletion26 && _iterator26.return) {
-                _iterator26.return();
-              }
-            } finally {
-              if (_didIteratorError26) {
-                throw _iteratorError26;
-              }
+          if (handler.contextRequestHandler) {
+            var itemInContext = handler.contextRequestHandler(component);
+            if (itemInContext.uuid == item.uuid) {
+              return true;
             }
           }
         }
@@ -37346,156 +37622,250 @@ var ComponentManager = function () {
           }
         }
       }
+
+      return false;
     }
   }, {
-    key: 'handleStreamItemsMessage',
-    value: function handleStreamItemsMessage(component, message) {
+    key: 'handlersForArea',
+    value: function handlersForArea(area) {
+      return this.handlers.filter(function (candidate) {
+        return candidate.areas.includes(area);
+      });
+    }
+  }, {
+    key: 'handleSaveItemsMessage',
+    value: function handleSaveItemsMessage(component, message) {
+      var _this25 = this;
+
+      var responseItems = message.data.items;
+      var requiredPermissions;
+
+      // Check if you're just trying to save the context item, which requires only stream-context-item permissions
+      if (responseItems.length == 1 && this.isItemWithinComponentContextJurisdiction(responseItems[0], component)) {
+        requiredPermissions = [{
+          name: "stream-context-item"
+        }];
+      } else {
+        var requiredContentTypes = _.uniq(responseItems.map(function (i) {
+          return i.content_type;
+        })).sort();
+        requiredPermissions = [{
+          name: "stream-items",
+          content_types: requiredContentTypes
+        }];
+      }
+
+      this.runWithPermissions(component, requiredPermissions, function () {
+
+        _this25.removePrivatePropertiesFromResponseItems(responseItems, { includeUrls: true });
+
+        /*
+        We map the items here because modelManager is what updates the UI. If you were to instead get the items directly,
+        this would update them server side via sync, but would never make its way back to the UI.
+        */
+        var localItems = _this25.modelManager.mapResponseItemsToLocalModels(responseItems, ModelManager.MappingSourceComponentRetrieved);
+
+        var _iteratorNormalCompletion26 = true;
+        var _didIteratorError26 = false;
+        var _iteratorError26 = undefined;
+
+        try {
+          for (var _iterator26 = localItems[Symbol.iterator](), _step26; !(_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done); _iteratorNormalCompletion26 = true) {
+            var item = _step26.value;
+
+            var responseItem = _.find(responseItems, { uuid: item.uuid });
+            _.merge(item.content, responseItem.content);
+            if (responseItem.clientData) {
+              item.setDomainDataItem(component.url || component.uuid, responseItem.clientData, ClientDataDomain);
+            }
+            item.setDirty(true);
+          }
+        } catch (err) {
+          _didIteratorError26 = true;
+          _iteratorError26 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion26 && _iterator26.return) {
+              _iterator26.return();
+            }
+          } finally {
+            if (_didIteratorError26) {
+              throw _iteratorError26;
+            }
+          }
+        }
+
+        _this25.syncManager.sync(function (response) {
+          // Allow handlers to be notified when a save begins and ends, to update the UI
+          var saveMessage = Object.assign({}, message);
+          saveMessage.action = response && response.error ? "save-error" : "save-success";
+          _this25.handleMessage(component, saveMessage);
+        });
+      });
+    }
+  }, {
+    key: 'handleCreateItemMessage',
+    value: function handleCreateItemMessage(component, message) {
+      var _this26 = this;
+
       var requiredPermissions = [{
         name: "stream-items",
-        content_types: message.data.content_types.sort()
+        content_types: [message.data.item.content_type]
       }];
 
-      this.runWithPermissions(component, requiredPermissions, message.permissions, function () {
-        if (!_.find(this.streamObservers, { identifier: component.url })) {
-          // for pushing laster as changes come in
-          this.streamObservers.push({
-            identifier: component.url,
-            component: component,
-            originalMessage: message,
-            contentTypes: message.data.content_types
-          });
+      this.runWithPermissions(component, requiredPermissions, function () {
+        var responseItem = message.data.item;
+        _this26.removePrivatePropertiesFromResponseItems([responseItem]);
+        var item = _this26.modelManager.createItem(responseItem);
+        if (responseItem.clientData) {
+          item.setDomainDataItem(component.url || component.uuid, responseItem.clientData, ClientDataDomain);
         }
-
-        // push immediately now
-        var items = [];
-        var _iteratorNormalCompletion27 = true;
-        var _didIteratorError27 = false;
-        var _iteratorError27 = undefined;
-
-        try {
-          for (var _iterator27 = message.data.content_types[Symbol.iterator](), _step27; !(_iteratorNormalCompletion27 = (_step27 = _iterator27.next()).done); _iteratorNormalCompletion27 = true) {
-            var contentType = _step27.value;
-
-            items = items.concat(this.modelManager.itemsForContentType(contentType));
-          }
-        } catch (err) {
-          _didIteratorError27 = true;
-          _iteratorError27 = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion27 && _iterator27.return) {
-              _iterator27.return();
-            }
-          } finally {
-            if (_didIteratorError27) {
-              throw _iteratorError27;
-            }
-          }
-        }
-
-        this.sendItemsInReply(component, items, message);
-      }.bind(this));
+        _this26.modelManager.addItem(item);
+        _this26.modelManager.resolveReferencesForItem(item);
+        item.setDirty(true);
+        _this26.syncManager.sync();
+        _this26.replyToMessage(component, message, { item: _this26.jsonForItem(item, component) });
+      });
     }
   }, {
-    key: 'handleStreamContextItemMessage',
-    value: function handleStreamContextItemMessage(component, message) {
+    key: 'handleDeleteItemsMessage',
+    value: function handleDeleteItemsMessage(component, message) {
+      var _this27 = this;
 
+      var requiredContentTypes = _.uniq(message.data.items.map(function (i) {
+        return i.content_type;
+      })).sort();
       var requiredPermissions = [{
-        name: "stream-context-item"
+        name: "stream-items",
+        content_types: requiredContentTypes
       }];
 
-      this.runWithPermissions(component, requiredPermissions, message.permissions, function () {
-        if (!_.find(this.contextStreamObservers, { identifier: component.url })) {
-          // for pushing laster as changes come in
-          this.contextStreamObservers.push({
-            identifier: component.url,
-            component: component,
-            originalMessage: message
-          });
-        }
+      this.runWithPermissions(component, requiredPermissions, function () {
+        var items = message.data.items;
+        var noun = items.length == 1 ? "item" : "items";
+        if (confirm('Are you sure you want to delete ' + items.length + ' ' + noun + '?')) {
+          var _iteratorNormalCompletion27 = true;
+          var _didIteratorError27 = false;
+          var _iteratorError27 = undefined;
 
-        // push immediately now
-        var _iteratorNormalCompletion28 = true;
-        var _didIteratorError28 = false;
-        var _iteratorError28 = undefined;
-
-        try {
-          for (var _iterator28 = this.handlers[Symbol.iterator](), _step28; !(_iteratorNormalCompletion28 = (_step28 = _iterator28.next()).done); _iteratorNormalCompletion28 = true) {
-            var handler = _step28.value;
-
-            if (handler.areas.includes(component.area) === false) {
-              continue;
-            }
-            var itemInContext = handler.contextRequestHandler(component);
-            this.sendContextItemInReply(component, itemInContext, message);
-          }
-        } catch (err) {
-          _didIteratorError28 = true;
-          _iteratorError28 = err;
-        } finally {
           try {
-            if (!_iteratorNormalCompletion28 && _iterator28.return) {
-              _iterator28.return();
+            for (var _iterator27 = items[Symbol.iterator](), _step27; !(_iteratorNormalCompletion27 = (_step27 = _iterator27.next()).done); _iteratorNormalCompletion27 = true) {
+              var item = _step27.value;
+
+              var model = _this27.modelManager.findItem(item.uuid);
+              _this27.modelManager.setItemToBeDeleted(model);
             }
+          } catch (err) {
+            _didIteratorError27 = true;
+            _iteratorError27 = err;
           } finally {
-            if (_didIteratorError28) {
-              throw _iteratorError28;
+            try {
+              if (!_iteratorNormalCompletion27 && _iterator27.return) {
+                _iterator27.return();
+              }
+            } finally {
+              if (_didIteratorError27) {
+                throw _iteratorError27;
+              }
             }
           }
+
+          _this27.syncManager.sync();
         }
-      }.bind(this));
+      });
+    }
+  }, {
+    key: 'handleSetComponentDataMessage',
+    value: function handleSetComponentDataMessage(component, message) {
+      var _this28 = this;
+
+      // A component setting its own data does not require special permissions
+      this.runWithPermissions(component, [], function () {
+        component.componentData = message.data.componentData;
+        component.setDirty(true);
+        _this28.syncManager.sync();
+      });
+    }
+  }, {
+    key: 'handleToggleComponentMessage',
+    value: function handleToggleComponentMessage(sourceComponent, targetComponent, message) {
+      if (targetComponent.area == "modal") {
+        this.openModalComponent(targetComponent);
+      } else {
+        if (targetComponent.active) {
+          this.deactivateComponent(targetComponent);
+        } else {
+          if (targetComponent.content_type == "SN|Theme") {
+            // Deactive currently active theme
+            var activeTheme = this.getActiveTheme();
+            if (activeTheme) {
+              this.deactivateComponent(activeTheme);
+            }
+          }
+          this.activateComponent(targetComponent);
+        }
+      }
     }
   }, {
     key: 'runWithPermissions',
-    value: function runWithPermissions(component, requiredPermissions, requestedPermissions, runFunction) {
-
-      var acquiredPermissions = component.permissions;
-
-      var requestedMatchesRequired = true;
-
-      var _iteratorNormalCompletion29 = true;
-      var _didIteratorError29 = false;
-      var _iteratorError29 = undefined;
-
-      try {
-        for (var _iterator29 = requiredPermissions[Symbol.iterator](), _step29; !(_iteratorNormalCompletion29 = (_step29 = _iterator29.next()).done); _iteratorNormalCompletion29 = true) {
-          var required = _step29.value;
-
-          var matching = _.find(requestedPermissions, required);
-          if (!matching) {
-            requestedMatchesRequired = false;
-            break;
-          }
-        }
-      } catch (err) {
-        _didIteratorError29 = true;
-        _iteratorError29 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion29 && _iterator29.return) {
-            _iterator29.return();
-          }
-        } finally {
-          if (_didIteratorError29) {
-            throw _iteratorError29;
-          }
-        }
-      }
-
-      if (!requestedMatchesRequired) {
-        // Error with Component permissions request
-        console.error("You are requesting permissions", requestedPermissions, "when you need to be requesting", requiredPermissions, ". Component:", component);
-        return;
-      }
+    value: function runWithPermissions(component, requiredPermissions, runFunction) {
 
       if (!component.permissions) {
         component.permissions = [];
       }
 
-      var acquiredMatchesRequested = angular.toJson(component.permissions.sort()) === angular.toJson(requestedPermissions.sort());
+      var acquiredPermissions = component.permissions;
+      var acquiredMatchesRequired = true;
 
-      if (!acquiredMatchesRequested) {
-        this.promptForPermissions(component, requestedPermissions, function (approved) {
+      var _iteratorNormalCompletion28 = true;
+      var _didIteratorError28 = false;
+      var _iteratorError28 = undefined;
+
+      try {
+        for (var _iterator28 = requiredPermissions[Symbol.iterator](), _step28; !(_iteratorNormalCompletion28 = (_step28 = _iterator28.next()).done); _iteratorNormalCompletion28 = true) {
+          var required = _step28.value;
+
+          var matching = acquiredPermissions.find(function (candidate) {
+            var matchesContentTypes = true;
+            if (candidate.content_types && required.content_types) {
+              matchesContentTypes = JSON.stringify(candidate.content_types.sort()) == JSON.stringify(required.content_types.sort());
+            }
+            return candidate.name == required.name && matchesContentTypes;
+          });
+
+          if (!matching) {
+            /* Required permissions can be 1 content type, and requestedPermisisons may send an array of content types.
+            In the case of an array, we can just check to make sure that requiredPermissions content type is found in the array
+            */
+            matching = acquiredPermissions.find(function (candidate) {
+              return Array.isArray(candidate.content_types) && Array.isArray(required.content_types) && candidate.content_types.containsSubset(required.content_types);
+            });
+
+            if (!matching) {
+              acquiredMatchesRequired = false;
+              break;
+            }
+          }
+        }
+
+        // var acquiredMatchesRequested = angular.toJson(component.permissions.sort()) === angular.toJson(requestedPermissions.sort());
+      } catch (err) {
+        _didIteratorError28 = true;
+        _iteratorError28 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion28 && _iterator28.return) {
+            _iterator28.return();
+          }
+        } finally {
+          if (_didIteratorError28) {
+            throw _iteratorError28;
+          }
+        }
+      }
+
+      if (!acquiredMatchesRequired) {
+        this.promptForPermissions(component, requiredPermissions, function (approved) {
           if (approved) {
             runFunction();
           }
@@ -37506,19 +37876,44 @@ var ComponentManager = function () {
     }
   }, {
     key: 'promptForPermissions',
-    value: function promptForPermissions(component, requestedPermissions, callback) {
+    value: function promptForPermissions(component, permissions, callback) {
       // since these calls are asyncronous, multiple dialogs may be requested at the same time. We only want to present one and trigger all callbacks based on one modal result
       var existingDialog = _.find(this.permissionDialogs, { component: component });
 
-      component.trusted = component.url.startsWith("https://standardnotes.org") || component.url.startsWith("https://extensions.standardnotes.org");
       var scope = this.$rootScope.$new(true);
       scope.component = component;
-      scope.permissions = requestedPermissions;
+      scope.permissions = permissions;
       scope.actionBlock = callback;
 
       scope.callback = function (approved) {
         if (approved) {
-          component.permissions = requestedPermissions;
+          var _iteratorNormalCompletion29 = true;
+          var _didIteratorError29 = false;
+          var _iteratorError29 = undefined;
+
+          try {
+            for (var _iterator29 = permissions[Symbol.iterator](), _step29; !(_iteratorNormalCompletion29 = (_step29 = _iterator29.next()).done); _iteratorNormalCompletion29 = true) {
+              var permission = _step29.value;
+
+              if (!component.permissions.includes(permission)) {
+                component.permissions.push(permission);
+              }
+            }
+          } catch (err) {
+            _didIteratorError29 = true;
+            _iteratorError29 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion29 && _iterator29.return) {
+                _iterator29.return();
+              }
+            } finally {
+              if (_didIteratorError29) {
+                throw _iteratorError29;
+              }
+            }
+          }
+
           component.setDirty(true);
           this.syncManager.sync();
         }
@@ -37558,7 +37953,7 @@ var ComponentManager = function () {
       this.permissionDialogs.push(scope);
 
       if (!existingDialog) {
-        var el = this.$compile("<permissions-modal component='component' permissions='permissions' callback='callback' class='permissions-modal'></permissions-modal>")(scope);
+        var el = this.$compile("<permissions-modal component='component' permissions='permissions' callback='callback' class='modal'></permissions-modal>")(scope);
         angular.element(document.body).append(el);
       } else {
         console.log("Existing dialog, not presenting.");
@@ -37569,7 +37964,8 @@ var ComponentManager = function () {
     value: function openModalComponent(component) {
       var scope = this.$rootScope.$new(true);
       scope.component = component;
-      var el = this.$compile("<component-modal component='component' class='component-modal'></component-modal>")(scope);
+      scope.onDismiss = function () {};
+      var el = this.$compile("<component-modal component='component' class='modal'></component-modal>")(scope);
       angular.element(document.body).append(el);
     }
   }, {
@@ -37586,12 +37982,6 @@ var ComponentManager = function () {
   }, {
     key: 'sendMessageToComponent',
     value: function sendMessageToComponent(component, message) {
-      if (component.ignoreEvents && message.action !== "component-registered") {
-        if (this.loggingEnabled) {
-          console.log("Component disabled for current item, not sending any messages.", component.name);
-        }
-        return;
-      }
       if (this.loggingEnabled) {
         console.log("Web|sendMessageToComponent", component, message);
       }
@@ -37627,7 +38017,7 @@ var ComponentManager = function () {
         for (var _iterator31 = this.handlers[Symbol.iterator](), _step31; !(_iteratorNormalCompletion31 = (_step31 = _iterator31.next()).done); _iteratorNormalCompletion31 = true) {
           var handler = _step31.value;
 
-          if (handler.areas.includes(component.area)) {
+          if (handler.areas.includes(component.area) || handler.areas.includes("*")) {
             handler.activationHandler(component);
           }
         }
@@ -37653,6 +38043,10 @@ var ComponentManager = function () {
 
       if (!this.activeComponents.includes(component)) {
         this.activeComponents.push(component);
+      }
+
+      if (component.area == "themes") {
+        this.postThemeToAllComponents();
       }
     }
   }, {
@@ -37683,7 +38077,14 @@ var ComponentManager = function () {
       }
       component.window = componentWindow;
       component.sessionKey = Neeto.crypto.generateUUID();
-      this.sendMessageToComponent(component, { action: "component-registered", sessionKey: component.sessionKey, componentData: component.componentData });
+      this.sendMessageToComponent(component, {
+        action: "component-registered",
+        sessionKey: component.sessionKey,
+        componentData: component.componentData,
+        data: {
+          environment: isDesktopApplication() ? "desktop" : "web"
+        }
+      });
       this.postThemeToComponent(component);
     }
   }, {
@@ -37701,7 +38102,7 @@ var ComponentManager = function () {
         for (var _iterator32 = this.handlers[Symbol.iterator](), _step32; !(_iteratorNormalCompletion32 = (_step32 = _iterator32.next()).done); _iteratorNormalCompletion32 = true) {
           var handler = _step32.value;
 
-          if (handler.areas.includes(component.area)) {
+          if (handler.areas.includes(component.area) || handler.areas.includes("*")) {
             handler.activationHandler(component);
           }
         }
@@ -37734,6 +38135,10 @@ var ComponentManager = function () {
       this.contextStreamObservers = this.contextStreamObservers.filter(function (o) {
         return o.component !== component;
       });
+
+      if (component.area == "themes") {
+        this.postThemeToAllComponents();
+      }
     }
   }, {
     key: 'deleteComponent',
@@ -37747,46 +38152,20 @@ var ComponentManager = function () {
       return component.active;
     }
   }, {
-    key: 'disassociateComponentWithItem',
-    value: function disassociateComponentWithItem(component, item) {
-      _.pull(component.associatedItemIds, item.uuid);
-
-      if (component.disassociatedItemIds.indexOf(item.uuid) !== -1) {
-        return;
-      }
-
-      component.disassociatedItemIds.push(item.uuid);
-
-      component.setDirty(true);
-      this.syncManager.sync();
-    }
-  }, {
-    key: 'associateComponentWithItem',
-    value: function associateComponentWithItem(component, item) {
-      _.pull(component.disassociatedItemIds, item.uuid);
-
-      if (component.associatedItemIds.includes(item.uuid)) {
-        return;
-      }
-
-      component.associatedItemIds.push(item.uuid);
-
-      component.setDirty(true);
-      this.syncManager.sync();
-    }
-  }, {
-    key: 'enableComponentsForItem',
-    value: function enableComponentsForItem(components, item) {
+    key: 'iframeForComponent',
+    value: function iframeForComponent(component) {
       var _iteratorNormalCompletion33 = true;
       var _didIteratorError33 = false;
       var _iteratorError33 = undefined;
 
       try {
-        for (var _iterator33 = components[Symbol.iterator](), _step33; !(_iteratorNormalCompletion33 = (_step33 = _iterator33.next()).done); _iteratorNormalCompletion33 = true) {
-          var component = _step33.value;
+        for (var _iterator33 = document.getElementsByTagName("iframe")[Symbol.iterator](), _step33; !(_iteratorNormalCompletion33 = (_step33 = _iterator33.next()).done); _iteratorNormalCompletion33 = true) {
+          var frame = _step33.value;
 
-          _.pull(component.disassociatedItemIds, item.uuid);
-          component.setDirty(true);
+          var componentId = frame.dataset.componentId;
+          if (componentId === component.uuid) {
+            return frame;
+          }
         }
       } catch (err) {
         _didIteratorError33 = true;
@@ -37799,53 +38178,6 @@ var ComponentManager = function () {
         } finally {
           if (_didIteratorError33) {
             throw _iteratorError33;
-          }
-        }
-      }
-
-      this.syncManager.sync();
-    }
-  }, {
-    key: 'setEventFlowForComponent',
-    value: function setEventFlowForComponent(component, on) {
-      component.ignoreEvents = !on;
-    }
-  }, {
-    key: 'urlForComponent',
-    value: function urlForComponent(component) {
-      if (isDesktopApplication() && component.local && component.url.startsWith("sn://")) {
-        return component.url.replace("sn://", this.desktopManager.getApplicationDataPath() + "/");
-      } else {
-        return component.url;
-      }
-    }
-  }, {
-    key: 'iframeForComponent',
-    value: function iframeForComponent(component) {
-      var _iteratorNormalCompletion34 = true;
-      var _didIteratorError34 = false;
-      var _iteratorError34 = undefined;
-
-      try {
-        for (var _iterator34 = document.getElementsByTagName("iframe")[Symbol.iterator](), _step34; !(_iteratorNormalCompletion34 = (_step34 = _iterator34.next()).done); _iteratorNormalCompletion34 = true) {
-          var frame = _step34.value;
-
-          var componentId = frame.dataset.componentId;
-          if (componentId === component.uuid) {
-            return frame;
-          }
-        }
-      } catch (err) {
-        _didIteratorError34 = true;
-        _iteratorError34 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion34 && _iterator34.return) {
-            _iterator34.return();
-          }
-        } finally {
-          if (_didIteratorError34) {
-            throw _iteratorError34;
           }
         }
       }
@@ -37875,7 +38207,7 @@ var ComponentManager = function () {
   }, {
     key: 'components',
     get: function get() {
-      return this.modelManager.itemsForContentType("SN|Component");
+      return this.modelManager.allItemsMatchingTypes(["SN|Component", "SN|Theme"]);
     }
   }]);
 
@@ -38058,8 +38390,9 @@ angular.module('app.frontend').service('dbManager', DBManager);
 ; // An interface used by the Desktop app to interact with SN
 
 var DesktopManager = function () {
+  DesktopManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'authManager', 'passcodeManager'];
   function DesktopManager($rootScope, modelManager, syncManager, authManager, passcodeManager) {
-    var _this15 = this;
+    var _this29 = this;
 
     _classCallCheck(this, DesktopManager);
 
@@ -38072,32 +38405,20 @@ var DesktopManager = function () {
     this.isDesktop = isDesktopApplication();
 
     $rootScope.$on("initial-data-loaded", function () {
-      _this15.dataLoaded = true;
-      if (_this15.dataLoadHandler) {
-        _this15.dataLoadHandler();
+      _this29.dataLoaded = true;
+      if (_this29.dataLoadHandler) {
+        _this29.dataLoadHandler();
       }
     });
 
     $rootScope.$on("major-data-change", function () {
-      if (_this15.majorDataChangeHandler) {
-        _this15.majorDataChangeHandler();
+      if (_this29.majorDataChangeHandler) {
+        _this29.majorDataChangeHandler();
       }
     });
   }
 
-  /* Can handle components and themes */
-
-
   _createClass(DesktopManager, [{
-    key: 'installOfflineComponentFromData',
-    value: function installOfflineComponentFromData(componentData, callback) {
-      this.componentInstallationHandler(componentData, function (installedComponent) {
-        componentData.content.url = installedComponent.content.url;
-        componentData.content.local = true;
-        callback(componentData);
-      });
-    }
-  }, {
     key: 'getApplicationDataPath',
     value: function getApplicationDataPath() {
       console.assert(this.applicationDataPath, "applicationDataPath is null");
@@ -38109,7 +38430,7 @@ var DesktopManager = function () {
   }, {
     key: 'convertComponentForTransmission',
     value: function convertComponentForTransmission(component) {
-      return new ItemParams(component).paramsForExportFile();
+      return new ItemParams(component).paramsForExportFile(true);
     }
 
     // All `components` should be installed
@@ -38117,24 +38438,30 @@ var DesktopManager = function () {
   }, {
     key: 'syncComponentsInstallation',
     value: function syncComponentsInstallation(components) {
-      var _this16 = this;
+      var _this30 = this;
 
+      // console.log("Web Syncing Components", components);
       if (!this.isDesktop) return;
 
-      /* Allows us to look up component on desktop_updateComponentComplete */
-      this.syncingComponents = components;
-
       var data = components.map(function (component) {
-        return _this16.convertComponentForTransmission(component);
+        console.log("Web Sycying Component", _this30.convertComponentForTransmission(component));
+        return _this30.convertComponentForTransmission(component);
       });
       this.installationSyncHandler(data);
     }
   }, {
+    key: 'desktop_onComponentInstallationComplete',
+    value: function desktop_onComponentInstallationComplete(componentData) {
+      console.log("Web|Component Installation Complete", componentData);
+      var component = this.modelManager.mapResponseItemsToLocalModels([componentData], ModelManager.MappingSourceDesktopInstalled)[0];
+      component.setDirty(true);
+      this.syncManager.sync();
+    }
+  }, {
     key: 'desktop_updateComponentComplete',
     value: function desktop_updateComponentComplete(componentData) {
-      var component = this.syncingComponents.filter(function (c) {
-        return c.uuid == componentData.uuid;
-      })[0];
+      console.log("Web|Component Update Complete", componentData);
+      var component = this.modelManager.mapResponseItemsToLocalModels([componentData], ModelManager.MappingSourceDesktopInstalled)[0];
       component.setDirty(true);
       this.syncManager.sync();
     }
@@ -38232,7 +38559,7 @@ angular.module('app.frontend').service('desktopManager', DesktopManager);
     }
   };
 }]);
-;angular.module('app.frontend').directive('delayHide', function ($timeout) {
+;angular.module('app.frontend').directive('delayHide', ['$timeout', function ($timeout) {
   return {
     restrict: 'A',
     scope: {
@@ -38275,7 +38602,7 @@ angular.module('app.frontend').service('desktopManager', DesktopManager);
     }
 
   };
-});
+}]);
 ;angular.module('app.frontend').directive('fileChange', function () {
   return {
     restrict: 'A',
@@ -38347,41 +38674,29 @@ var AccountMenu = function () {
     this.restrict = "E";
     this.templateUrl = "frontend/directives/account-menu.html";
     this.scope = {
-      "onSuccessfulAuth": "&"
+      "onSuccessfulAuth": "&",
+      "closeFunction": "&"
     };
   }
 
   _createClass(AccountMenu, [{
     key: 'controller',
-    value: function controller($scope, $rootScope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
+    value: ['$scope', '$rootScope', 'authManager', 'modelManager', 'syncManager', 'dbManager', 'passcodeManager', '$timeout', 'storageManager', function controller($scope, $rootScope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
       'ngInject';
 
       $scope.formData = { mergeLocal: true, url: syncManager.serverURL, ephemeral: false };
       $scope.user = authManager.user;
       $scope.server = syncManager.serverURL;
 
+      $scope.close = function () {
+        $scope.closeFunction()();
+      };
+
       $scope.encryptedBackupsAvailable = function () {
         return authManager.user || passcodeManager.hasPasscode();
       };
 
       $scope.syncStatus = syncManager.syncStatus;
-
-      $scope.encryptionKey = function () {
-        return authManager.keys().mk;
-      };
-
-      $scope.authKey = function () {
-        return authManager.keys().ak;
-      };
-
-      $scope.serverPassword = function () {
-        return syncManager.serverPassword;
-      };
-
-      $scope.dashboardURL = function () {
-        return $scope.server + '/dashboard/#server=' + $scope.server + '&id=' + encodeURIComponent($scope.user.email) + '&pw=' + $scope.serverPassword();
-      };
-
       $scope.newPasswordData = {};
 
       $scope.showPasswordChangeForm = function () {
@@ -38925,7 +39240,7 @@ var AccountMenu = function () {
       $scope.isDesktopApplication = function () {
         return isDesktopApplication();
       };
-    }
+    }]
   }]);
 
   return AccountMenu;
@@ -38944,7 +39259,8 @@ var ComponentModal = function () {
     this.scope = {
       show: "=",
       component: "=",
-      callback: "="
+      callback: "=",
+      onDismiss: "&"
     };
   }
 
@@ -38955,45 +39271,26 @@ var ComponentModal = function () {
     }
   }, {
     key: 'controller',
-    value: function controller($scope, $timeout, componentManager) {
+    value: ['$scope', '$timeout', 'componentManager', function controller($scope, $timeout, componentManager) {
       'ngInject';
 
-      var _this17 = this;
+      if ($scope.component.directiveController) {
+        $scope.component.directiveController.dismiss = function (callback) {
+          $scope.dismiss(callback);
+        };
+      }
 
-      var identifier = "modal-" + $scope.component.uuid;
-
-      $scope.dismiss = function () {
-        componentManager.deregisterHandler(identifier);
-        componentManager.deactivateComponent($scope.component);
-        $scope.el.remove();
+      $scope.dismiss = function (callback) {
+        var onDismiss = $scope.component.directiveController && $scope.component.directiveController.onDismiss();
+        // Setting will null out compinent-view's component, which will handle deactivation
+        $scope.component = null;
+        $timeout(function () {
+          $scope.el.remove();
+          onDismiss && onDismiss();
+          callback && callback();
+        });
       };
-
-      $scope.url = function () {
-        return componentManager.urlForComponent($scope.component);
-      };
-
-      componentManager.registerHandler({ identifier: identifier, areas: ["modal"], activationHandler: function activationHandler(component) {
-          if (component.active) {
-            $timeout(function () {
-              var iframe = componentManager.iframeForComponent(component);
-              console.log("iframe", iframe, component);
-              if (iframe) {
-                iframe.onload = function () {
-                  componentManager.registerComponentWindow(component, iframe.contentWindow);
-                }.bind(this);
-              }
-            }.bind(_this17));
-          }
-        },
-        actionHandler: function (component, action, data) {
-          if (action == "set-size") {
-            console.log("componentModalReceivedAction SetSize", component);
-            componentManager.handleSetSizeEvent(component, data);
-          }
-        }.bind(this) });
-
-      componentManager.activateComponent($scope.component);
-    }
+    }]
   }]);
 
   return ComponentModal;
@@ -39002,6 +39299,91 @@ var ComponentModal = function () {
 angular.module('app.frontend').directive('componentModal', function () {
   return new ComponentModal();
 });
+;
+var ComponentView = function () {
+  function ComponentView(componentManager, $timeout) {
+    _classCallCheck(this, ComponentView);
+
+    this.restrict = "E";
+    this.templateUrl = "frontend/directives/component-view.html";
+    this.scope = {
+      component: "="
+    };
+
+    this.componentManager = componentManager;
+    this.timeout = $timeout;
+  }
+
+  _createClass(ComponentView, [{
+    key: 'link',
+    value: function link($scope, el, attrs, ctrl) {
+      var _this31 = this;
+
+      $scope.el = el;
+
+      var identifier = "component-view-" + Math.random();
+
+      this.componentManager.registerHandler({ identifier: identifier, areas: ["*"], activationHandler: function activationHandler(component) {
+          if (component.active) {
+            _this31.timeout(function () {
+              var iframe = this.componentManager.iframeForComponent(component);
+              if (iframe) {
+                iframe.onload = function () {
+                  this.componentManager.registerComponentWindow(component, iframe.contentWindow);
+                }.bind(this);
+              }
+            }.bind(_this31));
+          }
+        },
+        actionHandler: function (component, action, data) {
+          if (action == "set-size") {
+            this.componentManager.handleSetSizeEvent(component, data);
+          }
+        }.bind(this) });
+
+      $scope.$watch('component', function (component, prevComponent) {
+        ctrl.componentValueChanging(component, prevComponent);
+      });
+    }
+  }, {
+    key: 'controller',
+    value: ['$scope', '$timeout', 'componentManager', 'desktopManager', function controller($scope, $timeout, componentManager, desktopManager) {
+      'ngInject';
+
+      this.componentValueChanging = function (component, prevComponent) {
+        if (prevComponent && component !== prevComponent) {
+          // Deactive old component
+          componentManager.deactivateComponent(prevComponent);
+        }
+
+        if (component) {
+          componentManager.activateComponent(component);
+          component.runningLocally = $scope.getUrl;
+          console.log("Loading", $scope.component.name, $scope.getUrl());
+        }
+      };
+
+      $scope.getUrl = function () {
+        var url = componentManager.urlForComponent($scope.component);
+        $scope.component.runningLocally = url !== ($scope.component.url || $scope.component.hosted_url);
+        return url;
+      };
+
+      $scope.$on("$destroy", function () {
+        componentManager.deregisterHandler($scope.identifier);
+        if ($scope.component) {
+          componentManager.deactivateComponent($scope.component);
+        }
+      });
+    }]
+  }]);
+
+  return ComponentView;
+}();
+
+angular.module('app.frontend').directive('componentView', ['componentManager', '$timeout', function (componentManager, $timeout) {
+  return new ComponentView(componentManager, $timeout);
+}]);
 ;
 var ContextualExtensionsMenu = function () {
   function ContextualExtensionsMenu() {
@@ -39016,7 +39398,7 @@ var ContextualExtensionsMenu = function () {
 
   _createClass(ContextualExtensionsMenu, [{
     key: 'controller',
-    value: function controller($scope, modelManager, extensionManager) {
+    value: ['$scope', 'modelManager', 'extensionManager', function controller($scope, modelManager, extensionManager) {
       'ngInject';
 
       $scope.renderData = {};
@@ -39034,27 +39416,27 @@ var ContextualExtensionsMenu = function () {
         });
       };
 
-      var _iteratorNormalCompletion35 = true;
-      var _didIteratorError35 = false;
-      var _iteratorError35 = undefined;
+      var _iteratorNormalCompletion34 = true;
+      var _didIteratorError34 = false;
+      var _iteratorError34 = undefined;
 
       try {
-        for (var _iterator35 = $scope.extensions[Symbol.iterator](), _step35; !(_iteratorNormalCompletion35 = (_step35 = _iterator35.next()).done); _iteratorNormalCompletion35 = true) {
-          var ext = _step35.value;
+        for (var _iterator34 = $scope.extensions[Symbol.iterator](), _step34; !(_iteratorNormalCompletion34 = (_step34 = _iterator34.next()).done); _iteratorNormalCompletion34 = true) {
+          var ext = _step34.value;
 
           _loop4(ext);
         }
       } catch (err) {
-        _didIteratorError35 = true;
-        _iteratorError35 = err;
+        _didIteratorError34 = true;
+        _iteratorError34 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion35 && _iterator35.return) {
-            _iterator35.return();
+          if (!_iteratorNormalCompletion34 && _iterator34.return) {
+            _iterator34.return();
           }
         } finally {
-          if (_didIteratorError35) {
-            throw _iteratorError35;
+          if (_didIteratorError34) {
+            throw _iteratorError34;
           }
         }
       }
@@ -39113,7 +39495,7 @@ var ContextualExtensionsMenu = function () {
       $scope.accessTypeForExtension = function (extension) {
         return extension.encrypted ? "encrypted" : "decrypted";
       };
-    }
+    }]
   }]);
 
   return ContextualExtensionsMenu;
@@ -39137,26 +39519,65 @@ var EditorMenu = function () {
 
   _createClass(EditorMenu, [{
     key: 'controller',
-    value: function controller($scope, componentManager) {
+    value: ['$scope', 'componentManager', 'syncManager', '$timeout', function controller($scope, componentManager, syncManager, $timeout) {
       'ngInject';
 
       $scope.formData = {};
 
       $scope.editors = componentManager.componentsForArea("editor-editor");
+      $scope.stack = componentManager.componentsForArea("editor-stack");
 
       $scope.isDesktop = isDesktopApplication();
 
-      $scope.selectEditor = function ($event, editor) {
-        if (editor) {
-          editor.conflict_of = null; // clear conflict if applicable
-          if (editor.local && !isDesktopApplication()) {
-            alert("This editor is installed ");
-            return;
-          }
+      $scope.defaultEditor = $scope.editors.filter(function (e) {
+        return e.isDefaultEditor();
+      })[0];
+
+      $scope.selectComponent = function ($event, component) {
+        $event.stopPropagation();
+        if (component) {
+          component.conflict_of = null; // clear conflict if applicable
         }
-        $scope.callback()(editor);
+        $timeout(function () {
+          $scope.callback()(component);
+        });
       };
-    }
+
+      $scope.toggleDefaultForEditor = function (editor) {
+        if ($scope.defaultEditor == editor) {
+          $scope.removeEditorDefault(editor);
+        } else {
+          $scope.makeEditorDefault(editor);
+        }
+      };
+
+      $scope.offlineAvailableForComponent = function (component) {
+        return component.local_url && isDesktopApplication();
+      };
+
+      $scope.makeEditorDefault = function (component) {
+        var currentDefault = componentManager.componentsForArea("editor-editor").filter(function (e) {
+          return e.isDefaultEditor();
+        })[0];
+        if (currentDefault) {
+          currentDefault.setAppDataItem("defaultEditor", false);
+          currentDefault.setDirty(true);
+        }
+        component.setAppDataItem("defaultEditor", true);
+        component.setDirty(true);
+        syncManager.sync();
+
+        $scope.defaultEditor = component;
+      };
+
+      $scope.removeEditorDefault = function (component) {
+        component.setAppDataItem("defaultEditor", false);
+        component.setDirty(true);
+        syncManager.sync();
+
+        $scope.defaultEditor = null;
+      };
+    }]
   }]);
 
   return EditorMenu;
@@ -39177,7 +39598,7 @@ var GlobalExtensionsMenu = function () {
 
   _createClass(GlobalExtensionsMenu, [{
     key: 'controller',
-    value: function controller($scope, extensionManager, syncManager, modelManager, themeManager, componentManager, packageManager) {
+    value: ['$scope', 'extensionManager', 'syncManager', 'modelManager', 'themeManager', 'componentManager', 'packageManager', function controller($scope, extensionManager, syncManager, modelManager, themeManager, componentManager, packageManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -39302,25 +39723,6 @@ var GlobalExtensionsMenu = function () {
         }
       };
 
-      $scope.makeEditorDefault = function (component) {
-        var currentDefault = componentManager.componentsForArea("editor-editor").filter(function (e) {
-          return e.isDefaultEditor();
-        })[0];
-        if (currentDefault) {
-          currentDefault.setAppDataItem("defaultEditor", false);
-          currentDefault.setDirty(true);
-        }
-        component.setAppDataItem("defaultEditor", true);
-        component.setDirty(true);
-        syncManager.sync();
-      };
-
-      $scope.removeEditorDefault = function (component) {
-        component.setAppDataItem("defaultEditor", false);
-        component.setDirty(true);
-        syncManager.sync();
-      };
-
       // Installation
 
       $scope.submitInstallLink = function () {
@@ -39336,13 +39738,13 @@ var GlobalExtensionsMenu = function () {
         };
 
         var links = fullLink.split(",");
-        var _iteratorNormalCompletion36 = true;
-        var _didIteratorError36 = false;
-        var _iteratorError36 = undefined;
+        var _iteratorNormalCompletion35 = true;
+        var _didIteratorError35 = false;
+        var _iteratorError35 = undefined;
 
         try {
-          for (var _iterator36 = links[Symbol.iterator](), _step36; !(_iteratorNormalCompletion36 = (_step36 = _iterator36.next()).done); _iteratorNormalCompletion36 = true) {
-            var link = _step36.value;
+          for (var _iterator35 = links[Symbol.iterator](), _step35; !(_iteratorNormalCompletion35 = (_step35 = _iterator35.next()).done); _iteratorNormalCompletion35 = true) {
+            var link = _step35.value;
 
             var type = getParameterByName("type", link);
 
@@ -39361,16 +39763,16 @@ var GlobalExtensionsMenu = function () {
             }
           }
         } catch (err) {
-          _didIteratorError36 = true;
-          _iteratorError36 = err;
+          _didIteratorError35 = true;
+          _iteratorError35 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion36 && _iterator36.return) {
-              _iterator36.return();
+            if (!_iteratorNormalCompletion35 && _iterator35.return) {
+              _iterator35.return();
             }
           } finally {
-            if (_didIteratorError36) {
-              throw _iteratorError36;
+            if (_didIteratorError35) {
+              throw _iteratorError35;
             }
           }
         }
@@ -39413,7 +39815,7 @@ var GlobalExtensionsMenu = function () {
           });
         }
       };
-    }
+    }]
   }]);
 
   return GlobalExtensionsMenu;
@@ -39421,6 +39823,256 @@ var GlobalExtensionsMenu = function () {
 
 angular.module('app.frontend').directive('globalExtensionsMenu', function () {
   return new GlobalExtensionsMenu();
+});
+;
+var MenuRow = function () {
+  function MenuRow() {
+    _classCallCheck(this, MenuRow);
+
+    this.restrict = "E";
+    this.transclude = true;
+    this.templateUrl = "frontend/directives/menu-row.html";
+    this.scope = {
+      circle: "=",
+      title: "=",
+      subtite: "=",
+      hasButton: "=",
+      buttonText: "=",
+      buttonClass: "=",
+      buttonAction: "&"
+    };
+  }
+
+  _createClass(MenuRow, [{
+    key: 'controller',
+    value: ['$scope', 'componentManager', function controller($scope, componentManager) {
+      'ngInject';
+
+      $scope.clickButton = function ($event) {
+        $event.stopPropagation();
+        $scope.buttonAction();
+      };
+    }]
+  }]);
+
+  return MenuRow;
+}();
+
+angular.module('app.frontend').directive('menuRow', function () {
+  return new MenuRow();
+});
+;
+var PanelResizer = function () {
+  function PanelResizer() {
+    _classCallCheck(this, PanelResizer);
+
+    this.restrict = "E";
+    this.templateUrl = "frontend/directives/panel-resizer.html";
+    this.scope = {
+      index: "=",
+      panelId: "=",
+      onResize: "&",
+      onResizeFinish: "&",
+      control: "=",
+      alwaysVisible: "=",
+      minWidth: "=",
+      property: "=",
+      hoverable: "=",
+      collapsable: "="
+    };
+  }
+
+  _createClass(PanelResizer, [{
+    key: 'link',
+    value: function link(scope, elem, attrs, ctrl) {
+      scope.elem = elem;
+
+      scope.control.setWidth = function (value) {
+        scope.setWidth(value, true);
+      };
+
+      scope.control.setLeft = function (value) {
+        scope.setLeft(value);
+      };
+    }
+  }, {
+    key: 'controller',
+    value: ['$scope', '$element', 'modelManager', 'extensionManager', function controller($scope, $element, modelManager, extensionManager) {
+      'ngInject';
+
+      var panel = document.getElementById($scope.panelId);
+      if (!panel) {
+        console.log("Panel not found for", $scope.panelId);
+      }
+      var resizerColumn = $element[0];
+      var resizerWidth = resizerColumn.offsetWidth;
+      var minWidth = $scope.minWidth || resizerWidth;
+
+      function getParentRect() {
+        return panel.parentNode.getBoundingClientRect();
+      }
+
+      var pressed = false;
+      var startWidth = panel.scrollWidth,
+          startX,
+          lastDownX,
+          collapsed,
+          lastWidth = startWidth,
+          startLeft,
+          lastLeft;
+      var appFrame = document.getElementById("app").getBoundingClientRect();
+
+      if ($scope.alwaysVisible) {
+        console.log("Adding always visible", $scope.alwaysVisible);
+        resizerColumn.classList.add("always-visible");
+      }
+
+      if ($scope.hoverable) {
+        resizerColumn.classList.add("hoverable");
+      }
+
+      $scope.setWidth = function (width, finish) {
+        if (width < minWidth) {
+          width = minWidth;
+        }
+
+        var parentRect = getParentRect();
+
+        if (width > parentRect.width) {
+          width = parentRect.width;
+        }
+
+        if (width == parentRect.width) {
+          panel.style.width = "100%";
+          panel.style.flexBasis = "100%";
+        } else {
+          panel.style.flexBasis = width + "px";
+          panel.style.width = width + "px";
+        }
+
+        lastWidth = width;
+
+        if (finish) {
+          $scope.finishSettingWidth();
+        }
+      };
+
+      $scope.setLeft = function (left) {
+        panel.style.left = left + "px";
+        lastLeft = left;
+      };
+
+      $scope.finishSettingWidth = function () {
+        if (!$scope.collapsable) {
+          return;
+        }
+
+        if (lastWidth <= minWidth) {
+          collapsed = true;
+        } else {
+          collapsed = false;
+        }
+        if (collapsed) {
+          resizerColumn.classList.add("collapsed");
+        } else {
+          resizerColumn.classList.remove("collapsed");
+        }
+      };
+
+      resizerColumn.addEventListener("mousedown", function (event) {
+        pressed = true;
+        lastDownX = event.clientX;
+        startWidth = panel.scrollWidth;
+        startLeft = panel.offsetLeft;
+        panel.classList.add("no-selection");
+
+        if ($scope.hoverable) {
+          resizerColumn.classList.add("dragging");
+        }
+      });
+
+      document.addEventListener("mousemove", function (event) {
+        if (!pressed) {
+          return;
+        }
+
+        event.preventDefault();
+
+        if ($scope.property && $scope.property == 'left') {
+          handleLeftEvent(event);
+        } else {
+          handleWidthEvent(event);
+        }
+      });
+
+      function handleWidthEvent(event) {
+        var rect = panel.getBoundingClientRect();
+        var panelMaxX = rect.left + (startWidth || panel.style.maxWidth);
+
+        var x = event.clientX;
+
+        var deltaX = x - lastDownX;
+        var newWidth = startWidth + deltaX;
+
+        $scope.setWidth(newWidth, false);
+
+        if ($scope.onResize()) {
+          $scope.onResize()(lastWidth, panel);
+        }
+      }
+
+      function handleLeftEvent(event) {
+        var panelRect = panel.getBoundingClientRect();
+        var x = event.clientX;
+        var deltaX = x - lastDownX;
+        var newLeft = startLeft + deltaX;
+        if (newLeft < 0) {
+          newLeft = 0;
+          deltaX = -startLeft;
+        }
+
+        var parentRect = getParentRect();
+
+        var newWidth = startWidth - deltaX;
+        if (newWidth < minWidth) {
+          newWidth = minWidth;
+        }
+
+        if (newWidth > parentRect.width) {
+          newWidth = parentRect.width;
+        }
+
+        if (newLeft + newWidth > parentRect.width) {
+          newLeft = parentRect.width - newWidth;
+        }
+
+        $scope.setLeft(newLeft, false);
+        $scope.setWidth(newWidth, false);
+      }
+
+      document.addEventListener("mouseup", function (event) {
+        if (pressed) {
+          pressed = false;
+          resizerColumn.classList.remove("dragging");
+          panel.classList.remove("no-selection");
+
+          var isMaxWidth = lastWidth == getParentRect().width;
+
+          if ($scope.onResizeFinish) {
+            $scope.onResizeFinish()(lastWidth, lastLeft, isMaxWidth);
+          }
+
+          $scope.finishSettingWidth();
+        }
+      });
+    }]
+  }]);
+
+  return PanelResizer;
+}();
+
+angular.module('app.frontend').directive('panelResizer', function () {
+  return new PanelResizer();
 });
 ;
 var PermissionsModal = function () {
@@ -39454,12 +40106,20 @@ var PermissionsModal = function () {
         $scope.callback(false);
         $scope.dismiss();
       };
+    }
+  }, {
+    key: 'controller',
+    value: function controller($scope, modelManager) {
 
       $scope.formattedPermissions = $scope.permissions.map(function (permission) {
         if (permission.name === "stream-items") {
-          var title = "Access to ";
           var types = permission.content_types.map(function (type) {
-            return (type + "s").toLowerCase();
+            var desc = modelManager.humanReadableDisplayForContentType(type);
+            if (desc) {
+              return desc + "s";
+            } else {
+              return "items of type " + type;
+            }
           });
           var typesString = "";
           var separator = ", ";
@@ -39472,7 +40132,7 @@ var PermissionsModal = function () {
             } else if (i == types.length - 1) {
               // last element
               if (types.length > 2) {
-                typesString += separator + "and " + typesString;
+                typesString += separator + "and " + type;
               } else if (types.length == 2) {
                 typesString = typesString + " and " + type;
               }
@@ -39481,14 +40141,14 @@ var PermissionsModal = function () {
             }
           }
 
-          return title + typesString;
+          return typesString;
         } else if (permission.name === "stream-context-item") {
           var mapping = {
             "editor-stack": "working note",
             "note-tags": "working note",
             "editor-editor": "working note"
           };
-          return "Access to " + mapping[$scope.component.area];
+          return mapping[$scope.component.area];
         }
       });
     }
@@ -39501,64 +40161,8 @@ angular.module('app.frontend').directive('permissionsModal', function () {
   return new PermissionsModal();
 });
 ;
-var RoomBar = function () {
-  function RoomBar() {
-    _classCallCheck(this, RoomBar);
-
-    this.restrict = "E";
-    this.templateUrl = "frontend/directives/room-bar.html";
-    this.scope = {};
-  }
-
-  _createClass(RoomBar, [{
-    key: 'controller',
-    value: function controller($rootScope, $scope, desktopManager, syncManager, modelManager, componentManager, $timeout) {
-      'ngInject';
-
-      $scope.componentManager = componentManager;
-
-      $rootScope.$on("initial-data-loaded", function () {
-        $timeout(function () {
-          $scope.rooms = componentManager.componentsForArea("rooms");
-        });
-      });
-
-      componentManager.registerHandler({ identifier: "roomBar", areas: ["rooms"], activationHandler: function (component) {
-          if (component.active) {
-            $timeout(function () {
-              var iframe = componentManager.iframeForComponent(component);
-              if (iframe) {
-                iframe.onload = function () {
-                  componentManager.registerComponentWindow(component, iframe.contentWindow);
-                }.bind(this);
-              }
-            }.bind(this));
-          }
-        }.bind(this), actionHandler: function (component, action, data) {
-          if (action == "set-size") {
-            componentManager.handleSetSizeEvent(component, data);
-          }
-        }.bind(this) });
-
-      $scope.selectRoom = function (room) {
-        room.show = !room.show;
-        if (room.show) {
-          this.componentManager.activateComponent(room);
-        } else {
-          this.componentManager.deactivateComponent(room);
-        }
-      };
-    }
-  }]);
-
-  return RoomBar;
-}();
-
-angular.module('app.frontend').directive('roomBar', function () {
-  return new RoomBar();
-});
-;
 var ExtensionManager = function () {
+  ExtensionManager.$inject = ['httpManager', 'modelManager', 'authManager', 'syncManager', 'storageManager'];
   function ExtensionManager(httpManager, modelManager, authManager, syncManager, storageManager) {
     _classCallCheck(this, ExtensionManager);
 
@@ -39570,51 +40174,51 @@ var ExtensionManager = function () {
     this.storageManager = storageManager;
 
     modelManager.addItemSyncObserver("extensionManager", "Extension", function (allItems, validItems, deletedItems) {
-      var _iteratorNormalCompletion37 = true;
-      var _didIteratorError37 = false;
-      var _iteratorError37 = undefined;
+      var _iteratorNormalCompletion36 = true;
+      var _didIteratorError36 = false;
+      var _iteratorError36 = undefined;
 
       try {
-        for (var _iterator37 = validItems[Symbol.iterator](), _step37; !(_iteratorNormalCompletion37 = (_step37 = _iterator37.next()).done); _iteratorNormalCompletion37 = true) {
-          var ext = _step37.value;
-          var _iteratorNormalCompletion38 = true;
-          var _didIteratorError38 = false;
-          var _iteratorError38 = undefined;
+        for (var _iterator36 = validItems[Symbol.iterator](), _step36; !(_iteratorNormalCompletion36 = (_step36 = _iterator36.next()).done); _iteratorNormalCompletion36 = true) {
+          var ext = _step36.value;
+          var _iteratorNormalCompletion37 = true;
+          var _didIteratorError37 = false;
+          var _iteratorError37 = undefined;
 
           try {
-            for (var _iterator38 = ext.actions[Symbol.iterator](), _step38; !(_iteratorNormalCompletion38 = (_step38 = _iterator38.next()).done); _iteratorNormalCompletion38 = true) {
-              var action = _step38.value;
+            for (var _iterator37 = ext.actions[Symbol.iterator](), _step37; !(_iteratorNormalCompletion37 = (_step37 = _iterator37.next()).done); _iteratorNormalCompletion37 = true) {
+              var action = _step37.value;
 
               if (_.includes(this.enabledRepeatActionUrls, action.url)) {
                 this.enableRepeatAction(action, ext);
               }
             }
           } catch (err) {
-            _didIteratorError38 = true;
-            _iteratorError38 = err;
+            _didIteratorError37 = true;
+            _iteratorError37 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion38 && _iterator38.return) {
-                _iterator38.return();
+              if (!_iteratorNormalCompletion37 && _iterator37.return) {
+                _iterator37.return();
               }
             } finally {
-              if (_didIteratorError38) {
-                throw _iteratorError38;
+              if (_didIteratorError37) {
+                throw _iteratorError37;
               }
             }
           }
         }
       } catch (err) {
-        _didIteratorError37 = true;
-        _iteratorError37 = err;
+        _didIteratorError36 = true;
+        _iteratorError36 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion37 && _iterator37.return) {
-            _iterator37.return();
+          if (!_iteratorNormalCompletion36 && _iterator36.return) {
+            _iterator36.return();
           }
         } finally {
-          if (_didIteratorError37) {
-            throw _iteratorError37;
+          if (_didIteratorError36) {
+            throw _iteratorError36;
           }
         }
       }
@@ -39631,27 +40235,27 @@ var ExtensionManager = function () {
   }, {
     key: 'actionWithURL',
     value: function actionWithURL(url) {
-      var _iteratorNormalCompletion39 = true;
-      var _didIteratorError39 = false;
-      var _iteratorError39 = undefined;
+      var _iteratorNormalCompletion38 = true;
+      var _didIteratorError38 = false;
+      var _iteratorError38 = undefined;
 
       try {
-        for (var _iterator39 = this.extensions[Symbol.iterator](), _step39; !(_iteratorNormalCompletion39 = (_step39 = _iterator39.next()).done); _iteratorNormalCompletion39 = true) {
-          var extension = _step39.value;
+        for (var _iterator38 = this.extensions[Symbol.iterator](), _step38; !(_iteratorNormalCompletion38 = (_step38 = _iterator38.next()).done); _iteratorNormalCompletion38 = true) {
+          var extension = _step38.value;
 
           return _.find(extension.actions, { url: url });
         }
       } catch (err) {
-        _didIteratorError39 = true;
-        _iteratorError39 = err;
+        _didIteratorError38 = true;
+        _iteratorError38 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion39 && _iterator39.return) {
-            _iterator39.return();
+          if (!_iteratorNormalCompletion38 && _iterator38.return) {
+            _iterator38.return();
           }
         } finally {
-          if (_didIteratorError39) {
-            throw _iteratorError39;
+          if (_didIteratorError38) {
+            throw _iteratorError38;
           }
         }
       }
@@ -39664,13 +40268,13 @@ var ExtensionManager = function () {
   }, {
     key: 'deleteExtension',
     value: function deleteExtension(extension) {
-      var _iteratorNormalCompletion40 = true;
-      var _didIteratorError40 = false;
-      var _iteratorError40 = undefined;
+      var _iteratorNormalCompletion39 = true;
+      var _didIteratorError39 = false;
+      var _iteratorError39 = undefined;
 
       try {
-        for (var _iterator40 = extension.actions[Symbol.iterator](), _step40; !(_iteratorNormalCompletion40 = (_step40 = _iterator40.next()).done); _iteratorNormalCompletion40 = true) {
-          var action = _step40.value;
+        for (var _iterator39 = extension.actions[Symbol.iterator](), _step39; !(_iteratorNormalCompletion39 = (_step39 = _iterator39.next()).done); _iteratorNormalCompletion39 = true) {
+          var action = _step39.value;
 
           if (action.repeat_mode) {
             if (this.isRepeatActionEnabled(action)) {
@@ -39679,16 +40283,16 @@ var ExtensionManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError40 = true;
-        _iteratorError40 = err;
+        _didIteratorError39 = true;
+        _iteratorError39 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion40 && _iterator40.return) {
-            _iterator40.return();
+          if (!_iteratorNormalCompletion39 && _iterator39.return) {
+            _iterator39.return();
           }
         } finally {
-          if (_didIteratorError40) {
-            throw _iteratorError40;
+          if (_didIteratorError39) {
+            throw _iteratorError39;
           }
         }
       }
@@ -39779,18 +40383,45 @@ var ExtensionManager = function () {
   }, {
     key: 'refreshExtensionsFromServer',
     value: function refreshExtensionsFromServer() {
-      var _iteratorNormalCompletion41 = true;
-      var _didIteratorError41 = false;
-      var _iteratorError41 = undefined;
+      var _iteratorNormalCompletion40 = true;
+      var _didIteratorError40 = false;
+      var _iteratorError40 = undefined;
 
       try {
-        for (var _iterator41 = this.enabledRepeatActionUrls[Symbol.iterator](), _step41; !(_iteratorNormalCompletion41 = (_step41 = _iterator41.next()).done); _iteratorNormalCompletion41 = true) {
-          var url = _step41.value;
+        for (var _iterator40 = this.enabledRepeatActionUrls[Symbol.iterator](), _step40; !(_iteratorNormalCompletion40 = (_step40 = _iterator40.next()).done); _iteratorNormalCompletion40 = true) {
+          var url = _step40.value;
 
           var action = this.actionWithURL(url);
           if (action) {
             this.disableRepeatAction(action);
           }
+        }
+      } catch (err) {
+        _didIteratorError40 = true;
+        _iteratorError40 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion40 && _iterator40.return) {
+            _iterator40.return();
+          }
+        } finally {
+          if (_didIteratorError40) {
+            throw _iteratorError40;
+          }
+        }
+      }
+
+      var _iteratorNormalCompletion41 = true;
+      var _didIteratorError41 = false;
+      var _iteratorError41 = undefined;
+
+      try {
+        for (var _iterator41 = this.extensions[Symbol.iterator](), _step41; !(_iteratorNormalCompletion41 = (_step41 = _iterator41.next()).done); _iteratorNormalCompletion41 = true) {
+          var ext = _step41.value;
+
+          this.retrieveExtensionFromServer(ext.url, function (extension) {
+            extension.setDirty(true);
+          });
         }
       } catch (err) {
         _didIteratorError41 = true;
@@ -39803,33 +40434,6 @@ var ExtensionManager = function () {
         } finally {
           if (_didIteratorError41) {
             throw _iteratorError41;
-          }
-        }
-      }
-
-      var _iteratorNormalCompletion42 = true;
-      var _didIteratorError42 = false;
-      var _iteratorError42 = undefined;
-
-      try {
-        for (var _iterator42 = this.extensions[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
-          var ext = _step42.value;
-
-          this.retrieveExtensionFromServer(ext.url, function (extension) {
-            extension.setDirty(true);
-          });
-        }
-      } catch (err) {
-        _didIteratorError42 = true;
-        _iteratorError42 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion42 && _iterator42.return) {
-            _iterator42.return();
-          }
-        } finally {
-          if (_didIteratorError42) {
-            throw _iteratorError42;
           }
         }
       }
@@ -39860,27 +40464,27 @@ var ExtensionManager = function () {
               var items = response.items || [response.item];
               EncryptionHelper.decryptMultipleItems(items, this.authManager.keys());
               items = this.modelManager.mapResponseItemsToLocalModels(items, ModelManager.MappingSourceRemoteActionRetrieved);
-              var _iteratorNormalCompletion43 = true;
-              var _didIteratorError43 = false;
-              var _iteratorError43 = undefined;
+              var _iteratorNormalCompletion42 = true;
+              var _didIteratorError42 = false;
+              var _iteratorError42 = undefined;
 
               try {
-                for (var _iterator43 = items[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
-                  var item = _step43.value;
+                for (var _iterator42 = items[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
+                  var item = _step42.value;
 
                   item.setDirty(true);
                 }
               } catch (err) {
-                _didIteratorError43 = true;
-                _iteratorError43 = err;
+                _didIteratorError42 = true;
+                _iteratorError42 = err;
               } finally {
                 try {
-                  if (!_iteratorNormalCompletion43 && _iterator43.return) {
-                    _iterator43.return();
+                  if (!_iteratorNormalCompletion42 && _iterator42.return) {
+                    _iterator42.return();
                   }
                 } finally {
-                  if (_didIteratorError43) {
-                    throw _iteratorError43;
+                  if (_didIteratorError42) {
+                    throw _iteratorError42;
                   }
                 }
               }
@@ -40068,16 +40672,16 @@ var ExtensionManager = function () {
 }();
 
 angular.module('app.frontend').service('extensionManager', ExtensionManager);
-;angular.module('app.frontend').filter('appDate', function ($filter) {
+;angular.module('app.frontend').filter('appDate', ['$filter', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy', 'UTC') : '';
   };
-}).filter('appDateTime', function ($filter) {
+}]).filter('appDateTime', ['$filter', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy h:mm a') : '';
   };
-});
-;angular.module('app.frontend').filter('sortBy', function ($filter) {
+}]);
+;angular.module('app.frontend').filter('sortBy', ['$filter', function ($filter) {
   return function (items, sortBy) {
     var sortValueFn = function sortValueFn(a, b) {
       var pinCheck = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
@@ -40126,7 +40730,7 @@ angular.module('app.frontend').service('extensionManager', ExtensionManager);
       return sortValueFn(a, b);
     });
   };
-});
+}]);
 ;angular.module('app.frontend').filter('startFrom', function () {
   return function (input, start) {
     return input.slice(start);
@@ -40139,6 +40743,7 @@ angular.module('app.frontend').service('extensionManager', ExtensionManager);
 }]);
 ;
 var HttpManager = function () {
+  HttpManager.$inject = ['$timeout', 'storageManager'];
   function HttpManager($timeout, storageManager) {
     _classCallCheck(this, HttpManager);
 
@@ -40227,8 +40832,9 @@ var HttpManager = function () {
 angular.module('app.frontend').service('httpManager', HttpManager);
 ;
 var MigrationManager = function () {
+  MigrationManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'componentManager'];
   function MigrationManager($rootScope, modelManager, syncManager, componentManager) {
-    var _this18 = this;
+    var _this32 = this;
 
     _classCallCheck(this, MigrationManager);
 
@@ -40242,13 +40848,13 @@ var MigrationManager = function () {
     this.addEditorToComponentMigrator();
 
     this.modelManager.addItemSyncObserver("migration-manager", "*", function (allItems, validItems, deletedItems) {
-      var _iteratorNormalCompletion44 = true;
-      var _didIteratorError44 = false;
-      var _iteratorError44 = undefined;
+      var _iteratorNormalCompletion43 = true;
+      var _didIteratorError43 = false;
+      var _iteratorError43 = undefined;
 
       try {
-        for (var _iterator44 = _this18.migrators[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
-          var migrator = _step44.value;
+        for (var _iterator43 = _this32.migrators[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
+          var migrator = _step43.value;
 
           var items = allItems.filter(function (item) {
             return item.content_type == migrator.content_type;
@@ -40258,16 +40864,16 @@ var MigrationManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError44 = true;
-        _iteratorError44 = err;
+        _didIteratorError43 = true;
+        _iteratorError43 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion44 && _iterator44.return) {
-            _iterator44.return();
+          if (!_iteratorNormalCompletion43 && _iterator43.return) {
+            _iterator43.return();
           }
         } finally {
-          if (_didIteratorError44) {
-            throw _iteratorError44;
+          if (_didIteratorError43) {
+            throw _iteratorError43;
           }
         }
       }
@@ -40282,24 +40888,24 @@ var MigrationManager = function () {
   _createClass(MigrationManager, [{
     key: 'addEditorToComponentMigrator',
     value: function addEditorToComponentMigrator() {
-      var _this19 = this;
+      var _this33 = this;
 
       this.migrators.push({
         content_type: "SN|Editor",
 
         handler: function handler(editors) {
           // Convert editors to components
-          var _iteratorNormalCompletion45 = true;
-          var _didIteratorError45 = false;
-          var _iteratorError45 = undefined;
+          var _iteratorNormalCompletion44 = true;
+          var _didIteratorError44 = false;
+          var _iteratorError44 = undefined;
 
           try {
-            for (var _iterator45 = editors[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
-              var editor = _step45.value;
+            for (var _iterator44 = editors[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
+              var editor = _step44.value;
 
               // If there's already a component for this url, then skip this editor
-              if (editor.url && !_this19.componentManager.componentForUrl(editor.url)) {
-                var component = _this19.modelManager.createItem({
+              if (editor.url && !_this33.componentManager.componentForUrl(editor.url)) {
+                var component = _this33.modelManager.createItem({
                   content_type: "SN|Component",
                   url: editor.url,
                   name: editor.name,
@@ -40307,8 +40913,33 @@ var MigrationManager = function () {
                 });
                 component.setAppDataItem("data", editor.data);
                 component.setDirty(true);
-                _this19.modelManager.addItem(component);
+                _this33.modelManager.addItem(component);
               }
+            }
+          } catch (err) {
+            _didIteratorError44 = true;
+            _iteratorError44 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion44 && _iterator44.return) {
+                _iterator44.return();
+              }
+            } finally {
+              if (_didIteratorError44) {
+                throw _iteratorError44;
+              }
+            }
+          }
+
+          var _iteratorNormalCompletion45 = true;
+          var _didIteratorError45 = false;
+          var _iteratorError45 = undefined;
+
+          try {
+            for (var _iterator45 = editors[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
+              var _editor = _step45.value;
+
+              _this33.modelManager.setItemToBeDeleted(_editor);
             }
           } catch (err) {
             _didIteratorError45 = true;
@@ -40325,32 +40956,7 @@ var MigrationManager = function () {
             }
           }
 
-          var _iteratorNormalCompletion46 = true;
-          var _didIteratorError46 = false;
-          var _iteratorError46 = undefined;
-
-          try {
-            for (var _iterator46 = editors[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
-              var _editor = _step46.value;
-
-              _this19.modelManager.setItemToBeDeleted(_editor);
-            }
-          } catch (err) {
-            _didIteratorError46 = true;
-            _iteratorError46 = err;
-          } finally {
-            try {
-              if (!_iteratorNormalCompletion46 && _iterator46.return) {
-                _iterator46.return();
-              }
-            } finally {
-              if (_didIteratorError46) {
-                throw _iteratorError46;
-              }
-            }
-          }
-
-          _this19.syncManager.sync();
+          _this33.syncManager.sync();
         }
       });
     }
@@ -40362,13 +40968,16 @@ var MigrationManager = function () {
 angular.module('app.frontend').service('migrationManager', MigrationManager);
 ;
 var ModelManager = function () {
+  ModelManager.$inject = ['storageManager'];
   function ModelManager(storageManager) {
     _classCallCheck(this, ModelManager);
 
     ModelManager.MappingSourceRemoteRetrieved = "MappingSourceRemoteRetrieved";
     ModelManager.MappingSourceRemoteSaved = "MappingSourceRemoteSaved";
+    ModelManager.MappingSourceLocalSaved = "MappingSourceLocalSaved";
     ModelManager.MappingSourceLocalRetrieved = "MappingSourceLocalRetrieved";
     ModelManager.MappingSourceComponentRetrieved = "MappingSourceComponentRetrieved";
+    ModelManager.MappingSourceDesktopInstalled = "MappingSourceDesktopInstalled"; // When a component is installed by the desktop and some of its values change
     ModelManager.MappingSourceRemoteActionRetrieved = "MappingSourceRemoteActionRetrieved"; /* aciton-based Extensions like note history */
     ModelManager.MappingSourceFileImport = "MappingSourceFileImport";
 
@@ -40394,7 +41003,7 @@ var ModelManager = function () {
   }, {
     key: 'alternateUUIDForItem',
     value: function alternateUUIDForItem(item, callback, removeOriginal) {
-      var _this20 = this;
+      var _this34 = this;
 
       // we need to clone this item and give it a new uuid, then delete item with old uuid from db (you can't mofidy uuid's in our indexeddb setup)
       var newItem = this.createItem(item);
@@ -40407,16 +41016,17 @@ var ModelManager = function () {
       this.informModelsOfUUIDChangeForItem(newItem, item.uuid, newItem.uuid);
 
       var block = function block() {
-        _this20.addItem(newItem);
+        _this34.addItem(newItem);
         newItem.setDirty(true);
         newItem.markAllReferencesDirty();
         callback();
       };
 
       if (removeOriginal) {
-        this.removeItemLocally(item, function () {
-          block();
-        });
+        // Set to deleted, then run through mapping function so that observers can be notified
+        item.deleted = true;
+        this.mapResponseItemsToLocalModels([item], ModelManager.MappingSourceLocalSaved);
+        block();
       } else {
         block();
       }
@@ -40428,27 +41038,27 @@ var ModelManager = function () {
       // for example, editors have a one way relationship with notes. When a note changes its UUID, it has no way to inform the editor
       // to update its relationships
 
-      var _iteratorNormalCompletion47 = true;
-      var _didIteratorError47 = false;
-      var _iteratorError47 = undefined;
+      var _iteratorNormalCompletion46 = true;
+      var _didIteratorError46 = false;
+      var _iteratorError46 = undefined;
 
       try {
-        for (var _iterator47 = this.items[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
-          var model = _step47.value;
+        for (var _iterator46 = this.items[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
+          var model = _step46.value;
 
           model.potentialItemOfInterestHasChangedItsUUID(newItem, oldUUID, newUUID);
         }
       } catch (err) {
-        _didIteratorError47 = true;
-        _iteratorError47 = err;
+        _didIteratorError46 = true;
+        _iteratorError46 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion47 && _iterator47.return) {
-            _iterator47.return();
+          if (!_iteratorNormalCompletion46 && _iterator46.return) {
+            _iterator46.return();
           }
         } finally {
-          if (_didIteratorError47) {
-            throw _iteratorError47;
+          if (_didIteratorError46) {
+            throw _iteratorError46;
           }
         }
       }
@@ -40456,14 +41066,14 @@ var ModelManager = function () {
   }, {
     key: 'allItemsMatchingTypes',
     value: function allItemsMatchingTypes(contentTypes) {
-      return this.items.filter(function (item) {
+      return this.allItems.filter(function (item) {
         return (_.includes(contentTypes, item.content_type) || _.includes(contentTypes, "*")) && !item.dummy;
       });
     }
   }, {
     key: 'itemsForContentType',
     value: function itemsForContentType(contentType) {
-      return this.items.filter(function (item) {
+      return this.allItems.filter(function (item) {
         return item.content_type == contentType;
       });
     }
@@ -40483,6 +41093,11 @@ var ModelManager = function () {
       return tag;
     }
   }, {
+    key: 'didSyncModelsOffline',
+    value: function didSyncModelsOffline(items) {
+      this.notifySyncObserversOfModels(items, ModelManager.MappingSourceLocalSaved);
+    }
+  }, {
     key: 'mapResponseItemsToLocalModels',
     value: function mapResponseItemsToLocalModels(items, source) {
       return this.mapResponseItemsToLocalModelsOmittingFields(items, null, source);
@@ -40495,13 +41110,13 @@ var ModelManager = function () {
           modelsToNotifyObserversOf = [];
 
       // first loop should add and process items
-      var _iteratorNormalCompletion48 = true;
-      var _didIteratorError48 = false;
-      var _iteratorError48 = undefined;
+      var _iteratorNormalCompletion47 = true;
+      var _didIteratorError47 = false;
+      var _iteratorError47 = undefined;
 
       try {
-        for (var _iterator48 = items[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
-          var json_obj = _step48.value;
+        for (var _iterator47 = items[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
+          var json_obj = _step47.value;
 
           if ((!json_obj.content_type || !json_obj.content) && !json_obj.deleted && !json_obj.errorDecrypting) {
             // An item that is not deleted should never have empty content
@@ -40533,7 +41148,7 @@ var ModelManager = function () {
           }
 
           if (!item) {
-            item = this.createItem(json_obj);
+            item = this.createItem(json_obj, true);
           }
 
           this.addItem(item);
@@ -40545,16 +41160,16 @@ var ModelManager = function () {
 
         // second loop should process references
       } catch (err) {
-        _didIteratorError48 = true;
-        _iteratorError48 = err;
+        _didIteratorError47 = true;
+        _iteratorError47 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion48 && _iterator48.return) {
-            _iterator48.return();
+          if (!_iteratorNormalCompletion47 && _iterator47.return) {
+            _iterator47.return();
           }
         } finally {
-          if (_didIteratorError48) {
-            throw _iteratorError48;
+          if (_didIteratorError47) {
+            throw _iteratorError47;
           }
         }
       }
@@ -40573,26 +41188,26 @@ var ModelManager = function () {
   }, {
     key: 'notifySyncObserversOfModels',
     value: function notifySyncObserversOfModels(models, source) {
-      var _iteratorNormalCompletion49 = true;
-      var _didIteratorError49 = false;
-      var _iteratorError49 = undefined;
+      var _iteratorNormalCompletion48 = true;
+      var _didIteratorError48 = false;
+      var _iteratorError48 = undefined;
 
       try {
-        for (var _iterator49 = this.itemSyncObservers[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
-          var observer = _step49.value;
+        for (var _iterator48 = this.itemSyncObservers[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
+          var observer = _step48.value;
 
           var allRelevantItems = models.filter(function (item) {
             return item.content_type == observer.type || observer.type == "*";
           });
           var validItems = [],
               deletedItems = [];
-          var _iteratorNormalCompletion50 = true;
-          var _didIteratorError50 = false;
-          var _iteratorError50 = undefined;
+          var _iteratorNormalCompletion49 = true;
+          var _didIteratorError49 = false;
+          var _iteratorError49 = undefined;
 
           try {
-            for (var _iterator50 = allRelevantItems[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
-              var item = _step50.value;
+            for (var _iterator49 = allRelevantItems[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
+              var item = _step49.value;
 
               if (item.deleted) {
                 deletedItems.push(item);
@@ -40601,16 +41216,16 @@ var ModelManager = function () {
               }
             }
           } catch (err) {
-            _didIteratorError50 = true;
-            _iteratorError50 = err;
+            _didIteratorError49 = true;
+            _iteratorError49 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion50 && _iterator50.return) {
-                _iterator50.return();
+              if (!_iteratorNormalCompletion49 && _iterator49.return) {
+                _iterator49.return();
               }
             } finally {
-              if (_didIteratorError50) {
-                throw _iteratorError50;
+              if (_didIteratorError49) {
+                throw _iteratorError49;
               }
             }
           }
@@ -40620,16 +41235,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError49 = true;
-        _iteratorError49 = err;
+        _didIteratorError48 = true;
+        _iteratorError48 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion49 && _iterator49.return) {
-            _iterator49.return();
+          if (!_iteratorNormalCompletion48 && _iterator48.return) {
+            _iterator48.return();
           }
         } finally {
-          if (_didIteratorError49) {
-            throw _iteratorError49;
+          if (_didIteratorError48) {
+            throw _iteratorError48;
           }
         }
       }
@@ -40637,13 +41252,13 @@ var ModelManager = function () {
   }, {
     key: 'notifyItemChangeObserversOfModels',
     value: function notifyItemChangeObserversOfModels(models) {
-      var _iteratorNormalCompletion51 = true;
-      var _didIteratorError51 = false;
-      var _iteratorError51 = undefined;
+      var _iteratorNormalCompletion50 = true;
+      var _didIteratorError50 = false;
+      var _iteratorError50 = undefined;
 
       try {
-        for (var _iterator51 = this.itemChangeObservers[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
-          var observer = _step51.value;
+        for (var _iterator50 = this.itemChangeObservers[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
+          var observer = _step50.value;
 
           var relevantItems = models.filter(function (item) {
             return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
@@ -40654,23 +41269,23 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError51 = true;
-        _iteratorError51 = err;
+        _didIteratorError50 = true;
+        _iteratorError50 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion51 && _iterator51.return) {
-            _iterator51.return();
+          if (!_iteratorNormalCompletion50 && _iterator50.return) {
+            _iterator50.return();
           }
         } finally {
-          if (_didIteratorError51) {
-            throw _iteratorError51;
+          if (_didIteratorError50) {
+            throw _iteratorError50;
           }
         }
       }
     }
   }, {
     key: 'createItem',
-    value: function createItem(json_obj) {
+    value: function createItem(json_obj, dontNotifyObservers) {
       var item;
       if (json_obj.content_type == "Note") {
         item = new Note(json_obj);
@@ -40692,6 +41307,15 @@ var ModelManager = function () {
         item = new Item(json_obj);
       }
 
+      // Some observers would be interested to know when an an item is locally created
+      // If we don't send this out, these observers would have to wait until MappingSourceRemoteSaved
+      // to hear about it, but sometimes, RemoveSaved is explicitly ignored by the observer to avoid
+      // recursive callbacks. See componentManager's syncObserver callback.
+      // dontNotifyObservers is currently only set true by modelManagers mapResponseItemsToLocalModels
+      if (!dontNotifyObservers) {
+        this.notifySyncObserversOfModels([item], ModelManager.MappingSourceLocalSaved);
+      }
+
       item.addObserver(this, function (changedItem) {
         this.notifyItemChangeObserversOfModels([changedItem]);
       }.bind(this));
@@ -40701,7 +41325,7 @@ var ModelManager = function () {
   }, {
     key: 'createDuplicateItem',
     value: function createDuplicateItem(itemResponse, sourceItem) {
-      var dup = this.createItem(itemResponse);
+      var dup = this.createItem(itemResponse, true);
       this.resolveReferencesForItem(dup);
       return dup;
     }
@@ -40757,13 +41381,13 @@ var ModelManager = function () {
         return;
       }
 
-      var _iteratorNormalCompletion52 = true;
-      var _didIteratorError52 = false;
-      var _iteratorError52 = undefined;
+      var _iteratorNormalCompletion51 = true;
+      var _didIteratorError51 = false;
+      var _iteratorError51 = undefined;
 
       try {
-        for (var _iterator52 = contentObject.references[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
-          var reference = _step52.value;
+        for (var _iterator51 = contentObject.references[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
+          var reference = _step51.value;
 
           var referencedItem = this.findItem(reference.uuid);
           if (referencedItem) {
@@ -40774,16 +41398,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError52 = true;
-        _iteratorError52 = err;
+        _didIteratorError51 = true;
+        _iteratorError51 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion52 && _iterator52.return) {
-            _iterator52.return();
+          if (!_iteratorNormalCompletion51 && _iterator51.return) {
+            _iterator51.return();
           }
         } finally {
-          if (_didIteratorError52) {
-            throw _iteratorError52;
+          if (_didIteratorError51) {
+            throw _iteratorError51;
           }
         }
       }
@@ -40819,27 +41443,27 @@ var ModelManager = function () {
   }, {
     key: 'clearDirtyItems',
     value: function clearDirtyItems(items) {
-      var _iteratorNormalCompletion53 = true;
-      var _didIteratorError53 = false;
-      var _iteratorError53 = undefined;
+      var _iteratorNormalCompletion52 = true;
+      var _didIteratorError52 = false;
+      var _iteratorError52 = undefined;
 
       try {
-        for (var _iterator53 = items[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
-          var item = _step53.value;
+        for (var _iterator52 = items[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
+          var item = _step52.value;
 
           item.setDirty(false);
         }
       } catch (err) {
-        _didIteratorError53 = true;
-        _iteratorError53 = err;
+        _didIteratorError52 = true;
+        _iteratorError52 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion53 && _iterator53.return) {
-            _iterator53.return();
+          if (!_iteratorNormalCompletion52 && _iterator52.return) {
+            _iterator52.return();
           }
         } finally {
-          if (_didIteratorError53) {
-            throw _iteratorError53;
+          if (_didIteratorError52) {
+            throw _iteratorError52;
           }
         }
       }
@@ -40868,27 +41492,27 @@ var ModelManager = function () {
         return _.includes(this.acceptableContentTypes, item.content_type);
       }.bind(this));
 
-      var _iteratorNormalCompletion54 = true;
-      var _didIteratorError54 = false;
-      var _iteratorError54 = undefined;
+      var _iteratorNormalCompletion53 = true;
+      var _didIteratorError53 = false;
+      var _iteratorError53 = undefined;
 
       try {
-        for (var _iterator54 = relevantItems[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
-          var item = _step54.value;
+        for (var _iterator53 = relevantItems[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
+          var item = _step53.value;
 
           item.setDirty(true);
         }
       } catch (err) {
-        _didIteratorError54 = true;
-        _iteratorError54 = err;
+        _didIteratorError53 = true;
+        _iteratorError53 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion54 && _iterator54.return) {
-            _iterator54.return();
+          if (!_iteratorNormalCompletion53 && _iterator53.return) {
+            _iterator53.return();
           }
         } finally {
-          if (_didIteratorError54) {
-            throw _iteratorError54;
+          if (_didIteratorError53) {
+            throw _iteratorError53;
           }
         }
       }
@@ -40952,6 +41576,25 @@ var ModelManager = function () {
 
       return JSON.stringify(data, null, 2 /* pretty print */);
     }
+
+    /*
+    Misc
+    */
+
+  }, {
+    key: 'humanReadableDisplayForContentType',
+    value: function humanReadableDisplayForContentType(contentType) {
+      return {
+        "Note": "note",
+        "Tag": "tag",
+        "Extension": "action-based extension",
+        "SN|Component": "component",
+        "SN|Editor": "editor",
+        "SN|Theme": "theme",
+        "SF|Extension": "server extension",
+        "SF|MFA": "server multi-factor authentication setting"
+      }[contentType];
+    }
   }, {
     key: 'allItems',
     get: function get() {
@@ -40979,12 +41622,14 @@ var ModelManager = function () {
 angular.module('app.frontend').service('modelManager', ModelManager);
 ;
 var PackageManager = function () {
-  function PackageManager(httpManager, modelManager, syncManager) {
+  PackageManager.$inject = ['httpManager', 'modelManager', 'syncManager', 'componentManager'];
+  function PackageManager(httpManager, modelManager, syncManager, componentManager) {
     _classCallCheck(this, PackageManager);
 
     this.httpManager = httpManager;
     this.modelManager = modelManager;
     this.syncManager = syncManager;
+    this.componentManager = componentManager;
   }
 
   _createClass(PackageManager, [{
@@ -40997,8 +41642,14 @@ var PackageManager = function () {
           return;
         }
 
-        var assembled = this.modelManager.createItem(aPackage);
+        // Remove private properties
+        this.componentManager.removePrivatePropertiesFromResponseItems([aPackage]);
+
+        aPackage.package_info = Object.assign({}, aPackage);
+
+        var assembled = this.modelManager.createItem(aPackage);;
         this.modelManager.addItem(assembled);
+
         assembled.setDirty(true);
         this.syncManager.sync();
 
@@ -41018,9 +41669,9 @@ var PackageManager = function () {
 angular.module('app.frontend').service('packageManager', PackageManager);
 ;angular.module('app.frontend').provider('passcodeManager', function () {
 
-  this.$get = function ($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
+  this.$get = ['$rootScope', '$timeout', 'modelManager', 'dbManager', 'authManager', 'storageManager', function ($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
     return new PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager);
-  };
+  }];
 
   function PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
 
@@ -41096,6 +41747,249 @@ angular.module('app.frontend').service('packageManager', PackageManager);
     };
   }
 });
+; /*
+   The SingletonManager allows controllers to register an item as a singleton, which means only one instance of that model
+   should exist, both on the server and on the client. When the SingletonManager detects multiple items matching the singleton predicate,
+   the oldest ones will be deleted, leaving the newest ones.
+    We will treat the model most recently arrived from the server as the most recent one. The reason for this is, if you're offline,
+   a singleton can be created, as in the case of UserPreferneces. Then when you sign in, you'll retrieve your actual user preferences.
+   In that case, even though the offline singleton has a more recent updated_at, the server retreived value is the one we care more about.
+  */
+
+var SingletonManager = function () {
+  SingletonManager.$inject = ['$rootScope', 'modelManager'];
+  function SingletonManager($rootScope, modelManager) {
+    var _this35 = this;
+
+    _classCallCheck(this, SingletonManager);
+
+    this.$rootScope = $rootScope;
+    this.modelManager = modelManager;
+    this.singletonHandlers = [];
+
+    $rootScope.$on("initial-data-loaded", function (event, data) {
+      _this35.resolveSingletons(modelManager.allItems, null, true);
+    });
+
+    $rootScope.$on("sync:completed", function (event, data) {
+      // The reason we also need to consider savedItems in consolidating singletons is in case of sync conflicts,
+      // a new item can be created, but is never processed through "retrievedItems" since it is only created locally then saved.
+      _this35.resolveSingletons(data.retrievedItems, data.savedItems);
+    });
+
+    // Testing code to make sure only 1 exists
+    // setTimeout(function () {
+    //   var userPrefs = modelManager.itemsForContentType("SN|UserPreferences");
+    //   console.assert(userPrefs.length == 1);
+    // }, 1000);
+  }
+
+  _createClass(SingletonManager, [{
+    key: 'registerSingleton',
+    value: function registerSingleton(predicate, resolveCallback, createBlock) {
+      /*
+      predicate: a key/value pair that specifies properties that should match in order for an item to be considered a predicate
+      resolveCallback: called when one or more items are deleted and a new item becomes the reigning singleton
+      createBlock: called when a sync is complete and no items are found. The createBlock should create the item and return it.
+      */
+      this.singletonHandlers.push({
+        predicate: predicate,
+        resolutionCallback: resolveCallback,
+        createBlock: createBlock
+      });
+    }
+  }, {
+    key: 'resolveSingletons',
+    value: function resolveSingletons(retrievedItems, savedItems, initialLoad) {
+      var _this36 = this;
+
+      retrievedItems = retrievedItems || [];
+      savedItems = savedItems || [];
+
+      var _loop5 = function _loop5(singletonHandler) {
+        predicate = singletonHandler.predicate;
+        singletonItems = _this36.filterItemsWithPredicate(_.uniq(retrievedItems.concat(savedItems)), predicate);
+
+        if (singletonItems.length > 0) {
+          /*
+            Check local inventory and make sure only 1 similar item exists. If more than 1, delete oldest
+            Note that this local inventory will also contain whatever is in retrievedItems.
+            However, as stated in the header comment, retrievedItems take precendence over existing items,
+            even if they have a lower updated_at value
+          */
+          allExtantItemsMatchingPredicate = _this36.filterItemsWithPredicate(_this36.modelManager.allItems, predicate);
+
+          /*
+            If there are more than 1 matches, delete everything not in `singletonItems`,
+            then delete all but the latest in `singletonItems`
+          */
+
+          if (allExtantItemsMatchingPredicate.length >= 2) {
+            toDelete = [];
+            var _iteratorNormalCompletion55 = true;
+            var _didIteratorError55 = false;
+            var _iteratorError55 = undefined;
+
+            try {
+              for (var _iterator55 = allExtantItemsMatchingPredicate[Symbol.iterator](), _step55; !(_iteratorNormalCompletion55 = (_step55 = _iterator55.next()).done); _iteratorNormalCompletion55 = true) {
+                var extantItem = _step55.value;
+
+                if (!singletonItems.includes(extantItem)) {
+                  // Delete it
+                  toDelete.push(extantItem);
+                }
+              }
+
+              // Sort incoming singleton items by most recently updated first, then delete all the rest
+            } catch (err) {
+              _didIteratorError55 = true;
+              _iteratorError55 = err;
+            } finally {
+              try {
+                if (!_iteratorNormalCompletion55 && _iterator55.return) {
+                  _iterator55.return();
+                }
+              } finally {
+                if (_didIteratorError55) {
+                  throw _iteratorError55;
+                }
+              }
+            }
+
+            sorted = singletonItems.sort(function (a, b) {
+              return a.updated_at < b.updated_at;
+            });
+
+            // Delete everything but the first one
+
+            toDelete = toDelete.concat(sorted.slice(1, sorted.length));
+
+            var _iteratorNormalCompletion56 = true;
+            var _didIteratorError56 = false;
+            var _iteratorError56 = undefined;
+
+            try {
+              for (var _iterator56 = toDelete[Symbol.iterator](), _step56; !(_iteratorNormalCompletion56 = (_step56 = _iterator56.next()).done); _iteratorNormalCompletion56 = true) {
+                d = _step56.value;
+
+                _this36.modelManager.setItemToBeDeleted(d);
+              }
+            } catch (err) {
+              _didIteratorError56 = true;
+              _iteratorError56 = err;
+            } finally {
+              try {
+                if (!_iteratorNormalCompletion56 && _iterator56.return) {
+                  _iterator56.return();
+                }
+              } finally {
+                if (_didIteratorError56) {
+                  throw _iteratorError56;
+                }
+              }
+            }
+
+            _this36.$rootScope.sync();
+
+            // Send remaining item to callback
+            singleton = sorted[0];
+
+            singletonHandler.singleton = singleton;
+            singletonHandler.resolutionCallback(singleton);
+          } else if (allExtantItemsMatchingPredicate.length == 1) {
+            if (!singletonHandler.singleton) {
+              // Not yet notified interested parties of object
+              singleton = allExtantItemsMatchingPredicate[0];
+
+              singletonHandler.singleton = singleton;
+              singletonHandler.resolutionCallback(singleton);
+            }
+          }
+        } else {
+          // Retrieved items does not include any items of interest. If we don't have a singleton registered to this handler,
+          // we need to create one. Only do this on actual sync completetions and not on initial data load. Because we want
+          // to get the latest from the server before making the decision to create a new item
+          if (!singletonHandler.singleton && !initialLoad && !singletonHandler.pendingCreateBlockCallback) {
+            singletonHandler.pendingCreateBlockCallback = true;
+            singletonHandler.createBlock(function (created) {
+              singletonHandler.singleton = created;
+              singletonHandler.pendingCreateBlockCallback = false;
+              singletonHandler.resolutionCallback(created);
+            });
+          }
+        }
+      };
+
+      var _iteratorNormalCompletion54 = true;
+      var _didIteratorError54 = false;
+      var _iteratorError54 = undefined;
+
+      try {
+        for (var _iterator54 = this.singletonHandlers[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
+          var singletonHandler = _step54.value;
+          var predicate;
+          var singletonItems;
+          var allExtantItemsMatchingPredicate;
+          var toDelete;
+          var sorted;
+          var d;
+          var singleton;
+          var singleton;
+
+          _loop5(singletonHandler);
+        }
+      } catch (err) {
+        _didIteratorError54 = true;
+        _iteratorError54 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion54 && _iterator54.return) {
+            _iterator54.return();
+          }
+        } finally {
+          if (_didIteratorError54) {
+            throw _iteratorError54;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'filterItemsWithPredicate',
+    value: function filterItemsWithPredicate(items, predicate) {
+      var _this37 = this;
+
+      return items.filter(function (candidate) {
+        return _this37.itemSatisfiesPredicate(candidate, predicate);
+      });
+    }
+  }, {
+    key: 'itemSatisfiesPredicate',
+    value: function itemSatisfiesPredicate(candidate, predicate) {
+      for (var key in predicate) {
+        var predicateValue = predicate[key];
+        var candidateValue = candidate[key];
+        if ((typeof predicateValue === 'undefined' ? 'undefined' : _typeof(predicateValue)) == 'object') {
+          // Check nested properties
+          if (!candidateValue) {
+            // predicateValue is 'object' but candidateValue is null
+            return false;
+          }
+
+          if (!this.itemSatisfiesPredicate(candidateValue, predicateValue)) {
+            return false;
+          }
+        } else if (candidateValue != predicateValue) {
+          return false;
+        }
+      }
+      return true;
+    }
+  }]);
+
+  return SingletonManager;
+}();
+
+angular.module('app.frontend').service('singletonManager', SingletonManager);
 ;
 var MemoryStorage = function () {
   function MemoryStorage() {
@@ -41145,6 +42039,7 @@ var MemoryStorage = function () {
 }();
 
 var StorageManager = function () {
+  StorageManager.$inject = ['dbManager'];
   function StorageManager(dbManager) {
     _classCallCheck(this, StorageManager);
 
@@ -41278,27 +42173,27 @@ var StorageManager = function () {
       EncryptionHelper.decryptItem(stored, this.encryptedStorageKeys);
       var encryptedStorage = new EncryptedStorage(stored);
 
-      var _iteratorNormalCompletion55 = true;
-      var _didIteratorError55 = false;
-      var _iteratorError55 = undefined;
+      var _iteratorNormalCompletion57 = true;
+      var _didIteratorError57 = false;
+      var _iteratorError57 = undefined;
 
       try {
-        for (var _iterator55 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step55; !(_iteratorNormalCompletion55 = (_step55 = _iterator55.next()).done); _iteratorNormalCompletion55 = true) {
-          var key = _step55.value;
+        for (var _iterator57 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step57; !(_iteratorNormalCompletion57 = (_step57 = _iterator57.next()).done); _iteratorNormalCompletion57 = true) {
+          var key = _step57.value;
 
           this.setItem(key, encryptedStorage.storage[key]);
         }
       } catch (err) {
-        _didIteratorError55 = true;
-        _iteratorError55 = err;
+        _didIteratorError57 = true;
+        _iteratorError57 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion55 && _iterator55.return) {
-            _iterator55.return();
+          if (!_iteratorNormalCompletion57 && _iterator57.return) {
+            _iterator57.return();
           }
         } finally {
-          if (_didIteratorError55) {
-            throw _iteratorError55;
+          if (_didIteratorError57) {
+            throw _iteratorError57;
           }
         }
       }
@@ -41388,6 +42283,7 @@ StorageManager.Fixed = "Fixed"; // localStorage
 angular.module('app.frontend').service('storageManager', StorageManager);
 ;
 var SyncManager = function () {
+  SyncManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'dbManager', 'httpManager', '$interval', '$timeout', 'storageManager', 'passcodeManager'];
   function SyncManager($rootScope, modelManager, authManager, dbManager, httpManager, $interval, $timeout, storageManager, passcodeManager) {
     _classCallCheck(this, SyncManager);
 
@@ -41438,32 +42334,37 @@ var SyncManager = function () {
     value: function syncOffline(items, callback) {
       this.writeItemsToLocalStorage(items, true, function (responseItems) {
         // delete anything needing to be deleted
-        var _iteratorNormalCompletion56 = true;
-        var _didIteratorError56 = false;
-        var _iteratorError56 = undefined;
+        var _iteratorNormalCompletion58 = true;
+        var _didIteratorError58 = false;
+        var _iteratorError58 = undefined;
 
         try {
-          for (var _iterator56 = items[Symbol.iterator](), _step56; !(_iteratorNormalCompletion56 = (_step56 = _iterator56.next()).done); _iteratorNormalCompletion56 = true) {
-            var item = _step56.value;
+          for (var _iterator58 = items[Symbol.iterator](), _step58; !(_iteratorNormalCompletion58 = (_step58 = _iterator58.next()).done); _iteratorNormalCompletion58 = true) {
+            var item = _step58.value;
 
             if (item.deleted) {
               this.modelManager.removeItemLocally(item);
             }
           }
         } catch (err) {
-          _didIteratorError56 = true;
-          _iteratorError56 = err;
+          _didIteratorError58 = true;
+          _iteratorError58 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion56 && _iterator56.return) {
-              _iterator56.return();
+            if (!_iteratorNormalCompletion58 && _iterator58.return) {
+              _iterator58.return();
             }
           } finally {
-            if (_didIteratorError56) {
-              throw _iteratorError56;
+            if (_didIteratorError58) {
+              throw _iteratorError58;
             }
           }
         }
+
+        this.$rootScope.$broadcast("sync:completed", {});
+
+        // Required in order for modelManager to notify sync observers
+        this.modelManager.didSyncModelsOffline(items);
 
         if (callback) {
           callback({ success: true });
@@ -41480,39 +42381,41 @@ var SyncManager = function () {
   }, {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback, alternateUUIDs) {
-      var _this21 = this;
+      var _this38 = this;
 
       // use a copy, as alternating uuid will affect array
       var originalItems = this.modelManager.allItems.slice();
 
+      console.log("markAllItemsDirtyAndSaveOffline", originalItems);
+
       var block = function block() {
-        var allItems = _this21.modelManager.allItems;
-        var _iteratorNormalCompletion57 = true;
-        var _didIteratorError57 = false;
-        var _iteratorError57 = undefined;
+        var allItems = _this38.modelManager.allItems;
+        var _iteratorNormalCompletion59 = true;
+        var _didIteratorError59 = false;
+        var _iteratorError59 = undefined;
 
         try {
-          for (var _iterator57 = allItems[Symbol.iterator](), _step57; !(_iteratorNormalCompletion57 = (_step57 = _iterator57.next()).done); _iteratorNormalCompletion57 = true) {
-            var item = _step57.value;
+          for (var _iterator59 = allItems[Symbol.iterator](), _step59; !(_iteratorNormalCompletion59 = (_step59 = _iterator59.next()).done); _iteratorNormalCompletion59 = true) {
+            var item = _step59.value;
 
             item.setDirty(true);
           }
         } catch (err) {
-          _didIteratorError57 = true;
-          _iteratorError57 = err;
+          _didIteratorError59 = true;
+          _iteratorError59 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion57 && _iterator57.return) {
-              _iterator57.return();
+            if (!_iteratorNormalCompletion59 && _iterator59.return) {
+              _iterator59.return();
             }
           } finally {
-            if (_didIteratorError57) {
-              throw _iteratorError57;
+            if (_didIteratorError59) {
+              throw _iteratorError59;
             }
           }
         }
 
-        _this21.writeItemsToLocalStorage(allItems, false, callback);
+        _this38.writeItemsToLocalStorage(allItems, false, callback);
       };
 
       if (alternateUUIDs) {
@@ -41520,7 +42423,7 @@ var SyncManager = function () {
 
         var alternateNextItem = function alternateNextItem() {
           if (index >= originalItems.length) {
-            // We don't use originalItems as altnerating UUID will have deleted them.
+            // We don't use originalItems as alternating UUID will have deleted them.
             block();
             return;
           }
@@ -41535,7 +42438,7 @@ var SyncManager = function () {
           // but for some reason retained their data (This happens in Firefox when using private mode).
           // In this case, we should pass false so that both copies are kept. However, it's difficult to
           // detect when the app has entered this state. We will just use true to remove original items for now.
-          _this21.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
+          _this38.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
         };
 
         alternateNextItem();
@@ -41556,27 +42459,27 @@ var SyncManager = function () {
         allCallbacks.push(currentCallback);
       }
       if (allCallbacks.length) {
-        var _iteratorNormalCompletion58 = true;
-        var _didIteratorError58 = false;
-        var _iteratorError58 = undefined;
+        var _iteratorNormalCompletion60 = true;
+        var _didIteratorError60 = false;
+        var _iteratorError60 = undefined;
 
         try {
-          for (var _iterator58 = allCallbacks[Symbol.iterator](), _step58; !(_iteratorNormalCompletion58 = (_step58 = _iterator58.next()).done); _iteratorNormalCompletion58 = true) {
-            var eachCallback = _step58.value;
+          for (var _iterator60 = allCallbacks[Symbol.iterator](), _step60; !(_iteratorNormalCompletion60 = (_step60 = _iterator60.next()).done); _iteratorNormalCompletion60 = true) {
+            var eachCallback = _step60.value;
 
             eachCallback(response);
           }
         } catch (err) {
-          _didIteratorError58 = true;
-          _iteratorError58 = err;
+          _didIteratorError60 = true;
+          _iteratorError60 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion58 && _iterator58.return) {
-              _iterator58.return();
+            if (!_iteratorNormalCompletion60 && _iterator60.return) {
+              _iterator60.return();
             }
           } finally {
-            if (_didIteratorError58) {
-              throw _iteratorError58;
+            if (_didIteratorError60) {
+              throw _iteratorError60;
             }
           }
         }
@@ -41659,6 +42562,11 @@ var SyncManager = function () {
         this.allRetreivedItems = [];
       }
 
+      // We also want to do this for savedItems
+      if (!this.allSavedItems) {
+        this.allSavedItems = [];
+      }
+
       var version = this.authManager.protocolVersion();
       var keys = this.authManager.keys();
 
@@ -41697,6 +42605,9 @@ var SyncManager = function () {
         // Map saved items to local data
         var saved = this.handleItemsResponse(response.saved_items, omitFields, ModelManager.MappingSourceRemoteSaved);
 
+        // Append items to master list of saved items for this ongoing sync operation
+        this.allSavedItems = this.allSavedItems.concat(saved);
+
         // Create copies of items or alternate their uuids if neccessary
         var unsaved = response.unsaved;
         this.handleUnsavedItemsResponse(unsaved);
@@ -41731,10 +42642,11 @@ var SyncManager = function () {
             this.$rootScope.$broadcast("major-data-change");
           }
 
-          this.allRetreivedItems = [];
-
           this.callQueuedCallbacksAndCurrent(callback, response);
-          this.$rootScope.$broadcast("sync:completed");
+          this.$rootScope.$broadcast("sync:completed", { retrievedItems: this.allRetreivedItems, savedItems: this.allSavedItems });
+
+          this.allRetreivedItems = [];
+          this.allSavedItems = [];
         }
       }.bind(this);
 
@@ -41858,11 +42770,6 @@ var SyncManager = function () {
       return this.storageManager.getItem("mk");
     }
   }, {
-    key: 'serverPassword',
-    get: function get() {
-      return this.storageManager.getItem("pw");
-    }
-  }, {
     key: 'syncURL',
     get: function get() {
       return this.serverURL + "/items/sync";
@@ -41909,44 +42816,163 @@ var SyncManager = function () {
 }();
 
 angular.module('app.frontend').service('syncManager', SyncManager);
+; /* A class for handling installation of system extensions */
+
+var SysExtManager = function () {
+  SysExtManager.$inject = ['modelManager', 'syncManager', 'singletonManager'];
+  function SysExtManager(modelManager, syncManager, singletonManager) {
+    _classCallCheck(this, SysExtManager);
+
+    this.modelManager = modelManager;
+    this.syncManager = syncManager;
+    this.singletonManager = singletonManager;
+
+    this.resolveExtensionsManager();
+  }
+
+  _createClass(SysExtManager, [{
+    key: 'resolveExtensionsManager',
+    value: function resolveExtensionsManager() {
+      var _this39 = this;
+
+      var extensionsIdentifier = "org.standardnotes.extensions-manager";
+
+      this.singletonManager.registerSingleton({ content_type: "SN|Component", package_info: { identifier: extensionsIdentifier } }, function (resolvedSingleton) {
+        // Resolved Singleton
+        console.log("Resolved extensions-manager", resolvedSingleton);
+        var needsSync = false;
+        if (isDesktopApplication()) {
+          if (!resolvedSingleton.local_url) {
+            resolvedSingleton.local_url = window._extensions_manager_location;
+            needsSync = true;
+          }
+        } else {
+          if (!resolvedSingleton.hosted_url) {
+            resolvedSingleton.hosted_url = window._extensions_manager_location;
+            needsSync = true;
+          }
+        }
+
+        if (needsSync) {
+          resolvedSingleton.setDirty(true);
+          _this39.syncManager.sync();
+        }
+      }, function (valueCallback) {
+        // Safe to create. Create and return object.
+        var url = window._extensions_manager_location;
+        console.log("Installing Extensions Manager from URL", url);
+        if (!url) {
+          console.error("window._extensions_manager_location must be set.");
+          return;
+        }
+
+        var packageInfo = {
+          name: "Extensions",
+          identifier: extensionsIdentifier
+        };
+
+        var item = {
+          content_type: "SN|Component",
+          content: {
+            name: packageInfo.name,
+            area: "rooms",
+            package_info: packageInfo,
+            permissions: [{
+              name: "stream-items",
+              content_types: ["SN|Component", "SN|Theme", "SF|Extension", "Extension", "SF|MFA", "SN|Editor"]
+            }]
+          }
+        };
+
+        if (isDesktopApplication()) {
+          item.content.local_url = window._extensions_manager_location;
+        } else {
+          item.content.hosted_url = window._extensions_manager_location;
+        }
+
+        var component = _this39.modelManager.createItem(item);
+        _this39.modelManager.addItem(component);
+
+        component.setDirty(true);
+        _this39.syncManager.sync();
+
+        valueCallback(component);
+      });
+    }
+  }]);
+
+  return SysExtManager;
+}();
+
+angular.module('app.frontend').service('sysExtManager', SysExtManager);
 ;
 var ThemeManager = function () {
-  function ThemeManager(modelManager, syncManager, $rootScope, storageManager) {
+  ThemeManager.$inject = ['modelManager', 'syncManager', '$rootScope', 'storageManager', 'componentManager'];
+  function ThemeManager(modelManager, syncManager, $rootScope, storageManager, componentManager) {
+    var _this40 = this;
+
     _classCallCheck(this, ThemeManager);
 
     this.syncManager = syncManager;
     this.modelManager = modelManager;
     this.$rootScope = $rootScope;
     this.storageManager = storageManager;
+    this.componentManager = componentManager;
+
+    componentManager.registerHandler({ identifier: "themeManager", areas: ["themes"], activationHandler: function activationHandler(component) {
+        if (component.active) {
+          _this40.activateTheme(component);
+        } else {
+          _this40.deactivateTheme(component);
+        }
+      } });
   }
 
   _createClass(ThemeManager, [{
     key: 'activateInitialTheme',
-    value: function activateInitialTheme() {
-      var theme = this.activeTheme;
-      if (theme) {
-        this.activateTheme(theme);
-      }
-    }
-  }, {
-    key: 'submitTheme',
-    value: function submitTheme(url) {
-      var name = this.displayNameForThemeFile(this.fileNameFromPath(url));
-      var theme = this.modelManager.createItem({ content_type: "SN|Theme", url: url, name: name });
-      this.modelManager.addItem(theme);
-      theme.setDirty(true);
-      this.syncManager.sync();
-    }
+
+
+    /*
+      activeTheme: computed property that returns saved theme
+      currentTheme: stored variable that allows other classes to watch changes
+    */
+
+    // get activeTheme() {
+    //   var activeThemeId = this.storageManager.getItem("activeTheme");
+    //   if(!activeThemeId) {
+    //     return null;
+    //   }
+    //
+    //   var theme = _.find(this.themes, {uuid: activeThemeId});
+    //   return theme;
+    // }
+
+    value: function activateInitialTheme() {}
+    // var theme = this.activeTheme;
+    // if(theme) {
+    //   this.activateTheme(theme);
+    // }
+
+
+    // submitTheme(url) {
+    //   var name = this.displayNameForThemeFile(this.fileNameFromPath(url));
+    //   var theme = this.modelManager.createItem({content_type: "SN|Theme", url: url, name: name});
+    //   this.modelManager.addItem(theme);
+    //   theme.setDirty(true);
+    //   this.syncManager.sync();
+    // }
+
   }, {
     key: 'activateTheme',
     value: function activateTheme(theme) {
-      var activeTheme = this.activeTheme;
-      if (activeTheme) {
-        this.deactivateTheme(activeTheme);
+      if (this.activeTheme && this.activeTheme !== theme) {
+        this.deactivateTheme(this.activeTheme);
       }
 
+      var url = this.componentManager.urlForComponent(theme);
+
       var link = document.createElement("link");
-      link.href = theme.url;
+      link.href = url;
       link.type = "text/css";
       link.rel = "stylesheet";
       link.media = "screen,print";
@@ -41969,11 +42995,6 @@ var ThemeManager = function () {
 
       this.currentTheme = null;
       this.$rootScope.$broadcast("theme-changed");
-    }
-  }, {
-    key: 'isThemeActive',
-    value: function isThemeActive(theme) {
-      return this.storageManager.getItem("activeTheme") === theme.uuid;
     }
   }, {
     key: 'fileNameFromPath',
@@ -42003,23 +43024,6 @@ var ThemeManager = function () {
     get: function get() {
       return this.modelManager.itemsForContentType("SN|Theme");
     }
-
-    /*
-      activeTheme: computed property that returns saved theme
-      currentTheme: stored variable that allows other classes to watch changes
-    */
-
-  }, {
-    key: 'activeTheme',
-    get: function get() {
-      var activeThemeId = this.storageManager.getItem("activeTheme");
-      if (!activeThemeId) {
-        return null;
-      }
-
-      var theme = _.find(this.themes, { uuid: activeThemeId });
-      return theme;
-    }
   }]);
 
   return ThemeManager;
@@ -42033,195 +43037,221 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
   'use strict';
 
   $templateCache.put('frontend/directives/account-menu.html',
-    "<div class='panel panel-default panel-right account-data-menu'>\n" +
-    "  <div class='panel-body large-padding'>\n" +
-    "    <div ng-if='!user'>\n" +
-    "      <div class='mb-10'>\n" +
-    "        <div class='step-one' ng-if='!formData.showLogin &amp;&amp; !formData.showRegister &amp;&amp; !formData.mfa'>\n" +
-    "          <h3>Sign in or register to enable sync and end-to-end encryption.</h3>\n" +
-    "          <div class='small-v-space'></div>\n" +
-    "          <div class='button-group mt-5'>\n" +
-    "            <button class='ui-button half-button' ng-click='formData.showLogin = true'>\n" +
-    "              <span>Sign In</span>\n" +
-    "            </button>\n" +
-    "            <button class='ui-button half-button' ng-click='formData.showRegister = true'>\n" +
-    "              <span>Register</span>\n" +
-    "            </button>\n" +
+    "<div class='sn-component'>\n" +
+    "  <div class='panel' id='account-panel'>\n" +
+    "    <div class='header'>\n" +
+    "      <h1 class='title'>Account</h1>\n" +
+    "      <a class='close-button' ng-click='close()'>Close</a>\n" +
+    "    </div>\n" +
+    "    <div class='content'>\n" +
+    "      <div class='panel-section hero' ng-if='!user &amp;&amp; !formData.showLogin &amp;&amp; !formData.showRegister &amp;&amp; !formData.mfa'>\n" +
+    "        <h1 class='title'>Sign in or register to enable sync and end-to-end encryption.</h1>\n" +
+    "        <div class='panel-row'></div>\n" +
+    "        <div class='panel-row'>\n" +
+    "          <div class='button-group stretch'>\n" +
+    "            <div class='button info featured' ng-click='formData.showLogin = true'>\n" +
+    "              <div class='label'>Sign In</div>\n" +
+    "            </div>\n" +
+    "            <div class='button info featured' ng-click='formData.showRegister = true'>\n" +
+    "              <div class='label'>Register</div>\n" +
+    "            </div>\n" +
     "          </div>\n" +
     "        </div>\n" +
-    "        <div class='step-two' ng-if='formData.showLogin || formData.showRegister'>\n" +
-    "          <div class='float-group h20'>\n" +
-    "            <h3 class='pull-left'>{{formData.showLogin ? \"Sign In\" : \"Register (free)\"}}</h3>\n" +
-    "            <a class='pull-right pt-5' ng-click='formData.showLogin = false; formData.showRegister = false;'>Cancel</a>\n" +
+    "        <p>\n" +
+    "          Standard Notes is free on every platform, and comes standard with sync and encryption.\n" +
+    "        </p>\n" +
+    "      </div>\n" +
+    "      <div class='panel-section' ng-if='formData.showLogin || formData.showRegister'>\n" +
+    "        <h3 class='title'>\n" +
+    "          {{formData.showLogin ? \"Sign In\" : \"Register (free)\"}}\n" +
+    "        </h3>\n" +
+    "        <form class='panel-form'>\n" +
+    "          <input autofocus='autofocus' name='email' ng-model='formData.email' placeholder='Email' required type='email'>\n" +
+    "          <input name='password' ng-model='formData.user_password' placeholder='Password' required type='password'>\n" +
+    "          <input name='password' ng-if='formData.showRegister' ng-model='formData.password_conf' placeholder='Confirm Password' required type='password'>\n" +
+    "          <a class='panel-row' ng-click='formData.showAdvanced = !formData.showAdvanced'>\n" +
+    "            Advanced Options\n" +
+    "          </a>\n" +
+    "          <div class='notification info' ng-if='formData.showRegister'>\n" +
+    "            <h2 class='title'>No Password Reset.</h2>\n" +
+    "            <div class='text'>Because your notes are encrypted using your password, Standard Notes does not have a password reset option. You cannot forget your password.</div>\n" +
     "          </div>\n" +
-    "          <form class='mt-5'>\n" +
-    "            <input autofocus='autofocus' class='form-control mt-10' name='email' ng-model='formData.email' placeholder='Email' required type='email'>\n" +
-    "            <input class='form-control' name='password' ng-model='formData.user_password' placeholder='Password' required type='password'>\n" +
-    "            <input class='form-control' name='password' ng-if='formData.showRegister' ng-model='formData.password_conf' placeholder='Confirm Password' required type='password'>\n" +
-    "            <a class='block' ng-click='formData.showAdvanced = !formData.showAdvanced'>Advanced Options</a>\n" +
-    "            <div class='advanced-options mt-10' ng-if='formData.showAdvanced'>\n" +
-    "              <div class='float-group'>\n" +
-    "                <label class='pull-left'>Sync Server Domain</label>\n" +
-    "              </div>\n" +
+    "          <div class='advanced-options panel-row' ng-if='formData.showAdvanced'>\n" +
+    "            <div class='panel-column'>\n" +
+    "              <label class='pull-left'>Sync Server Domain</label>\n" +
     "              <input class='form-control mt-5' name='server' ng-model='formData.url' placeholder='Server URL' required type='text'>\n" +
     "            </div>\n" +
-    "            <div class='checkbox mt-10'>\n" +
-    "              <p>\n" +
-    "                <input ng-false-value='true' ng-model='formData.ephemeral' ng-true-value='false' type='checkbox'>\n" +
-    "                  Stay signed in\n" +
-    "                </input>\n" +
-    "              </p>\n" +
+    "          </div>\n" +
+    "          <div class='button-group stretch panel-row form-submit'>\n" +
+    "            <div class='button info featured' ng-click='submitAuthForm()'>\n" +
+    "              {{formData.showLogin ? \"Sign In\" : \"Register\"}}\n" +
     "            </div>\n" +
-    "            <div class='checkbox mt-10' ng-if='notesAndTagsCount() &gt; 0'>\n" +
-    "              <p>\n" +
-    "                <input ng-bind='true' ng-change='mergeLocalChanged()' ng-model='formData.mergeLocal' type='checkbox'>\n" +
-    "                  Merge local data ({{notesAndTagsCount()}} notes and tags)\n" +
-    "                </input>\n" +
-    "              </p>\n" +
-    "            </div>\n" +
-    "            <button class='ui-button block mt-10' ng-click='submitAuthForm()'>{{formData.showLogin ? \"Sign In\" : \"Register\"}}</button>\n" +
-    "          </form>\n" +
-    "        </div>\n" +
+    "          </div>\n" +
+    "          <label>\n" +
+    "            <input ng-false-value='true' ng-model='formData.ephemeral' ng-true-value='false' type='checkbox'>\n" +
+    "            Stay signed in\n" +
+    "          </label>\n" +
+    "          <label ng-if='notesAndTagsCount() &gt; 0'>\n" +
+    "            <input ng-bind='true' ng-change='mergeLocalChanged()' ng-model='formData.mergeLocal' type='checkbox'>\n" +
+    "            Merge local data ({{notesAndTagsCount()}} notes and tags)\n" +
+    "          </label>\n" +
+    "        </form>\n" +
     "        <form class='mt-5' ng-if='formData.mfa'>\n" +
     "          <p>{{formData.mfa.message}}</p>\n" +
     "          <input autofocus='true' class='form-control mt-10' name='mfa' ng-model='formData.userMfaCode' required>\n" +
     "          <button class='ui-button block mt-10' ng-click='submitMfaForm()'>{{\"Sign In\"}}</button>\n" +
     "        </form>\n" +
-    "        <div class='mt-15' ng-if='formData.showRegister'>\n" +
-    "          <h3>No Password Reset.</h3>\n" +
-    "          <p class='mt-5'>Because your notes are encrypted using your password, Standard Notes does not have a password reset option. You cannot forget your password.</p>\n" +
-    "        </div>\n" +
-    "        <em class='block center-align mt-10' ng-if='formData.status' style='font-size: 14px;'>{{formData.status}}</em>\n" +
+    "        <em class='block center-align mt-10' ng-if='formData.status' style='font-size: 14px;'></em>\n" +
+    "        {{formData.status}}\n" +
     "      </div>\n" +
-    "    </div>\n" +
-    "    <div ng-if='user'>\n" +
-    "      <h2>{{user.email}}</h2>\n" +
-    "      <p>{{server}}</p>\n" +
-    "      <div class='bold mt-10 tinted' delay-hide='true' delay='1000' show='syncStatus.syncOpInProgress || syncStatus.needsMoreSync'>\n" +
-    "        <div class='spinner inline mr-5 tinted'></div>\n" +
-    "        {{\"Syncing\" + (syncStatus.total > 0 ? \":\" : \"\")}}\n" +
-    "        <span ng-if='syncStatus.total &gt; 0'>{{syncStatus.current}}/{{syncStatus.total}}</span>\n" +
-    "      </div>\n" +
-    "      <p class='bold mt-10 red block' ng-if='syncStatus.error'>Error syncing: {{syncStatus.error.message}}</p>\n" +
-    "      <a class='block mt-5' ng-click='newPasswordData.changePassword = !newPasswordData.changePassword'>Change Password</a>\n" +
-    "      <section class='gray-bg mt-10 medium-padding' ng-if='newPasswordData.changePassword'>\n" +
-    "        <p class='bold'>Change Password (Beta)</p>\n" +
-    "        <p class='mt-10'>Since your encryption key is based on your password, changing your password requires all your notes and tags to be re-encrypted using your new key.</p>\n" +
-    "        <p class='mt-5'>If you have thousands of items, this can take several minutes — you must keep the application window open during this process.</p>\n" +
-    "        <p class='mt-5'>After changing your password, you must log out of all other applications currently signed in to your account.</p>\n" +
-    "        <p class='bold mt-5'>It is highly recommended you download a backup of your data before proceeding.</p>\n" +
-    "        <div class='mt-10' ng-if='!newPasswordData.status'>\n" +
-    "          <a class='red mr-5' ng-click='showPasswordChangeForm()' ng-if='!newPasswordData.showForm'>Continue</a>\n" +
-    "          <a ng-click='newPasswordData.changePassword = false; newPasswordData.showForm = false'>Cancel</a>\n" +
-    "          <div class='mt-10' ng-if='newPasswordData.showForm'>\n" +
-    "            <form>\n" +
-    "              <input class='form-control' ng-model='newPasswordData.newPassword' placeholder='Enter new password' type='password'>\n" +
-    "              <input class='form-control' ng-model='newPasswordData.newPasswordConfirmation' placeholder='Confirm new password' type='password'>\n" +
-    "              <button class='ui-button block' ng-click='submitPasswordChange()'>Submit</button>\n" +
-    "            </form>\n" +
+    "      <div ng-if='!formData.showLogin &amp;&amp; !formData.showRegister'>\n" +
+    "        <div class='panel-section' ng-if='user'>\n" +
+    "          <div class='panel-row'>\n" +
+    "            <h2 class='title wrap'>{{user.email}}</h2>\n" +
+    "            <div class='horizontal-group' delay-hide='true' delay='1000' show='syncStatus.syncOpInProgress || syncStatus.needsMoreSync'>\n" +
+    "              <div class='spinner small info'></div>\n" +
+    "              <div class='sublabel'>\n" +
+    "                {{\"Syncing\" + (syncStatus.total > 0 ? \":\" : \"\")}}\n" +
+    "                <span ng-if='syncStatus.total &gt; 0'>{{syncStatus.current}}/{{syncStatus.total}}</span>\n" +
+    "              </div>\n" +
+    "            </div>\n" +
+    "          </div>\n" +
+    "          <div class='subtitle danger panel-row' ng-if='syncStatus.error'>Error syncing: {{syncStatus.error.message}}</div>\n" +
+    "          <div class='subtitle subtle normal'>{{server}}</div>\n" +
+    "          <div class='panel-row'></div>\n" +
+    "          <a class='panel-row condensed' ng-click='newPasswordData.changePassword = !newPasswordData.changePassword'>Change Password</a>\n" +
+    "          <div class='notification default' ng-if='newPasswordData.changePassword'>\n" +
+    "            <h1 class='title'>Change Password (Beta)</h1>\n" +
+    "            <div class='text'>\n" +
+    "              <p class='mt-10'>Since your encryption key is based on your password, changing your password requires all your notes and tags to be re-encrypted using your new key.</p>\n" +
+    "              <p class='mt-5'>If you have thousands of items, this can take several minutes — you must keep the application window open during this process.</p>\n" +
+    "              <p class='mt-5'>After changing your password, you must log out of all other applications currently signed in to your account.</p>\n" +
+    "              <p class='bold mt-5'>It is highly recommended you download a backup of your data before proceeding.</p>\n" +
+    "            </div>\n" +
+    "            <div class='mt-10' ng-if='!newPasswordData.status'>\n" +
+    "              <a class='red mr-5' ng-click='showPasswordChangeForm()' ng-if='!newPasswordData.showForm'>Continue</a>\n" +
+    "              <a ng-click='newPasswordData.changePassword = false; newPasswordData.showForm = false'>Cancel</a>\n" +
+    "              <div class='mt-10' ng-if='newPasswordData.showForm'>\n" +
+    "                <form>\n" +
+    "                  <input class='form-control' ng-model='newPasswordData.newPassword' placeholder='Enter new password' type='password'>\n" +
+    "                  <input class='form-control' ng-model='newPasswordData.newPasswordConfirmation' placeholder='Confirm new password' type='password'>\n" +
+    "                  <div class='button-group stretch panel-row form-submit'>\n" +
+    "                    <div class='button info' ng-click='submitPasswordChange()' type='submit'>\n" +
+    "                      <div class='label'>Submit</div>\n" +
+    "                    </div>\n" +
+    "                  </div>\n" +
+    "                </form>\n" +
+    "              </div>\n" +
+    "            </div>\n" +
+    "            <p class='italic mt-10' ng-if='newPasswordData.status'>{{newPasswordData.status}}</p>\n" +
+    "          </div>\n" +
+    "          <a class='panel-row condensed' ng-click='showAdvanced = !showAdvanced'>Advanced</a>\n" +
+    "          <div ng-if='showAdvanced'>\n" +
+    "            <a class='panel-row' ng-click='reencryptPressed()'>Resync All Items</a>\n" +
+    "          </div>\n" +
+    "          <div ng-if='securityUpdateAvailable()'>\n" +
+    "            <a class='block mt-5' ng-click='clickedSecurityUpdate()'>Security Update Available</a>\n" +
+    "            <section class='gray-bg mt-10 medium-padding' ng-if='securityUpdateData.showForm'>\n" +
+    "              <p>\n" +
+    "                <a href='https://standardnotes.org/help/security-update' target='_blank'>Learn more.</a>\n" +
+    "              </p>\n" +
+    "              <div class='mt-10' ng-if='!securityUpdateData.processing'>\n" +
+    "                <p class='bold'>Enter your password to update:</p>\n" +
+    "                <form class='mt-5'>\n" +
+    "                  <input class='form-control' ng-model='securityUpdateData.password' placeholder='Enter password' type='password'>\n" +
+    "                  <button class='ui-button block' ng-click='submitSecurityUpdateForm()'>Update</button>\n" +
+    "                </form>\n" +
+    "              </div>\n" +
+    "              <div class='mt-5' ng-if='securityUpdateData.processing'>\n" +
+    "                <p class='tinted'>Processing...</p>\n" +
+    "              </div>\n" +
+    "            </section>\n" +
     "          </div>\n" +
     "        </div>\n" +
-    "        <p class='italic mt-10' ng-if='newPasswordData.status'>{{newPasswordData.status}}</p>\n" +
-    "      </section>\n" +
-    "      <a class='block mt-5' ng-click='showAdvanced = !showAdvanced'>Advanced</a>\n" +
-    "      <div ng-if='showAdvanced'>\n" +
-    "        <a class='block mt-15' href='{{dashboardURL()}}' target='_blank'>Data Dashboard</a>\n" +
-    "        <a class='block mt-5' ng-click='reencryptPressed()'>Re-encrypt All Items</a>\n" +
-    "        <a class='block mt-5' ng-click='showCredentials = !showCredentials'>Show Credentials</a>\n" +
-    "        <section class='gray-bg mt-10 medium-padding' ng-if='showCredentials'>\n" +
-    "          <label class='block'>\n" +
-    "            Encryption key:\n" +
-    "            <div class='wrap normal mt-1 selectable'>{{encryptionKey()}}</div>\n" +
-    "          </label>\n" +
-    "          <label class='block mt-5 mb-0'>\n" +
-    "            Server password:\n" +
-    "            <div class='wrap normal mt-1 selectable'>{{serverPassword() ? serverPassword() : 'Not available. Sign out then sign back in to compute.'}}</div>\n" +
-    "          </label>\n" +
-    "          <label class='block mt-5 mb-0'>\n" +
-    "            Authentication key:\n" +
-    "            <div class='wrap normal mt-1 selectable'>{{authKey() ? authKey() : 'Not available. Sign out then sign back in to compute.'}}</div>\n" +
-    "          </label>\n" +
-    "        </section>\n" +
-    "      </div>\n" +
-    "      <div ng-if='securityUpdateAvailable()'>\n" +
-    "        <a class='block mt-5' ng-click='clickedSecurityUpdate()'>Security Update Available</a>\n" +
-    "        <section class='gray-bg mt-10 medium-padding' ng-if='securityUpdateData.showForm'>\n" +
+    "        <div class='panel-section'>\n" +
+    "          <h3 class='title panel-row'>Encryption</h3>\n" +
+    "          <h5 class='subtitle info panel-row' ng-if='encryptionEnabled()'>\n" +
+    "            {{encryptionStatusForNotes()}}\n" +
+    "          </h5>\n" +
     "          <p>\n" +
-    "            <a href='https://standardnotes.org/help/security-update' target='_blank'>Learn more.</a>\n" +
+    "            {{encryptionStatusString()}}\n" +
     "          </p>\n" +
-    "          <div class='mt-10' ng-if='!securityUpdateData.processing'>\n" +
-    "            <p class='bold'>Enter your password to update:</p>\n" +
-    "            <form class='mt-5'>\n" +
-    "              <input class='form-control' ng-model='securityUpdateData.password' placeholder='Enter password' type='password'>\n" +
-    "              <button class='ui-button block' ng-click='submitSecurityUpdateForm()'>Update</button>\n" +
+    "        </div>\n" +
+    "        <div class='panel-section'>\n" +
+    "          <h3 class='title panel-row'>Passcode Lock</h3>\n" +
+    "          <div ng-if='!hasPasscode() &amp;&amp; passcodeOptionAvailable()'>\n" +
+    "            <div class='panel-row'>\n" +
+    "              <div class='button info' ng-click='addPasscodeClicked(); $event.stopPropagation();' ng-if='!formData.showPasscodeForm'>\n" +
+    "                <div class='label'>Add Passcode</div>\n" +
+    "              </div>\n" +
+    "            </div>\n" +
+    "            <div class='panel-row'>\n" +
+    "              <p>Add an app passcode to lock the app and encrypt on-device key storage.</p>\n" +
+    "            </div>\n" +
+    "            <form class='mt-5' ng-if='formData.showPasscodeForm' ng-submit='submitPasscodeForm()'>\n" +
+    "              <input autofocus='true' class='form-control mt-10' ng-model='formData.passcode' placeholder='Passcode' type='password'>\n" +
+    "              <input class='form-control mt-10' ng-model='formData.confirmPasscode' placeholder='Confirm Passcode' type='password'>\n" +
+    "              <div class='button-group stretch panel-row form-submit'>\n" +
+    "                <div class='button info' type='submit'>\n" +
+    "                  <div class='label'>Set Passcode</div>\n" +
+    "                </div>\n" +
+    "              </div>\n" +
+    "              <a class='panel-row' ng-click='formData.showPasscodeForm = false'>Cancel</a>\n" +
     "            </form>\n" +
     "          </div>\n" +
-    "          <div class='mt-5' ng-if='securityUpdateData.processing'>\n" +
-    "            <p class='tinted'>Processing...</p>\n" +
+    "          <div class='panel-row' ng-if='hasPasscode()'>\n" +
+    "            <p>\n" +
+    "              Passcode lock is enabled.\n" +
+    "              <span ng-if='isDesktopApplication()'>Your passcode will be required on new sessions after app quit.</span>\n" +
+    "            </p>\n" +
+    "            <a class='block mt-5' ng-click='removePasscodePressed()'>Remove Passcode</a>\n" +
     "          </div>\n" +
-    "        </section>\n" +
+    "          <div class='panel-row' ng-if='!passcodeOptionAvailable()'>\n" +
+    "            <p>Passcode lock is only available to permanent sessions. (You chose not to stay signed in.)</p>\n" +
+    "          </div>\n" +
+    "        </div>\n" +
+    "        <div class='panel-section' ng-if='!importData.loading'>\n" +
+    "          <h3 class='title'>Data Backups</h3>\n" +
+    "          <form class='panel-form' ng-if='encryptedBackupsAvailable()'>\n" +
+    "            <div class='input-group'>\n" +
+    "              <label>\n" +
+    "                <input ng-change='archiveFormData.encrypted = true' ng-model='archiveFormData.encrypted' ng-value='true' type='radio'>\n" +
+    "                Encrypted\n" +
+    "              </label>\n" +
+    "              <label>\n" +
+    "                <input ng-change='archiveFormData.encrypted = false' ng-model='archiveFormData.encrypted' ng-value='false' type='radio'>\n" +
+    "                Decrypted\n" +
+    "              </label>\n" +
+    "            </div>\n" +
+    "          </form>\n" +
+    "          <div class='button-group'>\n" +
+    "            <div class='button info' ng-class=\"{'mt-5' : !user}\" ng-click='downloadDataArchive()'>\n" +
+    "              <div class='label'>Download Backup</div>\n" +
+    "            </div>\n" +
+    "            <label class='button info'>\n" +
+    "              <input file-change='-&gt;' handler='importFileSelected(files)' style='display: none;' type='file'>\n" +
+    "              <div class='label'>Import From Backup</div>\n" +
+    "            </label>\n" +
+    "          </div>\n" +
+    "          <div ng-if='importData.requestPassword'>\n" +
+    "            <form class='panel-form' ng-submit='submitImportPassword()'>\n" +
+    "              <p>Enter the account password associated with the import file.</p>\n" +
+    "              <input autofocus='true' class='form-control mt-5' ng-model='importData.password' type='password'>\n" +
+    "              <button class='standard ui-button block tinted mt-5' type='submit'>Decrypt & Import</button>\n" +
+    "            </form>\n" +
+    "          </div>\n" +
+    "        </div>\n" +
+    "        <div class='spinner mt-10' ng-if='importData.loading'></div>\n" +
     "      </div>\n" +
     "    </div>\n" +
-    "    <div class='mt-25'>\n" +
-    "      <h4>Encryption Status</h4>\n" +
-    "      <p>\n" +
-    "        {{encryptionStatusString()}}\n" +
-    "      </p>\n" +
-    "      <div class='mt-5' ng-if='encryptionEnabled()'>\n" +
-    "        <i>{{encryptionStatusForNotes()}}</i>\n" +
-    "      </div>\n" +
+    "    <div class='footer'>\n" +
+    "      <a class='right' ng-click='formData.showLogin = false; formData.showRegister = false;' ng-if='formData.showLogin || formData.showRegister'>\n" +
+    "        Cancel\n" +
+    "      </a>\n" +
+    "      <a class='right' ng-click='destroyLocalData()' ng-if='!formData.showLogin &amp;&amp; !formData.showRegister'>\n" +
+    "        {{ user ? \"Sign out and clear local data\" : \"Clear all local data\" }}\n" +
+    "      </a>\n" +
     "    </div>\n" +
-    "    <div class='mt-25'>\n" +
-    "      <h4>Passcode Lock</h4>\n" +
-    "      <div ng-if='!hasPasscode() &amp;&amp; passcodeOptionAvailable()'>\n" +
-    "        <p>Add an app passcode to lock the app and encrypt on-device key storage.</p>\n" +
-    "        <a class='block mt-5' ng-click='addPasscodeClicked()' ng-if='!formData.showPasscodeForm'>Add Passcode</a>\n" +
-    "        <form class='mt-5' ng-if='formData.showPasscodeForm' ng-submit='submitPasscodeForm()'>\n" +
-    "          <p class='bold'>Choose a passcode:</p>\n" +
-    "          <input autofocus='true' class='form-control mt-10' ng-model='formData.passcode' placeholder='Passcode' type='password'>\n" +
-    "          <input class='form-control mt-10' ng-model='formData.confirmPasscode' placeholder='Confirm Passcode' type='password'>\n" +
-    "          <button class='standard ui-button block tinted mt-5' type='submit'>Set Passcode</button>\n" +
-    "        </form>\n" +
-    "      </div>\n" +
-    "      <div ng-if='hasPasscode()'>\n" +
-    "        <p>\n" +
-    "          Passcode lock is enabled.\n" +
-    "          <span ng-if='isDesktopApplication()'>Your passcode will be required on new sessions after app quit.</span>\n" +
-    "        </p>\n" +
-    "        <a class='block mt-5' ng-click='removePasscodePressed()'>Remove Passcode</a>\n" +
-    "      </div>\n" +
-    "      <div ng-if='!passcodeOptionAvailable()'>\n" +
-    "        <p>Passcode lock is only available to permanent sessions. (You chose not to stay signed in.)</p>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
-    "    <div class='mt-25' ng-if='!importData.loading'>\n" +
-    "      <h4>Data Archives</h4>\n" +
-    "      <div class='mt-5' ng-if='encryptedBackupsAvailable()'>\n" +
-    "        <label class='normal inline'>\n" +
-    "          <input ng-change='archiveFormData.encrypted = true' ng-model='archiveFormData.encrypted' ng-value='true' type='radio'>\n" +
-    "          Encrypted\n" +
-    "        </label>\n" +
-    "        <label class='normal inline'>\n" +
-    "          <input ng-change='archiveFormData.encrypted = false' ng-model='archiveFormData.encrypted' ng-value='false' type='radio'>\n" +
-    "          Decrypted\n" +
-    "        </label>\n" +
-    "      </div>\n" +
-    "      <a class='block mt-5' ng-class=\"{'mt-5' : !user}\" ng-click='downloadDataArchive()'>Download Data Archive</a>\n" +
-    "      <label class='block mt-5'>\n" +
-    "        <input file-change='-&gt;' handler='importFileSelected(files)' style='display: none;' type='file'>\n" +
-    "        <div class='fake-link tinted'>Import Data from Archive</div>\n" +
-    "      </label>\n" +
-    "      <div ng-if='importData.requestPassword'>\n" +
-    "        <form ng-submit='submitImportPassword()'>\n" +
-    "          <p>Enter the account password associated with the import file.</p>\n" +
-    "          <input autofocus='true' class='form-control mt-5' ng-model='importData.password' type='password'>\n" +
-    "          <button class='standard ui-button block tinted mt-5' type='submit'>Decrypt & Import</button>\n" +
-    "        </form>\n" +
-    "      </div>\n" +
-    "      <p class='mt-5' ng-if='user'>Notes are downloaded in the Standard File format, which allows you to re-import back into this app easily. To download as plain text files, choose \"Decrypted\".</p>\n" +
-    "    </div>\n" +
-    "    <div class='spinner mt-10' ng-if='importData.loading'></div>\n" +
-    "    <a class='block mt-25 red' ng-click='destroyLocalData()'>{{ user ? \"Sign out and clear local data\" : \"Clear all local data\" }}</a>\n" +
     "  </div>\n" +
     "</div>\n"
   );
@@ -42235,29 +43265,52 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
   $templateCache.put('frontend/directives/component-modal.html',
     "<div class='background' ng-click='dismiss()'></div>\n" +
     "<div class='content'>\n" +
-    "  <div class='modal-iframe-container' ng-attr-id='component-{{component.uuid}}'>\n" +
-    "    <iframe class='modal-iframe' data-component-id='{{component.uuid}}' frameBorder='0' ng-src='{{url() | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-modals'></iframe>\n" +
+    "  <div class='sn-component'>\n" +
+    "    <div class='panel' ng-attr-id='component-{{component.uuid}}'>\n" +
+    "      <div class='header'>\n" +
+    "        <h1 class='title'>\n" +
+    "          {{component.name}}\n" +
+    "          <span class='subtle subtitle' ng-if='component.runningLocally'>| Desktop Mode</span>\n" +
+    "        </h1>\n" +
+    "        <a class='close-button info' ng-click='dismiss()'>Close</a>\n" +
+    "      </div>\n" +
+    "      <component-view class='component-view' component='component'></component-view>\n" +
+    "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
   );
 
 
+  $templateCache.put('frontend/directives/component-view.html',
+    "<iframe data-component-id='{{component.uuid}}' frameBorder='0' ng-attr-id='component-{{component.uuid}}' ng-if='component' ng-src='{{getUrl() | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-modals'>\n" +
+    "  Loading\n" +
+    "</iframe>\n"
+  );
+
+
+  $templateCache.put('frontend/directives/component.html',
+    "<div class='modal-iframe-container' ng-attr-id='component-{{component.uuid}}'>\n" +
+    "  <iframe class='modal-iframe' data-component-id='{{component.uuid}}' frameBorder='0' ng-src='{{url() | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-modals'></iframe>\n" +
+    "</div>\n"
+  );
+
+
   $templateCache.put('frontend/directives/contextual-menu.html',
-    "<ul class='dropdown-menu sectioned-menu'>\n" +
-    "  <div class='extension' ng-repeat='extension in extensions'>\n" +
-    "    <div class='header' ng-click='extension.hide = !extension.hide'>\n" +
-    "      <div class='title'>{{extension.name}}</div>\n" +
-    "      <div class='subtitle'>\n" +
-    "        Will submit your note\n" +
-    "        <strong>{{accessTypeForExtension(extension)}}</strong>\n" +
+    "<div class='sn-component'>\n" +
+    "  <div class='menu-panel dropdown-menu'>\n" +
+    "    <div class='section' ng-repeat='extension in extensions'>\n" +
+    "      <div class='header' ng-click='extension.hide = !extension.hide'>\n" +
+    "        <div class='column'>\n" +
+    "          <h4 class='title'>{{extension.name}}</h4>\n" +
+    "          <div class='subtitle'>\n" +
+    "            Will submit your note\n" +
+    "            <strong>{{accessTypeForExtension(extension)}}</strong>\n" +
+    "          </div>\n" +
+    "          <div class='spinner loading' ng-if='extension.loading'></div>\n" +
+    "          <div ng-if='extension.hide'>…</div>\n" +
+    "        </div>\n" +
     "      </div>\n" +
-    "      <div class='spinner loading' ng-if='extension.loading'></div>\n" +
-    "      <div ng-if='extension.hide'>…</div>\n" +
-    "    </div>\n" +
-    "    <ul ng-if='!extension.hide'>\n" +
-    "      <li class='menu-item' ng-class=\"{'faded' : !isActionEnabled(action, extension)}\" ng-click='executeAction(action, extension);' ng-repeat='action in extension.actionsWithContextForItem(item)'>\n" +
-    "        <label class='menu-item-title'>{{action.label}}</label>\n" +
-    "        <div class='menu-item-subtitle'>{{action.desc}}</div>\n" +
+    "      <menu-row ng-class=\"{'faded' : !isActionEnabled(action, extension)}\" ng-click='executeAction(action, extension);' ng-if='!extension.hide' ng-repeat='action in extension.actionsWithContextForItem(item)' subtitle='action.desc' title='action.label'>\n" +
     "        <div class='small normal' ng-if='!isActionEnabled(action, extension)'>\n" +
     "          Requires {{action.access_type}} access to this note.\n" +
     "        </div>\n" +
@@ -42275,54 +43328,63 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "        <span ng-if='action.running'>\n" +
     "          <div class='spinner' style='margin-top: 3px;'></div>\n" +
     "        </span>\n" +
-    "      </li>\n" +
-    "    </ul>\n" +
+    "      </menu-row>\n" +
+    "    </div>\n" +
     "  </div>\n" +
-    "</ul>\n" +
-    "<div class='extension-render-modal' ng-click='renderData.showRenderModal = false' ng-if='renderData.showRenderModal'>\n" +
-    "  <div class='content'>\n" +
-    "    <h2>{{renderData.title}}</h2>\n" +
-    "    <p class='normal' style='white-space: pre-wrap; font-family: monospace; font-size: 16px;'>{{renderData.text}}</p>\n" +
+    "  <div class='extension-render-modal' ng-click='renderData.showRenderModal = false' ng-if='renderData.showRenderModal'>\n" +
+    "    <div class='content'>\n" +
+    "      <h2>{{renderData.title}}</h2>\n" +
+    "      <p class='normal' style='white-space: pre-wrap; font-family: monospace; font-size: 16px;'>{{renderData.text}}</p>\n" +
+    "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
   );
 
 
   $templateCache.put('frontend/directives/editor-menu.html',
-    "<ul class='dropdown-menu sectioned-menu'>\n" +
-    "  <div class='header'>\n" +
-    "    <div class='title'>System Editor</div>\n" +
-    "  </div>\n" +
-    "  <ul>\n" +
-    "    <li class='menu-item' ng-click='selectEditor($event, null)'>\n" +
-    "      <span class='pull-left mr-10' ng-if='selectedEditor == null'>✓</span>\n" +
-    "      <label class='menu-item-title pull-left'>Plain</label>\n" +
-    "    </li>\n" +
-    "  </ul>\n" +
-    "  <div ng-if='editors.length &gt; 0'>\n" +
-    "    <div class='header'>\n" +
-    "      <div class='title'>External Editors</div>\n" +
-    "    </div>\n" +
-    "    <ul>\n" +
-    "      <li class='menu-item' ng-click='selectEditor($event, editor)' ng-repeat='editor in editors'>\n" +
-    "        <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
-    "        <label class='menu-item-title'>\n" +
-    "          <span class='inline tinted mr-10' ng-if='selectedEditor === editor'>✓</span>\n" +
-    "          {{editor.name}}\n" +
-    "        </label>\n" +
-    "        <div class='sublabel' ng-if='editor.local'>\n" +
-    "          Locally Installed\n" +
+    "<div class='sn-component'>\n" +
+    "  <div class='menu-panel dropdown-menu'>\n" +
+    "    <div class='section'>\n" +
+    "      <div class='header'>\n" +
+    "        <h4 class='title'>Note Editor</h4>\n" +
+    "      </div>\n" +
+    "      <menu-row circle=\"selectedEditor == null &amp;&amp; 'success'\" ng-click='selectComponent($event, null)' title=\"'Plain Editor'\"></menu-row>\n" +
+    "      <menu-row button-action='toggleDefaultForEditor(editor)' button-class=\"defaultEditor == editor ? 'warning' : 'info'\" button-text=\"defaultEditor == editor ? 'Undefault' : 'Set Default'\" circle=\"selectedEditor === editor &amp;&amp; 'success'\" has-button='selectedEditor == editor || defaultEditor == editor' ng-click='selectComponent($event, editor)' ng-repeat='editor in editors' title='editor.name'>\n" +
+    "        <div class='row'>\n" +
+    "          <div class='column'>\n" +
+    "            <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
+    "            <div class='sublabel' ng-if='offlineAvailableForComponent(editor)'>\n" +
+    "              Available Offline\n" +
+    "            </div>\n" +
+    "          </div>\n" +
     "        </div>\n" +
-    "        <div class='sublabel faded' ng-if='editor.local &amp;&amp; !isDesktop'>Unavailable in Web Browser</div>\n" +
-    "      </li>\n" +
-    "    </ul>\n" +
+    "      </menu-row>\n" +
+    "      <a class='no-decoration' href='https://standardnotes.org/extensions' ng-if='editors.length == 0' target='blank'>\n" +
+    "        <menu-row ng-click='moreEditors()' title=\"'Download More Editors'\"></menu-row>\n" +
+    "      </a>\n" +
+    "    </div>\n" +
+    "    <div class='section' ng-if='stack.length &gt; 0'>\n" +
+    "      <div class='header'>\n" +
+    "        <h4 class='title'>Editor Stack</h4>\n" +
+    "      </div>\n" +
+    "      <menu-row circle=\"component.active ? 'success' : 'danger'\" ng-click='selectComponent($event, component)' ng-repeat='component in stack' title='component.name'>\n" +
+    "        <div class='row'>\n" +
+    "          <div class='column'>\n" +
+    "            <strong class='red medium' ng-if='component.conflict_of'>Conflicted copy</strong>\n" +
+    "            <div class='sublabel' ng-if='component.local_url'>\n" +
+    "              Available Offline\n" +
+    "            </div>\n" +
+    "          </div>\n" +
+    "        </div>\n" +
+    "      </menu-row>\n" +
+    "    </div>\n" +
     "  </div>\n" +
-    "</ul>\n"
+    "</div>\n"
   );
 
 
   $templateCache.put('frontend/directives/global-extensions-menu.html',
-    "<div class='panel panel-default account-panel panel-right' id='global-ext-menu'>\n" +
+    "<div class='panel' id='global-ext-menu'>\n" +
     "  <div class='panel-body'>\n" +
     "    <div class='container'>\n" +
     "      <div class='float-group h20'>\n" +
@@ -42355,8 +43417,6 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "              <input class='bold' mb-autofocus='true' ng-if='theme.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(theme);' ng-model='theme.tempName' should-focus='true'>\n" +
     "              <span ng-if='!theme.rename'>{{theme.name}}</span>\n" +
     "            </h3>\n" +
-    "            <a ng-click='themeManager.activateTheme(theme); $event.stopPropagation();' ng-if='!themeManager.isThemeActive(theme)'>Activate</a>\n" +
-    "            <a ng-click='themeManager.deactivateTheme(theme); $event.stopPropagation();' ng-if='themeManager.isThemeActive(theme)'>Deactivate</a>\n" +
     "            <div class='mt-3' ng-if='theme.showDetails'>\n" +
     "              <div class='link-group'>\n" +
     "                <a ng-click='renameExtension(theme); $event.stopPropagation();'>Rename</a>\n" +
@@ -42508,44 +43568,82 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
   );
 
 
+  $templateCache.put('frontend/directives/menu-row.html',
+    "<div class='row'>\n" +
+    "  <div class='column'>\n" +
+    "    <div class='left'>\n" +
+    "      <div class='column' ng-if='circle'>\n" +
+    "        <div class='circle small' ng-class='circle'></div>\n" +
+    "      </div>\n" +
+    "      <div class='column'>\n" +
+    "        <div class='label'>\n" +
+    "          {{title}}\n" +
+    "        </div>\n" +
+    "        <div class='sublabel' ng-if='subtitle'>\n" +
+    "          {{subtitle}}\n" +
+    "        </div>\n" +
+    "        <ng-transclude></ng-transclude>\n" +
+    "      </div>\n" +
+    "    </div>\n" +
+    "  </div>\n" +
+    "  <div class='column' ng-if='hasButton'>\n" +
+    "    <div class='button info' ng-class='buttonClass' ng-click='clickButton($event)'>\n" +
+    "      {{buttonText}}\n" +
+    "    </div>\n" +
+    "  </div>\n" +
+    "</div>\n"
+  );
+
+
   $templateCache.put('frontend/directives/panel-resizer.html',
     "<div class='panel-resizer-column'></div>\n"
   );
 
 
   $templateCache.put('frontend/directives/permissions-modal.html',
-    "<div class='background' ng-click='dismiss()'></div>\n" +
-    "<div class='content'>\n" +
-    "  <h3>The following extension has requested these permissions:</h3>\n" +
-    "  <h4>Extension</h4>\n" +
-    "  <p>Name: {{component.name}}</p>\n" +
-    "  <p class='wrap'>URL: {{component.url}}</p>\n" +
-    "  <h4>Permissions</h4>\n" +
-    "  <div class='permission' ng-repeat='permission in formattedPermissions'>\n" +
-    "    <p>{{permission}}</p>\n" +
-    "  </div>\n" +
-    "  <h4>Status</h4>\n" +
-    "  <p class='status' ng-class=\"{'trusted tinted' : component.trusted}\">{{component.trusted ? 'Trusted' : 'Untrusted'}}</p>\n" +
-    "  <div class='learn-more'>\n" +
-    "    <h4>Details</h4>\n" +
-    "    <p>\n" +
-    "      Extensions use an offline messaging system to communicate. With <i>Trusted</i> extensions, data is never sent remotely without your consent. Learn more about extension permissions at\n" +
-    "      <a href='https://standardnotes.org/permissions' target='_blank'>https://standardnotes.org/permissions.</a>\n" +
-    "    </p>\n" +
-    "  </div>\n" +
-    "  <div class='buttons'>\n" +
-    "    <button class='standard white' ng-click='deny()'>Deny</button>\n" +
-    "    <button class='standard tinted' ng-click='accept()'>Accept</button>\n" +
+    "<div class='background' ng-click='deny()'></div>\n" +
+    "<div class='content' id='permissions-modal'>\n" +
+    "  <div class='sn-component'>\n" +
+    "    <div class='panel'>\n" +
+    "      <div class='header'>\n" +
+    "        <h1 class='title'>Activate Extension</h1>\n" +
+    "        <a class='close-button info' ng-click='deny()'>Cancel</a>\n" +
+    "      </div>\n" +
+    "      <div class='content'>\n" +
+    "        <div class='panel-section'>\n" +
+    "          <div class='panel-row'>\n" +
+    "            <h3>\n" +
+    "              <strong>{{component.name}}</strong>\n" +
+    "              would like to interact with your\n" +
+    "              <span ng-repeat='permission in formattedPermissions'>\n" +
+    "                {{permission}}.\n" +
+    "              </span>\n" +
+    "            </h3>\n" +
+    "          </div>\n" +
+    "          <div class='panel-row'>\n" +
+    "            <p>\n" +
+    "              Extensions use an offline messaging system to communicate. Learn more at\n" +
+    "              <a href='https://standardnotes.org/permissions' target='_blank'>https://standardnotes.org/permissions.</a>\n" +
+    "            </p>\n" +
+    "          </div>\n" +
+    "        </div>\n" +
+    "      </div>\n" +
+    "      <div class='footer'>\n" +
+    "        <div class='button info big block bold' ng-click='accept()'>Continue</div>\n" +
+    "      </div>\n" +
+    "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
   );
 
 
   $templateCache.put('frontend/directives/room-bar.html',
-    "<div class='room-item' ng-click='selectRoom(room)' ng-repeat='room in rooms'>\n" +
-    "  <span>{{room.name}}</span>\n" +
-    "  <div class='room-container panel-right' ng-attr-id='component-{{room.uuid}}' ng-if='room.show &amp;&amp; room.active'>\n" +
-    "    <iframe class='room-iframe' data-component-id='{{room.uuid}}' frameBorder='0' ng-src='{{componentManager.urlForComponent(room) | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-modals'></iframe>\n" +
+    "<div class='item' click-outside='hideRoom(room)' is-open='room.show &amp;&amp; room.active' ng-click='selectRoom(room)' ng-repeat='room in rooms'>\n" +
+    "  <div class='label'>{{room.name}}</div>\n" +
+    "  <div class='sn-component'>\n" +
+    "    <div class='room-container panel-right panel' ng-attr-id='component-{{room.uuid}}' ng-if='room.show &amp;&amp; room.active'>\n" +
+    "      <iframe class='room-iframe' data-component-id='{{room.uuid}}' frameBorder='0' ng-src='{{componentManager.urlForComponent(room) | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-modals'></iframe>\n" +
+    "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
   );
@@ -42580,116 +43678,123 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 
 
   $templateCache.put('frontend/editor.html',
-    "<div class='section editor' ng-class=\"{'fullscreen' : ctrl.fullscreen}\">\n" +
-    "  <div class='section-title-bar' id='editor-title-bar' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-show='ctrl.note &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
+    "<div class='section editor' id='editor-column'>\n" +
+    "  <div class='section-title-bar' id='editor-title-bar' ng-show='ctrl.note &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
     "    <div class='title'>\n" +
-    "      <input class='input' id='note-title-editor' ng-change='ctrl.nameChanged()' ng-focus='ctrl.onNameFocus()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTitle($event)' ng-model='ctrl.note.title' select-on-click='true'>\n" +
+    "      <input class='input' id='note-title-editor' ng-blur='ctrl.onNameBlur()' ng-change='ctrl.nameChanged()' ng-focus='ctrl.onNameFocus()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTitle($event)' ng-model='ctrl.note.title' select-on-click='true'>\n" +
     "    </div>\n" +
     "    <div id='save-status' ng-bind-html='ctrl.noteStatus' ng-class=\"{'red bold': ctrl.saveError, 'orange bold': ctrl.syncTakingTooLong}\"></div>\n" +
     "    <div class='editor-tags'>\n" +
-    "      <div id='note-tags-component-container' ng-if='ctrl.tagsComponent &amp;&amp; ctrl.tagsComponent.active'>\n" +
-    "        <iframe data-component-id='{{ctrl.tagsComponent.uuid}}' frameBorder='0' id='note-tags-iframe' ng-src='{{ctrl.componentManager.urlForComponent(ctrl.tagsComponent) | trusted}}' sandbox='allow-scripts'></iframe>\n" +
+    "      <div id='note-tags-component-container' ng-if='ctrl.tagsComponent'>\n" +
+    "        <component-view class='component-view' component='ctrl.tagsComponent'></component-view>\n" +
     "      </div>\n" +
     "      <input class='tags-input' ng-blur='ctrl.updateTagsFromTagsString($event, ctrl.tagsString)' ng-if='!(ctrl.tagsComponent &amp;&amp; ctrl.tagsComponent.active)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur();' ng-model='ctrl.tagsString' placeholder='#tags' type='text'>\n" +
     "    </div>\n" +
     "  </div>\n" +
-    "  <ul class='section-menu-bar' ng-if='ctrl.note'>\n" +
-    "    <li click-outside='ctrl.showMenu = false;' is-open='ctrl.showMenu' ng-class=\"{'selected' : ctrl.showMenu}\">\n" +
-    "      <label ng-click='ctrl.showMenu = !ctrl.showMenu; ctrl.showExtensions = false; ctrl.showEditorMenu = false;'>Menu</label>\n" +
-    "      <ul class='dropdown-menu sectioned-menu' ng-if='ctrl.showMenu'>\n" +
-    "        <li>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.togglePin()'>\n" +
-    "            <i class='icon ion-ios-flag'></i>\n" +
-    "            {{ctrl.note.pinned ? \"Unpin\" : \"Pin\"}}\n" +
-    "          </label>\n" +
-    "        </li>\n" +
-    "        <li>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.toggleArchiveNote()'>\n" +
-    "            <i class='icon ion-ios-box'></i>\n" +
-    "            {{ctrl.note.archived ? \"Unarchive\" : \"Archive\"}}\n" +
-    "          </label>\n" +
-    "        </li>\n" +
-    "        <li>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.deleteNote()'>\n" +
-    "            <i class='icon ion-trash-b'></i>\n" +
-    "            Delete\n" +
-    "          </label>\n" +
-    "        </li>\n" +
-    "        <li>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.toggleFullScreen()'>\n" +
-    "            <i class='icon ion-arrow-expand'></i>\n" +
-    "            Toggle Fullscreen\n" +
-    "          </label>\n" +
-    "        </li>\n" +
-    "        <li ng-if='ctrl.hasDisabledStackComponents()'>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.restoreDisabledStackComponents()'>Restore Disabled Components</label>\n" +
-    "        </li>\n" +
-    "      </ul>\n" +
-    "    </li>\n" +
-    "    <li click-outside='ctrl.showEditorMenu = false;' is-open='ctrl.showEditorMenu' ng-class=\"{'selected' : ctrl.showEditorMenu}\">\n" +
-    "      <label ng-click='ctrl.showEditorMenu = !ctrl.showEditorMenu; ctrl.showMenu = false; ctrl.showExtensions = false;'>Editor</label>\n" +
-    "      <editor-menu callback='ctrl.selectedEditor' ng-if='ctrl.showEditorMenu' selected-editor='ctrl.editorComponent'></editor-menu>\n" +
-    "    </li>\n" +
-    "    <li click-outside='ctrl.showExtensions = false;' is-open='ctrl.showExtensions' ng-class=\"{'selected' : ctrl.showExtensions}\" ng-if='ctrl.hasAvailableExtensions()'>\n" +
-    "      <label ng-click='ctrl.showExtensions = !ctrl.showExtensions; ctrl.showMenu = false; ctrl.showEditorMenu = false;'>Actions</label>\n" +
-    "      <contextual-extensions-menu item='ctrl.note' ng-if='ctrl.showExtensions'></contextual-extensions-menu>\n" +
-    "    </li>\n" +
-    "  </ul>\n" +
-    "  <div class='editor-content' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.noteReady &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
-    "    <iframe data-component-id='{{ctrl.editorComponent.uuid}}' frameBorder='0' id='editor-iframe' ng-if='ctrl.editorComponent &amp;&amp; ctrl.editorComponent.active' ng-src='{{ctrl.componentManager.urlForComponent(ctrl.editorComponent) | trusted}}' style='width: 100%;'>\n" +
-    "      Loading\n" +
-    "    </iframe>\n" +
-    "    <textarea class='editable' dir='auto' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.editorComponent' ng-model='ctrl.note.text'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
+    "  <div class='sn-component' ng-if='ctrl.note'>\n" +
+    "    <div class='app-bar no-edges'>\n" +
+    "      <div class='left'>\n" +
+    "        <div class='item' click-outside='ctrl.showMenu = false;' is-open='ctrl.showMenu' ng-class=\"{'selected' : ctrl.showMenu}\" ng-click='ctrl.showMenu = !ctrl.showMenu; ctrl.showExtensions = false; ctrl.showEditorMenu = false;'>\n" +
+    "          <div class='label'>Menu</div>\n" +
+    "          <div class='menu-panel dropdown-menu' ng-if='ctrl.showMenu'>\n" +
+    "            <div class='section'>\n" +
+    "              <div class='header'>\n" +
+    "                <h4 class='title'>Note Options</h4>\n" +
+    "              </div>\n" +
+    "              <menu-row ng-click='ctrl.selectedMenuItem($event); ctrl.togglePin()' title=\"ctrl.note.pinned ? 'Unpin' : 'Pin'\"></menu-row>\n" +
+    "              <menu-row ng-click='ctrl.selectedMenuItem($event); ctrl.toggleArchiveNote()' title=\"ctrl.note.archived ? 'Unarchive' : 'Archive'\"></menu-row>\n" +
+    "              <menu-row ng-click='ctrl.selectedMenuItem($event); ctrl.deleteNote()' title=\"'Delete'\"></menu-row>\n" +
+    "            </div>\n" +
+    "            <div class='section' ng-if='!ctrl.selectedEditor'>\n" +
+    "              <div class='header'>\n" +
+    "                <h4 class='title'>Display</h4>\n" +
+    "              </div>\n" +
+    "              <menu-row circle=\"ctrl.monospaceFont ? 'success' : 'default'\" ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('monospaceFont')\" title=\"'Monospace Font'\"></menu-row>\n" +
+    "            </div>\n" +
+    "          </div>\n" +
+    "        </div>\n" +
+    "        <div class='item' click-outside='ctrl.showEditorMenu = false;' is-open='ctrl.showEditorMenu' ng-class=\"{'selected' : ctrl.showEditorMenu}\" ng-click='ctrl.onEditorMenuClick()'>\n" +
+    "          <div class='label'>Editor</div>\n" +
+    "          <editor-menu callback='ctrl.editorMenuOnSelect' ng-if='ctrl.showEditorMenu' selected-editor='ctrl.selectedEditor'></editor-menu>\n" +
+    "        </div>\n" +
+    "        <div class='item' click-outside='ctrl.showExtensions = false;' is-open='ctrl.showExtensions' ng-class=\"{'selected' : ctrl.showExtensions}\" ng-click='ctrl.showExtensions = !ctrl.showExtensions; ctrl.showMenu = false; ctrl.showEditorMenu = false;' ng-if='ctrl.hasAvailableExtensions()'>\n" +
+    "          <div class='label'>Actions</div>\n" +
+    "          <contextual-extensions-menu item='ctrl.note' ng-if='ctrl.showExtensions'></contextual-extensions-menu>\n" +
+    "        </div>\n" +
+    "      </div>\n" +
+    "    </div>\n" +
+    "  </div>\n" +
+    "  <div class='editor-content' id='editor-content' ng-if='ctrl.noteReady &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
+    "    <panel-resizer class='left' control='ctrl.resizeControl' hoverable='true' min-width='300' on-resize-finish='ctrl.onPanelResizeFinish' panel-id=\"'editor-content'\" property=\"'left'\"></panel-resizer>\n" +
+    "    <component-view class='component-view' component='ctrl.selectedEditor' ng-if='ctrl.selectedEditor'></component-view>\n" +
+    "    <textarea class='editable' dir='auto' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.selectedEditor' ng-model='ctrl.note.text'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
+    "    <panel-resizer control='ctrl.resizeControl' hoverable='true' min-width='300' on-resize-finish='ctrl.onPanelResizeFinish' panel-id=\"'editor-content'\"></panel-resizer>\n" +
     "  </div>\n" +
     "  <section class='section' ng-if='ctrl.note.errorDecrypting'>\n" +
     "    <p class='medium-padding' style='padding-top: 0 !important;'>There was an error decrypting this item. Ensure you are running the latest version of this app, then sign out and sign back in to try again.</p>\n" +
     "  </section>\n" +
     "  <div id='editor-pane-component-stack'>\n" +
-    "    <div class='component component-stack-border' id=\"{{'component-' + component.uuid}}\" ng-if='component.active' ng-mouseleave='component.showExit = false' ng-mouseover='component.showExit = true' ng-repeat='component in ctrl.componentStack' ng-show='!component.ignoreEvents'>\n" +
-    "      <div class='exit-button body-text-color' ng-click='ctrl.disableComponentForCurrentItem(component, true)' ng-if='component.showExit'>×</div>\n" +
-    "      <iframe data-component-id='{{component.uuid}}' frameBorder='0' ng-src='{{ctrl.componentManager.urlForComponent(component) | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-modals'></iframe>\n" +
-    "    </div>\n" +
+    "    <component-view class='component-view component-stack-item' component='component' ng-if='component.active' ng-repeat='component in ctrl.componentStack'></component-view>\n" +
     "  </div>\n" +
     "</div>\n"
   );
 
 
   $templateCache.put('frontend/footer.html',
-    "<div id='footer-bar'>\n" +
-    "  <div class='pull-left'>\n" +
-    "    <div class='footer-bar-link' click-outside='ctrl.showAccountMenu = false;' is-open='ctrl.showAccountMenu'>\n" +
-    "      <a ng-class='{red: ctrl.error}' ng-click='ctrl.accountMenuPressed()'>Account</a>\n" +
-    "      <account-menu ng-if='ctrl.showAccountMenu' on-successful-auth='ctrl.onAuthSuccess'></account-menu>\n" +
+    "<div class='sn-component'>\n" +
+    "  <div class='app-bar no-edges' id='footer-bar'>\n" +
+    "    <div class='left'>\n" +
+    "      <div class='item' click-outside='ctrl.showAccountMenu = false;' is-open='ctrl.showAccountMenu'>\n" +
+    "        <div class='column'>\n" +
+    "          <div class='circle small' ng-class=\"ctrl.error ? 'danger' : (ctrl.user ? 'info' : 'default')\"></div>\n" +
+    "        </div>\n" +
+    "        <div class='column' ng-click='ctrl.accountMenuPressed()'>\n" +
+    "          <div class='label title' ng-class='{red: ctrl.error}'>Account</div>\n" +
+    "        </div>\n" +
+    "        <account-menu close-function='ctrl.closeAccountMenu' ng-if='ctrl.showAccountMenu' on-successful-auth='ctrl.onAuthSuccess'></account-menu>\n" +
+    "      </div>\n" +
+    "      <div class='item' click-outside='ctrl.showExtensionsMenu = false;' is-open='ctrl.showExtensionsMenu'>\n" +
+    "        <div class='column' ng-click='ctrl.toggleExtensions()'>\n" +
+    "          <div class='label title'>Extensions</div>\n" +
+    "        </div>\n" +
+    "        <global-extensions-menu ng-if='ctrl.showExtensionsMenu'></global-extensions-menu>\n" +
+    "      </div>\n" +
+    "      <div class='item'>\n" +
+    "        <div class='label title' href='https://standardnotes.org/help' target='_blank'>\n" +
+    "          Help\n" +
+    "        </div>\n" +
+    "      </div>\n" +
+    "      <div class='item border'></div>\n" +
+    "      <div class='item' ng-repeat='room in ctrl.rooms track by room.uuid'>\n" +
+    "        <div class='column' ng-click='ctrl.selectRoom(room)'>\n" +
+    "          <div class='label'>{{room.name}}</div>\n" +
+    "        </div>\n" +
+    "        <component-modal component='room' controller='room.directiveController' ng-if='room.showRoom'></component-modal>\n" +
+    "      </div>\n" +
     "    </div>\n" +
-    "    <div class='footer-bar-link' click-outside='ctrl.showExtensionsMenu = false;' is-open='ctrl.showExtensionsMenu'>\n" +
-    "      <a ng-click='ctrl.toggleExtensions()'>Extensions</a>\n" +
-    "      <global-extensions-menu ng-if='ctrl.showExtensionsMenu'></global-extensions-menu>\n" +
-    "    </div>\n" +
-    "    <div class='footer-bar-link'>\n" +
-    "      <a href='https://standardnotes.org/help' target='_blank'>\n" +
-    "        Help\n" +
-    "      </a>\n" +
-    "    </div>\n" +
-    "    <room-bar id='room-bar'></room-bar>\n" +
-    "  </div>\n" +
-    "  <div class='pull-right'>\n" +
-    "    <div class='footer-bar-link' ng-click='ctrl.clickedNewUpdateAnnouncement()' ng-if='ctrl.newUpdateAvailable'>\n" +
-    "      <span class='tinted normal'>New update downloaded. Installs on app restart.</span>\n" +
-    "    </div>\n" +
-    "    <div class='footer-bar-link' style='margin-right: 5px;'>\n" +
-    "      <span ng-if='ctrl.lastSyncDate' style='float: left; font-weight: normal; margin-right: 8px;'>\n" +
-    "        <span ng-if='!ctrl.isRefreshing'>\n" +
+    "    <div class='right'>\n" +
+    "      <div class='item' ng-click='ctrl.clickedNewUpdateAnnouncement()' ng-if='ctrl.newUpdateAvailable'>\n" +
+    "        <span class='tinted normal'>New update downloaded. Installs on app restart.</span>\n" +
+    "      </div>\n" +
+    "      <div class='item no-pointer' ng-if='ctrl.lastSyncDate &amp;&amp; !ctrl.isRefreshing'>\n" +
+    "        <div class='label subtle'>\n" +
     "          Last refreshed {{ctrl.lastSyncDate | appDateTime}}\n" +
-    "        </span>\n" +
-    "        <span ng-if='ctrl.isRefreshing'>\n" +
-    "          <div class='spinner' style='margin-top: 2px;'></div>\n" +
-    "        </span>\n" +
-    "      </span>\n" +
-    "      <strong ng-if='ctrl.offline'>Offline</strong>\n" +
-    "      <a ng-click='ctrl.refreshData()' ng-if='!ctrl.offline'>Refresh</a>\n" +
-    "      <span ng-if='ctrl.hasPasscode()'>\n" +
-    "        <i class='icon ion-locked' ng-click='ctrl.lockApp()' ng-if='ctrl.hasPasscode()'></i>\n" +
-    "      </span>\n" +
+    "        </div>\n" +
+    "      </div>\n" +
+    "      <div class='item' ng-if='ctrl.lastSyncDate &amp;&amp; ctrl.isRefreshing'>\n" +
+    "        <div class='spinner small'></div>\n" +
+    "      </div>\n" +
+    "      <div class='item' ng-if='ctrl.offline'>\n" +
+    "        <div class='label'>Offline</div>\n" +
+    "      </div>\n" +
+    "      <div class='item' ng-click='ctrl.refreshData()' ng-if='!ctrl.offline'>\n" +
+    "        <div class='label'>Refresh</div>\n" +
+    "      </div>\n" +
+    "      <div class='item' ng-if='ctrl.hasPasscode()'>\n" +
+    "        <div class='label'>\n" +
+    "          <i class='icon ion-locked' ng-click='ctrl.lockApp()' ng-if='ctrl.hasPasscode()'></i>\n" +
+    "        </div>\n" +
+    "      </div>\n" +
     "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
@@ -42699,7 +43804,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
   $templateCache.put('frontend/home.html',
     "<div class='main-ui-view'>\n" +
     "  <lock-screen ng-if='needsUnlock' on-success='onSuccessfulUnlock'></lock-screen>\n" +
-    "  <div class='app' ng-if='!needsUnlock'>\n" +
+    "  <div class='app' id='app' ng-if='!needsUnlock'>\n" +
     "    <tags-section add-new='tagsAddNew' all-tag='allTag' archive-tag='archiveTag' remove-tag='removeTag' save='tagsSave' selection-made='tagsSelectionMade' tags='tags' will-select='tagsWillMakeSelection'></tags-section>\n" +
     "    <notes-section add-new='notesAddNew' selection-made='notesSelectionMade' tag='selectedTag'></notes-section>\n" +
     "    <editor-section note='selectedNote' remove='deleteNote' save='saveNote' update-tags='updateTagsForNote'></editor-section>\n" +
@@ -42723,61 +43828,58 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
 
 
   $templateCache.put('frontend/notes.html',
-    "<div class='section notes'>\n" +
+    "<div class='section notes' id='notes-column'>\n" +
     "  <div class='content'>\n" +
     "    <div class='section-title-bar' id='notes-title-bar'>\n" +
-    "      <div class='title'>{{ctrl.tag.title}} notes</div>\n" +
-    "      <div class='add-button' id='notes-add-button' ng-click='ctrl.createNewNote()'>+</div>\n" +
-    "      <br>\n" +
-    "      <div class='filter-section'>\n" +
-    "        <input class='filter-bar' lowercase='true' ng-change='ctrl.filterTextChanged()' ng-model='ctrl.noteFilter.text' placeholder='Search' select-on-click='true'>\n" +
-    "          <div id='search-clear-button' ng-click=\"ctrl.noteFilter.text = ''; ctrl.filterTextChanged()\" ng-if='ctrl.noteFilter.text'>✕</div>\n" +
-    "        </input>\n" +
+    "      <div class='padded'>\n" +
+    "        <div class='section-title-bar-header'>\n" +
+    "          <div class='title'>{{ctrl.panelTitle()}}</div>\n" +
+    "          <div class='add-button' id='notes-add-button' ng-click='ctrl.createNewNote()'>+</div>\n" +
+    "        </div>\n" +
+    "        <div class='filter-section'>\n" +
+    "          <input class='filter-bar mousetrap' id='search-bar' lowercase='true' ng-change='ctrl.filterTextChanged()' ng-model='ctrl.noteFilter.text' placeholder='Search' select-on-click='true'>\n" +
+    "            <div id='search-clear-button' ng-click=\"ctrl.noteFilter.text = ''; ctrl.filterTextChanged()\" ng-if='ctrl.noteFilter.text'>✕</div>\n" +
+    "          </input>\n" +
+    "        </div>\n" +
     "      </div>\n" +
-    "      <ul class='section-menu-bar' id='notes-menu-bar'>\n" +
-    "        <li class='item-with-subtitle' ng-class=\"{'selected' : ctrl.showMenu}\">\n" +
-    "          <div class='wrapper' ng-click='ctrl.showMenu = !ctrl.showMenu'>\n" +
-    "            <label>Options</label>\n" +
-    "            <div class='subtitle'>{{ctrl.optionsSubtitle()}}</div>\n" +
-    "          </div>\n" +
-    "          <div class='sectioned-menu dropdown-menu' ng-if='ctrl.showMenu'>\n" +
-    "            <ul>\n" +
-    "              <div class='header'>\n" +
-    "                <div class='title'>Sort by</div>\n" +
+    "      <div class='sn-component' id='notes-menu-bar'>\n" +
+    "        <div class='app-bar no-edges'>\n" +
+    "          <div class='left'>\n" +
+    "            <div class='item' ng-class=\"{'selected' : ctrl.showMenu}\" ng-click='ctrl.showMenu = !ctrl.showMenu'>\n" +
+    "              <div class='column'>\n" +
+    "                <div class='label'>\n" +
+    "                  Options\n" +
+    "                </div>\n" +
     "              </div>\n" +
-    "              <li ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByCreated()'>\n" +
-    "                <label>\n" +
-    "                  <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'created_at'\">✓</span>\n" +
-    "                  By date added\n" +
-    "                </label>\n" +
-    "              </li>\n" +
-    "              <li ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByUpdated()'>\n" +
-    "                <label>\n" +
-    "                  <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'updated_at'\">✓</span>\n" +
-    "                  By date modified\n" +
-    "                </label>\n" +
-    "              </li>\n" +
-    "              <li ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByTitle()'>\n" +
-    "                <label>\n" +
-    "                  <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'title'\">✓</span>\n" +
-    "                  By title\n" +
-    "                </label>\n" +
-    "              </li>\n" +
-    "            </ul>\n" +
-    "            <ul ng-if='!ctrl.tag.archiveTag'>\n" +
-    "              <div class='header'>\n" +
-    "                <div class='title'>Archives</div>\n" +
+    "              <div class='column'>\n" +
+    "                <div class='sublabel'>{{ctrl.optionsSubtitle()}}</div>\n" +
     "              </div>\n" +
-    "              <li ng-click='ctrl.selectedMenuItem($event); ctrl.toggleShowArchived()'>\n" +
-    "                <label>\n" +
-    "                  <span class='top mt-5 mr-5' ng-if='ctrl.showArchived == true'>✓</span>\n" +
-    "                  Show archived notes\n" +
-    "                </label>\n" +
-    "              </li>\n" +
-    "            </ul>\n" +
+    "            </div>\n" +
     "          </div>\n" +
-    "        </li>\n" +
-    "      </ul>\n" +
+    "          <div class='sn-component' ng-if='ctrl.showMenu'>\n" +
+    "            <div class='menu-panel dropdown-menu'>\n" +
+    "              <div class='section'>\n" +
+    "                <div class='header'>\n" +
+    "                  <h4 class='title'>Sort By</h4>\n" +
+    "                </div>\n" +
+    "                <menu-row circle=\"ctrl.sortBy == 'created_at' &amp;&amp; 'success'\" ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByCreated()' title=\"'Date Added'\"></menu-row>\n" +
+    "                <menu-row circle=\"ctrl.sortBy == 'updated_at' &amp;&amp; 'success'\" ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByUpdated()' title=\"'Date Modified'\"></menu-row>\n" +
+    "                <menu-row circle=\"ctrl.sortBy == 'title' &amp;&amp; 'success'\" ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByTitle()' title=\"'Title'\"></menu-row>\n" +
+    "              </div>\n" +
+    "              <div class='section' ng-if='!ctrl.tag.archiveTag'>\n" +
+    "                <div class='header'>\n" +
+    "                  <h4 class='title'>Display</h4>\n" +
+    "                </div>\n" +
+    "                <menu-row circle=\"ctrl.showArchived ? 'success' : 'danger'\" ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('showArchived')\" title=\"'Archived Notes'\"></menu-row>\n" +
+    "                <menu-row circle=\"ctrl.hidePinned ? 'danger' : 'success'\" ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('hidePinned')\" title=\"'Pinned Notes'\"></menu-row>\n" +
+    "                <menu-row circle=\"ctrl.hideNotePreview ? 'danger' : 'success'\" ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('hideNotePreview')\" title=\"'Note Preview'\"></menu-row>\n" +
+    "                <menu-row circle=\"ctrl.hideDate ? 'danger' : 'success'\" ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('hideDate')\" title=\"'Date'\"></menu-row>\n" +
+    "                <menu-row circle=\"ctrl.hideTags ? 'danger' : 'success'\" ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('hideTags')\" title=\"'Tags'\"></menu-row>\n" +
+    "              </div>\n" +
+    "            </div>\n" +
+    "          </div>\n" +
+    "        </div>\n" +
+    "      </div>\n" +
     "    </div>\n" +
     "    <div class='scrollable'>\n" +
     "      <div can-load='true' class='infinite-scroll' id='notes-scrollable' infinite-scroll='ctrl.paginate()' threshold='200'>\n" +
@@ -42792,16 +43894,16 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "            <i class='icon ion-ios-box'></i>\n" +
     "            <strong class='medium'>Archived</strong>\n" +
     "          </div>\n" +
-    "          <div class='tags-string' ng-if='ctrl.tag.all'>\n" +
+    "          <div class='tags-string' ng-if='ctrl.tag.all &amp;&amp; !ctrl.hideTags'>\n" +
     "            <div class='faded'>{{note.tagsString()}}</div>\n" +
     "          </div>\n" +
     "          <div class='name' ng-if='note.title'>\n" +
     "            {{note.title}}\n" +
     "          </div>\n" +
-    "          <div class='note-preview'>\n" +
+    "          <div class='note-preview' ng-if='!ctrl.hideNotePreview'>\n" +
     "            {{note.text}}\n" +
     "          </div>\n" +
-    "          <div class='date faded'>\n" +
+    "          <div class='date faded' ng-if='!ctrl.hideDate'>\n" +
     "            <span ng-if=\"ctrl.sortBy == 'updated_at'\">Modified {{note.updatedAtString() || 'Now'}}</span>\n" +
     "            <span ng-if=\"ctrl.sortBy != 'updated_at'\">{{note.createdAtString() || 'Now'}}</span>\n" +
     "          </div>\n" +
@@ -42809,17 +43911,22 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      </div>\n" +
     "    </div>\n" +
     "  </div>\n" +
+    "  <panel-resizer collapsable='true' control='ctrl.panelController' hoverable='true' on-resize-finish='ctrl.onPanelResize' panel-id=\"'notes-column'\"></panel-resizer>\n" +
     "</div>\n"
   );
 
 
   $templateCache.put('frontend/tags.html',
     "<div class='section tags' id='tags-column'>\n" +
-    "  <iframe frameBorder='0' id='tags-list-iframe' ng-if='ctrl.component &amp;&amp; ctrl.component.active' ng-src='{{ctrl.componentManager.urlForComponent(ctrl.component) | trusted}}' sandbox='allow-scripts' style='width: 100%; height: 100%;'></iframe>\n" +
+    "  <div class='component-view-container' ng-if='ctrl.component'>\n" +
+    "    <component-view class='component-view' component='ctrl.component'></component-view>\n" +
+    "  </div>\n" +
     "  <div class='content' id='tags-content' ng-if='!(ctrl.component &amp;&amp; ctrl.component.active)'>\n" +
     "    <div class='section-title-bar' id='tags-title-bar'>\n" +
-    "      <div class='title'>Tags</div>\n" +
-    "      <div class='add-button' id='tag-add-button' ng-click='ctrl.clickedAddNewTag()'>+</div>\n" +
+    "      <div class='section-title-bar-header'>\n" +
+    "        <div class='title'>Tags</div>\n" +
+    "        <div class='add-button' id='tag-add-button' ng-click='ctrl.createNewTag()'>+</div>\n" +
+    "      </div>\n" +
     "    </div>\n" +
     "    <div class='scrollable'>\n" +
     "      <div class='tag' ng-class=\"{'selected' : ctrl.selectedTag == ctrl.allTag}\" ng-click='ctrl.selectTag(ctrl.allTag)' ng-if='ctrl.allTag'>\n" +
@@ -42848,6 +43955,7 @@ angular.module('app.frontend').service('themeManager', ThemeManager);
     "      </div>\n" +
     "    </div>\n" +
     "  </div>\n" +
+    "  <panel-resizer collapsable='true' control='ctrl.panelController' hoverable='true' on-resize-finish='ctrl.onPanelResize' panel-id=\"'tags-column'\"></panel-resizer>\n" +
     "</div>\n"
   );
 

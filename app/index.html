@@ -52,6 +52,7 @@
       }
 
       window._default_sf_server = "https://sync.standardnotes.org";
+      window._extensions_manager_location = "extensions/extensions-manager/dist/index.html";
 
     </script>
 
@@ -68,34 +69,23 @@
         let packageCallbacks = [];
 
         ipcRenderer.on('install-component-complete', function (event, componentData) {
-          console.log('install-component-complete', componentData.content.url);
-          var callback = packageCallbacks.filter((cb) => {return cb.id == componentData.uuid})[0];
-          callback.callback(componentData);
-          packageCallbacks.splice(packageCallbacks.indexOf(callback), 1);
+          desktopManager.desktop_onComponentInstallationComplete(componentData);
         });
 
         ipcRenderer.on('update-component-complete', (event, componentData) => {
-          console.log('update-component-complete');
+          // console.log('update-component-complete');
           desktopManager.desktop_updateComponentComplete(componentData);
         });
 
-        console.log("Desktop: setting app data path");
-        console.log(userDataPath);
-
         desktopManager.desktop_setComponentInstallationSyncHandler((componentsData) => {
-          console.log("Syncing components");
+          // console.log("desktop_setComponentInstallationSyncHandler callback");
           ipcRenderer.send("sync-components", componentsData);
         })
 
         desktopManager.desktop_setApplicationDataPath(userDataPath);
 
-        desktopManager.desktop_setOfflineComponentInstallationHandler((componentData, callback) => {
+        desktopManager.desktop_setOfflineComponentInstallationHandler((componentData) => {
           // Install package
-          // let installedPackage = packageManager.installPackage(component);
-          packageCallbacks.push({
-            id: componentData.uuid,
-            callback: callback
-          })
           ipcRenderer.send("install-component", componentData);
         });
 
