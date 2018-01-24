@@ -76,7 +76,7 @@ function createWindow () {
   // automatically (the listeners will be removed when the window
   // is closed) and restore the maximized or full screen state
   winState.manage(win)
-  win.webContents.openDevTools()
+  // win.webContents.openDevTools()
 
   win.on('closed', (event) => {
     win = null

@@ -1,5 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html ng-app="app.frontend">
+<html ng-app="app">
   <head>
     <meta charset="utf-8"/>
     <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
@@ -60,7 +60,7 @@
     <link rel="stylesheet" media="all" href="../stylesheets/app.css" debug="false" />
 
     <script>
-      const {app} = require('electron').remote;
+      const {app} = window.nodeRequire('electron').remote;
       var userDataPath = app.getPath('userData');
 
       angular.element(document).ready(function () {
@@ -125,7 +125,7 @@
   </head>
 
   <body ng-class="bodyClass">
-    <div id="home" ng-controller="HomeCtrl" ng-include="'frontend/home.html'"></div>
+    <div id="home" ng-controller="HomeCtrl" ng-include="'home.html'"></div>
   </body>
 
 </html>
