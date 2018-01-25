@@ -33793,7 +33793,6 @@ Array.prototype.containsObjectSubset = function (array) {
 
   this.spellcheck = true;
   this.componentManager = componentManager;
-  this.componentStack = [];
 
   $rootScope.$on("sync:taking-too-long", function () {
     this.syncTakingTooLong = true;
@@ -34233,16 +34232,7 @@ Array.prototype.containsObjectSubset = function (array) {
       if (component.area === "note-tags") {
         // Autocomplete Tags
         this.tagsComponent = component.active ? component : null;
-      } else if (component.area == "editor-stack") {
-        // Stack
-        if (component.active) {
-          if (!_.find(this.componentStack, component)) {
-            this.componentStack.push(component);
-          }
-        } else {
-          _.pull(this.componentStack, component);
-        }
-      } else {
+      } else if (component.area == "editor-editor") {
         // Editor
         if (component.active && this.note && (component.isExplicitlyEnabledForItem(this.note) || component.isDefaultEditor())) {
           this.selectedEditor = component;
@@ -34295,26 +34285,18 @@ Array.prototype.containsObjectSubset = function (array) {
     }.bind(this) });
 
   this.reloadComponentContext = function () {
-    componentManager.contextItemDidChangeInArea("note-tags");
-    componentManager.contextItemDidChangeInArea("editor-stack");
-    componentManager.contextItemDidChangeInArea("editor-editor");
-
-    var stack = componentManager.componentsForArea("editor-stack");
+    // componentStack is used by the template to ng-repeat
+    this.componentStack = componentManager.componentsForArea("editor-stack");
     var _iteratorNormalCompletion4 = true;
     var _didIteratorError4 = false;
     var _iteratorError4 = undefined;
 
     try {
-      for (var _iterator4 = stack[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+      for (var _iterator4 = this.componentStack[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
         var component = _step4.value;
 
         if (component.active) {
-          var disabledForItem = component.isExplicitlyDisabledForItem(this.note);
-          if (disabledForItem) {
-            component.hidden = true;
-          } else {
-            component.hidden = false;
-          }
+          component.hidden = component.isExplicitlyDisabledForItem(this.note);
         }
       }
     } catch (err) {
@@ -34331,6 +34313,10 @@ Array.prototype.containsObjectSubset = function (array) {
         }
       }
     }
+
+    componentManager.contextItemDidChangeInArea("note-tags");
+    componentManager.contextItemDidChangeInArea("editor-stack");
+    componentManager.contextItemDidChangeInArea("editor-editor");
   };
 
   this.toggleStackComponentForCurrentItem = function (component) {
@@ -42024,9 +42010,17 @@ var ComponentView = function () {
         $scope.reloading = true;
         var previouslyValid = $scope.componentValid;
 
-        $scope.offlineRestricted = component.offlineOnly && !isDesktopApplication();
+        var expired, offlineRestricted, urlError;
 
-        $scope.componentValid = !$scope.offlineRestricted && (!component.valid_until || component.valid_until && component.valid_until > new Date());
+        offlineRestricted = component.offlineOnly && !isDesktopApplication();
+        urlError = !isDesktopApplication() && (!component.url || component.hosted_url);
+        expired = component.valid_until && component.valid_until <= new Date();
+
+        $scope.componentValid = !offlineRestricted && !urlError && !expired;
+
+        if (offlineRestricted) $scope.error = 'offline-restricted';
+        if (urlError) $scope.error = 'url-missing';
+        if (expired) $scope.error = 'expired';
 
         if ($scope.componentValid !== previouslyValid) {
           if ($scope.componentValid) {
@@ -42070,7 +42064,8 @@ var EditorMenu = function () {
     this.templateUrl = "directives/editor-menu.html";
     this.scope = {
       callback: "&",
-      selectedEditor: "="
+      selectedEditor: "=",
+      currentItem: "="
     };
   }
 
@@ -42120,6 +42115,7 @@ var EditorMenu = function () {
           currentDefault.setAppDataItem("defaultEditor", false);
           currentDefault.setDirty(true);
         }
+
         component.setAppDataItem("defaultEditor", true);
         component.setDirty(true);
         syncManager.sync("makeEditorDefault");
@@ -42133,6 +42129,10 @@ var EditorMenu = function () {
         syncManager.sync("removeEditorDefault");
 
         $scope.defaultEditor = null;
+      };
+
+      $scope.stackComponentEnabled = function (component) {
+        return component.active && !component.isExplicitlyDisabledForItem($scope.currentItem);
       };
     }
   }]);
@@ -42799,7 +42799,6 @@ angular.module('app').directive('permissionsModal', function () {
     "      <div class='header'>\n" +
     "        <h1 class='title'>\n" +
     "          {{component.name}}\n" +
-    "          <span class='subtle subtitle' ng-if='component.runningLocally'>| Desktop Mode</span>\n" +
     "        </h1>\n" +
     "        <a class='close-button info' ng-click='dismiss()'>Close</a>\n" +
     "      </div>\n" +
@@ -42811,7 +42810,7 @@ angular.module('app').directive('permissionsModal', function () {
 
 
   $templateCache.put('directives/component-view.html',
-    "<div class='sn-component' ng-if='!componentValid &amp;&amp; !offlineRestricted'>\n" +
+    "<div class='sn-component' ng-if=\"error == 'expired'\">\n" +
     "  <div class='panel static'>\n" +
     "    <div class='content'>\n" +
     "      <div class='panel-section stretch'>\n" +
@@ -42853,7 +42852,7 @@ angular.module('app').directive('permissionsModal', function () {
     "    </div>\n" +
     "  </div>\n" +
     "</div>\n" +
-    "<div class='sn-component' ng-if='offlineRestricted'>\n" +
+    "<div class='sn-component' ng-if=\"error == 'offline-restricted'\">\n" +
     "  <div class='panel static'>\n" +
     "    <div class='content'>\n" +
     "      <div class='panel-section stretch'>\n" +
@@ -42880,7 +42879,17 @@ angular.module('app').directive('permissionsModal', function () {
     "    </div>\n" +
     "  </div>\n" +
     "</div>\n" +
-    "<iframe data-component-id='{{component.uuid}}' frameBorder='0' ng-attr-id='component-{{component.uuid}}' ng-if='component &amp;&amp; componentValid &amp;&amp; !offlineRestricted' ng-src='{{getUrl() | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-modals allow-forms'>\n" +
+    "<div class='sn-component' ng-if=\"error == 'url-missing'\">\n" +
+    "  <div class='panel static'>\n" +
+    "    <div class='content'>\n" +
+    "      <div class='panel-section stretch'>\n" +
+    "        <h2 class='title'>This extension is not installed correctly.</h2>\n" +
+    "        <p>Please uninstall {{component.name}}, then re-install it.</p>\n" +
+    "      </div>\n" +
+    "    </div>\n" +
+    "  </div>\n" +
+    "</div>\n" +
+    "<iframe data-component-id='{{component.uuid}}' frameBorder='0' ng-attr-id='component-{{component.uuid}}' ng-if='component &amp;&amp; componentValid' ng-src='{{getUrl() | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-modals allow-forms'>\n" +
     "  Loading\n" +
     "</iframe>\n"
   );
@@ -42907,7 +42916,7 @@ angular.module('app').directive('permissionsModal', function () {
     "      <div class='header'>\n" +
     "        <h4 class='title'>Editor Stack</h4>\n" +
     "      </div>\n" +
-    "      <menu-row circle=\"component.active ? 'success' : 'danger'\" ng-click='selectComponent($event, component)' ng-repeat='component in stack' title='component.name'>\n" +
+    "      <menu-row circle=\"stackComponentEnabled(component) ? 'success' : 'danger'\" ng-click='selectComponent($event, component)' ng-repeat='component in stack' title='component.name'>\n" +
     "        <div class='column' ng-if='component.conflict_of'>\n" +
     "          <strong class='red medium' ng-if='component.conflict_of'>Conflicted copy</strong>\n" +
     "        </div>\n" +
@@ -43215,7 +43224,7 @@ angular.module('app').directive('permissionsModal', function () {
     "        </div>\n" +
     "        <div class='item' click-outside='ctrl.showEditorMenu = false;' is-open='ctrl.showEditorMenu' ng-class=\"{'selected' : ctrl.showEditorMenu}\" ng-click='ctrl.onEditorMenuClick()'>\n" +
     "          <div class='label'>Editor</div>\n" +
-    "          <editor-menu callback='ctrl.editorMenuOnSelect' ng-if='ctrl.showEditorMenu' selected-editor='ctrl.selectedEditor'></editor-menu>\n" +
+    "          <editor-menu callback='ctrl.editorMenuOnSelect' current-item='ctrl.note' ng-if='ctrl.showEditorMenu' selected-editor='ctrl.selectedEditor'></editor-menu>\n" +
     "        </div>\n" +
     "        <div class='item' click-outside='ctrl.showExtensions = false;' is-open='ctrl.showExtensions' ng-class=\"{'selected' : ctrl.showExtensions}\" ng-click='ctrl.showExtensions = !ctrl.showExtensions; ctrl.showMenu = false; ctrl.showEditorMenu = false;'>\n" +
     "          <div class='label'>Actions</div>\n" +
