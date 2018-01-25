@@ -135,6 +135,7 @@ p {
   overflow: hidden;
 }
 .app .section .section-title-bar .section-title-bar-header > .add-button {
+  color: #666666;
   font-size: 18px;
   width: 45px;
   height: 24px;
@@ -145,7 +146,8 @@ p {
   text-align: center;
 }
 .app .section .section-title-bar .section-title-bar-header > .add-button:hover {
-  background-color: rgba(233, 233, 233, 0.8);
+  background-color: gainsboro;
+  color: #666666;
 }
 
 .icon {
@@ -243,6 +245,10 @@ a.disabled {
   pointer-events: none;
 }
 
+#lock-item {
+  margin-left: 3px;
+}
+
 .icon.ion-locked {
   margin-left: 5px;
   border-left: 1px solid gray;
@@ -256,17 +262,19 @@ a.disabled {
   -khtml-user-select: none;
   -webkit-user-select: none;
 }
+.tags, .tags #tags-content {
+  background-color: #f6f6f6;
+  display: flex;
+  flex-direction: column;
+}
 .tags #tags-title-bar {
   color: black;
-  height: 55px;
   padding-top: 14px;
+  padding-bottom: 16px;
   padding-left: 12px;
   padding-right: 12px;
   font-size: 12px;
   color: rgba(0, 0, 0, 0.8);
-}
-.tags, .tags #tags-content {
-  background-color: #f6f6f6;
 }
 .tags #tag-add-button {
   background-color: #d7d7d7;
@@ -275,7 +283,11 @@ a.disabled {
   background-color: rgba(215, 215, 215, 0.8);
 }
 .tags .scrollable {
-  height: calc(100vh - (55px + 32px));
+  height: 100%;
+}
+.tags .infinite-scroll {
+  overflow-x: hidden;
+  height: inherit;
 }
 .tags .tag {
   min-height: 30px;
@@ -369,11 +381,8 @@ a.disabled {
   width: calc(90% - 45px);
 }
 #notes-column #notes-menu-bar, .notes #notes-menu-bar {
-  color: default;
   position: relative;
   margin-top: 14px;
-  height: auto;
-  width: auto;
 }
 #notes-column .filter-section, .notes .filter-section {
   clear: left;
@@ -708,6 +717,7 @@ a.disabled {
 }
 #lock-screen .panel {
   width: 315px;
+  flex-grow: 0;
 }
 #lock-screen .panel .header {
   justify-content: center;
@@ -928,8 +938,8 @@ a.disabled {
 }
 .sn-component .menu-panel .header {
   padding: 0.8rem 1rem;
-  border-bottom: 1px solid #E1E1E1;
-  background-color: #F6F6F6;
+  border-bottom: 1px solid #e2e2e2;
+  background-color: #f1f1f1;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -945,7 +955,7 @@ a.disabled {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  border-bottom: 1px solid #DDDDDD;
+  border-bottom: 1px solid #eaeaea;
 }
 .sn-component .menu-panel .row:hover {
   background-color: #efefef;
@@ -1467,6 +1477,9 @@ a.disabled {
 }
 .sn-component .panel-table .table-item .item-column {
   align-items: center;
+}
+.sn-component .panel-table .table-item .item-column.stretch {
+  width: 100%;
 }
 .sn-component .panel-table .table-item .item-column:not(:first-child) {
   padding-left: 0.75rem;

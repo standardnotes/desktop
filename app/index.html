@@ -52,7 +52,9 @@
       }
 
       window._default_sf_server = "https://sync.standardnotes.org";
-      window._extensions_manager_location = "extensions/extensions-manager/dist/index.html";
+
+      // window._extensions_manager_location = "extensions/extensions-manager/dist/index.html";
+      window._extensions_manager_location = "http://localhost:8080";
 
     </script>
 
@@ -66,29 +68,31 @@
       angular.element(document).ready(function () {
         var desktopManager = angular.element(document).injector().get('desktopManager');
 
-        let packageCallbacks = [];
+        desktopManager.desktop_setApplicationDataPath(userDataPath);
 
-        ipcRenderer.on('install-component-complete', function (event, componentData) {
-          desktopManager.desktop_onComponentInstallationComplete(componentData);
+        /*
+        Responses from packageManager
+        */
+        ipcRenderer.on('install-component-complete', function (event, data) {
+          console.log("install-component-complete", data.component.content.name, data.error && data.error.tag);
+          desktopManager.desktop_onComponentInstallationComplete(data.component, data.error);
         });
 
-        ipcRenderer.on('update-component-complete', (event, componentData) => {
-          // console.log('update-component-complete');
-          desktopManager.desktop_updateComponentComplete(componentData);
-        });
+        /*
+        Actions triggered from the web code
+        */
 
+        /* Handled by PackageManager */
         desktopManager.desktop_setComponentInstallationSyncHandler((componentsData) => {
-          // console.log("desktop_setComponentInstallationSyncHandler callback");
           ipcRenderer.send("sync-components", componentsData);
         })
 
-        desktopManager.desktop_setApplicationDataPath(userDataPath);
-
-        desktopManager.desktop_setOfflineComponentInstallationHandler((componentData) => {
-          // Install package
+        desktopManager.desktop_setInstallComponentHandler((componentData) => {
           ipcRenderer.send("install-component", componentData);
         });
 
+
+        /* Handled by ArchiveManager */
         desktopManager.desktop_setInitialDataLoadHandler(() => {
           ipcRenderer.send("initial-data-loaded");
         })
@@ -101,7 +105,7 @@
       // For Mac inset window
       if(process.platform == "darwin") {
         var sheet = window.document.styleSheets[0];
-        sheet.insertRule('.tags { padding-top: 22px; }', sheet.cssRules.length);
+        sheet.insertRule('#tags-title-bar { padding-top: 36px !important; }', sheet.cssRules.length);
       }
 
     </script>
@@ -113,11 +117,11 @@
       }
 
       /* Required for BrowserWindow titleBarStyle: 'hiddenInset' */
-      .tags, #notes-title-bar, #editor-title-bar {
+      .tags, #tags-title-bar, #notes-title-bar, #editor-title-bar {
         -webkit-app-region: drag;
       }
 
-      input {
+      input, .tags .content {
         -webkit-app-region: no-drag;
       }
     </style>

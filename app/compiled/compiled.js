@@ -33752,7 +33752,7 @@ Array.prototype.containsObjectSubset = function (array) {
   return !array.some(function (val) {
     return !_.find(_this4, val);
   });
-};angular.module('app').config(['$locationProvider', function ($locationProvider) {
+};angular.module('app').config(function ($locationProvider) {
 
   if (!isDesktopApplication()) {
     if (window.history && window.history.pushState) {
@@ -33764,8 +33764,8 @@ Array.prototype.containsObjectSubset = function (array) {
   } else {
     $locationProvider.html5Mode(false);
   }
-}]);
-;angular.module('app').directive("editorSection", ['$timeout', '$sce', function ($timeout, $sce) {
+});
+;angular.module('app').directive("editorSection", function ($timeout, $sce) {
   return {
     restrict: 'E',
     scope: {
@@ -33788,7 +33788,7 @@ Array.prototype.containsObjectSubset = function (array) {
       });
     }
   };
-}]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'actionsManager', 'syncManager', 'modelManager', 'themeManager', 'componentManager', 'storageManager', function ($sce, $timeout, authManager, $rootScope, actionsManager, syncManager, modelManager, themeManager, componentManager, storageManager) {
+}).controller('EditorCtrl', function ($sce, $timeout, authManager, $rootScope, actionsManager, syncManager, modelManager, themeManager, componentManager, storageManager) {
   var _this7 = this;
 
   this.spellcheck = true;
@@ -34217,6 +34217,9 @@ Array.prototype.containsObjectSubset = function (array) {
       this.noteReady = false;
       $timeout(function () {
         _this8.noteReady = true;
+        $timeout(function () {
+          _this8.reloadFont();
+        });
       }, 0);
     }
   };
@@ -34418,8 +34421,8 @@ Array.prototype.containsObjectSubset = function (array) {
       this.loadedTabListener = false;
     }.bind(this));
   };
-}]);
-;angular.module('app').directive("footer", ['authManager', function (authManager) {
+});
+;angular.module('app').directive("footer", function (authManager) {
   return {
     restrict: 'E',
     scope: {},
@@ -34441,7 +34444,7 @@ Array.prototype.containsObjectSubset = function (array) {
       });
     }
   };
-}]).controller('FooterCtrl', ['$rootScope', 'authManager', 'modelManager', '$timeout', 'dbManager', 'syncManager', 'storageManager', 'passcodeManager', 'componentManager', 'singletonManager', 'packageManager', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager, componentManager, singletonManager, packageManager) {
+}).controller('FooterCtrl', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager, componentManager, singletonManager) {
   var _this11 = this;
 
   this.getUser = function () {
@@ -34466,12 +34469,13 @@ Array.prototype.containsObjectSubset = function (array) {
     this.showAccountMenu = false;
   }.bind(this);
 
-  this.closeAccountMenu = function () {
-    _this11.showAccountMenu = false;
-  };
-
   this.accountMenuPressed = function () {
     this.showAccountMenu = !this.showAccountMenu;
+    this.closeAllRooms();
+  };
+
+  this.closeAccountMenu = function () {
+    _this11.showAccountMenu = false;
   };
 
   this.hasPasscode = function () {
@@ -34530,13 +34534,38 @@ Array.prototype.containsObjectSubset = function (array) {
     _this11.rooms = _.uniq(_this11.rooms.concat(incomingRooms)).filter(function (candidate) {
       return !candidate.deleted;
     });
+
+    var _iteratorNormalCompletion5 = true;
+    var _didIteratorError5 = false;
+    var _iteratorError5 = undefined;
+
+    try {
+      for (var _iterator5 = _this11.rooms[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+        var room = _step5.value;
+
+        room.hosted_url = "http://localhost:8080";
+      }
+    } catch (err) {
+      _didIteratorError5 = true;
+      _iteratorError5 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion5 && _iterator5.return) {
+          _iterator5.return();
+        }
+      } finally {
+        if (_didIteratorError5) {
+          throw _iteratorError5;
+        }
+      }
+    }
   });
 
   componentManager.registerHandler({ identifier: "roomBar", areas: ["rooms", "modal"], activationHandler: function activationHandler(component) {
       if (component.active) {
         // Show room, if it was not activated manually (in the event of event from componentManager)
         if (component.area == "rooms" && !component.showRoom) {
-          _this11.selectRoom(component);
+          component.showRoom = true;
         }
         $timeout(function () {
           var lastSize = component.getLastSize();
@@ -34551,26 +34580,42 @@ Array.prototype.containsObjectSubset = function (array) {
       }
     } });
 
-  this.selectRoom = function (room) {
+  this.onRoomDismiss = function (room) {
+    room.showRoom = false;
+  };
 
-    // Allows us to send messages to component modal directive
-    if (!room.directiveController) {
-      room.directiveController = { onDismiss: function onDismiss() {
-          room.showRoom = false;
-        } };
-    }
+  this.closeAllRooms = function () {
+    var _iteratorNormalCompletion6 = true;
+    var _didIteratorError6 = false;
+    var _iteratorError6 = undefined;
 
-    // Make sure to call dismiss() before setting new showRoom value
-    // This way the directive stays alive long enough to deactivate the associated component
-    // (The directive's life is at the mercy of "ng-if" => "room.showRoom")
-    if (room.showRoom) {
-      room.directiveController.dismiss(function () {});
-    } else {
-      room.showRoom = true;
+    try {
+      for (var _iterator6 = this.rooms[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+        var room = _step6.value;
+
+        room.showRoom = false;
+      }
+    } catch (err) {
+      _didIteratorError6 = true;
+      _iteratorError6 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion6 && _iterator6.return) {
+          _iterator6.return();
+        }
+      } finally {
+        if (_didIteratorError6) {
+          throw _iteratorError6;
+        }
+      }
     }
   };
-}]);
-;angular.module('app').controller('HomeCtrl', ['$scope', '$location', '$rootScope', '$timeout', 'modelManager', 'dbManager', 'syncManager', 'authManager', 'themeManager', 'passcodeManager', 'storageManager', 'migrationManager', function ($scope, $location, $rootScope, $timeout, modelManager, dbManager, syncManager, authManager, themeManager, passcodeManager, storageManager, migrationManager) {
+
+  this.selectRoom = function (room) {
+    room.showRoom = !room.showRoom;
+  };
+});
+;angular.module('app').controller('HomeCtrl', function ($scope, $location, $rootScope, $timeout, modelManager, dbManager, syncManager, authManager, themeManager, passcodeManager, storageManager, migrationManager) {
 
   storageManager.initialize(passcodeManager.hasPasscode(), authManager.isEphemeralSession());
 
@@ -34659,73 +34704,17 @@ Array.prototype.containsObjectSubset = function (array) {
 
   $scope.updateTagsForNote = function (note, stringTags) {
     var toRemove = [];
-    var _iteratorNormalCompletion5 = true;
-    var _didIteratorError5 = false;
-    var _iteratorError5 = undefined;
-
-    try {
-      for (var _iterator5 = note.tags[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-        var tag = _step5.value;
-
-        if (stringTags.indexOf(tag.title) === -1) {
-          // remove this tag
-          toRemove.push(tag);
-        }
-      }
-    } catch (err) {
-      _didIteratorError5 = true;
-      _iteratorError5 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion5 && _iterator5.return) {
-          _iterator5.return();
-        }
-      } finally {
-        if (_didIteratorError5) {
-          throw _iteratorError5;
-        }
-      }
-    }
-
-    var _iteratorNormalCompletion6 = true;
-    var _didIteratorError6 = false;
-    var _iteratorError6 = undefined;
-
-    try {
-      for (var _iterator6 = toRemove[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-        var tagToRemove = _step6.value;
-
-        note.removeItemAsRelationship(tagToRemove);
-        tagToRemove.removeItemAsRelationship(note);
-        tagToRemove.setDirty(true);
-      }
-    } catch (err) {
-      _didIteratorError6 = true;
-      _iteratorError6 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion6 && _iterator6.return) {
-          _iterator6.return();
-        }
-      } finally {
-        if (_didIteratorError6) {
-          throw _iteratorError6;
-        }
-      }
-    }
-
-    var tags = [];
     var _iteratorNormalCompletion7 = true;
     var _didIteratorError7 = false;
     var _iteratorError7 = undefined;
 
     try {
-      for (var _iterator7 = stringTags[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-        var tagString = _step7.value;
+      for (var _iterator7 = note.tags[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+        var tag = _step7.value;
 
-        var existingRelationship = _.find(note.tags, { title: tagString });
-        if (!existingRelationship) {
-          tags.push(modelManager.findOrCreateTagByTitle(tagString));
+        if (stringTags.indexOf(tag.title) === -1) {
+          // remove this tag
+          toRemove.push(tag);
         }
       }
     } catch (err) {
@@ -34748,10 +34737,12 @@ Array.prototype.containsObjectSubset = function (array) {
     var _iteratorError8 = undefined;
 
     try {
-      for (var _iterator8 = tags[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-        var tag = _step8.value;
+      for (var _iterator8 = toRemove[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+        var tagToRemove = _step8.value;
 
-        modelManager.createRelationshipBetweenItems(note, tag);
+        note.removeItemAsRelationship(tagToRemove);
+        tagToRemove.removeItemAsRelationship(note);
+        tagToRemove.setDirty(true);
       }
     } catch (err) {
       _didIteratorError8 = true;
@@ -34764,6 +34755,60 @@ Array.prototype.containsObjectSubset = function (array) {
       } finally {
         if (_didIteratorError8) {
           throw _iteratorError8;
+        }
+      }
+    }
+
+    var tags = [];
+    var _iteratorNormalCompletion9 = true;
+    var _didIteratorError9 = false;
+    var _iteratorError9 = undefined;
+
+    try {
+      for (var _iterator9 = stringTags[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+        var tagString = _step9.value;
+
+        var existingRelationship = _.find(note.tags, { title: tagString });
+        if (!existingRelationship) {
+          tags.push(modelManager.findOrCreateTagByTitle(tagString));
+        }
+      }
+    } catch (err) {
+      _didIteratorError9 = true;
+      _iteratorError9 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion9 && _iterator9.return) {
+          _iterator9.return();
+        }
+      } finally {
+        if (_didIteratorError9) {
+          throw _iteratorError9;
+        }
+      }
+    }
+
+    var _iteratorNormalCompletion10 = true;
+    var _didIteratorError10 = false;
+    var _iteratorError10 = undefined;
+
+    try {
+      for (var _iterator10 = tags[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+        var tag = _step10.value;
+
+        modelManager.createRelationshipBetweenItems(note, tag);
+      }
+    } catch (err) {
+      _didIteratorError10 = true;
+      _iteratorError10 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion10 && _iterator10.return) {
+          _iterator10.return();
+        }
+      } finally {
+        if (_didIteratorError10) {
+          throw _iteratorError10;
         }
       }
     }
@@ -34923,7 +34968,7 @@ Array.prototype.containsObjectSubset = function (array) {
   if (urlParam("server")) {
     autoSignInFromParams();
   }
-}]);
+});
 ;
 var LockScreen = function () {
   function LockScreen() {
@@ -34938,7 +34983,7 @@ var LockScreen = function () {
 
   _createClass(LockScreen, [{
     key: 'controller',
-    value: ['$scope', 'passcodeManager', function controller($scope, passcodeManager) {
+    value: function controller($scope, passcodeManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -34953,7 +34998,7 @@ var LockScreen = function () {
           $scope.onSuccess()();
         });
       };
-    }]
+    }
   }]);
 
   return LockScreen;
@@ -34993,7 +35038,7 @@ angular.module('app').directive('lockScreen', function () {
       });
     }
   };
-}).controller('NotesCtrl', ['authManager', '$timeout', '$rootScope', 'modelManager', 'storageManager', function (authManager, $timeout, $rootScope, modelManager, storageManager) {
+}).controller('NotesCtrl', function (authManager, $timeout, $rootScope, modelManager, storageManager) {
   var _this13 = this;
 
   this.panelController = {};
@@ -35227,7 +35272,7 @@ angular.module('app').directive('lockScreen', function () {
     authManager.setUserPrefValue("sortBy", this.sortBy);
     authManager.syncUserPreferences();
   };
-}]);
+});
 ;angular.module('app').directive("tagsSection", function () {
   return {
     restrict: 'E',
@@ -35262,7 +35307,7 @@ angular.module('app').directive('lockScreen', function () {
       });
     }
   };
-}).controller('TagsCtrl', ['$rootScope', 'modelManager', '$timeout', 'componentManager', 'authManager', function ($rootScope, modelManager, $timeout, componentManager, authManager) {
+}).controller('TagsCtrl', function ($rootScope, modelManager, $timeout, componentManager, authManager) {
   var _this15 = this;
 
   var initialLoad = true;
@@ -35385,7 +35430,7 @@ angular.module('app').directive('lockScreen', function () {
     });
     return validNotes.length;
   };
-}]);
+});
 ;var AppDomain = "org.standardnotes.sn";
 var dateFormatter;
 
@@ -35452,27 +35497,27 @@ var Item = function () {
   }, {
     key: 'notifyObserversOfChange',
     value: function notifyObserversOfChange() {
-      var _iteratorNormalCompletion9 = true;
-      var _didIteratorError9 = false;
-      var _iteratorError9 = undefined;
+      var _iteratorNormalCompletion11 = true;
+      var _didIteratorError11 = false;
+      var _iteratorError11 = undefined;
 
       try {
-        for (var _iterator9 = this.observers[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-          var observer = _step9.value;
+        for (var _iterator11 = this.observers[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+          var observer = _step11.value;
 
           observer.callback(this);
         }
       } catch (err) {
-        _didIteratorError9 = true;
-        _iteratorError9 = err;
+        _didIteratorError11 = true;
+        _iteratorError11 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion9 && _iterator9.return) {
-            _iterator9.return();
+          if (!_iteratorNormalCompletion11 && _iterator11.return) {
+            _iterator11.return();
           }
         } finally {
-          if (_didIteratorError9) {
-            throw _iteratorError9;
+          if (_didIteratorError11) {
+            throw _iteratorError11;
           }
         }
       }
@@ -35480,7 +35525,9 @@ var Item = function () {
   }, {
     key: 'mapContentToLocalProperties',
     value: function mapContentToLocalProperties(contentObj) {
-      this.appData = contentObj.appData;
+      if (contentObj.appData) {
+        this.appData = contentObj.appData;
+      }
       if (!this.appData) {
         this.appData = {};
       }
@@ -35602,27 +35649,27 @@ var Item = function () {
     key: 'isItemContentEqualWith',
     value: function isItemContentEqualWith(otherItem) {
       var omit = function omit(obj, keys) {
-        var _iteratorNormalCompletion10 = true;
-        var _didIteratorError10 = false;
-        var _iteratorError10 = undefined;
+        var _iteratorNormalCompletion12 = true;
+        var _didIteratorError12 = false;
+        var _iteratorError12 = undefined;
 
         try {
-          for (var _iterator10 = keys[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-            var key = _step10.value;
+          for (var _iterator12 = keys[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+            var key = _step12.value;
 
             delete obj[key];
           }
         } catch (err) {
-          _didIteratorError10 = true;
-          _iteratorError10 = err;
+          _didIteratorError12 = true;
+          _iteratorError12 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion10 && _iterator10.return) {
-              _iterator10.return();
+            if (!_iteratorNormalCompletion12 && _iterator12.return) {
+              _iterator12.return();
             }
           } finally {
-            if (_didIteratorError10) {
-              throw _iteratorError10;
+            if (_didIteratorError12) {
+              throw _iteratorError12;
             }
           }
         }
@@ -36103,8 +36150,8 @@ var Action = function Action(json) {
   }
 };
 
-var Extension = function (_Item5) {
-  _inherits(Extension, _Item5);
+var Extension = function (_Component) {
+  _inherits(Extension, _Component);
 
   function Extension(json) {
     _classCallCheck(this, Extension);
@@ -36134,9 +36181,7 @@ var Extension = function (_Item5) {
     key: 'mapContentToLocalProperties',
     value: function mapContentToLocalProperties(content) {
       _get(Extension.prototype.__proto__ || Object.getPrototypeOf(Extension.prototype), 'mapContentToLocalProperties', this).call(this, content);
-      this.name = content.name;
       this.description = content.description;
-      this.url = content.url;
 
       this.supported_types = content.supported_types;
       if (content.actions) {
@@ -36146,16 +36191,9 @@ var Extension = function (_Item5) {
       }
     }
   }, {
-    key: 'referenceParams',
-    value: function referenceParams() {
-      return null;
-    }
-  }, {
     key: 'structureParams',
     value: function structureParams() {
       var params = {
-        name: this.name,
-        url: this.url,
         description: this.description,
         actions: this.actions,
         supported_types: this.supported_types
@@ -36172,11 +36210,11 @@ var Extension = function (_Item5) {
   }]);
 
   return Extension;
-}(Item);
+}(Component);
 
 ;
-var Note = function (_Item6) {
-  _inherits(Note, _Item6);
+var Note = function (_Item5) {
+  _inherits(Note, _Item5);
 
   function Note(json_obj) {
     _classCallCheck(this, Note);
@@ -36269,28 +36307,28 @@ var Note = function (_Item6) {
   }, {
     key: 'informReferencesOfUUIDChange',
     value: function informReferencesOfUUIDChange(oldUUID, newUUID) {
-      var _iteratorNormalCompletion11 = true;
-      var _didIteratorError11 = false;
-      var _iteratorError11 = undefined;
+      var _iteratorNormalCompletion13 = true;
+      var _didIteratorError13 = false;
+      var _iteratorError13 = undefined;
 
       try {
-        for (var _iterator11 = this.tags[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-          var tag = _step11.value;
+        for (var _iterator13 = this.tags[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+          var tag = _step13.value;
 
           _.pull(tag.notes, { uuid: oldUUID });
           tag.notes.push(this);
         }
       } catch (err) {
-        _didIteratorError11 = true;
-        _iteratorError11 = err;
+        _didIteratorError13 = true;
+        _iteratorError13 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion11 && _iterator11.return) {
-            _iterator11.return();
+          if (!_iteratorNormalCompletion13 && _iterator13.return) {
+            _iterator13.return();
           }
         } finally {
-          if (_didIteratorError11) {
-            throw _iteratorError11;
+          if (_didIteratorError13) {
+            throw _iteratorError13;
           }
         }
       }
@@ -36339,8 +36377,8 @@ var Note = function (_Item6) {
 }(Item);
 
 ;
-var Tag = function (_Item7) {
-  _inherits(Tag, _Item7);
+var Tag = function (_Item6) {
+  _inherits(Tag, _Item6);
 
   function Tag(json_obj) {
     _classCallCheck(this, Tag);
@@ -36430,28 +36468,28 @@ var Tag = function (_Item7) {
   }, {
     key: 'informReferencesOfUUIDChange',
     value: function informReferencesOfUUIDChange(oldUUID, newUUID) {
-      var _iteratorNormalCompletion12 = true;
-      var _didIteratorError12 = false;
-      var _iteratorError12 = undefined;
+      var _iteratorNormalCompletion14 = true;
+      var _didIteratorError14 = false;
+      var _iteratorError14 = undefined;
 
       try {
-        for (var _iterator12 = this.notes[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-          var note = _step12.value;
+        for (var _iterator14 = this.notes[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+          var note = _step14.value;
 
           _.pull(note.tags, { uuid: oldUUID });
           note.tags.push(this);
         }
       } catch (err) {
-        _didIteratorError12 = true;
-        _iteratorError12 = err;
+        _didIteratorError14 = true;
+        _iteratorError14 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion12 && _iterator12.return) {
-            _iterator12.return();
+          if (!_iteratorNormalCompletion14 && _iterator14.return) {
+            _iterator14.return();
           }
         } finally {
-          if (_didIteratorError12) {
-            throw _iteratorError12;
+          if (_didIteratorError14) {
+            throw _iteratorError14;
           }
         }
       }
@@ -36483,8 +36521,8 @@ var Tag = function (_Item7) {
 }(Item);
 
 ;
-var Theme = function (_Component) {
-  _inherits(Theme, _Component);
+var Theme = function (_Component2) {
+  _inherits(Theme, _Component2);
 
   function Theme(json_obj) {
     _classCallCheck(this, Theme);
@@ -36506,8 +36544,8 @@ var Theme = function (_Component) {
 }(Component);
 
 ;
-var EncryptedStorage = function (_Item8) {
-  _inherits(EncryptedStorage, _Item8);
+var EncryptedStorage = function (_Item7) {
+  _inherits(EncryptedStorage, _Item7);
 
   function EncryptedStorage(json_obj) {
     _classCallCheck(this, EncryptedStorage);
@@ -36619,16 +36657,13 @@ var ItemParams = function () {
 
 ;
 var ActionsManager = function () {
-  ActionsManager.$inject = ['httpManager', 'modelManager', 'authManager', 'syncManager', 'storageManager'];
-  function ActionsManager(httpManager, modelManager, authManager, syncManager, storageManager) {
+  function ActionsManager(httpManager, modelManager, authManager, syncManager) {
     _classCallCheck(this, ActionsManager);
 
     this.httpManager = httpManager;
     this.modelManager = modelManager;
     this.authManager = authManager;
-    this.enabledRepeatActionUrls = JSON.parse(storageManager.getItem("enabledRepeatActionUrls")) || [];
     this.syncManager = syncManager;
-    this.storageManager = storageManager;
   }
 
   _createClass(ActionsManager, [{
@@ -36637,45 +36672,6 @@ var ActionsManager = function () {
       return this.extensions.filter(function (ext) {
         return _.includes(ext.supported_types, item.content_type) || ext.actionsWithContextForItem(item).length > 0;
       });
-    }
-  }, {
-    key: 'actionWithURL',
-    value: function actionWithURL(url) {
-      var _iteratorNormalCompletion13 = true;
-      var _didIteratorError13 = false;
-      var _iteratorError13 = undefined;
-
-      try {
-        for (var _iterator13 = this.extensions[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-          var extension = _step13.value;
-
-          return _.find(extension.actions, { url: url });
-        }
-      } catch (err) {
-        _didIteratorError13 = true;
-        _iteratorError13 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion13 && _iterator13.return) {
-            _iterator13.return();
-          }
-        } finally {
-          if (_didIteratorError13) {
-            throw _iteratorError13;
-          }
-        }
-      }
-    }
-  }, {
-    key: 'addExtension',
-    value: function addExtension(url, callback) {
-      this.retrieveExtensionFromServer(url, callback);
-    }
-  }, {
-    key: 'deleteExtension',
-    value: function deleteExtension(extension) {
-      this.modelManager.setItemToBeDeleted(extension);
-      this.syncManager.sync(null);
     }
 
     /*
@@ -36686,7 +36682,6 @@ var ActionsManager = function () {
   }, {
     key: 'loadExtensionInContextOfItem',
     value: function loadExtensionInContextOfItem(extension, item, callback) {
-
       this.httpManager.getAbsolute(extension.url, { content_type: item.content_type, item_uuid: item.uuid }, function (response) {
         this.updateExtensionFromRemoteResponse(extension, response);
         callback && callback(extension);
@@ -36696,47 +36691,6 @@ var ActionsManager = function () {
           callback(null);
         }
       }.bind(this));
-    }
-
-    /*
-    Registers new extension and saves it to user's account
-    */
-
-  }, {
-    key: 'retrieveExtensionFromServer',
-    value: function retrieveExtensionFromServer(url, callback) {
-      this.httpManager.getAbsolute(url, {}, function (response) {
-        if ((typeof response === 'undefined' ? 'undefined' : _typeof(response)) !== 'object') {
-          callback(null);
-          return;
-        }
-        var ext = this.handleExtensionLoadExternalResponseItem(url, response);
-        if (callback) {
-          callback(ext);
-        }
-      }.bind(this), function (response) {
-        console.error("Error registering extension", response);
-        callback(null);
-      });
-    }
-  }, {
-    key: 'handleExtensionLoadExternalResponseItem',
-    value: function handleExtensionLoadExternalResponseItem(url, externalResponseItem) {
-      // Don't allow remote response to set these flags
-      delete externalResponseItem.uuid;
-
-      var extension = _.find(this.extensions, { url: url });
-      if (extension) {
-        this.updateExtensionFromRemoteResponse(extension, externalResponseItem);
-      } else {
-        extension = new Extension(externalResponseItem);
-        extension.url = url;
-        extension.setDirty(true);
-        this.modelManager.addItem(extension);
-        this.syncManager.sync(null);
-      }
-
-      return extension;
     }
   }, {
     key: 'updateExtensionFromRemoteResponse',
@@ -36754,36 +36708,6 @@ var ActionsManager = function () {
         });
       } else {
         extension.actions = [];
-      }
-    }
-  }, {
-    key: 'refreshExtensionsFromServer',
-    value: function refreshExtensionsFromServer() {
-      var _iteratorNormalCompletion14 = true;
-      var _didIteratorError14 = false;
-      var _iteratorError14 = undefined;
-
-      try {
-        for (var _iterator14 = this.extensions[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-          var ext = _step14.value;
-
-          this.retrieveExtensionFromServer(ext.url, function (extension) {
-            extension.setDirty(true);
-          });
-        }
-      } catch (err) {
-        _didIteratorError14 = true;
-        _iteratorError14 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion14 && _iterator14.return) {
-            _iterator14.return();
-          }
-        } finally {
-          if (_didIteratorError14) {
-            throw _iteratorError14;
-          }
-        }
       }
     }
   }, {
@@ -36895,26 +36819,6 @@ var ActionsManager = function () {
       action.lastExecuted = new Date();
     }
   }, {
-    key: 'isRepeatActionEnabled',
-    value: function isRepeatActionEnabled(action) {
-      return _.includes(this.enabledRepeatActionUrls, action.url);
-    }
-  }, {
-    key: 'queueAction',
-    value: function queueAction(action, extension, delay, changedItems) {
-      this.actionQueue = this.actionQueue || [];
-      if (_.find(this.actionQueue, { url: action.url })) {
-        return;
-      }
-
-      this.actionQueue.push(action);
-
-      setTimeout(function () {
-        this.triggerWatchAction(action, extension, changedItems);
-        _.pull(this.actionQueue, action);
-      }.bind(this), delay * 1000);
-    }
-  }, {
     key: 'outgoingParamsForItem',
     value: function outgoingParamsForItem(item, extension) {
       var decrypted = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
@@ -36961,9 +36865,9 @@ angular.module('app').service('actionsManager', ActionsManager);
     return domain;
   }
 
-  this.$get = ['$rootScope', '$timeout', 'httpManager', 'modelManager', 'dbManager', 'storageManager', 'singletonManager', function ($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager, singletonManager) {
+  this.$get = function ($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager, singletonManager) {
     return new AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager, singletonManager);
-  }];
+  };
 
   function AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager, singletonManager) {
     var _this25 = this;
@@ -37288,7 +37192,6 @@ angular.module('app').service('actionsManager', ActionsManager);
 var ClientDataDomain = "org.standardnotes.sn.components";
 
 var ComponentManager = function () {
-  ComponentManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'desktopManager', 'sysExtManager', '$timeout', '$compile'];
   function ComponentManager($rootScope, modelManager, syncManager, desktopManager, sysExtManager, $timeout, $compile) {
     var _this26 = this;
 
@@ -37299,6 +37202,7 @@ var ComponentManager = function () {
     this.modelManager = modelManager;
     this.syncManager = syncManager;
     this.desktopManager = desktopManager;
+    this.sysExtManager = sysExtManager;
     this.timeout = $timeout;
     this.streamObservers = [];
     this.contextStreamObservers = [];
@@ -37619,7 +37523,7 @@ var ComponentManager = function () {
       if (source && source == ModelManager.MappingSourceRemoteSaved) {
         params.isMetadataUpdate = true;
       }
-      this.removePrivatePropertiesFromResponseItems([params]);
+      this.removePrivatePropertiesFromResponseItems([params], component);
       return params;
     }
   }, {
@@ -37746,6 +37650,8 @@ var ComponentManager = function () {
         this.handleToggleComponentMessage(component, componentToToggle, message);
       } else if (message.action === "request-permissions") {
         this.handleRequestPermissionsMessage(component, message);
+      } else if (message.action === "install-local-component") {
+        this.handleInstallLocalComponentMessage(component, message);
       }
 
       // Notify observers
@@ -37785,11 +37691,21 @@ var ComponentManager = function () {
     }
   }, {
     key: 'removePrivatePropertiesFromResponseItems',
-    value: function removePrivatePropertiesFromResponseItems(responseItems, includeUrls) {
+    value: function removePrivatePropertiesFromResponseItems(responseItems, component) {
+      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+      if (component) {
+        // System extensions can bypass this step
+        if (this.sysExtManager.isSystemExtension(component)) {
+          return;
+        }
+      }
       // Don't allow component to overwrite these properties.
-      var privateProperties = ["appData", "autoupdateDisabled", "permissions", "active", "encrypted"];
-      if (includeUrls) {
-        privateProperties = privateProperties.concat(["url", "hosted_url", "local_url"]);
+      var privateProperties = ["appData", "autoupdateDisabled", "permissions", "active"];
+      if (options) {
+        if (options.includeUrls) {
+          privateProperties = privateProperties.concat(["url", "hosted_url", "local_url"]);
+        }
       }
       var _iteratorNormalCompletion24 = true;
       var _didIteratorError24 = false;
@@ -37812,7 +37728,7 @@ var ComponentManager = function () {
             for (var _iterator25 = privateProperties[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
               var prop = _step25.value;
 
-              delete responseItem[prop];
+              delete responseItem.content[prop];
             }
           } catch (err) {
             _didIteratorError25 = true;
@@ -38010,7 +37926,7 @@ var ComponentManager = function () {
 
       this.runWithPermissions(component, requiredPermissions, function () {
 
-        _this29.removePrivatePropertiesFromResponseItems(responseItems, { includeUrls: true });
+        _this29.removePrivatePropertiesFromResponseItems(responseItems, component, { includeUrls: true });
 
         /*
         We map the items here because modelManager is what updates the UI. If you were to instead get the items directly,
@@ -38069,7 +37985,7 @@ var ComponentManager = function () {
 
       this.runWithPermissions(component, requiredPermissions, function () {
         var responseItem = message.data.item;
-        _this30.removePrivatePropertiesFromResponseItems([responseItem]);
+        _this30.removePrivatePropertiesFromResponseItems([responseItem], component);
         var item = _this30.modelManager.createItem(responseItem);
         if (responseItem.clientData) {
           item.setDomainDataItem(component.url || component.uuid, responseItem.clientData, ClientDataDomain);
@@ -38168,6 +38084,17 @@ var ComponentManager = function () {
           this.activateComponent(targetComponent);
         }
       }
+    }
+  }, {
+    key: 'handleInstallLocalComponentMessage',
+    value: function handleInstallLocalComponentMessage(sourceComponent, message) {
+      // Only extensions manager has this permission
+      if (!this.sysExtManager.isSystemExtension(sourceComponent)) {
+        return;
+      }
+
+      var targetComponent = this.modelManager.findItem(message.data.uuid);
+      this.desktopManager.installComponent(targetComponent);
     }
   }, {
     key: 'runWithPermissions',
@@ -38323,25 +38250,8 @@ var ComponentManager = function () {
     value: function openModalComponent(component) {
       var scope = this.$rootScope.$new(true);
       scope.component = component;
-      scope.onDismiss = function () {};
       var el = this.$compile("<component-modal component='component' class='modal'></component-modal>")(scope);
       angular.element(document.body).append(el);
-    }
-  }, {
-    key: 'installComponent',
-    value: function installComponent(url) {
-      var name = getParameterByName("name", url);
-      var area = getParameterByName("area", url);
-      var component = this.modelManager.createItem({
-        content_type: "SN|Component",
-        url: url,
-        name: name,
-        area: area
-      });
-
-      this.modelManager.addItem(component);
-      component.setDirty(true);
-      this.syncManager.sync("installComponent");
     }
   }, {
     key: 'activateComponent',
@@ -38735,7 +38645,6 @@ angular.module('app').service('dbManager', DBManager);
 ; // An interface used by the Desktop app to interact with SN
 
 var DesktopManager = function () {
-  DesktopManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'authManager', 'passcodeManager'];
   function DesktopManager($rootScope, modelManager, syncManager, authManager, passcodeManager) {
     var _this34 = this;
 
@@ -38785,30 +38694,32 @@ var DesktopManager = function () {
     value: function syncComponentsInstallation(components) {
       var _this35 = this;
 
-      // console.log("Web Syncing Components", components);
       if (!this.isDesktop) return;
 
       var data = components.map(function (component) {
-        console.log("Web Sycying Component", _this35.convertComponentForTransmission(component));
         return _this35.convertComponentForTransmission(component);
       });
       this.installationSyncHandler(data);
     }
   }, {
-    key: 'desktop_onComponentInstallationComplete',
-    value: function desktop_onComponentInstallationComplete(componentData) {
-      console.log("Web|Component Installation Complete", componentData);
-      var component = this.modelManager.mapResponseItemsToLocalModels([componentData], ModelManager.MappingSourceDesktopInstalled)[0];
-      component.setDirty(true);
-      this.syncManager.sync("desktop_onComponentInstallationComplete");
+    key: 'installComponent',
+    value: function installComponent(component) {
+      this.installComponentHandler(this.convertComponentForTransmission(component));
     }
   }, {
-    key: 'desktop_updateComponentComplete',
-    value: function desktop_updateComponentComplete(componentData) {
-      console.log("Web|Component Update Complete", componentData);
-      var component = this.modelManager.mapResponseItemsToLocalModels([componentData], ModelManager.MappingSourceDesktopInstalled)[0];
+    key: 'desktop_onComponentInstallationComplete',
+    value: function desktop_onComponentInstallationComplete(componentData, error) {
+      console.log("Web|Component Installation/Update Complete", componentData, error);
+      var component = this.modelManager.findItem(componentData.uuid);
+      if (error) {
+        component = this.modelManager.findItem(componentData.uuid);
+        component.setAppDataItem("installError", error);
+      } else {
+        component = this.modelManager.mapResponseItemsToLocalModels([componentData], ModelManager.MappingSourceDesktopInstalled)[0];
+        component.setAppDataItem("installError", null);
+      }
       component.setDirty(true);
-      this.syncManager.sync("desktop_updateComponentComplete");
+      this.syncManager.sync("onComponentInstallationComplete");
     }
 
     /* Used to resolve "sn://" */
@@ -38824,9 +38735,9 @@ var DesktopManager = function () {
       this.installationSyncHandler = handler;
     }
   }, {
-    key: 'desktop_setOfflineComponentInstallationHandler',
-    value: function desktop_setOfflineComponentInstallationHandler(handler) {
-      this.componentInstallationHandler = handler;
+    key: 'desktop_setInstallComponentHandler',
+    value: function desktop_setInstallComponentHandler(handler) {
+      this.installComponentHandler = handler;
     }
   }, {
     key: 'desktop_setInitialDataLoadHandler',
@@ -38867,7 +38778,6 @@ var DesktopManager = function () {
 angular.module('app').service('desktopManager', DesktopManager);
 ;
 var HttpManager = function () {
-  HttpManager.$inject = ['$timeout', 'storageManager'];
   function HttpManager($timeout, storageManager) {
     _classCallCheck(this, HttpManager);
 
@@ -38956,7 +38866,6 @@ var HttpManager = function () {
 angular.module('app').service('httpManager', HttpManager);
 ;
 var MigrationManager = function () {
-  MigrationManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'componentManager'];
   function MigrationManager($rootScope, modelManager, syncManager, componentManager) {
     var _this36 = this;
 
@@ -39092,7 +39001,6 @@ var MigrationManager = function () {
 angular.module('app').service('migrationManager', MigrationManager);
 ;
 var ModelManager = function () {
-  ModelManager.$inject = ['storageManager'];
   function ModelManager(storageManager) {
     _classCallCheck(this, ModelManager);
 
@@ -39748,58 +39656,11 @@ var ModelManager = function () {
 }();
 
 angular.module('app').service('modelManager', ModelManager);
-;
-var PackageManager = function () {
-  PackageManager.$inject = ['httpManager', 'modelManager', 'syncManager', 'componentManager'];
-  function PackageManager(httpManager, modelManager, syncManager, componentManager) {
-    _classCallCheck(this, PackageManager);
-
-    this.httpManager = httpManager;
-    this.modelManager = modelManager;
-    this.syncManager = syncManager;
-    this.componentManager = componentManager;
-  }
-
-  _createClass(PackageManager, [{
-    key: 'installPackage',
-    value: function installPackage(url, callback) {
-      this.httpManager.getAbsolute(url, {}, function (aPackage) {
-        console.log("Got package data", aPackage);
-        if ((typeof aPackage === 'undefined' ? 'undefined' : _typeof(aPackage)) !== 'object') {
-          callback(null);
-          return;
-        }
-
-        // Remove private properties
-        this.componentManager.removePrivatePropertiesFromResponseItems([aPackage]);
-
-        aPackage.package_info = Object.assign({}, aPackage);
-
-        var assembled = this.modelManager.createItem(aPackage);;
-        this.modelManager.addItem(assembled);
-
-        assembled.setDirty(true);
-        this.syncManager.sync("installPackage");
-
-        console.log("Created assembled", assembled);
-
-        callback && callback(assembled);
-      }.bind(this), function (response) {
-        console.error("Error retrieving package", response);
-        callback(null);
-      });
-    }
-  }]);
-
-  return PackageManager;
-}();
-
-angular.module('app').service('packageManager', PackageManager);
 ;angular.module('app').provider('passcodeManager', function () {
 
-  this.$get = ['$rootScope', '$timeout', 'modelManager', 'dbManager', 'authManager', 'storageManager', function ($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
+  this.$get = function ($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
     return new PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager);
-  }];
+  };
 
   function PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
     var _this39 = this;
@@ -39891,7 +39752,6 @@ angular.module('app').service('packageManager', PackageManager);
   */
 
 var SingletonManager = function () {
-  SingletonManager.$inject = ['$rootScope', 'modelManager'];
   function SingletonManager($rootScope, modelManager) {
     var _this40 = this;
 
@@ -40190,7 +40050,6 @@ var MemoryStorage = function () {
 }();
 
 var StorageManager = function () {
-  StorageManager.$inject = ['dbManager'];
   function StorageManager(dbManager) {
     _classCallCheck(this, StorageManager);
 
@@ -40434,7 +40293,6 @@ StorageManager.Fixed = "Fixed"; // localStorage
 angular.module('app').service('storageManager', StorageManager);
 ;
 var SyncManager = function () {
-  SyncManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'dbManager', 'httpManager', '$interval', '$timeout', 'storageManager', 'passcodeManager'];
   function SyncManager($rootScope, modelManager, authManager, dbManager, httpManager, $interval, $timeout, storageManager, passcodeManager) {
     _classCallCheck(this, SyncManager);
 
@@ -40992,7 +40850,6 @@ angular.module('app').service('syncManager', SyncManager);
 ; /* A class for handling installation of system extensions */
 
 var SysExtManager = function () {
-  SysExtManager.$inject = ['modelManager', 'syncManager', 'singletonManager'];
   function SysExtManager(modelManager, syncManager, singletonManager) {
     _classCallCheck(this, SysExtManager);
 
@@ -41000,18 +40857,26 @@ var SysExtManager = function () {
     this.syncManager = syncManager;
     this.singletonManager = singletonManager;
 
+    this.extensionsIdentifier = "org.standardnotes.extensions-manager";
+    this.systemExtensions = [];
+
     this.resolveExtensionsManager();
   }
 
   _createClass(SysExtManager, [{
+    key: 'isSystemExtension',
+    value: function isSystemExtension(extension) {
+      return this.systemExtensions.includes(extension.uuid);
+    }
+  }, {
     key: 'resolveExtensionsManager',
     value: function resolveExtensionsManager() {
       var _this45 = this;
 
-      var extensionsIdentifier = "org.standardnotes.extensions-manager";
-
-      this.singletonManager.registerSingleton({ content_type: "SN|Component", package_info: { identifier: extensionsIdentifier } }, function (resolvedSingleton) {
+      this.singletonManager.registerSingleton({ content_type: "SN|Component", package_info: { identifier: this.extensionsIdentifier } }, function (resolvedSingleton) {
         // Resolved Singleton
+        _this45.systemExtensions.push(resolvedSingleton.uuid);
+
         var needsSync = false;
         if (isDesktopApplication()) {
           if (!resolvedSingleton.local_url) {
@@ -41040,7 +40905,7 @@ var SysExtManager = function () {
 
         var packageInfo = {
           name: "Extensions",
-          identifier: extensionsIdentifier
+          identifier: _this45.extensionsIdentifier
         };
 
         var item = {
@@ -41068,6 +40933,8 @@ var SysExtManager = function () {
         component.setDirty(true);
         _this45.syncManager.sync("resolveExtensionsManager createNew");
 
+        _this45.systemExtensions.push(component.uuid);
+
         valueCallback(component);
       });
     }
@@ -41079,7 +40946,6 @@ var SysExtManager = function () {
 angular.module('app').service('sysExtManager', SysExtManager);
 ;
 var ThemeManager = function () {
-  ThemeManager.$inject = ['componentManager'];
   function ThemeManager(componentManager) {
     var _this46 = this;
 
@@ -41123,16 +40989,16 @@ var ThemeManager = function () {
 }();
 
 angular.module('app').service('themeManager', ThemeManager);
-;angular.module('app').filter('appDate', ['$filter', function ($filter) {
+;angular.module('app').filter('appDate', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy', 'UTC') : '';
   };
-}]).filter('appDateTime', ['$filter', function ($filter) {
+}).filter('appDateTime', function ($filter) {
   return function (input) {
     return input ? $filter('date')(new Date(input), 'MM/dd/yyyy h:mm a') : '';
   };
-}]);
-;angular.module('app').filter('sortBy', ['$filter', function ($filter) {
+});
+;angular.module('app').filter('sortBy', function ($filter) {
   return function (items, sortBy) {
     var sortValueFn = function sortValueFn(a, b) {
       var pinCheck = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
@@ -41181,7 +41047,7 @@ angular.module('app').service('themeManager', ThemeManager);
       return sortValueFn(a, b);
     });
   };
-}]);
+});
 ;angular.module('app').filter('startFrom', function () {
   return function (input, start) {
     return input.slice(start);
@@ -41231,7 +41097,7 @@ angular.module('app').service('themeManager', ThemeManager);
     }
   };
 }]);
-;angular.module('app').directive('delayHide', ['$timeout', function ($timeout) {
+;angular.module('app').directive('delayHide', function ($timeout) {
   return {
     restrict: 'A',
     scope: {
@@ -41274,7 +41140,7 @@ angular.module('app').service('themeManager', ThemeManager);
     }
 
   };
-}]);
+});
 ;angular.module('app').directive('fileChange', function () {
   return {
     restrict: 'A',
@@ -41353,7 +41219,7 @@ var AccountMenu = function () {
 
   _createClass(AccountMenu, [{
     key: 'controller',
-    value: ['$scope', '$rootScope', 'authManager', 'modelManager', 'syncManager', 'dbManager', 'passcodeManager', '$timeout', 'storageManager', function controller($scope, $rootScope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
+    value: function controller($scope, $rootScope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
       'ngInject';
 
       $scope.formData = { mergeLocal: true, url: syncManager.serverURL, ephemeral: false };
@@ -41361,7 +41227,9 @@ var AccountMenu = function () {
       $scope.server = syncManager.serverURL;
 
       $scope.close = function () {
-        $scope.closeFunction()();
+        $timeout(function () {
+          $scope.closeFunction()();
+        });
       };
 
       $scope.encryptedBackupsAvailable = function () {
@@ -41915,7 +41783,7 @@ var AccountMenu = function () {
       $scope.isDesktopApplication = function () {
         return isDesktopApplication();
       };
-    }]
+    }
   }]);
 
   return AccountMenu;
@@ -41938,7 +41806,7 @@ var ActionsMenu = function () {
 
   _createClass(ActionsMenu, [{
     key: 'controller',
-    value: ['$scope', 'modelManager', 'actionsManager', function controller($scope, modelManager, actionsManager) {
+    value: function controller($scope, modelManager, actionsManager) {
       'ngInject';
 
       $scope.renderData = {};
@@ -42034,7 +41902,7 @@ var ActionsMenu = function () {
           };
         });
       };
-    }]
+    }
   }]);
 
   return ActionsMenu;
@@ -42065,23 +41933,16 @@ var ComponentModal = function () {
     }
   }, {
     key: 'controller',
-    value: ['$scope', '$timeout', 'componentManager', function controller($scope, $timeout, componentManager) {
+    value: function controller($scope, $timeout, componentManager) {
       'ngInject';
 
-      if ($scope.component.directiveController) {
-        $scope.component.directiveController.dismiss = function (callback) {
-          $scope.dismiss(callback);
-        };
-      }
-
       $scope.dismiss = function (callback) {
-        var onDismiss = $scope.component.directiveController && $scope.component.directiveController.onDismiss();
         $scope.el.remove();
         $scope.$destroy();
-        onDismiss && onDismiss();
+        $scope.onDismiss && $scope.onDismiss() && $scope.onDismiss()($scope.component);
         callback && callback();
       };
-    }]
+    }
   }]);
 
   return ComponentModal;
@@ -42115,7 +41976,7 @@ var ComponentView = function () {
 
       $scope.identifier = "component-view-" + Math.random();
 
-      console.log("Registering handler", $scope.identifier, $scope.component.name);
+      // console.log("Registering handler", $scope.identifier, $scope.component.name);
 
       this.componentManager.registerHandler({ identifier: $scope.identifier, areas: [$scope.component.area], activationHandler: function activationHandler(component) {
           if (component.active) {
@@ -42141,7 +42002,7 @@ var ComponentView = function () {
     }
   }, {
     key: 'controller',
-    value: ['$scope', '$timeout', 'componentManager', 'desktopManager', function controller($scope, $timeout, componentManager, desktopManager) {
+    value: function controller($scope, $timeout, componentManager, desktopManager) {
       'ngInject';
 
       this.componentValueChanging = function (component, prevComponent) {
@@ -42185,21 +42046,21 @@ var ComponentView = function () {
       };
 
       $scope.$on("$destroy", function () {
-        console.log("Deregistering handler", $scope.identifier, $scope.component.name);
+        // console.log("Deregistering handler", $scope.identifier, $scope.component.name);
         componentManager.deregisterHandler($scope.identifier);
         if ($scope.component && !$scope.manualDealloc) {
           componentManager.deactivateComponent($scope.component);
         }
       });
-    }]
+    }
   }]);
 
   return ComponentView;
 }();
 
-angular.module('app').directive('componentView', ['componentManager', '$timeout', function (componentManager, $timeout) {
+angular.module('app').directive('componentView', function (componentManager, $timeout) {
   return new ComponentView(componentManager, $timeout);
-}]);
+});
 ;
 var EditorMenu = function () {
   function EditorMenu() {
@@ -42215,7 +42076,7 @@ var EditorMenu = function () {
 
   _createClass(EditorMenu, [{
     key: 'controller',
-    value: ['$scope', 'componentManager', 'syncManager', '$timeout', function controller($scope, componentManager, syncManager, $timeout) {
+    value: function controller($scope, componentManager, syncManager, $timeout) {
       'ngInject';
 
       $scope.formData = {};
@@ -42273,7 +42134,7 @@ var EditorMenu = function () {
 
         $scope.defaultEditor = null;
       };
-    }]
+    }
   }]);
 
   return EditorMenu;
@@ -42306,14 +42167,14 @@ var MenuRow = function () {
 
   _createClass(MenuRow, [{
     key: 'controller',
-    value: ['$scope', 'componentManager', function controller($scope, componentManager) {
+    value: function controller($scope, componentManager) {
       'ngInject';
 
       $scope.clickButton = function ($event) {
         $event.stopPropagation();
         $scope.buttonAction();
       };
-    }]
+    }
   }]);
 
   return MenuRow;
@@ -42358,7 +42219,7 @@ var PanelResizer = function () {
     }
   }, {
     key: 'controller',
-    value: ['$scope', '$element', 'modelManager', 'actionsManager', function controller($scope, $element, modelManager, actionsManager) {
+    value: function controller($scope, $element, modelManager, actionsManager) {
       'ngInject';
 
       var panel = document.getElementById($scope.panelId);
@@ -42526,7 +42387,7 @@ var PanelResizer = function () {
           $scope.finishSettingWidth();
         }
       });
-    }]
+    }
   }]);
 
   return PanelResizer;
@@ -43034,13 +42895,8 @@ angular.module('app').directive('permissionsModal', function () {
     "      </div>\n" +
     "      <menu-row circle=\"selectedEditor == null &amp;&amp; 'success'\" ng-click='selectComponent($event, null)' title=\"'Plain Editor'\"></menu-row>\n" +
     "      <menu-row button-action='toggleDefaultForEditor(editor)' button-class=\"defaultEditor == editor ? 'warning' : 'info'\" button-text=\"defaultEditor == editor ? 'Undefault' : 'Set Default'\" circle=\"selectedEditor === editor &amp;&amp; 'success'\" has-button='selectedEditor == editor || defaultEditor == editor' ng-click='selectComponent($event, editor)' ng-repeat='editor in editors' title='editor.name'>\n" +
-    "        <div class='row' ng-if='component.conflict_of || offlineAvailableForComponent(editor)'>\n" +
-    "          <div class='column'>\n" +
-    "            <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
-    "            <div class='sublabel' ng-if='offlineAvailableForComponent(editor)'>\n" +
-    "              Available Offline\n" +
-    "            </div>\n" +
-    "          </div>\n" +
+    "        <div class='column' ng-if='component.conflict_of'>\n" +
+    "          <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
     "        </div>\n" +
     "      </menu-row>\n" +
     "      <a class='no-decoration' href='https://standardnotes.org/extensions' ng-if='editors.length == 0' target='blank'>\n" +
@@ -43052,13 +42908,8 @@ angular.module('app').directive('permissionsModal', function () {
     "        <h4 class='title'>Editor Stack</h4>\n" +
     "      </div>\n" +
     "      <menu-row circle=\"component.active ? 'success' : 'danger'\" ng-click='selectComponent($event, component)' ng-repeat='component in stack' title='component.name'>\n" +
-    "        <div class='row' ng-if='component.conflict_of || offlineAvailableForComponent(component)'>\n" +
-    "          <div class='column'>\n" +
-    "            <strong class='red medium' ng-if='component.conflict_of'>Conflicted copy</strong>\n" +
-    "            <div class='sublabel' ng-if='offlineAvailableForComponent(component)'>\n" +
-    "              Available Offline\n" +
-    "            </div>\n" +
-    "          </div>\n" +
+    "        <div class='column' ng-if='component.conflict_of'>\n" +
+    "          <strong class='red medium' ng-if='component.conflict_of'>Conflicted copy</strong>\n" +
     "        </div>\n" +
     "      </menu-row>\n" +
     "    </div>\n" +
@@ -43349,13 +43200,13 @@ angular.module('app').directive('permissionsModal', function () {
     "              <div class='header'>\n" +
     "                <h4 class='title'>Note Options</h4>\n" +
     "              </div>\n" +
-    "              <menu-row ng-click='ctrl.selectedMenuItem($event); ctrl.togglePin()' title=\"ctrl.note.pinned ? 'Unpin' : 'Pin'\"></menu-row>\n" +
-    "              <menu-row ng-click='ctrl.selectedMenuItem($event); ctrl.toggleArchiveNote()' title=\"ctrl.note.archived ? 'Unarchive' : 'Archive'\"></menu-row>\n" +
+    "              <menu-row ng-click='ctrl.selectedMenuItem($event, true); ctrl.togglePin()' title=\"ctrl.note.pinned ? 'Unpin' : 'Pin'\"></menu-row>\n" +
+    "              <menu-row ng-click='ctrl.selectedMenuItem($event, true); ctrl.toggleArchiveNote()' title=\"ctrl.note.archived ? 'Unarchive' : 'Archive'\"></menu-row>\n" +
     "              <menu-row ng-click='ctrl.selectedMenuItem($event); ctrl.deleteNote()' title=\"'Delete'\"></menu-row>\n" +
     "            </div>\n" +
     "            <div class='section' ng-if='!ctrl.selectedEditor'>\n" +
     "              <div class='header'>\n" +
-    "                <h4 class='title'>Display</h4>\n" +
+    "                <h4 class='title'>Global Display</h4>\n" +
     "              </div>\n" +
     "              <menu-row circle=\"ctrl.monospaceFont ? 'success' : 'default'\" ng-click=\"ctrl.selectedMenuItem($event, true); ctrl.toggleKey('monospaceFont')\" title=\"'Monospace Font'\"></menu-row>\n" +
     "              <menu-row circle=\"ctrl.spellcheck ? 'success' : 'default'\" ng-click=\"ctrl.selectedMenuItem($event, true); ctrl.toggleKey('spellcheck')\" title=\"'Spellcheck'\"></menu-row>\n" +
@@ -43403,16 +43254,16 @@ angular.module('app').directive('permissionsModal', function () {
     "        <account-menu close-function='ctrl.closeAccountMenu' ng-click='$event.stopPropagation()' ng-if='ctrl.showAccountMenu' on-successful-auth='ctrl.onAuthSuccess'></account-menu>\n" +
     "      </div>\n" +
     "      <div class='item'>\n" +
-    "        <div class='label title' href='https://standardnotes.org/help' target='_blank'>\n" +
+    "        <a class='no-decoration label title' href='https://standardnotes.org/help' target='_blank'>\n" +
     "          Help\n" +
-    "        </div>\n" +
+    "        </a>\n" +
     "      </div>\n" +
     "      <div class='item border'></div>\n" +
     "      <div class='item' ng-repeat='room in ctrl.rooms track by room.uuid'>\n" +
     "        <div class='column' ng-click='ctrl.selectRoom(room)'>\n" +
     "          <div class='label'>{{room.name}}</div>\n" +
     "        </div>\n" +
-    "        <component-modal component='room' controller='room.directiveController' ng-if='room.showRoom'></component-modal>\n" +
+    "        <component-modal component='room' ng-if='room.showRoom' on-dismiss='ctrl.onRoomDismiss'></component-modal>\n" +
     "      </div>\n" +
     "    </div>\n" +
     "    <div class='right'>\n" +
@@ -43433,7 +43284,7 @@ angular.module('app').directive('permissionsModal', function () {
     "      <div class='item' ng-click='ctrl.refreshData()' ng-if='!ctrl.offline'>\n" +
     "        <div class='label'>Refresh</div>\n" +
     "      </div>\n" +
-    "      <div class='item' ng-if='ctrl.hasPasscode()'>\n" +
+    "      <div class='item' id='lock-item' ng-if='ctrl.hasPasscode()'>\n" +
     "        <div class='label'>\n" +
     "          <i class='icon ion-locked' ng-click='ctrl.lockApp()' ng-if='ctrl.hasPasscode()'></i>\n" +
     "        </div>\n" +

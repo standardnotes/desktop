@@ -8,19 +8,18 @@ var appPath = app.getPath('userData');
 var AdmZip = require('adm-zip');
 var compareVersions = require('compare-versions');
 
-let MappingFileLocation = appPath + "/packages/mapping.json";
+let ExtensionsFolderName = "Extensions";
+
+let MappingFileLocation = appPath + `/${ExtensionsFolderName}/mapping.json`;
 
 class PackageManager {
 
   constructor() {
     ipcMain.on('install-component', (event, data) => {
-      this.installComponent(data, (component) => {
-        this.window.webContents.send("install-component-complete", component);
-      });
+      this.installComponent(data);
     });
 
     ipcMain.on('sync-components', (event, data) => {
-      console.log("ipcMain received sync components message");
       this.syncComponents(data);
     });
   }
@@ -30,24 +29,30 @@ class PackageManager {
   }
 
   pathsForComponent(component) {
-    let relativePath = "packages/" + component.content.package_info.identifier;
+    let relativePath = `${ExtensionsFolderName}/` + component.content.package_info.identifier;
     return {
-      downloadPath: appPath + "/packages/downloads/" + component.content.name + ".zip",
+      downloadPath: appPath + `/${ExtensionsFolderName}/downloads/` + component.content.name + ".zip",
       relativePath: relativePath,
       absolutePath: appPath + "/" + relativePath
     }
   }
 
-  installComponent(component, callback) {
+  installComponent(component) {
     let downloadUrl = component.content.package_info.download_url;
-    console.log("Installing component", component.content.name, downloadUrl);
     if(!downloadUrl) {
       return;
     }
 
+    console.log("Installing component", component.content.name, downloadUrl);
+
+    let callback = (installedComponent, error) => {
+      console.log("Calling installComponent callback with error", error);
+      this.window.webContents.send("install-component-complete", {component: installedComponent, error: error});
+    }
+
     let paths = this.pathsForComponent(component);
 
-    this.downloadFile(component.content.package_info.download_url, paths.downloadPath, (error) => {
+    this.downloadFile(downloadUrl, paths.downloadPath, (error) => {
       if(!error) {
         // Delete any existing content, especially in the case of performing an update
         this.deleteAppRelativeDirectory(paths.relativePath);
@@ -59,26 +64,28 @@ class PackageManager {
               // Find out main file
               this.readJsonFile(paths.absolutePath + "/package.json", (response, error) => {
                 var main;
-                if(response && response.sn) { main = response["sn"]["main"]; }
+                if(response) {
+                  if(response.sn) { main = response["sn"]["main"]; }
+                  if(response.version) { component.content.package_info.version = response.version; }
+                }
                 if(!main) { main = "index.html"; }
 
                 component.content.local_url = "sn://" + paths.relativePath + "/" + main;
-                callback && callback(component);
+                callback(component);
 
                 // Update mapping file
                 this.updateMappingFile(component.uuid, paths.relativePath);
-                // // Make package.json file with component.content.package_info
-                // fs.writeFile(paths.absolutePath + "/package.json", JSON.stringify(component.content.package_info, null, 2), 'utf8', (err) => {
-                //   if(err) console.log(err);
-                // });
               })
             })
           } else {
             // Unzip error
+            console.log("Unzip error for", component.content.name);
+            callback(component, {tag: "error-unzipping"})
           }
         });
       } else {
         // Download error
+        callback(component, {tag: "error-downloading"})
       }
     });
   }
@@ -124,9 +131,7 @@ class PackageManager {
         var doesntExist = err && err.code === 'ENOENT';
         if(doesntExist || !component.content.local_url) {
           // Doesn't exist, install it
-          this.installComponent(component, (installedComponent) => {
-            this.window.webContents.send("install-component-complete", installedComponent);
-          });
+          this.installComponent(component);
         } else if(!component.content.autoupdateDisabled) {
           // Check for updates
           this.checkForUpdate(component);
@@ -144,7 +149,7 @@ class PackageManager {
       console.log("No latest url, skipping update", component.content.name);
       return;
     }
-    console.log("Checking for update for", component.content.name);
+    // console.log("Checking for update for", component.content.name, "current version", component.content.package_info.version);
     request.get(latestURL, (error, response, body) => {
       if(response.statusCode == 200) {
         var payload = JSON.parse(body);
@@ -153,9 +158,7 @@ class PackageManager {
           console.log("Downloading new version", payload.download_url);
           component.content.package_info.download_url = payload.download_url;
           component.content.package_info.version = payload.version;
-          this.installComponent(component, (component) => {
-            this.window.webContents.send("update-component-complete", component);
-          });
+          this.installComponent(component);
         }
       }
     })
@@ -193,7 +196,6 @@ class PackageManager {
   */
 
   readJsonFile(path, callback) {
-    console.log("Reading JSON file", path);
     fs.readFile(path, 'utf8', function (err, data) {
       if(err) {
         console.log("ERROR READING JSON FILE", path);
@@ -201,14 +203,13 @@ class PackageManager {
         return;
       }
       var obj = JSON.parse(data);
-      console.log("JSON result", obj);
       callback(obj);
     });
   }
 
   deleteAppRelativeDirectory(relativePath) {
+    console.log("Delete App Relative Directory", relativePath);
     let deleteDirectory = (dir_path) => {
-      console.log("Deleting directory", dir_path);
       if (fs.existsSync(dir_path)) {
         fs.readdirSync(dir_path).forEach((entry) => {
           var entry_path = path.join(dir_path, entry);
@@ -237,15 +238,26 @@ class PackageManager {
   downloadFile(url, filePath, callback) {
     this.ensureDirectoryExists(filePath);
 
+    // null callback after calliing because multiple '.on' could be called
+
     request(url)
-      .pipe(fs.createWriteStream(filePath))
       .on('error', function (err) {
         console.log('File download error', url,  err);
-        callback()
+        callback && callback()
+        callback = null;
       })
-      .on('close', function () {
+      .on('response', function(response) {
+        if(response.statusCode !== 200) {
+          console.log("File download not 200", url);
+          callback && callback(response);
+          callback = null;
+        }
+      })
+      .pipe(fs.createWriteStream(filePath))
+      .on('close', function() {
         console.log('File download success', url);
-        callback(null)
+        callback && callback(null)
+        callback = null;
       });
   }
 
@@ -272,7 +284,7 @@ class PackageManager {
     moves all that folders contents up by a level.
    */
   unnestPackageContents(directory, callback) {
-    console.log("unnestPackageContents", directory);
+    // console.log("unnestPackageContents", directory);
     fs.readdir(directory, (err, files) => {
       if(err) {
         callback();
@@ -308,7 +320,7 @@ class PackageManager {
   }
 
   copyFolderRecursiveSync(source, target, addBase) {
-    console.log("copyFolderRecursiveSync", source, target);
+    // console.log("copyFolderRecursiveSync", source, target);
     var files = [];
 
     // Check if folder needs to be created or integrated
