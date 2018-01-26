@@ -42013,7 +42013,7 @@ var ComponentView = function () {
         var expired, offlineRestricted, urlError;
 
         offlineRestricted = component.offlineOnly && !isDesktopApplication();
-        urlError = !isDesktopApplication() && (!component.url || component.hosted_url);
+        urlError = !isDesktopApplication() && !component.url && !component.hosted_url;
         expired = component.valid_until && component.valid_until <= new Date();
 
         $scope.componentValid = !offlineRestricted && !urlError && !expired;
@@ -42035,7 +42035,7 @@ var ComponentView = function () {
 
       $scope.getUrl = function () {
         var url = componentManager.urlForComponent($scope.component);
-        $scope.component.runningLocally = url !== ($scope.component.url || $scope.component.hosted_url);
+        $scope.component.runningLocally = url !== $scope.component.url && url !== $scope.component.hosted_url;
         return url;
       };
 
@@ -42129,6 +42129,20 @@ var EditorMenu = function () {
         syncManager.sync("removeEditorDefault");
 
         $scope.defaultEditor = null;
+      };
+
+      $scope.shouldDisplayRunningLocallyLabel = function (component) {
+        if (!component.runningLocally) {
+          return false;
+        }
+
+        if (component == $scope.selectedEditor) {
+          return true;
+        } else if (component.area == "editor-stack") {
+          return $scope.stackComponentEnabled(component);
+        } else {
+          return false;
+        }
       };
 
       $scope.stackComponentEnabled = function (component) {
@@ -42904,8 +42918,9 @@ angular.module('app').directive('permissionsModal', function () {
     "      </div>\n" +
     "      <menu-row circle=\"selectedEditor == null &amp;&amp; 'success'\" ng-click='selectComponent($event, null)' title=\"'Plain Editor'\"></menu-row>\n" +
     "      <menu-row button-action='toggleDefaultForEditor(editor)' button-class=\"defaultEditor == editor ? 'warning' : 'info'\" button-text=\"defaultEditor == editor ? 'Undefault' : 'Set Default'\" circle=\"selectedEditor === editor &amp;&amp; 'success'\" has-button='selectedEditor == editor || defaultEditor == editor' ng-click='selectComponent($event, editor)' ng-repeat='editor in editors' title='editor.name'>\n" +
-    "        <div class='column' ng-if='component.conflict_of'>\n" +
+    "        <div class='column' ng-if='component.conflict_of || shouldDisplayRunningLocallyLabel(editor)'>\n" +
     "          <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
+    "          <div class='sublabel' ng-if='shouldDisplayRunningLocallyLabel(editor)'>Running Locally</div>\n" +
     "        </div>\n" +
     "      </menu-row>\n" +
     "      <a class='no-decoration' href='https://standardnotes.org/extensions' ng-if='editors.length == 0' target='blank'>\n" +
@@ -42917,8 +42932,9 @@ angular.module('app').directive('permissionsModal', function () {
     "        <h4 class='title'>Editor Stack</h4>\n" +
     "      </div>\n" +
     "      <menu-row circle=\"stackComponentEnabled(component) ? 'success' : 'danger'\" ng-click='selectComponent($event, component)' ng-repeat='component in stack' title='component.name'>\n" +
-    "        <div class='column' ng-if='component.conflict_of'>\n" +
+    "        <div class='column' ng-if='component.conflict_of || shouldDisplayRunningLocallyLabel(component)'>\n" +
     "          <strong class='red medium' ng-if='component.conflict_of'>Conflicted copy</strong>\n" +
+    "          <div class='sublabel' ng-if='shouldDisplayRunningLocallyLabel(component)'>Running Locally</div>\n" +
     "        </div>\n" +
     "      </menu-row>\n" +
     "    </div>\n" +
