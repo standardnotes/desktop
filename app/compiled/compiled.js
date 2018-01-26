@@ -37858,7 +37858,7 @@ var ComponentManager = function () {
 
           if (handler.contextRequestHandler) {
             var itemInContext = handler.contextRequestHandler(component);
-            if (itemInContext.uuid == item.uuid) {
+            if (itemInContext && itemInContext.uuid == item.uuid) {
               return true;
             }
           }
@@ -44447,14 +44447,14 @@ angular.module('app').directive('permissionsModal', function () {
 
   $templateCache.put('tags.html',
     "<div class='section tags' id='tags-column'>\n" +
-    "  <div class='component-view-container' ng-if='ctrl.component'>\n" +
+    "  <div class='component-view-container' ng-if='ctrl.component.active'>\n" +
     "    <component-view class='component-view' component='ctrl.component'></component-view>\n" +
     "  </div>\n" +
     "  <div class='content' id='tags-content' ng-if='!(ctrl.component &amp;&amp; ctrl.component.active)'>\n" +
     "    <div class='section-title-bar' id='tags-title-bar'>\n" +
     "      <div class='section-title-bar-header'>\n" +
     "        <div class='title'>Tags</div>\n" +
-    "        <div class='add-button' id='tag-add-button' ng-click='ctrl.createNewTag()'>+</div>\n" +
+    "        <div class='add-button' id='tag-add-button' ng-click='ctrl.clickedAddNewTag()'>+</div>\n" +
     "      </div>\n" +
     "    </div>\n" +
     "    <div class='scrollable'>\n" +
