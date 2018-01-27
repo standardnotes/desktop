@@ -34228,7 +34228,6 @@ Array.prototype.containsObjectSubset = function (array) {
   */
 
   componentManager.registerHandler({ identifier: "editor", areas: ["note-tags", "editor-stack", "editor-editor"], activationHandler: function (component) {
-
       if (component.area === "note-tags") {
         // Autocomplete Tags
         this.tagsComponent = component.active ? component : null;
@@ -34239,6 +34238,8 @@ Array.prototype.containsObjectSubset = function (array) {
         } else {
           this.selectedEditor = null;
         }
+      } else if (component.area == "editor-stack") {
+        this.reloadComponentContext();
       }
     }.bind(this), contextRequestHandler: function (component) {
       return this.note;
@@ -34296,7 +34297,7 @@ Array.prototype.containsObjectSubset = function (array) {
         var component = _step4.value;
 
         if (component.active) {
-          component.hidden = component.isExplicitlyDisabledForItem(this.note);
+          component.hidden = !this.note || component.isExplicitlyDisabledForItem(this.note);
         }
       }
     } catch (err) {
@@ -34320,14 +34321,18 @@ Array.prototype.containsObjectSubset = function (array) {
   };
 
   this.toggleStackComponentForCurrentItem = function (component) {
-    if (component.active) {
+    if (component.hidden) {
+      // Unhide, associate with current item
+      component.hidden = false;
+      if (!component.active) {
+        componentManager.activateComponent(component);
+      }
+      this.associateComponentWithCurrentNote(component);
+      componentManager.contextItemDidChangeInArea("editor-stack");
+    } else {
+      // not hidden, hide
       component.hidden = true;
       this.disassociateComponentWithCurrentNote(component);
-    } else {
-      // Inactive
-      componentManager.activateComponent(component);
-      componentManager.contextItemDidChangeInArea("editor-stack");
-      this.associateComponentWithCurrentNote(component);
     }
   };
 
@@ -35450,7 +35455,17 @@ var Item = function () {
 
       if (json.content) {
         this.mapContentToLocalProperties(this.contentObject);
+      } else if (json.deleted == true) {
+        this.handleDeletedContent();
       }
+    }
+
+    /* Allows the item to handle the case where the item is deleted and the content is null */
+
+  }, {
+    key: 'handleDeletedContent',
+    value: function handleDeletedContent() {
+      // Subclasses can override
     }
   }, {
     key: 'setDirty',
@@ -35886,6 +35901,10 @@ var Component = function (_Item3) {
       this.area = content.area;
 
       this.permissions = content.permissions;
+      if (!this.permissions) {
+        this.permissions = [];
+      }
+
       this.active = content.active;
 
       // custom data that a component can store in itself
@@ -35896,6 +35915,13 @@ var Component = function (_Item3) {
 
       // items that have requested a component to be enabled in its context
       this.associatedItemIds = content.associatedItemIds || [];
+    }
+  }, {
+    key: 'handleDeletedContent',
+    value: function handleDeletedContent() {
+      _get(Component.prototype.__proto__ || Object.getPrototypeOf(Component.prototype), 'handleDeletedContent', this).call(this);
+
+      this.active = false;
     }
   }, {
     key: 'structureParams',
@@ -37549,7 +37575,8 @@ var ComponentManager = function () {
   }, {
     key: 'sendMessageToComponent',
     value: function sendMessageToComponent(component, message) {
-      if (component.hidden && message.action !== "component-registered") {
+      var permissibleActionsWhileHidden = ["component-registered", "themes"];
+      if (component.hidden && !permissibleActionsWhileHidden.includes(message.action)) {
         if (this.loggingEnabled) {
           console.log("Component disabled for current item, not sending any messages.", component.name);
         }
@@ -37997,18 +38024,22 @@ var ComponentManager = function () {
       }];
 
       this.runWithPermissions(component, requiredPermissions, function () {
-        var items = message.data.items;
-        var noun = items.length == 1 ? "item" : "items";
-        if (confirm('Are you sure you want to delete ' + items.length + ' ' + noun + '?')) {
+        var itemsData = message.data.items;
+        var noun = itemsData.length == 1 ? "item" : "items";
+        if (confirm('Are you sure you want to delete ' + itemsData.length + ' ' + noun + '?')) {
+          // Filter for any components and deactivate before deleting
           var _iteratorNormalCompletion30 = true;
           var _didIteratorError30 = false;
           var _iteratorError30 = undefined;
 
           try {
-            for (var _iterator30 = items[Symbol.iterator](), _step30; !(_iteratorNormalCompletion30 = (_step30 = _iterator30.next()).done); _iteratorNormalCompletion30 = true) {
-              var item = _step30.value;
+            for (var _iterator30 = itemsData[Symbol.iterator](), _step30; !(_iteratorNormalCompletion30 = (_step30 = _iterator30.next()).done); _iteratorNormalCompletion30 = true) {
+              var itemData = _step30.value;
 
-              var model = _this31.modelManager.findItem(item.uuid);
+              var model = _this31.modelManager.findItem(itemData.uuid);
+              if (["SN|Component", "SN|Theme"].includes(model.content_type)) {
+                _this31.deactivateComponent(model, true);
+              }
               _this31.modelManager.setItemToBeDeleted(model);
             }
           } catch (err) {
@@ -38196,10 +38227,14 @@ var ComponentManager = function () {
             return false;
           }
 
-          if (approved && pendingDialog.component == component) {
+          if (pendingDialog.component == component) {
             // remove pending dialogs that are encapsulated by already approved permissions, and run its function
             if (pendingDialog.permissions == permissions || permissions.containsObjectSubset(pendingDialog.permissions)) {
-              pendingDialog.actionBlock && pendingDialog.actionBlock(approved);
+              // If approved, run the action block. Otherwise, if canceled, cancel any pending ones as well, since the user was
+              // explicit in their intentions
+              if (approved) {
+                pendingDialog.actionBlock && pendingDialog.actionBlock(approved);
+              }
               return false;
             }
           }
@@ -38238,52 +38273,6 @@ var ComponentManager = function () {
       scope.component = component;
       var el = this.$compile("<component-modal component='component' class='modal'></component-modal>")(scope);
       angular.element(document.body).append(el);
-    }
-  }, {
-    key: 'activateComponent',
-    value: function activateComponent(component) {
-      var didChange = component.active != true;
-
-      component.active = true;
-      var _iteratorNormalCompletion33 = true;
-      var _didIteratorError33 = false;
-      var _iteratorError33 = undefined;
-
-      try {
-        for (var _iterator33 = this.handlers[Symbol.iterator](), _step33; !(_iteratorNormalCompletion33 = (_step33 = _iterator33.next()).done); _iteratorNormalCompletion33 = true) {
-          var handler = _step33.value;
-
-          if (handler.areas.includes(component.area) || handler.areas.includes("*")) {
-            handler.activationHandler(component);
-          }
-        }
-      } catch (err) {
-        _didIteratorError33 = true;
-        _iteratorError33 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion33 && _iterator33.return) {
-            _iterator33.return();
-          }
-        } finally {
-          if (_didIteratorError33) {
-            throw _iteratorError33;
-          }
-        }
-      }
-
-      if (didChange) {
-        component.setDirty(true);
-        this.syncManager.sync("activateComponent");
-      }
-
-      if (!this.activeComponents.includes(component)) {
-        this.activeComponents.push(component);
-      }
-
-      if (component.area == "themes") {
-        this.postThemeToAllComponents();
-      }
     }
   }, {
     key: 'registerHandler',
@@ -38325,8 +38314,58 @@ var ComponentManager = function () {
       this.postThemeToComponent(component);
     }
   }, {
+    key: 'activateComponent',
+    value: function activateComponent(component) {
+      var dontSync = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+      var didChange = component.active != true;
+
+      component.active = true;
+      var _iteratorNormalCompletion33 = true;
+      var _didIteratorError33 = false;
+      var _iteratorError33 = undefined;
+
+      try {
+        for (var _iterator33 = this.handlers[Symbol.iterator](), _step33; !(_iteratorNormalCompletion33 = (_step33 = _iterator33.next()).done); _iteratorNormalCompletion33 = true) {
+          var handler = _step33.value;
+
+          if (handler.areas.includes(component.area) || handler.areas.includes("*")) {
+            handler.activationHandler(component);
+          }
+        }
+      } catch (err) {
+        _didIteratorError33 = true;
+        _iteratorError33 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion33 && _iterator33.return) {
+            _iterator33.return();
+          }
+        } finally {
+          if (_didIteratorError33) {
+            throw _iteratorError33;
+          }
+        }
+      }
+
+      if (didChange && !dontSync) {
+        component.setDirty(true);
+        this.syncManager.sync("activateComponent");
+      }
+
+      if (!this.activeComponents.includes(component)) {
+        this.activeComponents.push(component);
+      }
+
+      if (component.area == "themes") {
+        this.postThemeToAllComponents();
+      }
+    }
+  }, {
     key: 'deactivateComponent',
     value: function deactivateComponent(component) {
+      var dontSync = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
       var didChange = component.active != false;
       component.active = false;
       component.sessionKey = null;
@@ -38358,7 +38397,7 @@ var ComponentManager = function () {
         }
       }
 
-      if (didChange) {
+      if (didChange && !dontSync) {
         component.setDirty(true);
         this.syncManager.sync("deactivateComponent");
       }
@@ -38696,12 +38735,40 @@ var DesktopManager = function () {
     key: 'desktop_onComponentInstallationComplete',
     value: function desktop_onComponentInstallationComplete(componentData, error) {
       console.log("Web|Component Installation/Update Complete", componentData, error);
+
+      // Desktop is only allowed to change these keys:
+      var permissableKeys = ["package_info", "local_url"];
       var component = this.modelManager.findItem(componentData.uuid);
+
       if (error) {
-        component = this.modelManager.findItem(componentData.uuid);
         component.setAppDataItem("installError", error);
       } else {
-        component = this.modelManager.mapResponseItemsToLocalModels([componentData], ModelManager.MappingSourceDesktopInstalled)[0];
+        var _iteratorNormalCompletion36 = true;
+        var _didIteratorError36 = false;
+        var _iteratorError36 = undefined;
+
+        try {
+          for (var _iterator36 = permissableKeys[Symbol.iterator](), _step36; !(_iteratorNormalCompletion36 = (_step36 = _iterator36.next()).done); _iteratorNormalCompletion36 = true) {
+            var key = _step36.value;
+
+            component[key] = componentData.content[key];
+          }
+        } catch (err) {
+          _didIteratorError36 = true;
+          _iteratorError36 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion36 && _iterator36.return) {
+              _iterator36.return();
+            }
+          } finally {
+            if (_didIteratorError36) {
+              throw _iteratorError36;
+            }
+          }
+        }
+
+        this.modelManager.notifySyncObserversOfModels([component], ModelManager.MappingSourceDesktopInstalled);
         component.setAppDataItem("installError", null);
       }
       component.setDirty(true);
@@ -38867,13 +38934,13 @@ var MigrationManager = function () {
     this.addEditorToComponentMigrator();
 
     this.modelManager.addItemSyncObserver("migration-manager", "*", function (allItems, validItems, deletedItems) {
-      var _iteratorNormalCompletion36 = true;
-      var _didIteratorError36 = false;
-      var _iteratorError36 = undefined;
+      var _iteratorNormalCompletion37 = true;
+      var _didIteratorError37 = false;
+      var _iteratorError37 = undefined;
 
       try {
-        for (var _iterator36 = _this36.migrators[Symbol.iterator](), _step36; !(_iteratorNormalCompletion36 = (_step36 = _iterator36.next()).done); _iteratorNormalCompletion36 = true) {
-          var migrator = _step36.value;
+        for (var _iterator37 = _this36.migrators[Symbol.iterator](), _step37; !(_iteratorNormalCompletion37 = (_step37 = _iterator37.next()).done); _iteratorNormalCompletion37 = true) {
+          var migrator = _step37.value;
 
           var items = allItems.filter(function (item) {
             return item.content_type == migrator.content_type;
@@ -38883,16 +38950,16 @@ var MigrationManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError36 = true;
-        _iteratorError36 = err;
+        _didIteratorError37 = true;
+        _iteratorError37 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion36 && _iterator36.return) {
-            _iterator36.return();
+          if (!_iteratorNormalCompletion37 && _iterator37.return) {
+            _iterator37.return();
           }
         } finally {
-          if (_didIteratorError36) {
-            throw _iteratorError36;
+          if (_didIteratorError37) {
+            throw _iteratorError37;
           }
         }
       }
@@ -38914,13 +38981,13 @@ var MigrationManager = function () {
 
         handler: function handler(editors) {
           // Convert editors to components
-          var _iteratorNormalCompletion37 = true;
-          var _didIteratorError37 = false;
-          var _iteratorError37 = undefined;
+          var _iteratorNormalCompletion38 = true;
+          var _didIteratorError38 = false;
+          var _iteratorError38 = undefined;
 
           try {
-            for (var _iterator37 = editors[Symbol.iterator](), _step37; !(_iteratorNormalCompletion37 = (_step37 = _iterator37.next()).done); _iteratorNormalCompletion37 = true) {
-              var editor = _step37.value;
+            for (var _iterator38 = editors[Symbol.iterator](), _step38; !(_iteratorNormalCompletion38 = (_step38 = _iterator38.next()).done); _iteratorNormalCompletion38 = true) {
+              var editor = _step38.value;
 
               // If there's already a component for this url, then skip this editor
               if (editor.url && !_this37.componentManager.componentForUrl(editor.url)) {
@@ -38936,31 +39003,6 @@ var MigrationManager = function () {
               }
             }
           } catch (err) {
-            _didIteratorError37 = true;
-            _iteratorError37 = err;
-          } finally {
-            try {
-              if (!_iteratorNormalCompletion37 && _iterator37.return) {
-                _iterator37.return();
-              }
-            } finally {
-              if (_didIteratorError37) {
-                throw _iteratorError37;
-              }
-            }
-          }
-
-          var _iteratorNormalCompletion38 = true;
-          var _didIteratorError38 = false;
-          var _iteratorError38 = undefined;
-
-          try {
-            for (var _iterator38 = editors[Symbol.iterator](), _step38; !(_iteratorNormalCompletion38 = (_step38 = _iterator38.next()).done); _iteratorNormalCompletion38 = true) {
-              var _editor = _step38.value;
-
-              _this37.modelManager.setItemToBeDeleted(_editor);
-            }
-          } catch (err) {
             _didIteratorError38 = true;
             _iteratorError38 = err;
           } finally {
@@ -38971,6 +39013,31 @@ var MigrationManager = function () {
             } finally {
               if (_didIteratorError38) {
                 throw _iteratorError38;
+              }
+            }
+          }
+
+          var _iteratorNormalCompletion39 = true;
+          var _didIteratorError39 = false;
+          var _iteratorError39 = undefined;
+
+          try {
+            for (var _iterator39 = editors[Symbol.iterator](), _step39; !(_iteratorNormalCompletion39 = (_step39 = _iterator39.next()).done); _iteratorNormalCompletion39 = true) {
+              var _editor = _step39.value;
+
+              _this37.modelManager.setItemToBeDeleted(_editor);
+            }
+          } catch (err) {
+            _didIteratorError39 = true;
+            _iteratorError39 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion39 && _iterator39.return) {
+                _iterator39.return();
+              }
+            } finally {
+              if (_didIteratorError39) {
+                throw _iteratorError39;
               }
             }
           }
@@ -39058,27 +39125,27 @@ var ModelManager = function () {
       // for example, editors have a one way relationship with notes. When a note changes its UUID, it has no way to inform the editor
       // to update its relationships
 
-      var _iteratorNormalCompletion39 = true;
-      var _didIteratorError39 = false;
-      var _iteratorError39 = undefined;
+      var _iteratorNormalCompletion40 = true;
+      var _didIteratorError40 = false;
+      var _iteratorError40 = undefined;
 
       try {
-        for (var _iterator39 = this.items[Symbol.iterator](), _step39; !(_iteratorNormalCompletion39 = (_step39 = _iterator39.next()).done); _iteratorNormalCompletion39 = true) {
-          var model = _step39.value;
+        for (var _iterator40 = this.items[Symbol.iterator](), _step40; !(_iteratorNormalCompletion40 = (_step40 = _iterator40.next()).done); _iteratorNormalCompletion40 = true) {
+          var model = _step40.value;
 
           model.potentialItemOfInterestHasChangedItsUUID(newItem, oldUUID, newUUID);
         }
       } catch (err) {
-        _didIteratorError39 = true;
-        _iteratorError39 = err;
+        _didIteratorError40 = true;
+        _iteratorError40 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion39 && _iterator39.return) {
-            _iterator39.return();
+          if (!_iteratorNormalCompletion40 && _iterator40.return) {
+            _iterator40.return();
           }
         } finally {
-          if (_didIteratorError39) {
-            throw _iteratorError39;
+          if (_didIteratorError40) {
+            throw _iteratorError40;
           }
         }
       }
@@ -39129,16 +39196,14 @@ var ModelManager = function () {
           processedObjects = [],
           modelsToNotifyObserversOf = [];
 
-      // console.log("mapResponseItemsToLocalModelsOmittingFields");
-
       // first loop should add and process items
-      var _iteratorNormalCompletion40 = true;
-      var _didIteratorError40 = false;
-      var _iteratorError40 = undefined;
+      var _iteratorNormalCompletion41 = true;
+      var _didIteratorError41 = false;
+      var _iteratorError41 = undefined;
 
       try {
-        for (var _iterator40 = items[Symbol.iterator](), _step40; !(_iteratorNormalCompletion40 = (_step40 = _iterator40.next()).done); _iteratorNormalCompletion40 = true) {
-          var json_obj = _step40.value;
+        for (var _iterator41 = items[Symbol.iterator](), _step41; !(_iteratorNormalCompletion41 = (_step41 = _iterator41.next()).done); _iteratorNormalCompletion41 = true) {
+          var json_obj = _step41.value;
 
           if ((!json_obj.content_type || !json_obj.content) && !json_obj.deleted && !json_obj.errorDecrypting) {
             // An item that is not deleted should never have empty content
@@ -39182,16 +39247,16 @@ var ModelManager = function () {
 
         // second loop should process references
       } catch (err) {
-        _didIteratorError40 = true;
-        _iteratorError40 = err;
+        _didIteratorError41 = true;
+        _iteratorError41 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion40 && _iterator40.return) {
-            _iterator40.return();
+          if (!_iteratorNormalCompletion41 && _iterator41.return) {
+            _iterator41.return();
           }
         } finally {
-          if (_didIteratorError40) {
-            throw _iteratorError40;
+          if (_didIteratorError41) {
+            throw _iteratorError41;
           }
         }
       }
@@ -39207,29 +39272,32 @@ var ModelManager = function () {
 
       return models;
     }
+
+    /* Note that this function is public, and can also be called manually (desktopManager uses it) */
+
   }, {
     key: 'notifySyncObserversOfModels',
     value: function notifySyncObserversOfModels(models, source) {
-      var _iteratorNormalCompletion41 = true;
-      var _didIteratorError41 = false;
-      var _iteratorError41 = undefined;
+      var _iteratorNormalCompletion42 = true;
+      var _didIteratorError42 = false;
+      var _iteratorError42 = undefined;
 
       try {
-        for (var _iterator41 = this.itemSyncObservers[Symbol.iterator](), _step41; !(_iteratorNormalCompletion41 = (_step41 = _iterator41.next()).done); _iteratorNormalCompletion41 = true) {
-          var observer = _step41.value;
+        for (var _iterator42 = this.itemSyncObservers[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
+          var observer = _step42.value;
 
           var allRelevantItems = models.filter(function (item) {
             return item.content_type == observer.type || observer.type == "*";
           });
           var validItems = [],
               deletedItems = [];
-          var _iteratorNormalCompletion42 = true;
-          var _didIteratorError42 = false;
-          var _iteratorError42 = undefined;
+          var _iteratorNormalCompletion43 = true;
+          var _didIteratorError43 = false;
+          var _iteratorError43 = undefined;
 
           try {
-            for (var _iterator42 = allRelevantItems[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
-              var item = _step42.value;
+            for (var _iterator43 = allRelevantItems[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
+              var item = _step43.value;
 
               if (item.deleted) {
                 deletedItems.push(item);
@@ -39238,16 +39306,16 @@ var ModelManager = function () {
               }
             }
           } catch (err) {
-            _didIteratorError42 = true;
-            _iteratorError42 = err;
+            _didIteratorError43 = true;
+            _iteratorError43 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion42 && _iterator42.return) {
-                _iterator42.return();
+              if (!_iteratorNormalCompletion43 && _iterator43.return) {
+                _iterator43.return();
               }
             } finally {
-              if (_didIteratorError42) {
-                throw _iteratorError42;
+              if (_didIteratorError43) {
+                throw _iteratorError43;
               }
             }
           }
@@ -39257,16 +39325,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError41 = true;
-        _iteratorError41 = err;
+        _didIteratorError42 = true;
+        _iteratorError42 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion41 && _iterator41.return) {
-            _iterator41.return();
+          if (!_iteratorNormalCompletion42 && _iterator42.return) {
+            _iterator42.return();
           }
         } finally {
-          if (_didIteratorError41) {
-            throw _iteratorError41;
+          if (_didIteratorError42) {
+            throw _iteratorError42;
           }
         }
       }
@@ -39274,13 +39342,13 @@ var ModelManager = function () {
   }, {
     key: 'notifyItemChangeObserversOfModels',
     value: function notifyItemChangeObserversOfModels(models) {
-      var _iteratorNormalCompletion43 = true;
-      var _didIteratorError43 = false;
-      var _iteratorError43 = undefined;
+      var _iteratorNormalCompletion44 = true;
+      var _didIteratorError44 = false;
+      var _iteratorError44 = undefined;
 
       try {
-        for (var _iterator43 = this.itemChangeObservers[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
-          var observer = _step43.value;
+        for (var _iterator44 = this.itemChangeObservers[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
+          var observer = _step44.value;
 
           var relevantItems = models.filter(function (item) {
             return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
@@ -39291,16 +39359,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError43 = true;
-        _iteratorError43 = err;
+        _didIteratorError44 = true;
+        _iteratorError44 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion43 && _iterator43.return) {
-            _iterator43.return();
+          if (!_iteratorNormalCompletion44 && _iterator44.return) {
+            _iterator44.return();
           }
         } finally {
-          if (_didIteratorError43) {
-            throw _iteratorError43;
+          if (_didIteratorError44) {
+            throw _iteratorError44;
           }
         }
       }
@@ -39403,13 +39471,13 @@ var ModelManager = function () {
         return;
       }
 
-      var _iteratorNormalCompletion44 = true;
-      var _didIteratorError44 = false;
-      var _iteratorError44 = undefined;
+      var _iteratorNormalCompletion45 = true;
+      var _didIteratorError45 = false;
+      var _iteratorError45 = undefined;
 
       try {
-        for (var _iterator44 = contentObject.references[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
-          var reference = _step44.value;
+        for (var _iterator45 = contentObject.references[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
+          var reference = _step45.value;
 
           var referencedItem = this.findItem(reference.uuid);
           if (referencedItem) {
@@ -39420,16 +39488,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError44 = true;
-        _iteratorError44 = err;
+        _didIteratorError45 = true;
+        _iteratorError45 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion44 && _iterator44.return) {
-            _iterator44.return();
+          if (!_iteratorNormalCompletion45 && _iterator45.return) {
+            _iterator45.return();
           }
         } finally {
-          if (_didIteratorError44) {
-            throw _iteratorError44;
+          if (_didIteratorError45) {
+            throw _iteratorError45;
           }
         }
       }
@@ -39465,27 +39533,27 @@ var ModelManager = function () {
   }, {
     key: 'clearDirtyItems',
     value: function clearDirtyItems(items) {
-      var _iteratorNormalCompletion45 = true;
-      var _didIteratorError45 = false;
-      var _iteratorError45 = undefined;
+      var _iteratorNormalCompletion46 = true;
+      var _didIteratorError46 = false;
+      var _iteratorError46 = undefined;
 
       try {
-        for (var _iterator45 = items[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
-          var item = _step45.value;
+        for (var _iterator46 = items[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
+          var item = _step46.value;
 
           item.setDirty(false);
         }
       } catch (err) {
-        _didIteratorError45 = true;
-        _iteratorError45 = err;
+        _didIteratorError46 = true;
+        _iteratorError46 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion45 && _iterator45.return) {
-            _iterator45.return();
+          if (!_iteratorNormalCompletion46 && _iterator46.return) {
+            _iterator46.return();
           }
         } finally {
-          if (_didIteratorError45) {
-            throw _iteratorError45;
+          if (_didIteratorError46) {
+            throw _iteratorError46;
           }
         }
       }
@@ -39514,27 +39582,27 @@ var ModelManager = function () {
         return _.includes(this.acceptableContentTypes, item.content_type);
       }.bind(this));
 
-      var _iteratorNormalCompletion46 = true;
-      var _didIteratorError46 = false;
-      var _iteratorError46 = undefined;
+      var _iteratorNormalCompletion47 = true;
+      var _didIteratorError47 = false;
+      var _iteratorError47 = undefined;
 
       try {
-        for (var _iterator46 = relevantItems[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
-          var item = _step46.value;
+        for (var _iterator47 = relevantItems[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
+          var item = _step47.value;
 
           item.setDirty(true);
         }
       } catch (err) {
-        _didIteratorError46 = true;
-        _iteratorError46 = err;
+        _didIteratorError47 = true;
+        _iteratorError47 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion46 && _iterator46.return) {
-            _iterator46.return();
+          if (!_iteratorNormalCompletion47 && _iterator47.return) {
+            _iterator47.return();
           }
         } finally {
-          if (_didIteratorError46) {
-            throw _iteratorError46;
+          if (_didIteratorError47) {
+            throw _iteratorError47;
           }
         }
       }
@@ -39818,13 +39886,13 @@ var SingletonManager = function () {
             // The item that will be chosen to be kept
 
             if (retrievedSingletonItems.length > 0) {
-              var _iteratorNormalCompletion48 = true;
-              var _didIteratorError48 = false;
-              var _iteratorError48 = undefined;
+              var _iteratorNormalCompletion49 = true;
+              var _didIteratorError49 = false;
+              var _iteratorError49 = undefined;
 
               try {
-                for (var _iterator48 = allExtantItemsMatchingPredicate[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
-                  var extantItem = _step48.value;
+                for (var _iterator49 = allExtantItemsMatchingPredicate[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
+                  var extantItem = _step49.value;
 
                   if (!retrievedSingletonItems.includes(extantItem)) {
                     // Delete it
@@ -39834,16 +39902,16 @@ var SingletonManager = function () {
 
                 // Sort incoming singleton items by most recently updated first, then delete all the rest
               } catch (err) {
-                _didIteratorError48 = true;
-                _iteratorError48 = err;
+                _didIteratorError49 = true;
+                _iteratorError49 = err;
               } finally {
                 try {
-                  if (!_iteratorNormalCompletion48 && _iterator48.return) {
-                    _iterator48.return();
+                  if (!_iteratorNormalCompletion49 && _iterator49.return) {
+                    _iterator49.return();
                   }
                 } finally {
-                  if (_didIteratorError48) {
-                    throw _iteratorError48;
+                  if (_didIteratorError49) {
+                    throw _iteratorError49;
                   }
                 }
               }
@@ -39865,27 +39933,27 @@ var SingletonManager = function () {
             // Delete everything but the first one
             toDelete = toDelete.concat(sorted.slice(1, sorted.length));
 
-            var _iteratorNormalCompletion49 = true;
-            var _didIteratorError49 = false;
-            var _iteratorError49 = undefined;
+            var _iteratorNormalCompletion50 = true;
+            var _didIteratorError50 = false;
+            var _iteratorError50 = undefined;
 
             try {
-              for (var _iterator49 = toDelete[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
-                d = _step49.value;
+              for (var _iterator50 = toDelete[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
+                d = _step50.value;
 
                 _this41.modelManager.setItemToBeDeleted(d);
               }
             } catch (err) {
-              _didIteratorError49 = true;
-              _iteratorError49 = err;
+              _didIteratorError50 = true;
+              _iteratorError50 = err;
             } finally {
               try {
-                if (!_iteratorNormalCompletion49 && _iterator49.return) {
-                  _iterator49.return();
+                if (!_iteratorNormalCompletion50 && _iterator50.return) {
+                  _iterator50.return();
                 }
               } finally {
-                if (_didIteratorError49) {
-                  throw _iteratorError49;
+                if (_didIteratorError50) {
+                  throw _iteratorError50;
                 }
               }
             }
@@ -39919,13 +39987,13 @@ var SingletonManager = function () {
         }
       };
 
-      var _iteratorNormalCompletion47 = true;
-      var _didIteratorError47 = false;
-      var _iteratorError47 = undefined;
+      var _iteratorNormalCompletion48 = true;
+      var _didIteratorError48 = false;
+      var _iteratorError48 = undefined;
 
       try {
-        for (var _iterator47 = this.singletonHandlers[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
-          var singletonHandler = _step47.value;
+        for (var _iterator48 = this.singletonHandlers[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
+          var singletonHandler = _step48.value;
           var predicate;
           var allExtantItemsMatchingPredicate;
           var toDelete;
@@ -39936,16 +40004,16 @@ var SingletonManager = function () {
           _loop4(singletonHandler);
         }
       } catch (err) {
-        _didIteratorError47 = true;
-        _iteratorError47 = err;
+        _didIteratorError48 = true;
+        _iteratorError48 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion47 && _iterator47.return) {
-            _iterator47.return();
+          if (!_iteratorNormalCompletion48 && _iterator48.return) {
+            _iterator48.return();
           }
         } finally {
-          if (_didIteratorError47) {
-            throw _iteratorError47;
+          if (_didIteratorError48) {
+            throw _iteratorError48;
           }
         }
       }
@@ -40169,27 +40237,27 @@ var StorageManager = function () {
       EncryptionHelper.decryptItem(stored, this.encryptedStorageKeys);
       var encryptedStorage = new EncryptedStorage(stored);
 
-      var _iteratorNormalCompletion50 = true;
-      var _didIteratorError50 = false;
-      var _iteratorError50 = undefined;
+      var _iteratorNormalCompletion51 = true;
+      var _didIteratorError51 = false;
+      var _iteratorError51 = undefined;
 
       try {
-        for (var _iterator50 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
-          var key = _step50.value;
+        for (var _iterator51 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
+          var key = _step51.value;
 
           this.setItem(key, encryptedStorage.storage[key]);
         }
       } catch (err) {
-        _didIteratorError50 = true;
-        _iteratorError50 = err;
+        _didIteratorError51 = true;
+        _iteratorError51 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion50 && _iterator50.return) {
-            _iterator50.return();
+          if (!_iteratorNormalCompletion51 && _iterator51.return) {
+            _iterator51.return();
           }
         } finally {
-          if (_didIteratorError50) {
-            throw _iteratorError50;
+          if (_didIteratorError51) {
+            throw _iteratorError51;
           }
         }
       }
@@ -40329,29 +40397,29 @@ var SyncManager = function () {
     value: function syncOffline(items, callback) {
       this.writeItemsToLocalStorage(items, true, function (responseItems) {
         // delete anything needing to be deleted
-        var _iteratorNormalCompletion51 = true;
-        var _didIteratorError51 = false;
-        var _iteratorError51 = undefined;
+        var _iteratorNormalCompletion52 = true;
+        var _didIteratorError52 = false;
+        var _iteratorError52 = undefined;
 
         try {
-          for (var _iterator51 = items[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
-            var item = _step51.value;
+          for (var _iterator52 = items[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
+            var item = _step52.value;
 
             if (item.deleted) {
               this.modelManager.removeItemLocally(item);
             }
           }
         } catch (err) {
-          _didIteratorError51 = true;
-          _iteratorError51 = err;
+          _didIteratorError52 = true;
+          _iteratorError52 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion51 && _iterator51.return) {
-              _iterator51.return();
+            if (!_iteratorNormalCompletion52 && _iterator52.return) {
+              _iterator52.return();
             }
           } finally {
-            if (_didIteratorError51) {
-              throw _iteratorError51;
+            if (_didIteratorError52) {
+              throw _iteratorError52;
             }
           }
         }
@@ -40383,27 +40451,27 @@ var SyncManager = function () {
 
       var block = function block() {
         var allItems = _this43.modelManager.allItems;
-        var _iteratorNormalCompletion52 = true;
-        var _didIteratorError52 = false;
-        var _iteratorError52 = undefined;
+        var _iteratorNormalCompletion53 = true;
+        var _didIteratorError53 = false;
+        var _iteratorError53 = undefined;
 
         try {
-          for (var _iterator52 = allItems[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
-            var item = _step52.value;
+          for (var _iterator53 = allItems[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
+            var item = _step53.value;
 
             item.setDirty(true);
           }
         } catch (err) {
-          _didIteratorError52 = true;
-          _iteratorError52 = err;
+          _didIteratorError53 = true;
+          _iteratorError53 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion52 && _iterator52.return) {
-              _iterator52.return();
+            if (!_iteratorNormalCompletion53 && _iterator53.return) {
+              _iterator53.return();
             }
           } finally {
-            if (_didIteratorError52) {
-              throw _iteratorError52;
+            if (_didIteratorError53) {
+              throw _iteratorError53;
             }
           }
         }
@@ -40452,27 +40520,27 @@ var SyncManager = function () {
         allCallbacks.push(currentCallback);
       }
       if (allCallbacks.length) {
-        var _iteratorNormalCompletion53 = true;
-        var _didIteratorError53 = false;
-        var _iteratorError53 = undefined;
+        var _iteratorNormalCompletion54 = true;
+        var _didIteratorError54 = false;
+        var _iteratorError54 = undefined;
 
         try {
-          for (var _iterator53 = allCallbacks[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
-            var eachCallback = _step53.value;
+          for (var _iterator54 = allCallbacks[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
+            var eachCallback = _step54.value;
 
             eachCallback(response);
           }
         } catch (err) {
-          _didIteratorError53 = true;
-          _iteratorError53 = err;
+          _didIteratorError54 = true;
+          _iteratorError54 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion53 && _iterator53.return) {
-              _iterator53.return();
+            if (!_iteratorNormalCompletion54 && _iterator54.return) {
+              _iterator54.return();
             }
           } finally {
-            if (_didIteratorError53) {
-              throw _iteratorError53;
+            if (_didIteratorError54) {
+              throw _iteratorError54;
             }
           }
         }
@@ -40609,6 +40677,7 @@ var SyncManager = function () {
         });
 
         // Map retrieved items to local data
+        // Note that deleted items will not be returned
         var retrieved = this.handleItemsResponse(response.retrieved_items, null, ModelManager.MappingSourceRemoteRetrieved);
 
         // Append items to master list of retrieved items for this ongoing sync operation
@@ -41806,27 +41875,27 @@ var ActionsMenu = function () {
         });
       };
 
-      var _iteratorNormalCompletion54 = true;
-      var _didIteratorError54 = false;
-      var _iteratorError54 = undefined;
+      var _iteratorNormalCompletion55 = true;
+      var _didIteratorError55 = false;
+      var _iteratorError55 = undefined;
 
       try {
-        for (var _iterator54 = $scope.extensions[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
-          var ext = _step54.value;
+        for (var _iterator55 = $scope.extensions[Symbol.iterator](), _step55; !(_iteratorNormalCompletion55 = (_step55 = _iterator55.next()).done); _iteratorNormalCompletion55 = true) {
+          var ext = _step55.value;
 
           _loop5(ext);
         }
       } catch (err) {
-        _didIteratorError54 = true;
-        _iteratorError54 = err;
+        _didIteratorError55 = true;
+        _iteratorError55 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion54 && _iterator54.return) {
-            _iterator54.return();
+          if (!_iteratorNormalCompletion55 && _iterator55.return) {
+            _iterator55.return();
           }
         } finally {
-          if (_didIteratorError54) {
-            throw _iteratorError54;
+          if (_didIteratorError55) {
+            throw _iteratorError55;
           }
         }
       }
@@ -43259,7 +43328,9 @@ angular.module('app').directive('permissionsModal', function () {
     "    <p class='medium-padding' style='padding-top: 0 !important;'>There was an error decrypting this item. Ensure you are running the latest version of this app, then sign out and sign back in to try again.</p>\n" +
     "  </section>\n" +
     "  <div id='editor-pane-component-stack'>\n" +
-    "    <component-view class='component-view component-stack-item' component='component' manual-dealloc='true' ng-if='component.active' ng-repeat='component in ctrl.componentStack' ng-show='!component.hidden'></component-view>\n" +
+    "    <div class='sn-component'>\n" +
+    "      <component-view class='component-view component-stack-item border-color' component='component' manual-dealloc='true' ng-if='component.active' ng-repeat='component in ctrl.componentStack' ng-show='!component.hidden'></component-view>\n" +
+    "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
   );

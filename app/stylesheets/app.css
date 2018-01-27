@@ -579,11 +579,6 @@ a.disabled {
 #editor-pane-component-stack .component-stack-item {
   width: 100%;
   position: relative;
-}
-#editor-pane-component-stack .component-stack-item:not(:last-child) {
-  border-bottom: 1px solid #e3e3e3;
-}
-#editor-pane-component-stack .component-stack-item:first-child {
   border-top: 1px solid #e3e3e3;
 }
 #editor-pane-component-stack .component-stack-item iframe {
