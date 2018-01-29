@@ -35957,6 +35957,11 @@ var Component = function (_Item3) {
       return this.area == "editor-editor";
     }
   }, {
+    key: 'isTheme',
+    value: function isTheme() {
+      return this.content_type == "SN|Theme" || this.area == "themes";
+    }
+  }, {
     key: 'isDefaultEditor',
     value: function isDefaultEditor() {
       return this.getAppDataItem("defaultEditor") == true;
@@ -37220,6 +37225,13 @@ var ComponentManager = function () {
     this.contextStreamObservers = [];
     this.activeComponents = [];
 
+    desktopManager.registerUpdateObserver(function (component) {
+      // Reload theme if active
+      if (component.active && component.isTheme()) {
+        _this26.postActiveThemeToAllComponents();
+      }
+    });
+
     // this.loggingEnabled = true;
 
     this.permissionDialogs = [];
@@ -37411,8 +37423,8 @@ var ComponentManager = function () {
   }
 
   _createClass(ComponentManager, [{
-    key: 'postThemeToAllComponents',
-    value: function postThemeToAllComponents() {
+    key: 'postActiveThemeToAllComponents',
+    value: function postActiveThemeToAllComponents() {
       var _iteratorNormalCompletion20 = true;
       var _didIteratorError20 = false;
       var _iteratorError20 = undefined;
@@ -37421,10 +37433,12 @@ var ComponentManager = function () {
         for (var _iterator20 = this.components[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
           var component = _step20.value;
 
-          if (component.area == "themes" || !component.active || !component.window) {
+          // Skip over components that are themes themselves,
+          // or components that are not active, or components that don't have a window
+          if (component.isTheme() || !component.active || !component.window) {
             continue;
           }
-          this.postThemeToComponent(component);
+          this.postActiveThemeToComponent(component);
         }
       } catch (err) {
         _didIteratorError20 = true;
@@ -37449,8 +37463,8 @@ var ComponentManager = function () {
       });
     }
   }, {
-    key: 'postThemeToComponent',
-    value: function postThemeToComponent(component) {
+    key: 'postActiveThemeToComponent',
+    value: function postActiveThemeToComponent(component) {
       var activeTheme = this.getActiveTheme();
       var data = {
         themes: [activeTheme ? this.urlForComponent(activeTheme) : null]
@@ -38311,7 +38325,7 @@ var ComponentManager = function () {
           environment: isDesktopApplication() ? "desktop" : "web"
         }
       });
-      this.postThemeToComponent(component);
+      this.postActiveThemeToComponent(component);
     }
   }, {
     key: 'activateComponent',
@@ -38358,7 +38372,7 @@ var ComponentManager = function () {
       }
 
       if (component.area == "themes") {
-        this.postThemeToAllComponents();
+        this.postActiveThemeToAllComponents();
       }
     }
   }, {
@@ -38413,7 +38427,7 @@ var ComponentManager = function () {
       });
 
       if (component.area == "themes") {
-        this.postThemeToAllComponents();
+        this.postActiveThemeToAllComponents();
       }
     }
   }, {
@@ -38670,7 +38684,7 @@ angular.module('app').service('dbManager', DBManager);
 ; // An interface used by the Desktop app to interact with SN
 
 var DesktopManager = function () {
-  function DesktopManager($rootScope, modelManager, syncManager, authManager, passcodeManager) {
+  function DesktopManager($rootScope, $timeout, modelManager, syncManager, authManager, passcodeManager) {
     var _this34 = this;
 
     _classCallCheck(this, DesktopManager);
@@ -38680,6 +38694,8 @@ var DesktopManager = function () {
     this.authManager = authManager;
     this.syncManager = syncManager;
     this.$rootScope = $rootScope;
+    this.timeout = $timeout;
+    this.updateObservers = [];
 
     this.isDesktop = isDesktopApplication();
 
@@ -38732,8 +38748,22 @@ var DesktopManager = function () {
       this.installComponentHandler(this.convertComponentForTransmission(component));
     }
   }, {
+    key: 'registerUpdateObserver',
+    value: function registerUpdateObserver(callback) {
+      var observer = { id: Math.random, callback: callback };
+      this.updateObservers.push(observer);
+      return observer;
+    }
+  }, {
+    key: 'deregisterUpdateObserver',
+    value: function deregisterUpdateObserver(observer) {
+      _.pull(this.updateObservers, observer);
+    }
+  }, {
     key: 'desktop_onComponentInstallationComplete',
     value: function desktop_onComponentInstallationComplete(componentData, error) {
+      var _this36 = this;
+
       console.log("Web|Component Installation/Update Complete", componentData, error);
 
       // Desktop is only allowed to change these keys:
@@ -38773,6 +38803,33 @@ var DesktopManager = function () {
       }
       component.setDirty(true);
       this.syncManager.sync("onComponentInstallationComplete");
+
+      this.timeout(function () {
+        var _iteratorNormalCompletion37 = true;
+        var _didIteratorError37 = false;
+        var _iteratorError37 = undefined;
+
+        try {
+          for (var _iterator37 = _this36.updateObservers[Symbol.iterator](), _step37; !(_iteratorNormalCompletion37 = (_step37 = _iterator37.next()).done); _iteratorNormalCompletion37 = true) {
+            var observer = _step37.value;
+
+            observer.callback(component);
+          }
+        } catch (err) {
+          _didIteratorError37 = true;
+          _iteratorError37 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion37 && _iterator37.return) {
+              _iterator37.return();
+            }
+          } finally {
+            if (_didIteratorError37) {
+              throw _iteratorError37;
+            }
+          }
+        }
+      });
     }
 
     /* Used to resolve "sn://" */
@@ -38920,7 +38977,7 @@ angular.module('app').service('httpManager', HttpManager);
 ;
 var MigrationManager = function () {
   function MigrationManager($rootScope, modelManager, syncManager, componentManager) {
-    var _this36 = this;
+    var _this37 = this;
 
     _classCallCheck(this, MigrationManager);
 
@@ -38934,13 +38991,13 @@ var MigrationManager = function () {
     this.addEditorToComponentMigrator();
 
     this.modelManager.addItemSyncObserver("migration-manager", "*", function (allItems, validItems, deletedItems) {
-      var _iteratorNormalCompletion37 = true;
-      var _didIteratorError37 = false;
-      var _iteratorError37 = undefined;
+      var _iteratorNormalCompletion38 = true;
+      var _didIteratorError38 = false;
+      var _iteratorError38 = undefined;
 
       try {
-        for (var _iterator37 = _this36.migrators[Symbol.iterator](), _step37; !(_iteratorNormalCompletion37 = (_step37 = _iterator37.next()).done); _iteratorNormalCompletion37 = true) {
-          var migrator = _step37.value;
+        for (var _iterator38 = _this37.migrators[Symbol.iterator](), _step38; !(_iteratorNormalCompletion38 = (_step38 = _iterator38.next()).done); _iteratorNormalCompletion38 = true) {
+          var migrator = _step38.value;
 
           var items = allItems.filter(function (item) {
             return item.content_type == migrator.content_type;
@@ -38950,16 +39007,16 @@ var MigrationManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError37 = true;
-        _iteratorError37 = err;
+        _didIteratorError38 = true;
+        _iteratorError38 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion37 && _iterator37.return) {
-            _iterator37.return();
+          if (!_iteratorNormalCompletion38 && _iterator38.return) {
+            _iterator38.return();
           }
         } finally {
-          if (_didIteratorError37) {
-            throw _iteratorError37;
+          if (_didIteratorError38) {
+            throw _iteratorError38;
           }
         }
       }
@@ -38974,24 +39031,24 @@ var MigrationManager = function () {
   _createClass(MigrationManager, [{
     key: 'addEditorToComponentMigrator',
     value: function addEditorToComponentMigrator() {
-      var _this37 = this;
+      var _this38 = this;
 
       this.migrators.push({
         content_type: "SN|Editor",
 
         handler: function handler(editors) {
           // Convert editors to components
-          var _iteratorNormalCompletion38 = true;
-          var _didIteratorError38 = false;
-          var _iteratorError38 = undefined;
+          var _iteratorNormalCompletion39 = true;
+          var _didIteratorError39 = false;
+          var _iteratorError39 = undefined;
 
           try {
-            for (var _iterator38 = editors[Symbol.iterator](), _step38; !(_iteratorNormalCompletion38 = (_step38 = _iterator38.next()).done); _iteratorNormalCompletion38 = true) {
-              var editor = _step38.value;
+            for (var _iterator39 = editors[Symbol.iterator](), _step39; !(_iteratorNormalCompletion39 = (_step39 = _iterator39.next()).done); _iteratorNormalCompletion39 = true) {
+              var editor = _step39.value;
 
               // If there's already a component for this url, then skip this editor
-              if (editor.url && !_this37.componentManager.componentForUrl(editor.url)) {
-                var component = _this37.modelManager.createItem({
+              if (editor.url && !_this38.componentManager.componentForUrl(editor.url)) {
+                var component = _this38.modelManager.createItem({
                   content_type: "SN|Component",
                   url: editor.url,
                   name: editor.name,
@@ -38999,33 +39056,8 @@ var MigrationManager = function () {
                 });
                 component.setAppDataItem("data", editor.data);
                 component.setDirty(true);
-                _this37.modelManager.addItem(component);
+                _this38.modelManager.addItem(component);
               }
-            }
-          } catch (err) {
-            _didIteratorError38 = true;
-            _iteratorError38 = err;
-          } finally {
-            try {
-              if (!_iteratorNormalCompletion38 && _iterator38.return) {
-                _iterator38.return();
-              }
-            } finally {
-              if (_didIteratorError38) {
-                throw _iteratorError38;
-              }
-            }
-          }
-
-          var _iteratorNormalCompletion39 = true;
-          var _didIteratorError39 = false;
-          var _iteratorError39 = undefined;
-
-          try {
-            for (var _iterator39 = editors[Symbol.iterator](), _step39; !(_iteratorNormalCompletion39 = (_step39 = _iterator39.next()).done); _iteratorNormalCompletion39 = true) {
-              var _editor = _step39.value;
-
-              _this37.modelManager.setItemToBeDeleted(_editor);
             }
           } catch (err) {
             _didIteratorError39 = true;
@@ -39042,7 +39074,32 @@ var MigrationManager = function () {
             }
           }
 
-          _this37.syncManager.sync("addEditorToComponentMigrator");
+          var _iteratorNormalCompletion40 = true;
+          var _didIteratorError40 = false;
+          var _iteratorError40 = undefined;
+
+          try {
+            for (var _iterator40 = editors[Symbol.iterator](), _step40; !(_iteratorNormalCompletion40 = (_step40 = _iterator40.next()).done); _iteratorNormalCompletion40 = true) {
+              var _editor = _step40.value;
+
+              _this38.modelManager.setItemToBeDeleted(_editor);
+            }
+          } catch (err) {
+            _didIteratorError40 = true;
+            _iteratorError40 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion40 && _iterator40.return) {
+                _iterator40.return();
+              }
+            } finally {
+              if (_didIteratorError40) {
+                throw _iteratorError40;
+              }
+            }
+          }
+
+          _this38.syncManager.sync("addEditorToComponentMigrator");
         }
       });
     }
@@ -39088,7 +39145,7 @@ var ModelManager = function () {
   }, {
     key: 'alternateUUIDForItem',
     value: function alternateUUIDForItem(item, callback, removeOriginal) {
-      var _this38 = this;
+      var _this39 = this;
 
       // we need to clone this item and give it a new uuid, then delete item with old uuid from db (you can't mofidy uuid's in our indexeddb setup)
       var newItem = this.createItem(item);
@@ -39103,7 +39160,7 @@ var ModelManager = function () {
       console.log(item.uuid, "-->", newItem.uuid);
 
       var block = function block() {
-        _this38.addItem(newItem);
+        _this39.addItem(newItem);
         newItem.setDirty(true);
         newItem.markAllReferencesDirty();
         callback();
@@ -39125,27 +39182,27 @@ var ModelManager = function () {
       // for example, editors have a one way relationship with notes. When a note changes its UUID, it has no way to inform the editor
       // to update its relationships
 
-      var _iteratorNormalCompletion40 = true;
-      var _didIteratorError40 = false;
-      var _iteratorError40 = undefined;
+      var _iteratorNormalCompletion41 = true;
+      var _didIteratorError41 = false;
+      var _iteratorError41 = undefined;
 
       try {
-        for (var _iterator40 = this.items[Symbol.iterator](), _step40; !(_iteratorNormalCompletion40 = (_step40 = _iterator40.next()).done); _iteratorNormalCompletion40 = true) {
-          var model = _step40.value;
+        for (var _iterator41 = this.items[Symbol.iterator](), _step41; !(_iteratorNormalCompletion41 = (_step41 = _iterator41.next()).done); _iteratorNormalCompletion41 = true) {
+          var model = _step41.value;
 
           model.potentialItemOfInterestHasChangedItsUUID(newItem, oldUUID, newUUID);
         }
       } catch (err) {
-        _didIteratorError40 = true;
-        _iteratorError40 = err;
+        _didIteratorError41 = true;
+        _iteratorError41 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion40 && _iterator40.return) {
-            _iterator40.return();
+          if (!_iteratorNormalCompletion41 && _iterator41.return) {
+            _iterator41.return();
           }
         } finally {
-          if (_didIteratorError40) {
-            throw _iteratorError40;
+          if (_didIteratorError41) {
+            throw _iteratorError41;
           }
         }
       }
@@ -39197,13 +39254,13 @@ var ModelManager = function () {
           modelsToNotifyObserversOf = [];
 
       // first loop should add and process items
-      var _iteratorNormalCompletion41 = true;
-      var _didIteratorError41 = false;
-      var _iteratorError41 = undefined;
+      var _iteratorNormalCompletion42 = true;
+      var _didIteratorError42 = false;
+      var _iteratorError42 = undefined;
 
       try {
-        for (var _iterator41 = items[Symbol.iterator](), _step41; !(_iteratorNormalCompletion41 = (_step41 = _iterator41.next()).done); _iteratorNormalCompletion41 = true) {
-          var json_obj = _step41.value;
+        for (var _iterator42 = items[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
+          var json_obj = _step42.value;
 
           if ((!json_obj.content_type || !json_obj.content) && !json_obj.deleted && !json_obj.errorDecrypting) {
             // An item that is not deleted should never have empty content
@@ -39247,16 +39304,16 @@ var ModelManager = function () {
 
         // second loop should process references
       } catch (err) {
-        _didIteratorError41 = true;
-        _iteratorError41 = err;
+        _didIteratorError42 = true;
+        _iteratorError42 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion41 && _iterator41.return) {
-            _iterator41.return();
+          if (!_iteratorNormalCompletion42 && _iterator42.return) {
+            _iterator42.return();
           }
         } finally {
-          if (_didIteratorError41) {
-            throw _iteratorError41;
+          if (_didIteratorError42) {
+            throw _iteratorError42;
           }
         }
       }
@@ -39278,26 +39335,26 @@ var ModelManager = function () {
   }, {
     key: 'notifySyncObserversOfModels',
     value: function notifySyncObserversOfModels(models, source) {
-      var _iteratorNormalCompletion42 = true;
-      var _didIteratorError42 = false;
-      var _iteratorError42 = undefined;
+      var _iteratorNormalCompletion43 = true;
+      var _didIteratorError43 = false;
+      var _iteratorError43 = undefined;
 
       try {
-        for (var _iterator42 = this.itemSyncObservers[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
-          var observer = _step42.value;
+        for (var _iterator43 = this.itemSyncObservers[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
+          var observer = _step43.value;
 
           var allRelevantItems = models.filter(function (item) {
             return item.content_type == observer.type || observer.type == "*";
           });
           var validItems = [],
               deletedItems = [];
-          var _iteratorNormalCompletion43 = true;
-          var _didIteratorError43 = false;
-          var _iteratorError43 = undefined;
+          var _iteratorNormalCompletion44 = true;
+          var _didIteratorError44 = false;
+          var _iteratorError44 = undefined;
 
           try {
-            for (var _iterator43 = allRelevantItems[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
-              var item = _step43.value;
+            for (var _iterator44 = allRelevantItems[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
+              var item = _step44.value;
 
               if (item.deleted) {
                 deletedItems.push(item);
@@ -39306,16 +39363,16 @@ var ModelManager = function () {
               }
             }
           } catch (err) {
-            _didIteratorError43 = true;
-            _iteratorError43 = err;
+            _didIteratorError44 = true;
+            _iteratorError44 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion43 && _iterator43.return) {
-                _iterator43.return();
+              if (!_iteratorNormalCompletion44 && _iterator44.return) {
+                _iterator44.return();
               }
             } finally {
-              if (_didIteratorError43) {
-                throw _iteratorError43;
+              if (_didIteratorError44) {
+                throw _iteratorError44;
               }
             }
           }
@@ -39325,16 +39382,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError42 = true;
-        _iteratorError42 = err;
+        _didIteratorError43 = true;
+        _iteratorError43 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion42 && _iterator42.return) {
-            _iterator42.return();
+          if (!_iteratorNormalCompletion43 && _iterator43.return) {
+            _iterator43.return();
           }
         } finally {
-          if (_didIteratorError42) {
-            throw _iteratorError42;
+          if (_didIteratorError43) {
+            throw _iteratorError43;
           }
         }
       }
@@ -39342,13 +39399,13 @@ var ModelManager = function () {
   }, {
     key: 'notifyItemChangeObserversOfModels',
     value: function notifyItemChangeObserversOfModels(models) {
-      var _iteratorNormalCompletion44 = true;
-      var _didIteratorError44 = false;
-      var _iteratorError44 = undefined;
+      var _iteratorNormalCompletion45 = true;
+      var _didIteratorError45 = false;
+      var _iteratorError45 = undefined;
 
       try {
-        for (var _iterator44 = this.itemChangeObservers[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
-          var observer = _step44.value;
+        for (var _iterator45 = this.itemChangeObservers[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
+          var observer = _step45.value;
 
           var relevantItems = models.filter(function (item) {
             return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
@@ -39359,16 +39416,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError44 = true;
-        _iteratorError44 = err;
+        _didIteratorError45 = true;
+        _iteratorError45 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion44 && _iterator44.return) {
-            _iterator44.return();
+          if (!_iteratorNormalCompletion45 && _iterator45.return) {
+            _iterator45.return();
           }
         } finally {
-          if (_didIteratorError44) {
-            throw _iteratorError44;
+          if (_didIteratorError45) {
+            throw _iteratorError45;
           }
         }
       }
@@ -39471,13 +39528,13 @@ var ModelManager = function () {
         return;
       }
 
-      var _iteratorNormalCompletion45 = true;
-      var _didIteratorError45 = false;
-      var _iteratorError45 = undefined;
+      var _iteratorNormalCompletion46 = true;
+      var _didIteratorError46 = false;
+      var _iteratorError46 = undefined;
 
       try {
-        for (var _iterator45 = contentObject.references[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
-          var reference = _step45.value;
+        for (var _iterator46 = contentObject.references[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
+          var reference = _step46.value;
 
           var referencedItem = this.findItem(reference.uuid);
           if (referencedItem) {
@@ -39488,16 +39545,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError45 = true;
-        _iteratorError45 = err;
+        _didIteratorError46 = true;
+        _iteratorError46 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion45 && _iterator45.return) {
-            _iterator45.return();
+          if (!_iteratorNormalCompletion46 && _iterator46.return) {
+            _iterator46.return();
           }
         } finally {
-          if (_didIteratorError45) {
-            throw _iteratorError45;
+          if (_didIteratorError46) {
+            throw _iteratorError46;
           }
         }
       }
@@ -39533,27 +39590,27 @@ var ModelManager = function () {
   }, {
     key: 'clearDirtyItems',
     value: function clearDirtyItems(items) {
-      var _iteratorNormalCompletion46 = true;
-      var _didIteratorError46 = false;
-      var _iteratorError46 = undefined;
+      var _iteratorNormalCompletion47 = true;
+      var _didIteratorError47 = false;
+      var _iteratorError47 = undefined;
 
       try {
-        for (var _iterator46 = items[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
-          var item = _step46.value;
+        for (var _iterator47 = items[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
+          var item = _step47.value;
 
           item.setDirty(false);
         }
       } catch (err) {
-        _didIteratorError46 = true;
-        _iteratorError46 = err;
+        _didIteratorError47 = true;
+        _iteratorError47 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion46 && _iterator46.return) {
-            _iterator46.return();
+          if (!_iteratorNormalCompletion47 && _iterator47.return) {
+            _iterator47.return();
           }
         } finally {
-          if (_didIteratorError46) {
-            throw _iteratorError46;
+          if (_didIteratorError47) {
+            throw _iteratorError47;
           }
         }
       }
@@ -39582,27 +39639,27 @@ var ModelManager = function () {
         return _.includes(this.acceptableContentTypes, item.content_type);
       }.bind(this));
 
-      var _iteratorNormalCompletion47 = true;
-      var _didIteratorError47 = false;
-      var _iteratorError47 = undefined;
+      var _iteratorNormalCompletion48 = true;
+      var _didIteratorError48 = false;
+      var _iteratorError48 = undefined;
 
       try {
-        for (var _iterator47 = relevantItems[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
-          var item = _step47.value;
+        for (var _iterator48 = relevantItems[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
+          var item = _step48.value;
 
           item.setDirty(true);
         }
       } catch (err) {
-        _didIteratorError47 = true;
-        _iteratorError47 = err;
+        _didIteratorError48 = true;
+        _iteratorError48 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion47 && _iterator47.return) {
-            _iterator47.return();
+          if (!_iteratorNormalCompletion48 && _iterator48.return) {
+            _iterator48.return();
           }
         } finally {
-          if (_didIteratorError47) {
-            throw _iteratorError47;
+          if (_didIteratorError48) {
+            throw _iteratorError48;
           }
         }
       }
@@ -39717,7 +39774,7 @@ angular.module('app').service('modelManager', ModelManager);
   };
 
   function PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
-    var _this39 = this;
+    var _this40 = this;
 
     this._hasPasscode = storageManager.getItem("offlineParams", StorageManager.Fixed) != null;
     this._locked = this._hasPasscode;
@@ -39769,11 +39826,11 @@ angular.module('app').service('modelManager', ModelManager);
         // After it's cleared, it's safe to write to it
         storageManager.setItem("offlineParams", JSON.stringify(defaultParams), StorageManager.Fixed);
         callback(true);
-      }.bind(_this39));
+      }.bind(_this40));
     };
 
     this.changePasscode = function (newPasscode, callback) {
-      _this39.setPasscode(newPasscode, callback);
+      _this40.setPasscode(newPasscode, callback);
     };
 
     this.clearPasscode = function () {
@@ -39807,7 +39864,7 @@ angular.module('app').service('modelManager', ModelManager);
 
 var SingletonManager = function () {
   function SingletonManager($rootScope, modelManager) {
-    var _this40 = this;
+    var _this41 = this;
 
     _classCallCheck(this, SingletonManager);
 
@@ -39816,7 +39873,7 @@ var SingletonManager = function () {
     this.singletonHandlers = [];
 
     $rootScope.$on("initial-data-loaded", function (event, data) {
-      _this40.resolveSingletons(modelManager.allItems, null, true);
+      _this41.resolveSingletons(modelManager.allItems, null, true);
     });
 
     $rootScope.$on("sync:completed", function (event, data) {
@@ -39829,7 +39886,7 @@ var SingletonManager = function () {
       // the whole purpose of this thing.
 
       // Updated solution: resolveSingletons will now evaluate both of these arrays separately.
-      _this40.resolveSingletons(data.retrievedItems, data.savedItems);
+      _this41.resolveSingletons(data.retrievedItems, data.savedItems);
     });
   }
 
@@ -39850,7 +39907,7 @@ var SingletonManager = function () {
   }, {
     key: 'resolveSingletons',
     value: function resolveSingletons(retrievedItems, savedItems, initialLoad) {
-      var _this41 = this;
+      var _this42 = this;
 
       retrievedItems = retrievedItems || [];
       savedItems = savedItems || [];
@@ -39858,12 +39915,12 @@ var SingletonManager = function () {
       var _loop4 = function _loop4(singletonHandler) {
         predicate = singletonHandler.predicate;
 
-        var retrievedSingletonItems = _this41.filterItemsWithPredicate(retrievedItems, predicate);
+        var retrievedSingletonItems = _this42.filterItemsWithPredicate(retrievedItems, predicate);
 
         // We only want to consider saved items count to see if it's more than 0, and do nothing else with it.
         // This way we know there was some action and things need to be resolved. The saved items will come up
         // in filterItemsWithPredicate(this.modelManager.allItems) and be deleted anyway
-        var savedSingletonItemsCount = _this41.filterItemsWithPredicate(savedItems, predicate).length;
+        var savedSingletonItemsCount = _this42.filterItemsWithPredicate(savedItems, predicate).length;
 
         if (retrievedSingletonItems.length > 0 || savedSingletonItemsCount > 0) {
           /*
@@ -39872,7 +39929,7 @@ var SingletonManager = function () {
             However, as stated in the header comment, retrievedItems take precendence over existing items,
             even if they have a lower updated_at value
           */
-          allExtantItemsMatchingPredicate = _this41.filterItemsWithPredicate(_this41.modelManager.allItems, predicate);
+          allExtantItemsMatchingPredicate = _this42.filterItemsWithPredicate(_this42.modelManager.allItems, predicate);
 
           /*
             If there are more than 1 matches, delete everything not in `retrievedSingletonItems`,
@@ -39886,13 +39943,13 @@ var SingletonManager = function () {
             // The item that will be chosen to be kept
 
             if (retrievedSingletonItems.length > 0) {
-              var _iteratorNormalCompletion49 = true;
-              var _didIteratorError49 = false;
-              var _iteratorError49 = undefined;
+              var _iteratorNormalCompletion50 = true;
+              var _didIteratorError50 = false;
+              var _iteratorError50 = undefined;
 
               try {
-                for (var _iterator49 = allExtantItemsMatchingPredicate[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
-                  var extantItem = _step49.value;
+                for (var _iterator50 = allExtantItemsMatchingPredicate[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
+                  var extantItem = _step50.value;
 
                   if (!retrievedSingletonItems.includes(extantItem)) {
                     // Delete it
@@ -39902,16 +39959,16 @@ var SingletonManager = function () {
 
                 // Sort incoming singleton items by most recently updated first, then delete all the rest
               } catch (err) {
-                _didIteratorError49 = true;
-                _iteratorError49 = err;
+                _didIteratorError50 = true;
+                _iteratorError50 = err;
               } finally {
                 try {
-                  if (!_iteratorNormalCompletion49 && _iterator49.return) {
-                    _iterator49.return();
+                  if (!_iteratorNormalCompletion50 && _iterator50.return) {
+                    _iterator50.return();
                   }
                 } finally {
-                  if (_didIteratorError49) {
-                    throw _iteratorError49;
+                  if (_didIteratorError50) {
+                    throw _iteratorError50;
                   }
                 }
               }
@@ -39933,32 +39990,32 @@ var SingletonManager = function () {
             // Delete everything but the first one
             toDelete = toDelete.concat(sorted.slice(1, sorted.length));
 
-            var _iteratorNormalCompletion50 = true;
-            var _didIteratorError50 = false;
-            var _iteratorError50 = undefined;
+            var _iteratorNormalCompletion51 = true;
+            var _didIteratorError51 = false;
+            var _iteratorError51 = undefined;
 
             try {
-              for (var _iterator50 = toDelete[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
-                d = _step50.value;
+              for (var _iterator51 = toDelete[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
+                d = _step51.value;
 
-                _this41.modelManager.setItemToBeDeleted(d);
+                _this42.modelManager.setItemToBeDeleted(d);
               }
             } catch (err) {
-              _didIteratorError50 = true;
-              _iteratorError50 = err;
+              _didIteratorError51 = true;
+              _iteratorError51 = err;
             } finally {
               try {
-                if (!_iteratorNormalCompletion50 && _iterator50.return) {
-                  _iterator50.return();
+                if (!_iteratorNormalCompletion51 && _iterator51.return) {
+                  _iterator51.return();
                 }
               } finally {
-                if (_didIteratorError50) {
-                  throw _iteratorError50;
+                if (_didIteratorError51) {
+                  throw _iteratorError51;
                 }
               }
             }
 
-            _this41.$rootScope.sync("resolveSingletons");
+            _this42.$rootScope.sync("resolveSingletons");
 
             // Send remaining item to callback
             singletonHandler.singleton = winningItem;
@@ -39987,13 +40044,13 @@ var SingletonManager = function () {
         }
       };
 
-      var _iteratorNormalCompletion48 = true;
-      var _didIteratorError48 = false;
-      var _iteratorError48 = undefined;
+      var _iteratorNormalCompletion49 = true;
+      var _didIteratorError49 = false;
+      var _iteratorError49 = undefined;
 
       try {
-        for (var _iterator48 = this.singletonHandlers[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
-          var singletonHandler = _step48.value;
+        for (var _iterator49 = this.singletonHandlers[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
+          var singletonHandler = _step49.value;
           var predicate;
           var allExtantItemsMatchingPredicate;
           var toDelete;
@@ -40004,16 +40061,16 @@ var SingletonManager = function () {
           _loop4(singletonHandler);
         }
       } catch (err) {
-        _didIteratorError48 = true;
-        _iteratorError48 = err;
+        _didIteratorError49 = true;
+        _iteratorError49 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion48 && _iterator48.return) {
-            _iterator48.return();
+          if (!_iteratorNormalCompletion49 && _iterator49.return) {
+            _iterator49.return();
           }
         } finally {
-          if (_didIteratorError48) {
-            throw _iteratorError48;
+          if (_didIteratorError49) {
+            throw _iteratorError49;
           }
         }
       }
@@ -40021,10 +40078,10 @@ var SingletonManager = function () {
   }, {
     key: 'filterItemsWithPredicate',
     value: function filterItemsWithPredicate(items, predicate) {
-      var _this42 = this;
+      var _this43 = this;
 
       return items.filter(function (candidate) {
-        return _this42.itemSatisfiesPredicate(candidate, predicate);
+        return _this43.itemSatisfiesPredicate(candidate, predicate);
       });
     }
   }, {
@@ -40237,27 +40294,27 @@ var StorageManager = function () {
       EncryptionHelper.decryptItem(stored, this.encryptedStorageKeys);
       var encryptedStorage = new EncryptedStorage(stored);
 
-      var _iteratorNormalCompletion51 = true;
-      var _didIteratorError51 = false;
-      var _iteratorError51 = undefined;
+      var _iteratorNormalCompletion52 = true;
+      var _didIteratorError52 = false;
+      var _iteratorError52 = undefined;
 
       try {
-        for (var _iterator51 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
-          var key = _step51.value;
+        for (var _iterator52 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
+          var key = _step52.value;
 
           this.setItem(key, encryptedStorage.storage[key]);
         }
       } catch (err) {
-        _didIteratorError51 = true;
-        _iteratorError51 = err;
+        _didIteratorError52 = true;
+        _iteratorError52 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion51 && _iterator51.return) {
-            _iterator51.return();
+          if (!_iteratorNormalCompletion52 && _iterator52.return) {
+            _iterator52.return();
           }
         } finally {
-          if (_didIteratorError51) {
-            throw _iteratorError51;
+          if (_didIteratorError52) {
+            throw _iteratorError52;
           }
         }
       }
@@ -40397,29 +40454,29 @@ var SyncManager = function () {
     value: function syncOffline(items, callback) {
       this.writeItemsToLocalStorage(items, true, function (responseItems) {
         // delete anything needing to be deleted
-        var _iteratorNormalCompletion52 = true;
-        var _didIteratorError52 = false;
-        var _iteratorError52 = undefined;
+        var _iteratorNormalCompletion53 = true;
+        var _didIteratorError53 = false;
+        var _iteratorError53 = undefined;
 
         try {
-          for (var _iterator52 = items[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
-            var item = _step52.value;
+          for (var _iterator53 = items[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
+            var item = _step53.value;
 
             if (item.deleted) {
               this.modelManager.removeItemLocally(item);
             }
           }
         } catch (err) {
-          _didIteratorError52 = true;
-          _iteratorError52 = err;
+          _didIteratorError53 = true;
+          _iteratorError53 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion52 && _iterator52.return) {
-              _iterator52.return();
+            if (!_iteratorNormalCompletion53 && _iterator53.return) {
+              _iterator53.return();
             }
           } finally {
-            if (_didIteratorError52) {
-              throw _iteratorError52;
+            if (_didIteratorError53) {
+              throw _iteratorError53;
             }
           }
         }
@@ -40444,39 +40501,39 @@ var SyncManager = function () {
   }, {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback, alternateUUIDs) {
-      var _this43 = this;
+      var _this44 = this;
 
       // use a copy, as alternating uuid will affect array
       var originalItems = this.modelManager.allItems.slice();
 
       var block = function block() {
-        var allItems = _this43.modelManager.allItems;
-        var _iteratorNormalCompletion53 = true;
-        var _didIteratorError53 = false;
-        var _iteratorError53 = undefined;
+        var allItems = _this44.modelManager.allItems;
+        var _iteratorNormalCompletion54 = true;
+        var _didIteratorError54 = false;
+        var _iteratorError54 = undefined;
 
         try {
-          for (var _iterator53 = allItems[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
-            var item = _step53.value;
+          for (var _iterator54 = allItems[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
+            var item = _step54.value;
 
             item.setDirty(true);
           }
         } catch (err) {
-          _didIteratorError53 = true;
-          _iteratorError53 = err;
+          _didIteratorError54 = true;
+          _iteratorError54 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion53 && _iterator53.return) {
-              _iterator53.return();
+            if (!_iteratorNormalCompletion54 && _iterator54.return) {
+              _iterator54.return();
             }
           } finally {
-            if (_didIteratorError53) {
-              throw _iteratorError53;
+            if (_didIteratorError54) {
+              throw _iteratorError54;
             }
           }
         }
 
-        _this43.writeItemsToLocalStorage(allItems, false, callback);
+        _this44.writeItemsToLocalStorage(allItems, false, callback);
       };
 
       if (alternateUUIDs) {
@@ -40499,7 +40556,7 @@ var SyncManager = function () {
           // but for some reason retained their data (This happens in Firefox when using private mode).
           // In this case, we should pass false so that both copies are kept. However, it's difficult to
           // detect when the app has entered this state. We will just use true to remove original items for now.
-          _this43.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
+          _this44.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
         };
 
         alternateNextItem();
@@ -40520,27 +40577,27 @@ var SyncManager = function () {
         allCallbacks.push(currentCallback);
       }
       if (allCallbacks.length) {
-        var _iteratorNormalCompletion54 = true;
-        var _didIteratorError54 = false;
-        var _iteratorError54 = undefined;
+        var _iteratorNormalCompletion55 = true;
+        var _didIteratorError55 = false;
+        var _iteratorError55 = undefined;
 
         try {
-          for (var _iterator54 = allCallbacks[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
-            var eachCallback = _step54.value;
+          for (var _iterator55 = allCallbacks[Symbol.iterator](), _step55; !(_iteratorNormalCompletion55 = (_step55 = _iterator55.next()).done); _iteratorNormalCompletion55 = true) {
+            var eachCallback = _step55.value;
 
             eachCallback(response);
           }
         } catch (err) {
-          _didIteratorError54 = true;
-          _iteratorError54 = err;
+          _didIteratorError55 = true;
+          _iteratorError55 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion54 && _iterator54.return) {
-              _iterator54.return();
+            if (!_iteratorNormalCompletion55 && _iterator55.return) {
+              _iterator55.return();
             }
           } finally {
-            if (_didIteratorError54) {
-              throw _iteratorError54;
+            if (_didIteratorError55) {
+              throw _iteratorError55;
             }
           }
         }
@@ -40773,7 +40830,7 @@ var SyncManager = function () {
   }, {
     key: 'handleUnsavedItemsResponse',
     value: function handleUnsavedItemsResponse(unsaved) {
-      var _this44 = this;
+      var _this45 = this;
 
       if (unsaved.length == 0) {
         return;
@@ -40785,14 +40842,14 @@ var SyncManager = function () {
       var handleNext = function handleNext() {
         if (i >= unsaved.length) {
           // Handled all items
-          _this44.sync(null, { additionalFields: ["created_at", "updated_at"] });
+          _this45.sync(null, { additionalFields: ["created_at", "updated_at"] });
           return;
         }
 
         var mapping = unsaved[i];
         var itemResponse = mapping.item;
-        EncryptionHelper.decryptMultipleItems([itemResponse], _this44.authManager.keys());
-        var item = _this44.modelManager.findItem(itemResponse.uuid);
+        EncryptionHelper.decryptMultipleItems([itemResponse], _this45.authManager.keys());
+        var item = _this45.modelManager.findItem(itemResponse.uuid);
 
         if (!item) {
           // Could be deleted
@@ -40804,7 +40861,7 @@ var SyncManager = function () {
         if (error.tag === "uuid_conflict") {
           // UUID conflicts can occur if a user attempts to
           // import an old data archive with uuids from the old account into a new account
-          _this44.modelManager.alternateUUIDForItem(item, function () {
+          _this45.modelManager.alternateUUIDForItem(item, function () {
             i++;
             handleNext();
           }, true);
@@ -40814,9 +40871,9 @@ var SyncManager = function () {
           // We want a new uuid for the new item. Note that this won't neccessarily adjust references.
           itemResponse.uuid = null;
 
-          var dup = _this44.modelManager.createDuplicateItem(itemResponse, item);
+          var dup = _this45.modelManager.createDuplicateItem(itemResponse, item);
           if (!itemResponse.deleted && !item.isItemContentEqualWith(dup)) {
-            _this44.modelManager.addItem(dup);
+            _this45.modelManager.addItem(dup);
             dup.conflict_of = item.uuid;
             dup.setDirty(true);
           }
@@ -40926,11 +40983,11 @@ var SysExtManager = function () {
   }, {
     key: 'resolveExtensionsManager',
     value: function resolveExtensionsManager() {
-      var _this45 = this;
+      var _this46 = this;
 
       this.singletonManager.registerSingleton({ content_type: "SN|Component", package_info: { identifier: this.extensionsIdentifier } }, function (resolvedSingleton) {
         // Resolved Singleton
-        _this45.systemExtensions.push(resolvedSingleton.uuid);
+        _this46.systemExtensions.push(resolvedSingleton.uuid);
 
         var needsSync = false;
         if (isDesktopApplication()) {
@@ -40947,7 +41004,7 @@ var SysExtManager = function () {
 
         if (needsSync) {
           resolvedSingleton.setDirty(true);
-          _this45.syncManager.sync("resolveExtensionsManager");
+          _this46.syncManager.sync("resolveExtensionsManager");
         }
       }, function (valueCallback) {
         // Safe to create. Create and return object.
@@ -40960,7 +41017,7 @@ var SysExtManager = function () {
 
         var packageInfo = {
           name: "Extensions",
-          identifier: _this45.extensionsIdentifier
+          identifier: _this46.extensionsIdentifier
         };
 
         var item = {
@@ -40982,13 +41039,13 @@ var SysExtManager = function () {
           item.content.hosted_url = window._extensions_manager_location;
         }
 
-        var component = _this45.modelManager.createItem(item);
-        _this45.modelManager.addItem(component);
+        var component = _this46.modelManager.createItem(item);
+        _this46.modelManager.addItem(component);
 
         component.setDirty(true);
-        _this45.syncManager.sync("resolveExtensionsManager createNew");
+        _this46.syncManager.sync("resolveExtensionsManager createNew");
 
-        _this45.systemExtensions.push(component.uuid);
+        _this46.systemExtensions.push(component.uuid);
 
         valueCallback(component);
       });
@@ -41001,18 +41058,28 @@ var SysExtManager = function () {
 angular.module('app').service('sysExtManager', SysExtManager);
 ;
 var ThemeManager = function () {
-  function ThemeManager(componentManager) {
-    var _this46 = this;
+  function ThemeManager(componentManager, desktopManager) {
+    var _this47 = this;
 
     _classCallCheck(this, ThemeManager);
 
     this.componentManager = componentManager;
 
+    desktopManager.registerUpdateObserver(function (component) {
+      // Reload theme if active
+      if (component.active && component.isTheme()) {
+        _this47.deactivateTheme(component);
+        setTimeout(function () {
+          _this47.activateTheme(component);
+        }, 10);
+      }
+    });
+
     componentManager.registerHandler({ identifier: "themeManager", areas: ["themes"], activationHandler: function activationHandler(component) {
         if (component.active) {
-          _this46.activateTheme(component);
+          _this47.activateTheme(component);
         } else {
-          _this46.deactivateTheme(component);
+          _this47.deactivateTheme(component);
         }
       } });
   }
@@ -41875,27 +41942,27 @@ var ActionsMenu = function () {
         });
       };
 
-      var _iteratorNormalCompletion55 = true;
-      var _didIteratorError55 = false;
-      var _iteratorError55 = undefined;
+      var _iteratorNormalCompletion56 = true;
+      var _didIteratorError56 = false;
+      var _iteratorError56 = undefined;
 
       try {
-        for (var _iterator55 = $scope.extensions[Symbol.iterator](), _step55; !(_iteratorNormalCompletion55 = (_step55 = _iterator55.next()).done); _iteratorNormalCompletion55 = true) {
-          var ext = _step55.value;
+        for (var _iterator56 = $scope.extensions[Symbol.iterator](), _step56; !(_iteratorNormalCompletion56 = (_step56 = _iterator56.next()).done); _iteratorNormalCompletion56 = true) {
+          var ext = _step56.value;
 
           _loop5(ext);
         }
       } catch (err) {
-        _didIteratorError55 = true;
-        _iteratorError55 = err;
+        _didIteratorError56 = true;
+        _iteratorError56 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion55 && _iterator55.return) {
-            _iterator55.return();
+          if (!_iteratorNormalCompletion56 && _iterator56.return) {
+            _iterator56.return();
           }
         } finally {
-          if (_didIteratorError55) {
-            throw _iteratorError55;
+          if (_didIteratorError56) {
+            throw _iteratorError56;
           }
         }
       }
@@ -41940,7 +42007,7 @@ var ActionsMenu = function () {
       };
 
       $scope.subRowsForAction = function (parentAction, extension) {
-        var _this47 = this;
+        var _this48 = this;
 
         if (!parentAction.subactions) {
           return null;
@@ -41948,7 +42015,7 @@ var ActionsMenu = function () {
         return parentAction.subactions.map(function (subaction) {
           return {
             onClick: function onClick($event) {
-              _this47.executeAction(subaction, extension, parentAction);
+              _this48.executeAction(subaction, extension, parentAction);
               $event.stopPropagation();
             },
             title: subaction.label,
@@ -42008,7 +42075,7 @@ angular.module('app').directive('componentModal', function () {
 });
 ;
 var ComponentView = function () {
-  function ComponentView(componentManager, $timeout) {
+  function ComponentView(componentManager, desktopManager, $timeout) {
     _classCallCheck(this, ComponentView);
 
     this.restrict = "E";
@@ -42019,13 +42086,14 @@ var ComponentView = function () {
     };
 
     this.componentManager = componentManager;
+    this.desktopManager = desktopManager;
     this.timeout = $timeout;
   }
 
   _createClass(ComponentView, [{
     key: 'link',
     value: function link($scope, el, attrs, ctrl) {
-      var _this48 = this;
+      var _this49 = this;
 
       $scope.el = el;
 
@@ -42035,21 +42103,27 @@ var ComponentView = function () {
 
       this.componentManager.registerHandler({ identifier: $scope.identifier, areas: [$scope.component.area], activationHandler: function activationHandler(component) {
           if (component.active) {
-            _this48.timeout(function () {
-              var iframe = _this48.componentManager.iframeForComponent(component);
+            _this49.timeout(function () {
+              var iframe = _this49.componentManager.iframeForComponent(component);
               if (iframe) {
                 iframe.onload = function () {
                   this.componentManager.registerComponentWindow(component, iframe.contentWindow);
-                }.bind(_this48);
+                }.bind(_this49);
               }
             });
           }
         },
         actionHandler: function actionHandler(component, action, data) {
           if (action == "set-size") {
-            _this48.componentManager.handleSetSizeEvent(component, data);
+            _this49.componentManager.handleSetSizeEvent(component, data);
           }
         } });
+
+      $scope.updateObserver = this.desktopManager.registerUpdateObserver(function (component) {
+        if (component == $scope.component && component.active) {
+          $scope.reloadComponent();
+        }
+      });
 
       $scope.$watch('component', function (component, prevComponent) {
         ctrl.componentValueChanging(component, prevComponent);
@@ -42068,10 +42142,18 @@ var ComponentView = function () {
 
         if (component) {
           componentManager.activateComponent(component);
-          console.log("Loading", $scope.component.name, $scope.getUrl(), component.valid_until);
+          console.log("Loading", $scope.component.name, $scope.getUrl(), component.valid_until, $scope.component);
 
           $scope.reloadStatus();
         }
+      };
+
+      $scope.reloadComponent = function () {
+        console.log("Reloading component", $scope.component);
+        componentManager.deactivateComponent($scope.component);
+        $timeout(function () {
+          componentManager.activateComponent($scope.component);
+        });
       };
 
       $scope.reloadStatus = function () {
@@ -42114,6 +42196,8 @@ var ComponentView = function () {
         if ($scope.component && !$scope.manualDealloc) {
           componentManager.deactivateComponent($scope.component);
         }
+
+        desktopManager.deregisterUpdateObserver($scope.updateObserver);
       });
     }
   }]);
@@ -42121,8 +42205,8 @@ var ComponentView = function () {
   return ComponentView;
 }();
 
-angular.module('app').directive('componentView', function (componentManager, $timeout) {
-  return new ComponentView(componentManager, $timeout);
+angular.module('app').directive('componentView', function (componentManager, desktopManager, $timeout) {
+  return new ComponentView(componentManager, desktopManager, $timeout);
 });
 ;
 var EditorMenu = function () {

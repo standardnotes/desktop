@@ -27,6 +27,7 @@ log.transports.file.level = 'info';
 let win;
 let willQuitApp = false;
 
+autoUpdater.allowPrerelease = app.getVersion().includes("beta");
 autoUpdater.on("update-downloaded", function() {
   win.webContents.send("update-available", null);
 })
