@@ -33902,6 +33902,12 @@ Array.prototype.containsObjectSubset = function (array) {
     this.showExtensions = false;
   };
 
+  this.closeAllMenus = function () {
+    this.showEditorMenu = false;
+    this.showMenu = false;
+    this.showExtensions = false;
+  };
+
   this.editorMenuOnSelect = function (component) {
     var _this6 = this;
 
@@ -34227,23 +34233,27 @@ Array.prototype.containsObjectSubset = function (array) {
   Components
   */
 
-  componentManager.registerHandler({ identifier: "editor", areas: ["note-tags", "editor-stack", "editor-editor"], activationHandler: function (component) {
+  componentManager.registerHandler({ identifier: "editor", areas: ["note-tags", "editor-stack", "editor-editor"], activationHandler: function activationHandler(component) {
       if (component.area === "note-tags") {
         // Autocomplete Tags
-        this.tagsComponent = component.active ? component : null;
+        _this7.tagsComponent = component.active ? component : null;
       } else if (component.area == "editor-editor") {
         // Editor
-        if (component.active && this.note && (component.isExplicitlyEnabledForItem(this.note) || component.isDefaultEditor())) {
-          this.selectedEditor = component;
+        if (component.active && _this7.note && (component.isExplicitlyEnabledForItem(_this7.note) || component.isDefaultEditor())) {
+          _this7.selectedEditor = component;
         } else {
-          this.selectedEditor = null;
+          _this7.selectedEditor = null;
         }
       } else if (component.area == "editor-stack") {
-        this.reloadComponentContext();
+        _this7.reloadComponentContext();
       }
-    }.bind(this), contextRequestHandler: function (component) {
-      return this.note;
-    }.bind(this), actionHandler: function (component, action, data) {
+    }, contextRequestHandler: function contextRequestHandler(component) {
+      return _this7.note;
+    }, focusHandler: function focusHandler(component, focused) {
+      if (component.isEditor() && focused) {
+        _this7.closeAllMenus();
+      }
+    }, actionHandler: function actionHandler(component, action, data) {
       if (action === "set-size") {
         var setSize = function setSize(element, size) {
           var widthString = typeof size.width === 'string' ? size.width : data.width + 'px';
@@ -34260,30 +34270,30 @@ Array.prototype.containsObjectSubset = function (array) {
       } else if (action === "associate-item") {
         if (data.item.content_type == "Tag") {
           var tag = modelManager.findItem(data.item.uuid);
-          this.addTag(tag);
+          _this7.addTag(tag);
         }
       } else if (action === "deassociate-item") {
         var tag = modelManager.findItem(data.item.uuid);
-        this.removeTag(tag);
+        _this7.removeTag(tag);
       } else if (action === "save-items" || action === "save-success" || action == "save-error") {
         if (data.items.map(function (item) {
           return item.uuid;
-        }).includes(this.note.uuid)) {
+        }).includes(_this7.note.uuid)) {
 
           if (action == "save-items") {
-            if (this.componentSaveTimeout) $timeout.cancel(this.componentSaveTimeout);
-            this.componentSaveTimeout = $timeout(this.showSavingStatus.bind(this), 10);
+            if (_this7.componentSaveTimeout) $timeout.cancel(_this7.componentSaveTimeout);
+            _this7.componentSaveTimeout = $timeout(_this7.showSavingStatus.bind(_this7), 10);
           } else {
-            if (this.componentStatusTimeout) $timeout.cancel(this.componentStatusTimeout);
+            if (_this7.componentStatusTimeout) $timeout.cancel(_this7.componentStatusTimeout);
             if (action == "save-success") {
-              this.componentStatusTimeout = $timeout(this.showAllChangesSavedStatus.bind(this), 400);
+              _this7.componentStatusTimeout = $timeout(_this7.showAllChangesSavedStatus.bind(_this7), 400);
             } else {
-              this.componentStatusTimeout = $timeout(this.showErrorStatus.bind(this), 400);
+              _this7.componentStatusTimeout = $timeout(_this7.showErrorStatus.bind(_this7), 400);
             }
           }
         }
       }
-    }.bind(this) });
+    } });
 
   this.reloadComponentContext = function () {
     // componentStack is used by the template to ng-repeat
@@ -34544,7 +34554,17 @@ Array.prototype.containsObjectSubset = function (array) {
       if (action == "set-size") {
         component.setLastSize(data);
       }
+    }, focusHandler: function focusHandler(component, focused) {
+      if (component.isEditor() && focused) {
+        _this11.closeAllRooms();
+        _this11.closeAccountMenu();
+      }
     } });
+
+  $rootScope.$on("editorFocused", function () {
+    _this11.closeAllRooms();
+    _this11.closeAccountMenu();
+  });
 
   this.onRoomDismiss = function (room) {
     room.showRoom = false;
@@ -35857,10 +35877,10 @@ var Component = function (_Item3) {
     value: function mapContentToLocalProperties(content) {
       _get(Component.prototype.__proto__ || Object.getPrototypeOf(Component.prototype), 'mapContentToLocalProperties', this).call(this, content);
       /* Legacy */
-      this.url = content.url;
+      this.url = content.url || content.hosted_url;
       /* New */
       this.local_url = content.local_url;
-      this.hosted_url = content.hosted_url;
+      this.hosted_url = content.hosted_url || content.url;
       this.offlineOnly = content.offlineOnly;
 
       if (content.valid_until) {
@@ -37202,6 +37222,41 @@ var ComponentManager = function () {
     this.contextStreamObservers = [];
     this.activeComponents = [];
 
+    var detectFocusChange = function detectFocusChange(event) {
+      var _iteratorNormalCompletion15 = true;
+      var _didIteratorError15 = false;
+      var _iteratorError15 = undefined;
+
+      try {
+        for (var _iterator15 = _this26.activeComponents[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+          var component = _step15.value;
+
+          if (document.activeElement == _this26.iframeForComponent(component)) {
+            _this26.timeout(function () {
+              _this26.focusChangedForComponent(component);
+            });
+            break;
+          }
+        }
+      } catch (err) {
+        _didIteratorError15 = true;
+        _iteratorError15 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion15 && _iterator15.return) {
+            _iterator15.return();
+          }
+        } finally {
+          if (_didIteratorError15) {
+            throw _iteratorError15;
+          }
+        }
+      }
+    };
+
+    window.addEventListener ? window.addEventListener('focus', detectFocusChange, true) : window.attachEvent('onfocusout', detectFocusChange);
+    window.addEventListener ? window.addEventListener('blur', detectFocusChange, true) : window.attachEvent('onblur', detectFocusChange);
+
     desktopManager.registerUpdateObserver(function (component) {
       // Reload theme if active
       if (component.active && component.isTheme()) {
@@ -37244,13 +37299,13 @@ var ComponentManager = function () {
         _this26.desktopManager.syncComponentsInstallation(syncedComponents);
       }
 
-      var _iteratorNormalCompletion15 = true;
-      var _didIteratorError15 = false;
-      var _iteratorError15 = undefined;
+      var _iteratorNormalCompletion16 = true;
+      var _didIteratorError16 = false;
+      var _iteratorError16 = undefined;
 
       try {
-        for (var _iterator15 = syncedComponents[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-          var component = _step15.value;
+        for (var _iterator16 = syncedComponents[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+          var component = _step16.value;
 
           var activeComponent = _.find(_this26.activeComponents, { uuid: component.uuid });
           if (component.active && !component.deleted && !activeComponent) {
@@ -37260,16 +37315,16 @@ var ComponentManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError15 = true;
-        _iteratorError15 = err;
+        _didIteratorError16 = true;
+        _iteratorError16 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion15 && _iterator15.return) {
-            _iterator15.return();
+          if (!_iteratorNormalCompletion16 && _iterator16.return) {
+            _iterator16.return();
           }
         } finally {
-          if (_didIteratorError15) {
-            throw _iteratorError15;
+          if (_didIteratorError16) {
+            throw _iteratorError16;
           }
         }
       }
@@ -37295,13 +37350,13 @@ var ComponentManager = function () {
         });
       };
 
-      var _iteratorNormalCompletion16 = true;
-      var _didIteratorError16 = false;
-      var _iteratorError16 = undefined;
+      var _iteratorNormalCompletion17 = true;
+      var _didIteratorError17 = false;
+      var _iteratorError17 = undefined;
 
       try {
-        for (var _iterator16 = _this26.streamObservers[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-          var observer = _step16.value;
+        for (var _iterator17 = _this26.streamObservers[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+          var observer = _step17.value;
           var relevantItems;
           var requiredPermissions;
 
@@ -37310,16 +37365,16 @@ var ComponentManager = function () {
           if (_ret === 'continue') continue;
         }
       } catch (err) {
-        _didIteratorError16 = true;
-        _iteratorError16 = err;
+        _didIteratorError17 = true;
+        _iteratorError17 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion16 && _iterator16.return) {
-            _iterator16.return();
+          if (!_iteratorNormalCompletion17 && _iterator17.return) {
+            _iterator17.return();
           }
         } finally {
-          if (_didIteratorError16) {
-            throw _iteratorError16;
+          if (_didIteratorError17) {
+            throw _iteratorError17;
           }
         }
       }
@@ -37329,13 +37384,13 @@ var ComponentManager = function () {
       }];
 
       var _loop2 = function _loop2(observer) {
-        var _iteratorNormalCompletion18 = true;
-        var _didIteratorError18 = false;
-        var _iteratorError18 = undefined;
+        var _iteratorNormalCompletion19 = true;
+        var _didIteratorError19 = false;
+        var _iteratorError19 = undefined;
 
         try {
-          for (var _iterator18 = _this26.handlers[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
-            var handler = _step18.value;
+          for (var _iterator19 = _this26.handlers[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
+            var handler = _step19.value;
 
             if (!handler.areas.includes(observer.component.area) && !handler.areas.includes("*")) {
               continue;
@@ -37355,44 +37410,44 @@ var ComponentManager = function () {
             }
           }
         } catch (err) {
-          _didIteratorError18 = true;
-          _iteratorError18 = err;
+          _didIteratorError19 = true;
+          _iteratorError19 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion18 && _iterator18.return) {
-              _iterator18.return();
+            if (!_iteratorNormalCompletion19 && _iterator19.return) {
+              _iterator19.return();
             }
           } finally {
-            if (_didIteratorError18) {
-              throw _iteratorError18;
+            if (_didIteratorError19) {
+              throw _iteratorError19;
             }
           }
         }
       };
 
-      var _iteratorNormalCompletion17 = true;
-      var _didIteratorError17 = false;
-      var _iteratorError17 = undefined;
+      var _iteratorNormalCompletion18 = true;
+      var _didIteratorError18 = false;
+      var _iteratorError18 = undefined;
 
       try {
-        for (var _iterator17 = _this26.contextStreamObservers[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
-          var observer = _step17.value;
+        for (var _iterator18 = _this26.contextStreamObservers[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
+          var observer = _step18.value;
           var itemInContext;
           var matchingItem;
 
           _loop2(observer);
         }
       } catch (err) {
-        _didIteratorError17 = true;
-        _iteratorError17 = err;
+        _didIteratorError18 = true;
+        _iteratorError18 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion17 && _iterator17.return) {
-            _iterator17.return();
+          if (!_iteratorNormalCompletion18 && _iterator18.return) {
+            _iterator18.return();
           }
         } finally {
-          if (_didIteratorError17) {
-            throw _iteratorError17;
+          if (_didIteratorError18) {
+            throw _iteratorError18;
           }
         }
       }
@@ -37402,13 +37457,13 @@ var ComponentManager = function () {
   _createClass(ComponentManager, [{
     key: 'postActiveThemeToAllComponents',
     value: function postActiveThemeToAllComponents() {
-      var _iteratorNormalCompletion19 = true;
-      var _didIteratorError19 = false;
-      var _iteratorError19 = undefined;
+      var _iteratorNormalCompletion20 = true;
+      var _didIteratorError20 = false;
+      var _iteratorError20 = undefined;
 
       try {
-        for (var _iterator19 = this.components[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
-          var component = _step19.value;
+        for (var _iterator20 = this.components[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
+          var component = _step20.value;
 
           // Skip over components that are themes themselves,
           // or components that are not active, or components that don't have a window
@@ -37418,16 +37473,16 @@ var ComponentManager = function () {
           this.postActiveThemeToComponent(component);
         }
       } catch (err) {
-        _didIteratorError19 = true;
-        _iteratorError19 = err;
+        _didIteratorError20 = true;
+        _iteratorError20 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion19 && _iterator19.return) {
-            _iterator19.return();
+          if (!_iteratorNormalCompletion20 && _iterator20.return) {
+            _iterator20.return();
           }
         } finally {
-          if (_didIteratorError19) {
-            throw _iteratorError19;
+          if (_didIteratorError20) {
+            throw _iteratorError20;
           }
         }
       }
@@ -37452,13 +37507,13 @@ var ComponentManager = function () {
   }, {
     key: 'contextItemDidChangeInArea',
     value: function contextItemDidChangeInArea(area) {
-      var _iteratorNormalCompletion20 = true;
-      var _didIteratorError20 = false;
-      var _iteratorError20 = undefined;
+      var _iteratorNormalCompletion21 = true;
+      var _didIteratorError21 = false;
+      var _iteratorError21 = undefined;
 
       try {
-        for (var _iterator20 = this.handlers[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
-          var handler = _step20.value;
+        for (var _iterator21 = this.handlers[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
+          var handler = _step21.value;
 
           if (handler.areas.includes(area) === false && !handler.areas.includes("*")) {
             continue;
@@ -37467,13 +37522,13 @@ var ComponentManager = function () {
             return observer.component.area === area;
           });
 
-          var _iteratorNormalCompletion21 = true;
-          var _didIteratorError21 = false;
-          var _iteratorError21 = undefined;
+          var _iteratorNormalCompletion22 = true;
+          var _didIteratorError22 = false;
+          var _iteratorError22 = undefined;
 
           try {
-            for (var _iterator21 = observers[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
-              var observer = _step21.value;
+            for (var _iterator22 = observers[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
+              var observer = _step22.value;
 
               if (handler.contextRequestHandler) {
                 var itemInContext = handler.contextRequestHandler(observer.component);
@@ -37481,31 +37536,31 @@ var ComponentManager = function () {
               }
             }
           } catch (err) {
-            _didIteratorError21 = true;
-            _iteratorError21 = err;
+            _didIteratorError22 = true;
+            _iteratorError22 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion21 && _iterator21.return) {
-                _iterator21.return();
+              if (!_iteratorNormalCompletion22 && _iterator22.return) {
+                _iterator22.return();
               }
             } finally {
-              if (_didIteratorError21) {
-                throw _iteratorError21;
+              if (_didIteratorError22) {
+                throw _iteratorError22;
               }
             }
           }
         }
       } catch (err) {
-        _didIteratorError20 = true;
-        _iteratorError20 = err;
+        _didIteratorError21 = true;
+        _iteratorError21 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion20 && _iterator20.return) {
-            _iterator20.return();
+          if (!_iteratorNormalCompletion21 && _iterator21.return) {
+            _iterator21.return();
           }
         } finally {
-          if (_didIteratorError20) {
-            throw _iteratorError20;
+          if (_didIteratorError21) {
+            throw _iteratorError21;
           }
         }
       }
@@ -37668,27 +37723,27 @@ var ComponentManager = function () {
         }
       };
 
-      var _iteratorNormalCompletion22 = true;
-      var _didIteratorError22 = false;
-      var _iteratorError22 = undefined;
+      var _iteratorNormalCompletion23 = true;
+      var _didIteratorError23 = false;
+      var _iteratorError23 = undefined;
 
       try {
-        for (var _iterator22 = this.handlers[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
-          var handler = _step22.value;
+        for (var _iterator23 = this.handlers[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
+          var handler = _step23.value;
 
           _loop3(handler);
         }
       } catch (err) {
-        _didIteratorError22 = true;
-        _iteratorError22 = err;
+        _didIteratorError23 = true;
+        _iteratorError23 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion22 && _iterator22.return) {
-            _iterator22.return();
+          if (!_iteratorNormalCompletion23 && _iterator23.return) {
+            _iterator23.return();
           }
         } finally {
-          if (_didIteratorError22) {
-            throw _iteratorError22;
+          if (_didIteratorError23) {
+            throw _iteratorError23;
           }
         }
       }
@@ -37711,55 +37766,55 @@ var ComponentManager = function () {
           privateProperties = privateProperties.concat(["url", "hosted_url", "local_url"]);
         }
       }
-      var _iteratorNormalCompletion23 = true;
-      var _didIteratorError23 = false;
-      var _iteratorError23 = undefined;
+      var _iteratorNormalCompletion24 = true;
+      var _didIteratorError24 = false;
+      var _iteratorError24 = undefined;
 
       try {
-        for (var _iterator23 = responseItems[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
-          var responseItem = _step23.value;
+        for (var _iterator24 = responseItems[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
+          var responseItem = _step24.value;
 
 
           // Do not pass in actual items here, otherwise that would be destructive.
           // Instead, generic JS/JSON objects should be passed.
           console.assert(typeof responseItem.setDirty !== 'function');
 
-          var _iteratorNormalCompletion24 = true;
-          var _didIteratorError24 = false;
-          var _iteratorError24 = undefined;
+          var _iteratorNormalCompletion25 = true;
+          var _didIteratorError25 = false;
+          var _iteratorError25 = undefined;
 
           try {
-            for (var _iterator24 = privateProperties[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
-              var prop = _step24.value;
+            for (var _iterator25 = privateProperties[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
+              var prop = _step25.value;
 
               delete responseItem.content[prop];
             }
           } catch (err) {
-            _didIteratorError24 = true;
-            _iteratorError24 = err;
+            _didIteratorError25 = true;
+            _iteratorError25 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion24 && _iterator24.return) {
-                _iterator24.return();
+              if (!_iteratorNormalCompletion25 && _iterator25.return) {
+                _iterator25.return();
               }
             } finally {
-              if (_didIteratorError24) {
-                throw _iteratorError24;
+              if (_didIteratorError25) {
+                throw _iteratorError25;
               }
             }
           }
         }
       } catch (err) {
-        _didIteratorError23 = true;
-        _iteratorError23 = err;
+        _didIteratorError24 = true;
+        _iteratorError24 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion23 && _iterator23.return) {
-            _iterator23.return();
+          if (!_iteratorNormalCompletion24 && _iterator24.return) {
+            _iterator24.return();
           }
         } finally {
-          if (_didIteratorError23) {
-            throw _iteratorError23;
+          if (_didIteratorError24) {
+            throw _iteratorError24;
           }
         }
       }
@@ -37787,27 +37842,27 @@ var ComponentManager = function () {
 
         // push immediately now
         var items = [];
-        var _iteratorNormalCompletion25 = true;
-        var _didIteratorError25 = false;
-        var _iteratorError25 = undefined;
+        var _iteratorNormalCompletion26 = true;
+        var _didIteratorError26 = false;
+        var _iteratorError26 = undefined;
 
         try {
-          for (var _iterator25 = message.data.content_types[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
-            var contentType = _step25.value;
+          for (var _iterator26 = message.data.content_types[Symbol.iterator](), _step26; !(_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done); _iteratorNormalCompletion26 = true) {
+            var contentType = _step26.value;
 
             items = items.concat(_this28.modelManager.itemsForContentType(contentType));
           }
         } catch (err) {
-          _didIteratorError25 = true;
-          _iteratorError25 = err;
+          _didIteratorError26 = true;
+          _iteratorError26 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion25 && _iterator25.return) {
-              _iterator25.return();
+            if (!_iteratorNormalCompletion26 && _iterator26.return) {
+              _iterator26.return();
             }
           } finally {
-            if (_didIteratorError25) {
-              throw _iteratorError25;
+            if (_didIteratorError26) {
+              throw _iteratorError26;
             }
           }
         }
@@ -37834,13 +37889,13 @@ var ComponentManager = function () {
         }
 
         // push immediately now
-        var _iteratorNormalCompletion26 = true;
-        var _didIteratorError26 = false;
-        var _iteratorError26 = undefined;
+        var _iteratorNormalCompletion27 = true;
+        var _didIteratorError27 = false;
+        var _iteratorError27 = undefined;
 
         try {
-          for (var _iterator26 = this.handlersForArea(component.area)[Symbol.iterator](), _step26; !(_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done); _iteratorNormalCompletion26 = true) {
-            var handler = _step26.value;
+          for (var _iterator27 = this.handlersForArea(component.area)[Symbol.iterator](), _step27; !(_iteratorNormalCompletion27 = (_step27 = _iterator27.next()).done); _iteratorNormalCompletion27 = true) {
+            var handler = _step27.value;
 
             if (handler.contextRequestHandler) {
               var itemInContext = handler.contextRequestHandler(component);
@@ -37848,16 +37903,16 @@ var ComponentManager = function () {
             }
           }
         } catch (err) {
-          _didIteratorError26 = true;
-          _iteratorError26 = err;
+          _didIteratorError27 = true;
+          _iteratorError27 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion26 && _iterator26.return) {
-              _iterator26.return();
+            if (!_iteratorNormalCompletion27 && _iterator27.return) {
+              _iterator27.return();
             }
           } finally {
-            if (_didIteratorError26) {
-              throw _iteratorError26;
+            if (_didIteratorError27) {
+              throw _iteratorError27;
             }
           }
         }
@@ -37866,13 +37921,13 @@ var ComponentManager = function () {
   }, {
     key: 'isItemWithinComponentContextJurisdiction',
     value: function isItemWithinComponentContextJurisdiction(item, component) {
-      var _iteratorNormalCompletion27 = true;
-      var _didIteratorError27 = false;
-      var _iteratorError27 = undefined;
+      var _iteratorNormalCompletion28 = true;
+      var _didIteratorError28 = false;
+      var _iteratorError28 = undefined;
 
       try {
-        for (var _iterator27 = this.handlersForArea(component.area)[Symbol.iterator](), _step27; !(_iteratorNormalCompletion27 = (_step27 = _iterator27.next()).done); _iteratorNormalCompletion27 = true) {
-          var handler = _step27.value;
+        for (var _iterator28 = this.handlersForArea(component.area)[Symbol.iterator](), _step28; !(_iteratorNormalCompletion28 = (_step28 = _iterator28.next()).done); _iteratorNormalCompletion28 = true) {
+          var handler = _step28.value;
 
           if (handler.contextRequestHandler) {
             var itemInContext = handler.contextRequestHandler(component);
@@ -37882,16 +37937,16 @@ var ComponentManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError27 = true;
-        _iteratorError27 = err;
+        _didIteratorError28 = true;
+        _iteratorError28 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion27 && _iterator27.return) {
-            _iterator27.return();
+          if (!_iteratorNormalCompletion28 && _iterator28.return) {
+            _iterator28.return();
           }
         } finally {
-          if (_didIteratorError27) {
-            throw _iteratorError27;
+          if (_didIteratorError28) {
+            throw _iteratorError28;
           }
         }
       }
@@ -37938,13 +37993,13 @@ var ComponentManager = function () {
         */
         var localItems = _this29.modelManager.mapResponseItemsToLocalModels(responseItems, ModelManager.MappingSourceComponentRetrieved);
 
-        var _iteratorNormalCompletion28 = true;
-        var _didIteratorError28 = false;
-        var _iteratorError28 = undefined;
+        var _iteratorNormalCompletion29 = true;
+        var _didIteratorError29 = false;
+        var _iteratorError29 = undefined;
 
         try {
-          for (var _iterator28 = localItems[Symbol.iterator](), _step28; !(_iteratorNormalCompletion28 = (_step28 = _iterator28.next()).done); _iteratorNormalCompletion28 = true) {
-            var item = _step28.value;
+          for (var _iterator29 = localItems[Symbol.iterator](), _step29; !(_iteratorNormalCompletion29 = (_step29 = _iterator29.next()).done); _iteratorNormalCompletion29 = true) {
+            var item = _step29.value;
 
             var responseItem = _.find(responseItems, { uuid: item.uuid });
             _.merge(item.content, responseItem.content);
@@ -37954,16 +38009,16 @@ var ComponentManager = function () {
             item.setDirty(true);
           }
         } catch (err) {
-          _didIteratorError28 = true;
-          _iteratorError28 = err;
+          _didIteratorError29 = true;
+          _iteratorError29 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion28 && _iterator28.return) {
-              _iterator28.return();
+            if (!_iteratorNormalCompletion29 && _iterator29.return) {
+              _iterator29.return();
             }
           } finally {
-            if (_didIteratorError28) {
-              throw _iteratorError28;
+            if (_didIteratorError29) {
+              throw _iteratorError29;
             }
           }
         }
@@ -38019,13 +38074,13 @@ var ComponentManager = function () {
         var noun = itemsData.length == 1 ? "item" : "items";
         if (confirm('Are you sure you want to delete ' + itemsData.length + ' ' + noun + '?')) {
           // Filter for any components and deactivate before deleting
-          var _iteratorNormalCompletion29 = true;
-          var _didIteratorError29 = false;
-          var _iteratorError29 = undefined;
+          var _iteratorNormalCompletion30 = true;
+          var _didIteratorError30 = false;
+          var _iteratorError30 = undefined;
 
           try {
-            for (var _iterator29 = itemsData[Symbol.iterator](), _step29; !(_iteratorNormalCompletion29 = (_step29 = _iterator29.next()).done); _iteratorNormalCompletion29 = true) {
-              var itemData = _step29.value;
+            for (var _iterator30 = itemsData[Symbol.iterator](), _step30; !(_iteratorNormalCompletion30 = (_step30 = _iterator30.next()).done); _iteratorNormalCompletion30 = true) {
+              var itemData = _step30.value;
 
               var model = _this31.modelManager.findItem(itemData.uuid);
               if (["SN|Component", "SN|Theme"].includes(model.content_type)) {
@@ -38034,16 +38089,16 @@ var ComponentManager = function () {
               _this31.modelManager.setItemToBeDeleted(model);
             }
           } catch (err) {
-            _didIteratorError29 = true;
-            _iteratorError29 = err;
+            _didIteratorError30 = true;
+            _iteratorError30 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion29 && _iterator29.return) {
-                _iterator29.return();
+              if (!_iteratorNormalCompletion30 && _iterator30.return) {
+                _iterator30.return();
               }
             } finally {
-              if (_didIteratorError29) {
-                throw _iteratorError29;
+              if (_didIteratorError30) {
+                throw _iteratorError30;
               }
             }
           }
@@ -38115,13 +38170,13 @@ var ComponentManager = function () {
       var acquiredPermissions = component.permissions;
       var acquiredMatchesRequired = true;
 
-      var _iteratorNormalCompletion30 = true;
-      var _didIteratorError30 = false;
-      var _iteratorError30 = undefined;
+      var _iteratorNormalCompletion31 = true;
+      var _didIteratorError31 = false;
+      var _iteratorError31 = undefined;
 
       try {
-        for (var _iterator30 = requiredPermissions[Symbol.iterator](), _step30; !(_iteratorNormalCompletion30 = (_step30 = _iterator30.next()).done); _iteratorNormalCompletion30 = true) {
-          var required = _step30.value;
+        for (var _iterator31 = requiredPermissions[Symbol.iterator](), _step31; !(_iteratorNormalCompletion31 = (_step31 = _iterator31.next()).done); _iteratorNormalCompletion31 = true) {
+          var required = _step31.value;
 
           var matching = acquiredPermissions.find(function (candidate) {
             var matchesContentTypes = true;
@@ -38146,16 +38201,16 @@ var ComponentManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError30 = true;
-        _iteratorError30 = err;
+        _didIteratorError31 = true;
+        _iteratorError31 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion30 && _iterator30.return) {
-            _iterator30.return();
+          if (!_iteratorNormalCompletion31 && _iterator31.return) {
+            _iterator31.return();
           }
         } finally {
-          if (_didIteratorError30) {
-            throw _iteratorError30;
+          if (_didIteratorError31) {
+            throw _iteratorError31;
           }
         }
       }
@@ -38180,29 +38235,29 @@ var ComponentManager = function () {
 
       scope.callback = function (approved) {
         if (approved) {
-          var _iteratorNormalCompletion31 = true;
-          var _didIteratorError31 = false;
-          var _iteratorError31 = undefined;
+          var _iteratorNormalCompletion32 = true;
+          var _didIteratorError32 = false;
+          var _iteratorError32 = undefined;
 
           try {
-            for (var _iterator31 = permissions[Symbol.iterator](), _step31; !(_iteratorNormalCompletion31 = (_step31 = _iterator31.next()).done); _iteratorNormalCompletion31 = true) {
-              var permission = _step31.value;
+            for (var _iterator32 = permissions[Symbol.iterator](), _step32; !(_iteratorNormalCompletion32 = (_step32 = _iterator32.next()).done); _iteratorNormalCompletion32 = true) {
+              var permission = _step32.value;
 
               if (!component.permissions.includes(permission)) {
                 component.permissions.push(permission);
               }
             }
           } catch (err) {
-            _didIteratorError31 = true;
-            _iteratorError31 = err;
+            _didIteratorError32 = true;
+            _iteratorError32 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion31 && _iterator31.return) {
-                _iterator31.return();
+              if (!_iteratorNormalCompletion32 && _iterator32.return) {
+                _iterator32.return();
               }
             } finally {
-              if (_didIteratorError31) {
-                throw _iteratorError31;
+              if (_didIteratorError32) {
+                throw _iteratorError32;
               }
             }
           }
@@ -38312,29 +38367,29 @@ var ComponentManager = function () {
       var didChange = component.active != true;
 
       component.active = true;
-      var _iteratorNormalCompletion32 = true;
-      var _didIteratorError32 = false;
-      var _iteratorError32 = undefined;
+      var _iteratorNormalCompletion33 = true;
+      var _didIteratorError33 = false;
+      var _iteratorError33 = undefined;
 
       try {
-        for (var _iterator32 = this.handlers[Symbol.iterator](), _step32; !(_iteratorNormalCompletion32 = (_step32 = _iterator32.next()).done); _iteratorNormalCompletion32 = true) {
-          var handler = _step32.value;
+        for (var _iterator33 = this.handlers[Symbol.iterator](), _step33; !(_iteratorNormalCompletion33 = (_step33 = _iterator33.next()).done); _iteratorNormalCompletion33 = true) {
+          var handler = _step33.value;
 
           if (handler.areas.includes(component.area) || handler.areas.includes("*")) {
             handler.activationHandler(component);
           }
         }
       } catch (err) {
-        _didIteratorError32 = true;
-        _iteratorError32 = err;
+        _didIteratorError33 = true;
+        _iteratorError33 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion32 && _iterator32.return) {
-            _iterator32.return();
+          if (!_iteratorNormalCompletion33 && _iterator33.return) {
+            _iterator33.return();
           }
         } finally {
-          if (_didIteratorError32) {
-            throw _iteratorError32;
+          if (_didIteratorError33) {
+            throw _iteratorError33;
           }
         }
       }
@@ -38361,29 +38416,29 @@ var ComponentManager = function () {
       component.active = false;
       component.sessionKey = null;
 
-      var _iteratorNormalCompletion33 = true;
-      var _didIteratorError33 = false;
-      var _iteratorError33 = undefined;
+      var _iteratorNormalCompletion34 = true;
+      var _didIteratorError34 = false;
+      var _iteratorError34 = undefined;
 
       try {
-        for (var _iterator33 = this.handlers[Symbol.iterator](), _step33; !(_iteratorNormalCompletion33 = (_step33 = _iterator33.next()).done); _iteratorNormalCompletion33 = true) {
-          var handler = _step33.value;
+        for (var _iterator34 = this.handlers[Symbol.iterator](), _step34; !(_iteratorNormalCompletion34 = (_step34 = _iterator34.next()).done); _iteratorNormalCompletion34 = true) {
+          var handler = _step34.value;
 
           if (handler.areas.includes(component.area) || handler.areas.includes("*")) {
             handler.activationHandler(component);
           }
         }
       } catch (err) {
-        _didIteratorError33 = true;
-        _iteratorError33 = err;
+        _didIteratorError34 = true;
+        _iteratorError34 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion33 && _iterator33.return) {
-            _iterator33.return();
+          if (!_iteratorNormalCompletion34 && _iterator34.return) {
+            _iterator34.return();
           }
         } finally {
-          if (_didIteratorError33) {
-            throw _iteratorError33;
+          if (_didIteratorError34) {
+            throw _iteratorError34;
           }
         }
       }
@@ -38421,13 +38476,13 @@ var ComponentManager = function () {
   }, {
     key: 'iframeForComponent',
     value: function iframeForComponent(component) {
-      var _iteratorNormalCompletion34 = true;
-      var _didIteratorError34 = false;
-      var _iteratorError34 = undefined;
+      var _iteratorNormalCompletion35 = true;
+      var _didIteratorError35 = false;
+      var _iteratorError35 = undefined;
 
       try {
-        for (var _iterator34 = document.getElementsByTagName("iframe")[Symbol.iterator](), _step34; !(_iteratorNormalCompletion34 = (_step34 = _iterator34.next()).done); _iteratorNormalCompletion34 = true) {
-          var frame = _step34.value;
+        for (var _iterator35 = document.getElementsByTagName("iframe")[Symbol.iterator](), _step35; !(_iteratorNormalCompletion35 = (_step35 = _iterator35.next()).done); _iteratorNormalCompletion35 = true) {
+          var frame = _step35.value;
 
           var componentId = frame.dataset.componentId;
           if (componentId === component.uuid) {
@@ -38435,16 +38490,46 @@ var ComponentManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError34 = true;
-        _iteratorError34 = err;
+        _didIteratorError35 = true;
+        _iteratorError35 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion34 && _iterator34.return) {
-            _iterator34.return();
+          if (!_iteratorNormalCompletion35 && _iterator35.return) {
+            _iterator35.return();
           }
         } finally {
-          if (_didIteratorError34) {
-            throw _iteratorError34;
+          if (_didIteratorError35) {
+            throw _iteratorError35;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'focusChangedForComponent',
+    value: function focusChangedForComponent(component) {
+      var focused = document.activeElement == this.iframeForComponent(component);
+      var _iteratorNormalCompletion36 = true;
+      var _didIteratorError36 = false;
+      var _iteratorError36 = undefined;
+
+      try {
+        for (var _iterator36 = this.handlers[Symbol.iterator](), _step36; !(_iteratorNormalCompletion36 = (_step36 = _iterator36.next()).done); _iteratorNormalCompletion36 = true) {
+          var handler = _step36.value;
+
+          // Notify all handlers, and not just ones that match this component type
+          handler.focusHandler && handler.focusHandler(component, focused);
+        }
+      } catch (err) {
+        _didIteratorError36 = true;
+        _iteratorError36 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion36 && _iterator36.return) {
+            _iterator36.return();
+          }
+        } finally {
+          if (_didIteratorError36) {
+            throw _iteratorError36;
           }
         }
       }
@@ -38748,30 +38833,35 @@ var DesktopManager = function () {
       var permissableKeys = ["package_info", "local_url"];
       var component = this.modelManager.findItem(componentData.uuid);
 
+      if (!component) {
+        console.error("desktop_onComponentInstallationComplete component is null for uuid", componentData.uuid);
+        return;
+      }
+
       if (error) {
         component.setAppDataItem("installError", error);
       } else {
-        var _iteratorNormalCompletion35 = true;
-        var _didIteratorError35 = false;
-        var _iteratorError35 = undefined;
+        var _iteratorNormalCompletion37 = true;
+        var _didIteratorError37 = false;
+        var _iteratorError37 = undefined;
 
         try {
-          for (var _iterator35 = permissableKeys[Symbol.iterator](), _step35; !(_iteratorNormalCompletion35 = (_step35 = _iterator35.next()).done); _iteratorNormalCompletion35 = true) {
-            var key = _step35.value;
+          for (var _iterator37 = permissableKeys[Symbol.iterator](), _step37; !(_iteratorNormalCompletion37 = (_step37 = _iterator37.next()).done); _iteratorNormalCompletion37 = true) {
+            var key = _step37.value;
 
             component[key] = componentData.content[key];
           }
         } catch (err) {
-          _didIteratorError35 = true;
-          _iteratorError35 = err;
+          _didIteratorError37 = true;
+          _iteratorError37 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion35 && _iterator35.return) {
-              _iterator35.return();
+            if (!_iteratorNormalCompletion37 && _iterator37.return) {
+              _iterator37.return();
             }
           } finally {
-            if (_didIteratorError35) {
-              throw _iteratorError35;
+            if (_didIteratorError37) {
+              throw _iteratorError37;
             }
           }
         }
@@ -38783,27 +38873,27 @@ var DesktopManager = function () {
       this.syncManager.sync("onComponentInstallationComplete");
 
       this.timeout(function () {
-        var _iteratorNormalCompletion36 = true;
-        var _didIteratorError36 = false;
-        var _iteratorError36 = undefined;
+        var _iteratorNormalCompletion38 = true;
+        var _didIteratorError38 = false;
+        var _iteratorError38 = undefined;
 
         try {
-          for (var _iterator36 = _this36.updateObservers[Symbol.iterator](), _step36; !(_iteratorNormalCompletion36 = (_step36 = _iterator36.next()).done); _iteratorNormalCompletion36 = true) {
-            var observer = _step36.value;
+          for (var _iterator38 = _this36.updateObservers[Symbol.iterator](), _step38; !(_iteratorNormalCompletion38 = (_step38 = _iterator38.next()).done); _iteratorNormalCompletion38 = true) {
+            var observer = _step38.value;
 
             observer.callback(component);
           }
         } catch (err) {
-          _didIteratorError36 = true;
-          _iteratorError36 = err;
+          _didIteratorError38 = true;
+          _iteratorError38 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion36 && _iterator36.return) {
-              _iterator36.return();
+            if (!_iteratorNormalCompletion38 && _iterator38.return) {
+              _iterator38.return();
             }
           } finally {
-            if (_didIteratorError36) {
-              throw _iteratorError36;
+            if (_didIteratorError38) {
+              throw _iteratorError38;
             }
           }
         }
@@ -38971,13 +39061,13 @@ var MigrationManager = function () {
     this.addEditorToComponentMigrator();
 
     this.modelManager.addItemSyncObserver("migration-manager", "*", function (allItems, validItems, deletedItems) {
-      var _iteratorNormalCompletion37 = true;
-      var _didIteratorError37 = false;
-      var _iteratorError37 = undefined;
+      var _iteratorNormalCompletion39 = true;
+      var _didIteratorError39 = false;
+      var _iteratorError39 = undefined;
 
       try {
-        for (var _iterator37 = _this37.migrators[Symbol.iterator](), _step37; !(_iteratorNormalCompletion37 = (_step37 = _iterator37.next()).done); _iteratorNormalCompletion37 = true) {
-          var migrator = _step37.value;
+        for (var _iterator39 = _this37.migrators[Symbol.iterator](), _step39; !(_iteratorNormalCompletion39 = (_step39 = _iterator39.next()).done); _iteratorNormalCompletion39 = true) {
+          var migrator = _step39.value;
 
           var items = allItems.filter(function (item) {
             return item.content_type == migrator.content_type;
@@ -38987,16 +39077,16 @@ var MigrationManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError37 = true;
-        _iteratorError37 = err;
+        _didIteratorError39 = true;
+        _iteratorError39 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion37 && _iterator37.return) {
-            _iterator37.return();
+          if (!_iteratorNormalCompletion39 && _iterator39.return) {
+            _iterator39.return();
           }
         } finally {
-          if (_didIteratorError37) {
-            throw _iteratorError37;
+          if (_didIteratorError39) {
+            throw _iteratorError39;
           }
         }
       }
@@ -39018,13 +39108,13 @@ var MigrationManager = function () {
 
         handler: function handler(editors) {
           // Convert editors to components
-          var _iteratorNormalCompletion38 = true;
-          var _didIteratorError38 = false;
-          var _iteratorError38 = undefined;
+          var _iteratorNormalCompletion40 = true;
+          var _didIteratorError40 = false;
+          var _iteratorError40 = undefined;
 
           try {
-            for (var _iterator38 = editors[Symbol.iterator](), _step38; !(_iteratorNormalCompletion38 = (_step38 = _iterator38.next()).done); _iteratorNormalCompletion38 = true) {
-              var editor = _step38.value;
+            for (var _iterator40 = editors[Symbol.iterator](), _step40; !(_iteratorNormalCompletion40 = (_step40 = _iterator40.next()).done); _iteratorNormalCompletion40 = true) {
+              var editor = _step40.value;
 
               // If there's already a component for this url, then skip this editor
               if (editor.url && !_this38.componentManager.componentForUrl(editor.url)) {
@@ -39040,41 +39130,41 @@ var MigrationManager = function () {
               }
             }
           } catch (err) {
-            _didIteratorError38 = true;
-            _iteratorError38 = err;
+            _didIteratorError40 = true;
+            _iteratorError40 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion38 && _iterator38.return) {
-                _iterator38.return();
+              if (!_iteratorNormalCompletion40 && _iterator40.return) {
+                _iterator40.return();
               }
             } finally {
-              if (_didIteratorError38) {
-                throw _iteratorError38;
+              if (_didIteratorError40) {
+                throw _iteratorError40;
               }
             }
           }
 
-          var _iteratorNormalCompletion39 = true;
-          var _didIteratorError39 = false;
-          var _iteratorError39 = undefined;
+          var _iteratorNormalCompletion41 = true;
+          var _didIteratorError41 = false;
+          var _iteratorError41 = undefined;
 
           try {
-            for (var _iterator39 = editors[Symbol.iterator](), _step39; !(_iteratorNormalCompletion39 = (_step39 = _iterator39.next()).done); _iteratorNormalCompletion39 = true) {
-              var _editor = _step39.value;
+            for (var _iterator41 = editors[Symbol.iterator](), _step41; !(_iteratorNormalCompletion41 = (_step41 = _iterator41.next()).done); _iteratorNormalCompletion41 = true) {
+              var _editor = _step41.value;
 
               _this38.modelManager.setItemToBeDeleted(_editor);
             }
           } catch (err) {
-            _didIteratorError39 = true;
-            _iteratorError39 = err;
+            _didIteratorError41 = true;
+            _iteratorError41 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion39 && _iterator39.return) {
-                _iterator39.return();
+              if (!_iteratorNormalCompletion41 && _iterator41.return) {
+                _iterator41.return();
               }
             } finally {
-              if (_didIteratorError39) {
-                throw _iteratorError39;
+              if (_didIteratorError41) {
+                throw _iteratorError41;
               }
             }
           }
@@ -39163,27 +39253,27 @@ var ModelManager = function () {
       // for example, editors have a one way relationship with notes. When a note changes its UUID, it has no way to inform the editor
       // to update its relationships
 
-      var _iteratorNormalCompletion40 = true;
-      var _didIteratorError40 = false;
-      var _iteratorError40 = undefined;
+      var _iteratorNormalCompletion42 = true;
+      var _didIteratorError42 = false;
+      var _iteratorError42 = undefined;
 
       try {
-        for (var _iterator40 = this.items[Symbol.iterator](), _step40; !(_iteratorNormalCompletion40 = (_step40 = _iterator40.next()).done); _iteratorNormalCompletion40 = true) {
-          var model = _step40.value;
+        for (var _iterator42 = this.items[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
+          var model = _step42.value;
 
           model.potentialItemOfInterestHasChangedItsUUID(newItem, oldUUID, newUUID);
         }
       } catch (err) {
-        _didIteratorError40 = true;
-        _iteratorError40 = err;
+        _didIteratorError42 = true;
+        _iteratorError42 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion40 && _iterator40.return) {
-            _iterator40.return();
+          if (!_iteratorNormalCompletion42 && _iterator42.return) {
+            _iterator42.return();
           }
         } finally {
-          if (_didIteratorError40) {
-            throw _iteratorError40;
+          if (_didIteratorError42) {
+            throw _iteratorError42;
           }
         }
       }
@@ -39235,13 +39325,13 @@ var ModelManager = function () {
           modelsToNotifyObserversOf = [];
 
       // first loop should add and process items
-      var _iteratorNormalCompletion41 = true;
-      var _didIteratorError41 = false;
-      var _iteratorError41 = undefined;
+      var _iteratorNormalCompletion43 = true;
+      var _didIteratorError43 = false;
+      var _iteratorError43 = undefined;
 
       try {
-        for (var _iterator41 = items[Symbol.iterator](), _step41; !(_iteratorNormalCompletion41 = (_step41 = _iterator41.next()).done); _iteratorNormalCompletion41 = true) {
-          var json_obj = _step41.value;
+        for (var _iterator43 = items[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
+          var json_obj = _step43.value;
 
           if ((!json_obj.content_type || !json_obj.content) && !json_obj.deleted && !json_obj.errorDecrypting) {
             // An item that is not deleted should never have empty content
@@ -39285,16 +39375,16 @@ var ModelManager = function () {
 
         // second loop should process references
       } catch (err) {
-        _didIteratorError41 = true;
-        _iteratorError41 = err;
+        _didIteratorError43 = true;
+        _iteratorError43 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion41 && _iterator41.return) {
-            _iterator41.return();
+          if (!_iteratorNormalCompletion43 && _iterator43.return) {
+            _iterator43.return();
           }
         } finally {
-          if (_didIteratorError41) {
-            throw _iteratorError41;
+          if (_didIteratorError43) {
+            throw _iteratorError43;
           }
         }
       }
@@ -39316,26 +39406,26 @@ var ModelManager = function () {
   }, {
     key: 'notifySyncObserversOfModels',
     value: function notifySyncObserversOfModels(models, source) {
-      var _iteratorNormalCompletion42 = true;
-      var _didIteratorError42 = false;
-      var _iteratorError42 = undefined;
+      var _iteratorNormalCompletion44 = true;
+      var _didIteratorError44 = false;
+      var _iteratorError44 = undefined;
 
       try {
-        for (var _iterator42 = this.itemSyncObservers[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
-          var observer = _step42.value;
+        for (var _iterator44 = this.itemSyncObservers[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
+          var observer = _step44.value;
 
           var allRelevantItems = models.filter(function (item) {
             return item.content_type == observer.type || observer.type == "*";
           });
           var validItems = [],
               deletedItems = [];
-          var _iteratorNormalCompletion43 = true;
-          var _didIteratorError43 = false;
-          var _iteratorError43 = undefined;
+          var _iteratorNormalCompletion45 = true;
+          var _didIteratorError45 = false;
+          var _iteratorError45 = undefined;
 
           try {
-            for (var _iterator43 = allRelevantItems[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
-              var item = _step43.value;
+            for (var _iterator45 = allRelevantItems[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
+              var item = _step45.value;
 
               if (item.deleted) {
                 deletedItems.push(item);
@@ -39344,56 +39434,22 @@ var ModelManager = function () {
               }
             }
           } catch (err) {
-            _didIteratorError43 = true;
-            _iteratorError43 = err;
+            _didIteratorError45 = true;
+            _iteratorError45 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion43 && _iterator43.return) {
-                _iterator43.return();
+              if (!_iteratorNormalCompletion45 && _iterator45.return) {
+                _iterator45.return();
               }
             } finally {
-              if (_didIteratorError43) {
-                throw _iteratorError43;
+              if (_didIteratorError45) {
+                throw _iteratorError45;
               }
             }
           }
 
           if (allRelevantItems.length > 0) {
             observer.callback(allRelevantItems, validItems, deletedItems, source);
-          }
-        }
-      } catch (err) {
-        _didIteratorError42 = true;
-        _iteratorError42 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion42 && _iterator42.return) {
-            _iterator42.return();
-          }
-        } finally {
-          if (_didIteratorError42) {
-            throw _iteratorError42;
-          }
-        }
-      }
-    }
-  }, {
-    key: 'notifyItemChangeObserversOfModels',
-    value: function notifyItemChangeObserversOfModels(models) {
-      var _iteratorNormalCompletion44 = true;
-      var _didIteratorError44 = false;
-      var _iteratorError44 = undefined;
-
-      try {
-        for (var _iterator44 = this.itemChangeObservers[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
-          var observer = _step44.value;
-
-          var relevantItems = models.filter(function (item) {
-            return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
-          });
-
-          if (relevantItems.length > 0) {
-            observer.callback(relevantItems);
           }
         }
       } catch (err) {
@@ -39407,6 +39463,40 @@ var ModelManager = function () {
         } finally {
           if (_didIteratorError44) {
             throw _iteratorError44;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'notifyItemChangeObserversOfModels',
+    value: function notifyItemChangeObserversOfModels(models) {
+      var _iteratorNormalCompletion46 = true;
+      var _didIteratorError46 = false;
+      var _iteratorError46 = undefined;
+
+      try {
+        for (var _iterator46 = this.itemChangeObservers[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
+          var observer = _step46.value;
+
+          var relevantItems = models.filter(function (item) {
+            return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
+          });
+
+          if (relevantItems.length > 0) {
+            observer.callback(relevantItems);
+          }
+        }
+      } catch (err) {
+        _didIteratorError46 = true;
+        _iteratorError46 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion46 && _iterator46.return) {
+            _iterator46.return();
+          }
+        } finally {
+          if (_didIteratorError46) {
+            throw _iteratorError46;
           }
         }
       }
@@ -39509,13 +39599,13 @@ var ModelManager = function () {
         return;
       }
 
-      var _iteratorNormalCompletion45 = true;
-      var _didIteratorError45 = false;
-      var _iteratorError45 = undefined;
+      var _iteratorNormalCompletion47 = true;
+      var _didIteratorError47 = false;
+      var _iteratorError47 = undefined;
 
       try {
-        for (var _iterator45 = contentObject.references[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
-          var reference = _step45.value;
+        for (var _iterator47 = contentObject.references[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
+          var reference = _step47.value;
 
           var referencedItem = this.findItem(reference.uuid);
           if (referencedItem) {
@@ -39526,16 +39616,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError45 = true;
-        _iteratorError45 = err;
+        _didIteratorError47 = true;
+        _iteratorError47 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion45 && _iterator45.return) {
-            _iterator45.return();
+          if (!_iteratorNormalCompletion47 && _iterator47.return) {
+            _iterator47.return();
           }
         } finally {
-          if (_didIteratorError45) {
-            throw _iteratorError45;
+          if (_didIteratorError47) {
+            throw _iteratorError47;
           }
         }
       }
@@ -39571,27 +39661,27 @@ var ModelManager = function () {
   }, {
     key: 'clearDirtyItems',
     value: function clearDirtyItems(items) {
-      var _iteratorNormalCompletion46 = true;
-      var _didIteratorError46 = false;
-      var _iteratorError46 = undefined;
+      var _iteratorNormalCompletion48 = true;
+      var _didIteratorError48 = false;
+      var _iteratorError48 = undefined;
 
       try {
-        for (var _iterator46 = items[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
-          var item = _step46.value;
+        for (var _iterator48 = items[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
+          var item = _step48.value;
 
           item.setDirty(false);
         }
       } catch (err) {
-        _didIteratorError46 = true;
-        _iteratorError46 = err;
+        _didIteratorError48 = true;
+        _iteratorError48 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion46 && _iterator46.return) {
-            _iterator46.return();
+          if (!_iteratorNormalCompletion48 && _iterator48.return) {
+            _iterator48.return();
           }
         } finally {
-          if (_didIteratorError46) {
-            throw _iteratorError46;
+          if (_didIteratorError48) {
+            throw _iteratorError48;
           }
         }
       }
@@ -39620,27 +39710,27 @@ var ModelManager = function () {
         return _.includes(this.acceptableContentTypes, item.content_type);
       }.bind(this));
 
-      var _iteratorNormalCompletion47 = true;
-      var _didIteratorError47 = false;
-      var _iteratorError47 = undefined;
+      var _iteratorNormalCompletion49 = true;
+      var _didIteratorError49 = false;
+      var _iteratorError49 = undefined;
 
       try {
-        for (var _iterator47 = relevantItems[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
-          var item = _step47.value;
+        for (var _iterator49 = relevantItems[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
+          var item = _step49.value;
 
           item.setDirty(true);
         }
       } catch (err) {
-        _didIteratorError47 = true;
-        _iteratorError47 = err;
+        _didIteratorError49 = true;
+        _iteratorError49 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion47 && _iterator47.return) {
-            _iterator47.return();
+          if (!_iteratorNormalCompletion49 && _iterator49.return) {
+            _iterator49.return();
           }
         } finally {
-          if (_didIteratorError47) {
-            throw _iteratorError47;
+          if (_didIteratorError49) {
+            throw _iteratorError49;
           }
         }
       }
@@ -39925,13 +40015,13 @@ var SingletonManager = function () {
             // The item that will be chosen to be kept
 
             if (retrievedSingletonItems.length > 0) {
-              var _iteratorNormalCompletion49 = true;
-              var _didIteratorError49 = false;
-              var _iteratorError49 = undefined;
+              var _iteratorNormalCompletion51 = true;
+              var _didIteratorError51 = false;
+              var _iteratorError51 = undefined;
 
               try {
-                for (var _iterator49 = allExtantItemsMatchingPredicate[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
-                  var extantItem = _step49.value;
+                for (var _iterator51 = allExtantItemsMatchingPredicate[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
+                  var extantItem = _step51.value;
 
                   if (!retrievedSingletonItems.includes(extantItem)) {
                     // Delete it
@@ -39941,16 +40031,16 @@ var SingletonManager = function () {
 
                 // Sort incoming singleton items by most recently updated first, then delete all the rest
               } catch (err) {
-                _didIteratorError49 = true;
-                _iteratorError49 = err;
+                _didIteratorError51 = true;
+                _iteratorError51 = err;
               } finally {
                 try {
-                  if (!_iteratorNormalCompletion49 && _iterator49.return) {
-                    _iterator49.return();
+                  if (!_iteratorNormalCompletion51 && _iterator51.return) {
+                    _iterator51.return();
                   }
                 } finally {
-                  if (_didIteratorError49) {
-                    throw _iteratorError49;
+                  if (_didIteratorError51) {
+                    throw _iteratorError51;
                   }
                 }
               }
@@ -39972,27 +40062,27 @@ var SingletonManager = function () {
             // Delete everything but the first one
             toDelete = toDelete.concat(sorted.slice(1, sorted.length));
 
-            var _iteratorNormalCompletion50 = true;
-            var _didIteratorError50 = false;
-            var _iteratorError50 = undefined;
+            var _iteratorNormalCompletion52 = true;
+            var _didIteratorError52 = false;
+            var _iteratorError52 = undefined;
 
             try {
-              for (var _iterator50 = toDelete[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
-                d = _step50.value;
+              for (var _iterator52 = toDelete[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
+                d = _step52.value;
 
                 _this42.modelManager.setItemToBeDeleted(d);
               }
             } catch (err) {
-              _didIteratorError50 = true;
-              _iteratorError50 = err;
+              _didIteratorError52 = true;
+              _iteratorError52 = err;
             } finally {
               try {
-                if (!_iteratorNormalCompletion50 && _iterator50.return) {
-                  _iterator50.return();
+                if (!_iteratorNormalCompletion52 && _iterator52.return) {
+                  _iterator52.return();
                 }
               } finally {
-                if (_didIteratorError50) {
-                  throw _iteratorError50;
+                if (_didIteratorError52) {
+                  throw _iteratorError52;
                 }
               }
             }
@@ -40026,13 +40116,13 @@ var SingletonManager = function () {
         }
       };
 
-      var _iteratorNormalCompletion48 = true;
-      var _didIteratorError48 = false;
-      var _iteratorError48 = undefined;
+      var _iteratorNormalCompletion50 = true;
+      var _didIteratorError50 = false;
+      var _iteratorError50 = undefined;
 
       try {
-        for (var _iterator48 = this.singletonHandlers[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
-          var singletonHandler = _step48.value;
+        for (var _iterator50 = this.singletonHandlers[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
+          var singletonHandler = _step50.value;
           var predicate;
           var allExtantItemsMatchingPredicate;
           var toDelete;
@@ -40043,16 +40133,16 @@ var SingletonManager = function () {
           _loop4(singletonHandler);
         }
       } catch (err) {
-        _didIteratorError48 = true;
-        _iteratorError48 = err;
+        _didIteratorError50 = true;
+        _iteratorError50 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion48 && _iterator48.return) {
-            _iterator48.return();
+          if (!_iteratorNormalCompletion50 && _iterator50.return) {
+            _iterator50.return();
           }
         } finally {
-          if (_didIteratorError48) {
-            throw _iteratorError48;
+          if (_didIteratorError50) {
+            throw _iteratorError50;
           }
         }
       }
@@ -40277,27 +40367,27 @@ var StorageManager = function () {
       EncryptionHelper.decryptItem(stored, this.encryptedStorageKeys);
       var encryptedStorage = new EncryptedStorage(stored);
 
-      var _iteratorNormalCompletion51 = true;
-      var _didIteratorError51 = false;
-      var _iteratorError51 = undefined;
+      var _iteratorNormalCompletion53 = true;
+      var _didIteratorError53 = false;
+      var _iteratorError53 = undefined;
 
       try {
-        for (var _iterator51 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
-          var key = _step51.value;
+        for (var _iterator53 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
+          var key = _step53.value;
 
           this.setItem(key, encryptedStorage.storage[key]);
         }
       } catch (err) {
-        _didIteratorError51 = true;
-        _iteratorError51 = err;
+        _didIteratorError53 = true;
+        _iteratorError53 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion51 && _iterator51.return) {
-            _iterator51.return();
+          if (!_iteratorNormalCompletion53 && _iterator53.return) {
+            _iterator53.return();
           }
         } finally {
-          if (_didIteratorError51) {
-            throw _iteratorError51;
+          if (_didIteratorError53) {
+            throw _iteratorError53;
           }
         }
       }
@@ -40438,29 +40528,29 @@ var SyncManager = function () {
     value: function syncOffline(items, callback) {
       this.writeItemsToLocalStorage(items, true, function (responseItems) {
         // delete anything needing to be deleted
-        var _iteratorNormalCompletion52 = true;
-        var _didIteratorError52 = false;
-        var _iteratorError52 = undefined;
+        var _iteratorNormalCompletion54 = true;
+        var _didIteratorError54 = false;
+        var _iteratorError54 = undefined;
 
         try {
-          for (var _iterator52 = items[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
-            var item = _step52.value;
+          for (var _iterator54 = items[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
+            var item = _step54.value;
 
             if (item.deleted) {
               this.modelManager.removeItemLocally(item);
             }
           }
         } catch (err) {
-          _didIteratorError52 = true;
-          _iteratorError52 = err;
+          _didIteratorError54 = true;
+          _iteratorError54 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion52 && _iterator52.return) {
-              _iterator52.return();
+            if (!_iteratorNormalCompletion54 && _iterator54.return) {
+              _iterator54.return();
             }
           } finally {
-            if (_didIteratorError52) {
-              throw _iteratorError52;
+            if (_didIteratorError54) {
+              throw _iteratorError54;
             }
           }
         }
@@ -40492,27 +40582,27 @@ var SyncManager = function () {
 
       var block = function block() {
         var allItems = _this44.modelManager.allItems;
-        var _iteratorNormalCompletion53 = true;
-        var _didIteratorError53 = false;
-        var _iteratorError53 = undefined;
+        var _iteratorNormalCompletion55 = true;
+        var _didIteratorError55 = false;
+        var _iteratorError55 = undefined;
 
         try {
-          for (var _iterator53 = allItems[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
-            var item = _step53.value;
+          for (var _iterator55 = allItems[Symbol.iterator](), _step55; !(_iteratorNormalCompletion55 = (_step55 = _iterator55.next()).done); _iteratorNormalCompletion55 = true) {
+            var item = _step55.value;
 
             item.setDirty(true);
           }
         } catch (err) {
-          _didIteratorError53 = true;
-          _iteratorError53 = err;
+          _didIteratorError55 = true;
+          _iteratorError55 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion53 && _iterator53.return) {
-              _iterator53.return();
+            if (!_iteratorNormalCompletion55 && _iterator55.return) {
+              _iterator55.return();
             }
           } finally {
-            if (_didIteratorError53) {
-              throw _iteratorError53;
+            if (_didIteratorError55) {
+              throw _iteratorError55;
             }
           }
         }
@@ -40561,27 +40651,27 @@ var SyncManager = function () {
         allCallbacks.push(currentCallback);
       }
       if (allCallbacks.length) {
-        var _iteratorNormalCompletion54 = true;
-        var _didIteratorError54 = false;
-        var _iteratorError54 = undefined;
+        var _iteratorNormalCompletion56 = true;
+        var _didIteratorError56 = false;
+        var _iteratorError56 = undefined;
 
         try {
-          for (var _iterator54 = allCallbacks[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
-            var eachCallback = _step54.value;
+          for (var _iterator56 = allCallbacks[Symbol.iterator](), _step56; !(_iteratorNormalCompletion56 = (_step56 = _iterator56.next()).done); _iteratorNormalCompletion56 = true) {
+            var eachCallback = _step56.value;
 
             eachCallback(response);
           }
         } catch (err) {
-          _didIteratorError54 = true;
-          _iteratorError54 = err;
+          _didIteratorError56 = true;
+          _iteratorError56 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion54 && _iterator54.return) {
-              _iterator54.return();
+            if (!_iteratorNormalCompletion56 && _iterator56.return) {
+              _iterator56.return();
             }
           } finally {
-            if (_didIteratorError54) {
-              throw _iteratorError54;
+            if (_didIteratorError56) {
+              throw _iteratorError56;
             }
           }
         }
@@ -41928,27 +42018,27 @@ var ActionsMenu = function () {
         });
       };
 
-      var _iteratorNormalCompletion55 = true;
-      var _didIteratorError55 = false;
-      var _iteratorError55 = undefined;
+      var _iteratorNormalCompletion57 = true;
+      var _didIteratorError57 = false;
+      var _iteratorError57 = undefined;
 
       try {
-        for (var _iterator55 = $scope.extensions[Symbol.iterator](), _step55; !(_iteratorNormalCompletion55 = (_step55 = _iterator55.next()).done); _iteratorNormalCompletion55 = true) {
-          var ext = _step55.value;
+        for (var _iterator57 = $scope.extensions[Symbol.iterator](), _step57; !(_iteratorNormalCompletion57 = (_step57 = _iterator57.next()).done); _iteratorNormalCompletion57 = true) {
+          var ext = _step57.value;
 
           _loop5(ext);
         }
       } catch (err) {
-        _didIteratorError55 = true;
-        _iteratorError55 = err;
+        _didIteratorError57 = true;
+        _iteratorError57 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion55 && _iterator55.return) {
-            _iterator55.return();
+          if (!_iteratorNormalCompletion57 && _iterator57.return) {
+            _iterator57.return();
           }
         } finally {
-          if (_didIteratorError55) {
-            throw _iteratorError55;
+          if (_didIteratorError57) {
+            throw _iteratorError57;
           }
         }
       }
@@ -42584,7 +42674,8 @@ var PermissionsModal = function () {
     }
   }, {
     key: 'controller',
-    value: function controller($scope, modelManager) {
+    value: ['$scope', 'modelManager', function controller($scope, modelManager) {
+      'ngInject';
 
       $scope.permissionsString = function () {
         var finalString = "";
@@ -42648,7 +42739,7 @@ var PermissionsModal = function () {
 
         return finalString + ".";
       };
-    }
+    }]
   }]);
 
   return PermissionsModal;

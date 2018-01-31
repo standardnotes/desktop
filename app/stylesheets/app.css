@@ -834,6 +834,8 @@ a.disabled {
   flex-grow: 1;
   overflow: scroll;
   height: 100%;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
 }
 .sn-component .panel .content p, .sn-component .panel .content li {
   color: #454545;
@@ -930,6 +932,8 @@ a.disabled {
   border-radius: 0.6rem;
   overflow: scroll;
   user-select: none;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
 }
 .sn-component .menu-panel .header {
   padding: 0.8rem 1rem;
