@@ -129,9 +129,9 @@ function createWindow () {
 }
 
 function checkForUpdates() {
-  // if(!isDev) {
+  if(!isDev) {
     autoUpdater.checkForUpdates();
-  // }
+  }
 }
 
 app.on('before-quit', () => willQuitApp = true);
