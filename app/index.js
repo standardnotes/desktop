@@ -2,7 +2,6 @@ const {app, Menu, BrowserWindow, dialog, ipcMain} = require('electron');
 app.setName('Standard Notes');
 
 const path = require('path')
-const {autoUpdater} = require("electron-updater")
 const url = require('url')
 const windowStateKeeper = require('electron-window-state')
 const shell = require('electron').shell;
@@ -27,7 +26,7 @@ log.transports.file.level = 'info';
 let win;
 let willQuitApp = false;
 
-autoUpdater.allowPrerelease = app.getVersion().includes("beta");
+const {autoUpdater} = require("electron-updater")
 autoUpdater.on("update-downloaded", function() {
   win.webContents.send("update-available", null);
 })
@@ -130,9 +129,9 @@ function createWindow () {
 }
 
 function checkForUpdates() {
-  if(!isDev) {
+  // if(!isDev) {
     autoUpdater.checkForUpdates();
-  }
+  // }
 }
 
 app.on('before-quit', () => willQuitApp = true);

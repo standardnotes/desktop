@@ -37205,8 +37205,8 @@ angular.module('app').service('actionsManager', ActionsManager);
 var ClientDataDomain = "org.standardnotes.sn.components";
 
 var ComponentManager = function () {
-  ComponentManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'desktopManager', 'sysExtManager', '$timeout', '$compile'];
-  function ComponentManager($rootScope, modelManager, syncManager, desktopManager, sysExtManager, $timeout, $compile) {
+  ComponentManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'desktopManager', 'nativeExtManager', '$timeout', '$compile'];
+  function ComponentManager($rootScope, modelManager, syncManager, desktopManager, nativeExtManager, $timeout, $compile) {
     var _this26 = this;
 
     _classCallCheck(this, ComponentManager);
@@ -37216,7 +37216,7 @@ var ComponentManager = function () {
     this.modelManager = modelManager;
     this.syncManager = syncManager;
     this.desktopManager = desktopManager;
-    this.sysExtManager = sysExtManager;
+    this.nativeExtManager = nativeExtManager;
     this.timeout = $timeout;
     this.streamObservers = [];
     this.contextStreamObservers = [];
@@ -37647,7 +37647,7 @@ var ComponentManager = function () {
       if (component.offlineOnly || isDesktopApplication() && component.local_url) {
         return component.local_url && component.local_url.replace("sn://", this.desktopManager.getApplicationDataPath() + "/");
       } else {
-        return component.url || component.hosted_url;
+        return component.hosted_url || component.url;
       }
     }
   }, {
@@ -37755,7 +37755,7 @@ var ComponentManager = function () {
 
       if (component) {
         // System extensions can bypass this step
-        if (this.sysExtManager.isSystemExtension(component)) {
+        if (this.nativeExtManager.isSystemExtension(component)) {
           return;
         }
       }
@@ -38152,7 +38152,7 @@ var ComponentManager = function () {
     key: 'handleInstallLocalComponentMessage',
     value: function handleInstallLocalComponentMessage(sourceComponent, message) {
       // Only extensions manager has this permission
-      if (!this.sysExtManager.isSystemExtension(sourceComponent)) {
+      if (!this.nativeExtManager.isSystemExtension(sourceComponent)) {
         return;
       }
 
@@ -39838,6 +39838,104 @@ var ModelManager = function () {
 }();
 
 angular.module('app').service('modelManager', ModelManager);
+; /* A class for handling installation of system extensions */
+
+var NativeExtManager = function () {
+  NativeExtManager.$inject = ['modelManager', 'syncManager', 'singletonManager'];
+  function NativeExtManager(modelManager, syncManager, singletonManager) {
+    _classCallCheck(this, NativeExtManager);
+
+    this.modelManager = modelManager;
+    this.syncManager = syncManager;
+    this.singletonManager = singletonManager;
+
+    this.extensionsIdentifier = "org.standardnotes.extensions-manager";
+    this.systemExtensions = [];
+
+    this.resolveExtensionsManager();
+  }
+
+  _createClass(NativeExtManager, [{
+    key: 'isSystemExtension',
+    value: function isSystemExtension(extension) {
+      return this.systemExtensions.includes(extension.uuid);
+    }
+  }, {
+    key: 'resolveExtensionsManager',
+    value: function resolveExtensionsManager() {
+      var _this40 = this;
+
+      this.singletonManager.registerSingleton({ content_type: "SN|Component", package_info: { identifier: this.extensionsIdentifier } }, function (resolvedSingleton) {
+        // Resolved Singleton
+        _this40.systemExtensions.push(resolvedSingleton.uuid);
+
+        var needsSync = false;
+        if (isDesktopApplication()) {
+          if (!resolvedSingleton.local_url) {
+            resolvedSingleton.local_url = window._extensions_manager_location;
+            needsSync = true;
+          }
+        } else {
+          if (!resolvedSingleton.hosted_url) {
+            resolvedSingleton.hosted_url = window._extensions_manager_location;
+            needsSync = true;
+          }
+        }
+
+        if (needsSync) {
+          resolvedSingleton.setDirty(true);
+          _this40.syncManager.sync("resolveExtensionsManager");
+        }
+      }, function (valueCallback) {
+        // Safe to create. Create and return object.
+        var url = window._extensions_manager_location;
+        console.log("Installing Extensions Manager from URL", url);
+        if (!url) {
+          console.error("window._extensions_manager_location must be set.");
+          return;
+        }
+
+        var packageInfo = {
+          name: "Extensions",
+          identifier: _this40.extensionsIdentifier
+        };
+
+        var item = {
+          content_type: "SN|Component",
+          content: {
+            name: packageInfo.name,
+            area: "rooms",
+            package_info: packageInfo,
+            permissions: [{
+              name: "stream-items",
+              content_types: ["SN|Component", "SN|Theme", "SF|Extension", "Extension", "SF|MFA", "SN|Editor"]
+            }]
+          }
+        };
+
+        if (isDesktopApplication()) {
+          item.content.local_url = window._extensions_manager_location;
+        } else {
+          item.content.hosted_url = window._extensions_manager_location;
+        }
+
+        var component = _this40.modelManager.createItem(item);
+        _this40.modelManager.addItem(component);
+
+        component.setDirty(true);
+        _this40.syncManager.sync("resolveExtensionsManager createNew");
+
+        _this40.systemExtensions.push(component.uuid);
+
+        valueCallback(component);
+      });
+    }
+  }]);
+
+  return NativeExtManager;
+}();
+
+angular.module('app').service('nativeExtManager', NativeExtManager);
 ;angular.module('app').provider('passcodeManager', function () {
 
   this.$get = ['$rootScope', '$timeout', 'modelManager', 'dbManager', 'authManager', 'storageManager', function ($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
@@ -39845,7 +39943,7 @@ angular.module('app').service('modelManager', ModelManager);
   }];
 
   function PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
-    var _this40 = this;
+    var _this41 = this;
 
     this._hasPasscode = storageManager.getItem("offlineParams", StorageManager.Fixed) != null;
     this._locked = this._hasPasscode;
@@ -39897,11 +39995,11 @@ angular.module('app').service('modelManager', ModelManager);
         // After it's cleared, it's safe to write to it
         storageManager.setItem("offlineParams", JSON.stringify(defaultParams), StorageManager.Fixed);
         callback(true);
-      }.bind(_this40));
+      }.bind(_this41));
     };
 
     this.changePasscode = function (newPasscode, callback) {
-      _this40.setPasscode(newPasscode, callback);
+      _this41.setPasscode(newPasscode, callback);
     };
 
     this.clearPasscode = function () {
@@ -39936,7 +40034,7 @@ angular.module('app').service('modelManager', ModelManager);
 var SingletonManager = function () {
   SingletonManager.$inject = ['$rootScope', 'modelManager'];
   function SingletonManager($rootScope, modelManager) {
-    var _this41 = this;
+    var _this42 = this;
 
     _classCallCheck(this, SingletonManager);
 
@@ -39945,7 +40043,7 @@ var SingletonManager = function () {
     this.singletonHandlers = [];
 
     $rootScope.$on("initial-data-loaded", function (event, data) {
-      _this41.resolveSingletons(modelManager.allItems, null, true);
+      _this42.resolveSingletons(modelManager.allItems, null, true);
     });
 
     $rootScope.$on("sync:completed", function (event, data) {
@@ -39958,7 +40056,7 @@ var SingletonManager = function () {
       // the whole purpose of this thing.
 
       // Updated solution: resolveSingletons will now evaluate both of these arrays separately.
-      _this41.resolveSingletons(data.retrievedItems, data.savedItems);
+      _this42.resolveSingletons(data.retrievedItems, data.savedItems);
     });
   }
 
@@ -39979,7 +40077,7 @@ var SingletonManager = function () {
   }, {
     key: 'resolveSingletons',
     value: function resolveSingletons(retrievedItems, savedItems, initialLoad) {
-      var _this42 = this;
+      var _this43 = this;
 
       retrievedItems = retrievedItems || [];
       savedItems = savedItems || [];
@@ -39987,12 +40085,12 @@ var SingletonManager = function () {
       var _loop4 = function _loop4(singletonHandler) {
         predicate = singletonHandler.predicate;
 
-        var retrievedSingletonItems = _this42.filterItemsWithPredicate(retrievedItems, predicate);
+        var retrievedSingletonItems = _this43.filterItemsWithPredicate(retrievedItems, predicate);
 
         // We only want to consider saved items count to see if it's more than 0, and do nothing else with it.
         // This way we know there was some action and things need to be resolved. The saved items will come up
         // in filterItemsWithPredicate(this.modelManager.allItems) and be deleted anyway
-        var savedSingletonItemsCount = _this42.filterItemsWithPredicate(savedItems, predicate).length;
+        var savedSingletonItemsCount = _this43.filterItemsWithPredicate(savedItems, predicate).length;
 
         if (retrievedSingletonItems.length > 0 || savedSingletonItemsCount > 0) {
           /*
@@ -40001,7 +40099,7 @@ var SingletonManager = function () {
             However, as stated in the header comment, retrievedItems take precendence over existing items,
             even if they have a lower updated_at value
           */
-          allExtantItemsMatchingPredicate = _this42.filterItemsWithPredicate(_this42.modelManager.allItems, predicate);
+          allExtantItemsMatchingPredicate = _this43.filterItemsWithPredicate(_this43.modelManager.allItems, predicate);
 
           /*
             If there are more than 1 matches, delete everything not in `retrievedSingletonItems`,
@@ -40070,7 +40168,7 @@ var SingletonManager = function () {
               for (var _iterator52 = toDelete[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
                 d = _step52.value;
 
-                _this42.modelManager.setItemToBeDeleted(d);
+                _this43.modelManager.setItemToBeDeleted(d);
               }
             } catch (err) {
               _didIteratorError52 = true;
@@ -40087,7 +40185,7 @@ var SingletonManager = function () {
               }
             }
 
-            _this42.$rootScope.sync("resolveSingletons");
+            _this43.$rootScope.sync("resolveSingletons");
 
             // Send remaining item to callback
             singletonHandler.singleton = winningItem;
@@ -40150,10 +40248,10 @@ var SingletonManager = function () {
   }, {
     key: 'filterItemsWithPredicate',
     value: function filterItemsWithPredicate(items, predicate) {
-      var _this43 = this;
+      var _this44 = this;
 
       return items.filter(function (candidate) {
-        return _this43.itemSatisfiesPredicate(candidate, predicate);
+        return _this44.itemSatisfiesPredicate(candidate, predicate);
       });
     }
   }, {
@@ -40575,13 +40673,13 @@ var SyncManager = function () {
   }, {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback, alternateUUIDs) {
-      var _this44 = this;
+      var _this45 = this;
 
       // use a copy, as alternating uuid will affect array
       var originalItems = this.modelManager.allItems.slice();
 
       var block = function block() {
-        var allItems = _this44.modelManager.allItems;
+        var allItems = _this45.modelManager.allItems;
         var _iteratorNormalCompletion55 = true;
         var _didIteratorError55 = false;
         var _iteratorError55 = undefined;
@@ -40607,7 +40705,7 @@ var SyncManager = function () {
           }
         }
 
-        _this44.writeItemsToLocalStorage(allItems, false, callback);
+        _this45.writeItemsToLocalStorage(allItems, false, callback);
       };
 
       if (alternateUUIDs) {
@@ -40630,7 +40728,7 @@ var SyncManager = function () {
           // but for some reason retained their data (This happens in Firefox when using private mode).
           // In this case, we should pass false so that both copies are kept. However, it's difficult to
           // detect when the app has entered this state. We will just use true to remove original items for now.
-          _this44.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
+          _this45.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
         };
 
         alternateNextItem();
@@ -40904,7 +41002,7 @@ var SyncManager = function () {
   }, {
     key: 'handleUnsavedItemsResponse',
     value: function handleUnsavedItemsResponse(unsaved) {
-      var _this45 = this;
+      var _this46 = this;
 
       if (unsaved.length == 0) {
         return;
@@ -40916,14 +41014,14 @@ var SyncManager = function () {
       var handleNext = function handleNext() {
         if (i >= unsaved.length) {
           // Handled all items
-          _this45.sync(null, { additionalFields: ["created_at", "updated_at"] });
+          _this46.sync(null, { additionalFields: ["created_at", "updated_at"] });
           return;
         }
 
         var mapping = unsaved[i];
         var itemResponse = mapping.item;
-        EncryptionHelper.decryptMultipleItems([itemResponse], _this45.authManager.keys());
-        var item = _this45.modelManager.findItem(itemResponse.uuid);
+        EncryptionHelper.decryptMultipleItems([itemResponse], _this46.authManager.keys());
+        var item = _this46.modelManager.findItem(itemResponse.uuid);
 
         if (!item) {
           // Could be deleted
@@ -40935,7 +41033,7 @@ var SyncManager = function () {
         if (error.tag === "uuid_conflict") {
           // UUID conflicts can occur if a user attempts to
           // import an old data archive with uuids from the old account into a new account
-          _this45.modelManager.alternateUUIDForItem(item, function () {
+          _this46.modelManager.alternateUUIDForItem(item, function () {
             i++;
             handleNext();
           }, true);
@@ -40945,9 +41043,9 @@ var SyncManager = function () {
           // We want a new uuid for the new item. Note that this won't neccessarily adjust references.
           itemResponse.uuid = null;
 
-          var dup = _this45.modelManager.createDuplicateItem(itemResponse, item);
+          var dup = _this46.modelManager.createDuplicateItem(itemResponse, item);
           if (!itemResponse.deleted && !item.isItemContentEqualWith(dup)) {
-            _this45.modelManager.addItem(dup);
+            _this46.modelManager.addItem(dup);
             dup.conflict_of = item.uuid;
             dup.setDirty(true);
           }
@@ -41033,104 +41131,6 @@ var SyncManager = function () {
 }();
 
 angular.module('app').service('syncManager', SyncManager);
-; /* A class for handling installation of system extensions */
-
-var SysExtManager = function () {
-  SysExtManager.$inject = ['modelManager', 'syncManager', 'singletonManager'];
-  function SysExtManager(modelManager, syncManager, singletonManager) {
-    _classCallCheck(this, SysExtManager);
-
-    this.modelManager = modelManager;
-    this.syncManager = syncManager;
-    this.singletonManager = singletonManager;
-
-    this.extensionsIdentifier = "org.standardnotes.extensions-manager";
-    this.systemExtensions = [];
-
-    this.resolveExtensionsManager();
-  }
-
-  _createClass(SysExtManager, [{
-    key: 'isSystemExtension',
-    value: function isSystemExtension(extension) {
-      return this.systemExtensions.includes(extension.uuid);
-    }
-  }, {
-    key: 'resolveExtensionsManager',
-    value: function resolveExtensionsManager() {
-      var _this46 = this;
-
-      this.singletonManager.registerSingleton({ content_type: "SN|Component", package_info: { identifier: this.extensionsIdentifier } }, function (resolvedSingleton) {
-        // Resolved Singleton
-        _this46.systemExtensions.push(resolvedSingleton.uuid);
-
-        var needsSync = false;
-        if (isDesktopApplication()) {
-          if (!resolvedSingleton.local_url) {
-            resolvedSingleton.local_url = window._extensions_manager_location;
-            needsSync = true;
-          }
-        } else {
-          if (!resolvedSingleton.hosted_url) {
-            resolvedSingleton.hosted_url = window._extensions_manager_location;
-            needsSync = true;
-          }
-        }
-
-        if (needsSync) {
-          resolvedSingleton.setDirty(true);
-          _this46.syncManager.sync("resolveExtensionsManager");
-        }
-      }, function (valueCallback) {
-        // Safe to create. Create and return object.
-        var url = window._extensions_manager_location;
-        console.log("Installing Extensions Manager from URL", url);
-        if (!url) {
-          console.error("window._extensions_manager_location must be set.");
-          return;
-        }
-
-        var packageInfo = {
-          name: "Extensions",
-          identifier: _this46.extensionsIdentifier
-        };
-
-        var item = {
-          content_type: "SN|Component",
-          content: {
-            name: packageInfo.name,
-            area: "rooms",
-            package_info: packageInfo,
-            permissions: [{
-              name: "stream-items",
-              content_types: ["SN|Component", "SN|Theme", "SF|Extension", "Extension", "SF|MFA", "SN|Editor"]
-            }]
-          }
-        };
-
-        if (isDesktopApplication()) {
-          item.content.local_url = window._extensions_manager_location;
-        } else {
-          item.content.hosted_url = window._extensions_manager_location;
-        }
-
-        var component = _this46.modelManager.createItem(item);
-        _this46.modelManager.addItem(component);
-
-        component.setDirty(true);
-        _this46.syncManager.sync("resolveExtensionsManager createNew");
-
-        _this46.systemExtensions.push(component.uuid);
-
-        valueCallback(component);
-      });
-    }
-  }]);
-
-  return SysExtManager;
-}();
-
-angular.module('app').service('sysExtManager', SysExtManager);
 ;
 var ThemeManager = function () {
   ThemeManager.$inject = ['componentManager', 'desktopManager'];
@@ -42218,7 +42218,7 @@ var ComponentView = function () {
 
         if (component) {
           componentManager.activateComponent(component);
-          console.log("Loading", $scope.component.name, $scope.getUrl(), component.valid_until, $scope.component);
+          console.log("Loading", $scope.component.name, $scope.getUrl(), component.valid_until);
 
           $scope.reloadStatus();
         }
@@ -42781,7 +42781,7 @@ angular.module('app').directive('permissionsModal', function () {
     "</div>\n" +
     "<div class='panel-section' ng-if='formData.showLogin || formData.showRegister'>\n" +
     "<h3 class='title panel-row'>\n" +
-    "{{formData.showLogin ? \"Sign In\" : \"Register (free)\"}}\n" +
+    "{{formData.showLogin ? \"Sign In\" : \"Register\"}}\n" +
     "</h3>\n" +
     "<form class='panel-form' ng-submit='submitAuthForm()'>\n" +
     "<input name='email' ng-model='formData.email' placeholder='Email' required should-focus='true' sn-autofocus='true' type='email'>\n" +
