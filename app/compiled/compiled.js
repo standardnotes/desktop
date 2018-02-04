@@ -42240,14 +42240,14 @@ var ComponentView = function () {
         var expired, offlineRestricted, urlError;
 
         offlineRestricted = component.offlineOnly && !isDesktopApplication();
-        urlError = !isDesktopApplication() && !component.url && !component.hosted_url;
+
+        urlError = !isDesktopApplication() && !component.url && !component.hosted_url || isDesktopApplication() && !component.local_url && !component.url && !component.hosted_url;
+
         expired = component.valid_until && component.valid_until <= new Date();
 
         $scope.componentValid = !offlineRestricted && !urlError && !expired;
 
-        if (offlineRestricted) $scope.error = 'offline-restricted';
-        if (urlError) $scope.error = 'url-missing';
-        if (expired) $scope.error = 'expired';
+        if (offlineRestricted) $scope.error = 'offline-restricted';else if (urlError) $scope.error = 'url-missing';else if (expired) $scope.error = 'expired';else $scope.error = null;
 
         if ($scope.componentValid !== previouslyValid) {
           if ($scope.componentValid) {
@@ -43129,6 +43129,10 @@ angular.module('app').directive('permissionsModal', function () {
     "<div class='panel-section stretch'>\n" +
     "<h2 class='title'>This extension is not installed correctly.</h2>\n" +
     "<p>Please uninstall {{component.name}}, then re-install it.</p>\n" +
+    "<p>\n" +
+    "This issue can occur if you access Standard Notes using an older version of the app.\n" +
+    "Ensure you are running at least version 2.1 on all platforms.\n" +
+    "</p>\n" +
     "</div>\n" +
     "</div>\n" +
     "</div>\n" +
