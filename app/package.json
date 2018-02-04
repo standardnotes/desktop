@@ -3,7 +3,7 @@
   "productName": "Standard Notes",
   "description": "A simple and private place for your notes, thoughts, and life's work.",
   "author": "Standard Notes <hello@standardnotes.org>",
-  "version": "2.1.0-beta.3",
+  "version": "2.1.0-beta.4",
   "main": "./dist/index.js",
   "dependencies": {
     "adm-zip": "^0.4.7",
