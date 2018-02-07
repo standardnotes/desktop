@@ -34916,12 +34916,13 @@ Array.prototype.containsObjectSubset = function (array) {
         return;
       } else {
         // sign out
+        authManager.signOut();
         syncManager.destroyLocalData(function () {
           window.location.reload();
         });
       }
     } else {
-      authManager.login(server, email, pw, false, function (response) {
+      authManager.login(server, email, pw, false, {}, function (response) {
         window.location.reload();
       });
     }
@@ -36996,22 +36997,21 @@ angular.module('app').service('actionsManager', ActionsManager);
         }
 
         if (!this.isProtocolVersionSupported(authParams.version)) {
-          alert("The protocol version associated with your account is outdated and no longer supported by this application. Please visit standardnotes.org/help/security-update for more information.");
-          callback({ didDisplayAlert: true });
+          var message = "The protocol version associated with your account is outdated and no longer supported by this application. Please visit standardnotes.org/help/security-update for more information.";
+          callback({ error: { message: message } });
           return;
         }
 
         if (!this.supportsPasswordDerivationCost(authParams.pw_cost)) {
-          var string = "Your account was created on a platform with higher security capabilities than this browser supports. " + "If we attempted to generate your login keys here, it would take hours. " + "Please use a browser with more up to date security capabilities, like Google Chrome or Firefox, to login.";
-          alert(string);
-          callback({ didDisplayAlert: true });
+          var _message = "Your account was created on a platform with higher security capabilities than this browser supports. " + "If we attempted to generate your login keys here, it would take hours. " + "Please use a browser with more up to date security capabilities, like Google Chrome or Firefox, to log in.";
+          callback({ error: { message: _message } });
           return;
         }
 
         var minimum = this.costMinimumForVersion(authParams.version);
         if (authParams.pw_cost < minimum) {
-          alert("Unable to login due to insecure password parameters. Please visit standardnotes.org/help/password-upgrade for more information.");
-          callback({ didDisplayAlert: true });
+          var _message2 = "Unable to login due to insecure password parameters. Please visit standardnotes.org/help/password-upgrade for more information.";
+          callback({ error: { message: _message2 } });
           return;
         }
 
@@ -38472,7 +38472,7 @@ var ComponentManager = function () {
       var _iteratorError34 = undefined;
 
       try {
-        for (var _iterator34 = document.getElementsByTagName("iframe")[Symbol.iterator](), _step34; !(_iteratorNormalCompletion34 = (_step34 = _iterator34.next()).done); _iteratorNormalCompletion34 = true) {
+        for (var _iterator34 = Array.from(document.getElementsByTagName("iframe"))[Symbol.iterator](), _step34; !(_iteratorNormalCompletion34 = (_step34 = _iterator34.next()).done); _iteratorNormalCompletion34 = true) {
           var frame = _step34.value;
 
           var componentId = frame.dataset.componentId;
@@ -41507,22 +41507,30 @@ var AccountMenu = function () {
           authManager.login($scope.formData.url, $scope.formData.email, $scope.formData.user_password, $scope.formData.ephemeral, extraParams, function (response) {
             if (!response || response.error) {
               $scope.formData.status = null;
-              var error = response ? response.error : { message: "An unknown error occured." };
-              if (error.tag == "mfa-required" || error.tag == "mfa-invalid") {
+              var error = response ? response.error : { message: "An unknown error occured."
+
+                // MFA Error
+              };if (error.tag == "mfa-required" || error.tag == "mfa-invalid") {
                 $timeout(function () {
                   $scope.formData.showLogin = false;
                   $scope.formData.mfa = error;
                 });
-              } else if (!response || response && !response.didDisplayAlert) {
-                $timeout(function () {
-                  $scope.formData.showLogin = true;
-                  $scope.formData.mfa = null;
-                });
-                alert(error.message);
               }
-            } else {
-              $scope.onAuthSuccess();
+
+              // General Error
+              else {
+                  $timeout(function () {
+                    $scope.formData.showLogin = true;
+                    $scope.formData.mfa = null;
+                  });
+                  alert(error.message);
+                }
             }
+
+            // Success
+            else {
+                $scope.onAuthSuccess();
+              }
           });
         });
       };

@@ -659,7 +659,7 @@ a.disabled {
   height: 100%;
 }
 .modal > .content {
-  overflow-y: scroll;
+  overflow-y: auto;
   width: auto;
   padding: 0;
   padding-bottom: 0;
