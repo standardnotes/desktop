@@ -39355,7 +39355,8 @@ var ModelManager = function () {
             continue;
           }
 
-          var unknownContentType = !_.includes(this.acceptableContentTypes, json_obj["content_type"]);
+          var contentType = json_obj["content_type"] || item && item.content_type;
+          var unknownContentType = !_.includes(this.acceptableContentTypes, contentType);
           if (json_obj.deleted == true || unknownContentType) {
             if (item && !unknownContentType) {
               modelsToNotifyObserversOf.push(item);
@@ -41921,9 +41922,9 @@ var AccountMenu = function () {
 
       $scope.encryptionStatusString = function () {
         if (!authManager.offline()) {
-          return "End-to-end encryption is enabled. Your data is encrypted before being synced to your private account.";
+          return "End-to-end encryption is enabled. Your data is encrypted before syncing to your private account.";
         } else if (passcodeManager.hasPasscode()) {
-          return "Encryption is enabled. Your data is encrypted using your passcode before being stored on disk.";
+          return "Encryption is enabled. Your data is encrypted using your passcode before saving to your device storage.";
         } else {
           return "Encryption is not enabled. Sign in, register, or add a passcode lock to enable encryption.";
         }
@@ -43623,234 +43624,186 @@ angular.module('app').directive('permissionsModal', function () {
 
 
   $templateCache.put('frontend/directives/account-menu.html',
-    "<div class='sn-component'>\n" +
-    "  <div class='panel' id='account-panel'>\n" +
-    "    <div class='header'>\n" +
-    "      <h1 class='title'>Account</h1>\n" +
-    "      <a class='close-button' ng-click='close()'>Close</a>\n" +
-    "    </div>\n" +
-    "    <div class='content'>\n" +
-    "      <div class='panel-section hero' ng-if='!user &amp;&amp; !formData.showLogin &amp;&amp; !formData.showRegister &amp;&amp; !formData.mfa'>\n" +
-    "        <h1 class='title'>Sign in or register to enable sync and end-to-end encryption.</h1>\n" +
-    "        <div class='panel-row'></div>\n" +
-    "        <div class='panel-row'>\n" +
-    "          <div class='button-group stretch'>\n" +
-    "            <div class='button info featured' ng-click='formData.showLogin = true'>\n" +
-    "              <div class='label'>Sign In</div>\n" +
-    "            </div>\n" +
-    "            <div class='button info featured' ng-click='formData.showRegister = true'>\n" +
-    "              <div class='label'>Register</div>\n" +
-    "            </div>\n" +
+    "<div class='panel panel-default panel-right account-data-menu'>\n" +
+    "  <div class='panel-body large-padding'>\n" +
+    "    <div ng-if='!user'>\n" +
+    "      <div class='mb-10'>\n" +
+    "        <div class='step-one' ng-if='!formData.showLogin &amp;&amp; !formData.showRegister'>\n" +
+    "          <h3>Sign in or register to enable sync and end-to-end encryption.</h3>\n" +
+    "          <div class='small-v-space'></div>\n" +
+    "          <div class='button-group mt-5'>\n" +
+    "            <button class='ui-button half-button' ng-click='formData.showLogin = true'>\n" +
+    "              <span>Sign In</span>\n" +
+    "            </button>\n" +
+    "            <button class='ui-button half-button' ng-click='formData.showRegister = true'>\n" +
+    "              <span>Register</span>\n" +
+    "            </button>\n" +
     "          </div>\n" +
     "        </div>\n" +
-    "        <p>\n" +
-    "          Standard Notes is free on every platform, and comes standard with sync and encryption.\n" +
-    "        </p>\n" +
-    "      </div>\n" +
-    "      <div class='panel-section' ng-if='formData.showLogin || formData.showRegister'>\n" +
-    "        <h3 class='title panel-row'>\n" +
-    "          {{formData.showLogin ? \"Sign In\" : \"Register (free)\"}}\n" +
-    "        </h3>\n" +
-    "        <form class='panel-form' ng-submit='submitAuthForm()'>\n" +
-    "          <input autofocus='autofocus' name='email' ng-model='formData.email' placeholder='Email' required type='email'>\n" +
-    "          <input name='password' ng-model='formData.user_password' placeholder='Password' required type='password'>\n" +
-    "          <input name='password' ng-if='formData.showRegister' ng-model='formData.password_conf' placeholder='Confirm Password' required type='password'>\n" +
-    "          <a class='panel-row' ng-click='formData.showAdvanced = !formData.showAdvanced'>\n" +
-    "            Advanced Options\n" +
-    "          </a>\n" +
-    "          <div class='notification info' ng-if='formData.showRegister'>\n" +
-    "            <h2 class='title'>No Password Reset.</h2>\n" +
-    "            <div class='text'>Because your notes are encrypted using your password, Standard Notes does not have a password reset option. You cannot forget your password.</div>\n" +
+    "        <div class='step-two' ng-if='formData.showLogin || formData.showRegister'>\n" +
+    "          <div class='float-group h20'>\n" +
+    "            <h3 class='pull-left'>{{formData.showLogin ? \"Sign In\" : \"Register (free)\"}}</h3>\n" +
+    "            <a class='pull-right pt-5' ng-click='formData.showLogin = false; formData.showRegister = false;'>Cancel</a>\n" +
     "          </div>\n" +
-    "          <div class='advanced-options panel-row' ng-if='formData.showAdvanced'>\n" +
-    "            <div class='panel-column stretch'>\n" +
-    "              <label>Sync Server Domain</label>\n" +
+    "          <form class='mt-5'>\n" +
+    "            <input autofocus='autofocus' class='form-control mt-10' name='email' ng-model='formData.email' placeholder='Email' required type='email'>\n" +
+    "            <input class='form-control' name='password' ng-model='formData.user_password' placeholder='Password' required type='password'>\n" +
+    "            <input class='form-control' name='password' ng-if='formData.showRegister' ng-model='formData.password_conf' placeholder='Confirm Password' required type='password'>\n" +
+    "            <a class='block' ng-click='formData.showAdvanced = !formData.showAdvanced'>Advanced Options</a>\n" +
+    "            <div class='advanced-options mt-10' ng-if='formData.showAdvanced'>\n" +
+    "              <div class='float-group'>\n" +
+    "                <label class='pull-left'>Sync Server Domain</label>\n" +
+    "              </div>\n" +
     "              <input class='form-control mt-5' name='server' ng-model='formData.url' placeholder='Server URL' required type='text'>\n" +
     "            </div>\n" +
-    "          </div>\n" +
-    "          <div class='button-group stretch panel-row form-submit'>\n" +
-    "            <button class='button info featured' type='submit'>\n" +
-    "              <div class='label'>{{formData.showLogin ? \"Sign In\" : \"Register\"}}</div>\n" +
-    "            </button>\n" +
-    "          </div>\n" +
-    "          <label>\n" +
-    "            <input ng-false-value='true' ng-model='formData.ephemeral' ng-true-value='false' type='checkbox'>\n" +
-    "            Stay signed in\n" +
-    "          </label>\n" +
-    "          <label ng-if='notesAndTagsCount() &gt; 0'>\n" +
-    "            <input ng-bind='true' ng-change='mergeLocalChanged()' ng-model='formData.mergeLocal' type='checkbox'>\n" +
-    "            Merge local data ({{notesAndTagsCount()}} notes and tags)\n" +
-    "          </label>\n" +
-    "        </form>\n" +
-    "        <em class='block center-align mt-10' ng-if='formData.status' style='font-size: 14px;'></em>\n" +
-    "        {{formData.status}}\n" +
-    "      </div>\n" +
-    "      <div class='panel-section' ng-if='formData.mfa'>\n" +
-    "        <form ng-submit='submitMfaForm()'>\n" +
-    "          <p>{{formData.mfa.message}}</p>\n" +
-    "          <input autofocus='true' class='form-control mt-10' name='mfa' ng-model='formData.userMfaCode' placeholder='Enter Code' required should-focus='true' sn-autofocus='true'>\n" +
-    "          <div class='button-group stretch panel-row form-submit'>\n" +
-    "            <button class='button info featured' type='submit'>\n" +
-    "              <div class='label'>Sign In</div>\n" +
-    "            </button>\n" +
-    "          </div>\n" +
-    "        </form>\n" +
-    "      </div>\n" +
-    "      <div ng-if='!formData.showLogin &amp;&amp; !formData.showRegister &amp;&amp; !formData.mfa'>\n" +
-    "        <div class='panel-section' ng-if='user'>\n" +
-    "          <div class='panel-row'>\n" +
-    "            <h2 class='title wrap'>{{user.email}}</h2>\n" +
-    "            <div class='horizontal-group' delay-hide='true' delay='1000' show='syncStatus.syncOpInProgress || syncStatus.needsMoreSync'>\n" +
-    "              <div class='spinner small info'></div>\n" +
-    "              <div class='sublabel'>\n" +
-    "                {{\"Syncing\" + (syncStatus.total > 0 ? \":\" : \"\")}}\n" +
-    "                <span ng-if='syncStatus.total &gt; 0'>{{syncStatus.current}}/{{syncStatus.total}}</span>\n" +
-    "              </div>\n" +
+    "            <div class='checkbox mt-10'>\n" +
+    "              <p>\n" +
+    "                <input ng-false-value='true' ng-model='formData.ephemeral' ng-true-value='false' type='checkbox'>\n" +
+    "                  Stay signed in\n" +
+    "                </input>\n" +
+    "              </p>\n" +
     "            </div>\n" +
-    "          </div>\n" +
-    "          <div class='subtitle danger panel-row' ng-if='syncStatus.error'>Error syncing: {{syncStatus.error.message}}</div>\n" +
-    "          <div class='subtitle subtle normal'>{{server}}</div>\n" +
-    "          <div class='panel-row'></div>\n" +
-    "          <a class='panel-row condensed' ng-click='newPasswordData.changePassword = !newPasswordData.changePassword'>Change Password</a>\n" +
-    "          <div class='notification warning' ng-if='newPasswordData.changePassword'>\n" +
-    "            <h1 class='title'>Change Password</h1>\n" +
-    "            <div class='text'>\n" +
-    "              <p>Since your encryption key is based on your password, changing your password requires all your notes and tags to be re-encrypted using your new key.</p>\n" +
-    "              <p>If you have thousands of items, this can take several minutes — you must keep the application window open during this process.</p>\n" +
-    "              <p>After changing your password, you must log out of all other applications currently signed in to your account.</p>\n" +
-    "              <p class='bold'>It is highly recommended you download a backup of your data before proceeding.</p>\n" +
+    "            <div class='checkbox mt-10' ng-if='notesAndTagsCount() &gt; 0'>\n" +
+    "              <p>\n" +
+    "                <input ng-bind='true' ng-change='mergeLocalChanged()' ng-model='formData.mergeLocal' type='checkbox'>\n" +
+    "                  Merge local data ({{notesAndTagsCount()}} notes and tags)\n" +
+    "                </input>\n" +
+    "              </p>\n" +
     "            </div>\n" +
-    "            <div class='panel-row' ng-if='!newPasswordData.status'>\n" +
-    "              <div class='horizontal-group' ng-if='!newPasswordData.showForm'>\n" +
-    "                <a class='red' ng-click='showPasswordChangeForm()'>Continue</a>\n" +
-    "                <a ng-click='newPasswordData.changePassword = false; newPasswordData.showForm = false'>Cancel</a>\n" +
-    "              </div>\n" +
-    "              <div class='panel-row' ng-if='newPasswordData.showForm'>\n" +
-    "                <form class='panel-form stretch'>\n" +
-    "                  <input ng-model='newPasswordData.newPassword' placeholder='Enter new password' type='password'>\n" +
-    "                  <input ng-model='newPasswordData.newPasswordConfirmation' placeholder='Confirm new password' type='password'>\n" +
-    "                  <div class='button-group stretch panel-row form-submit'>\n" +
-    "                    <div class='button info' ng-click='submitPasswordChange()' type='submit'>\n" +
-    "                      <div class='label'>Submit</div>\n" +
-    "                    </div>\n" +
-    "                  </div>\n" +
-    "                  <a ng-click='newPasswordData.changePassword = false; newPasswordData.showForm = false'>Cancel</a>\n" +
-    "                </form>\n" +
-    "              </div>\n" +
-    "            </div>\n" +
-    "            <p class='italic mt-10' ng-if='newPasswordData.status'>{{newPasswordData.status}}</p>\n" +
-    "          </div>\n" +
-    "          <a class='panel-row condensed' ng-click='showAdvanced = !showAdvanced'>Advanced</a>\n" +
-    "          <div ng-if='showAdvanced'>\n" +
-    "            <a class='panel-row' ng-click='reencryptPressed()'>Resync All Items</a>\n" +
-    "          </div>\n" +
-    "          <a class='panel-row condensed' ng-click='clickedSecurityUpdate()' ng-if='securityUpdateAvailable()'>Security Update Available</a>\n" +
-    "          <div class='notification default' ng-if='securityUpdateData.showForm'>\n" +
-    "            <p>\n" +
-    "              <a href='https://standardnotes.org/help/security-update' target='_blank'>Learn more.</a>\n" +
-    "            </p>\n" +
-    "            <form class='panel-form stretch' ng-if='!securityUpdateData.processing' ng-submit='submitSecurityUpdateForm()'>\n" +
-    "              <p>Enter your password to update:</p>\n" +
-    "              <input class='panel-row' ng-model='securityUpdateData.password' placeholder='Enter password' type='password'>\n" +
-    "              <div class='button-group stretch panel-row form-submit'>\n" +
-    "                <button class='button info' ng-type='submit'>\n" +
-    "                  <div class='label'>Update</div>\n" +
-    "                </button>\n" +
-    "              </div>\n" +
-    "            </form>\n" +
-    "            <div class='panel-row' ng-if='securityUpdateData.processing'>\n" +
-    "              <p class='info'>Processing...</p>\n" +
-    "            </div>\n" +
-    "          </div>\n" +
-    "        </div>\n" +
-    "        <div class='panel-section'>\n" +
-    "          <h3 class='title panel-row'>Encryption</h3>\n" +
-    "          <h5 class='subtitle info panel-row' ng-if='encryptionEnabled()'>\n" +
-    "            {{encryptionStatusForNotes()}}\n" +
-    "          </h5>\n" +
-    "          <p>\n" +
-    "            {{encryptionStatusString()}}\n" +
-    "          </p>\n" +
-    "        </div>\n" +
-    "        <div class='panel-section'>\n" +
-    "          <h3 class='title panel-row'>Passcode Lock</h3>\n" +
-    "          <div ng-if='!hasPasscode() &amp;&amp; passcodeOptionAvailable()'>\n" +
-    "            <div class='panel-row' ng-if='!formData.showPasscodeForm'>\n" +
-    "              <div class='button info' ng-click='addPasscodeClicked(); $event.stopPropagation();'>\n" +
-    "                <div class='label'>Add Passcode</div>\n" +
-    "              </div>\n" +
-    "            </div>\n" +
-    "            <p>Add an app passcode to lock the app and encrypt on-device key storage.</p>\n" +
-    "            <form ng-if='formData.showPasscodeForm' ng-submit='submitPasscodeForm()'>\n" +
-    "              <input class='form-control' ng-model='formData.passcode' placeholder='Passcode' should-focus='true' sn-autofocus='true' type='password'>\n" +
-    "              <input class='form-control' ng-model='formData.confirmPasscode' placeholder='Confirm Passcode' type='password'>\n" +
-    "              <div class='button-group stretch panel-row form-submit'>\n" +
-    "                <button class='button info' type='submit'>\n" +
-    "                  <div class='label'>Set Passcode</div>\n" +
-    "                </button>\n" +
-    "              </div>\n" +
-    "              <a class='panel-row' ng-click='formData.showPasscodeForm = false'>Cancel</a>\n" +
-    "            </form>\n" +
-    "          </div>\n" +
-    "          <div class='panel-row' ng-if='hasPasscode()'>\n" +
-    "            <p>\n" +
-    "              Passcode lock is enabled.\n" +
-    "              <span ng-if='isDesktopApplication()'>Your passcode will be required on new sessions after app quit.</span>\n" +
-    "            </p>\n" +
-    "            <a class='block danger' ng-click='removePasscodePressed()'>Remove Passcode</a>\n" +
-    "          </div>\n" +
-    "          <div class='panel-row' ng-if='!passcodeOptionAvailable()'>\n" +
-    "            <p>Passcode lock is only available to permanent sessions. (You chose not to stay signed in.)</p>\n" +
-    "          </div>\n" +
-    "        </div>\n" +
-    "        <div class='panel-section' ng-if='!importData.loading'>\n" +
-    "          <h3 class='title'>Data Backups</h3>\n" +
-    "          <form class='panel-form' ng-if='encryptedBackupsAvailable()'>\n" +
-    "            <div class='input-group'>\n" +
-    "              <label>\n" +
-    "                <input ng-change='archiveFormData.encrypted = true' ng-model='archiveFormData.encrypted' ng-value='true' type='radio'>\n" +
-    "                Encrypted\n" +
-    "              </label>\n" +
-    "              <label>\n" +
-    "                <input ng-change='archiveFormData.encrypted = false' ng-model='archiveFormData.encrypted' ng-value='false' type='radio'>\n" +
-    "                Decrypted\n" +
-    "              </label>\n" +
-    "            </div>\n" +
+    "            <button class='ui-button block mt-10' ng-click='submitAuthForm()'>{{formData.showLogin ? \"Sign In\" : \"Register\"}}</button>\n" +
     "          </form>\n" +
-    "          <div class='button-group'>\n" +
-    "            <div class='button info' ng-class=\"{'mt-5' : !user}\" ng-click='downloadDataArchive()'>\n" +
-    "              <div class='label'>Download Backup</div>\n" +
-    "            </div>\n" +
-    "            <label class='button info'>\n" +
-    "              <input file-change='-&gt;' handler='importFileSelected(files)' style='display: none;' type='file'>\n" +
-    "              <div class='label'>Import From Backup</div>\n" +
-    "            </label>\n" +
-    "          </div>\n" +
-    "          <div ng-if='importData.requestPassword'>\n" +
-    "            <form class='panel-form stretch' ng-submit='submitImportPassword()'>\n" +
-    "              <p>Enter the account password associated with the import file.</p>\n" +
-    "              <input autofocus='true' class='form-control mt-5' ng-model='importData.password' placeholder='Enter File Account Password' type='password'>\n" +
-    "              <div class='button-group stretch panel-row form-submit'>\n" +
-    "                <button class='button info' type='submit'>\n" +
-    "                  <div class='label'>Decrypt & Import</div>\n" +
-    "                </button>\n" +
-    "              </div>\n" +
-    "            </form>\n" +
-    "          </div>\n" +
-    "          <div class='panel-row'>\n" +
-    "            <div class='spinner small info' ng-if='importData.loading'></div>\n" +
-    "          </div>\n" +
     "        </div>\n" +
+    "        <div class='mt-15' ng-if='formData.showRegister'>\n" +
+    "          <h3>No Password Reset.</h3>\n" +
+    "          <p class='mt-5'>Because your notes are encrypted using your password, Standard Notes does not have a password reset option. You cannot forget your password.</p>\n" +
+    "        </div>\n" +
+    "        <em class='block center-align mt-10' ng-if='formData.status' style='font-size: 14px;'>{{formData.status}}</em>\n" +
     "      </div>\n" +
     "    </div>\n" +
-    "    <div class='footer'>\n" +
-    "      <a class='right' ng-click='formData.showLogin = false; formData.showRegister = false;' ng-if='formData.showLogin || formData.showRegister'>\n" +
-    "        Cancel\n" +
-    "      </a>\n" +
-    "      <a class='right' ng-click='destroyLocalData()' ng-if='!formData.showLogin &amp;&amp; !formData.showRegister'>\n" +
-    "        {{ user ? \"Sign out and clear local data\" : \"Clear all local data\" }}\n" +
-    "      </a>\n" +
+    "    <div ng-if='user'>\n" +
+    "      <h2>{{user.email}}</h2>\n" +
+    "      <p>{{server}}</p>\n" +
+    "      <div class='bold mt-10 tinted' delay-hide='true' delay='1000' show='syncStatus.syncOpInProgress || syncStatus.needsMoreSync'>\n" +
+    "        <div class='spinner inline mr-5 tinted'></div>\n" +
+    "        {{\"Syncing\" + (syncStatus.total > 0 ? \":\" : \"\")}}\n" +
+    "        <span ng-if='syncStatus.total &gt; 0'>{{syncStatus.current}}/{{syncStatus.total}}</span>\n" +
+    "      </div>\n" +
+    "      <p class='bold mt-10 red block' ng-if='syncStatus.error'>Error syncing: {{syncStatus.error.message}}</p>\n" +
+    "      <a class='block mt-5' ng-click='newPasswordData.changePassword = !newPasswordData.changePassword'>Change Password</a>\n" +
+    "      <section class='gray-bg mt-10 medium-padding' ng-if='newPasswordData.changePassword'>\n" +
+    "        <p class='bold'>Change Password (Beta)</p>\n" +
+    "        <p class='mt-10'>Since your encryption key is based on your password, changing your password requires all your notes and tags to be re-encrypted using your new key.</p>\n" +
+    "        <p class='mt-5'>If you have thousands of items, this can take several minutes — you must keep the application window open during this process.</p>\n" +
+    "        <p class='mt-5'>After changing your password, you must log out of all other applications currently signed in to your account.</p>\n" +
+    "        <p class='bold mt-5'>It is highly recommended you download a backup of your data before proceeding.</p>\n" +
+    "        <div class='mt-10' ng-if='!newPasswordData.status'>\n" +
+    "          <a class='red mr-5' ng-click='showPasswordChangeForm()' ng-if='!newPasswordData.showForm'>Continue</a>\n" +
+    "          <a ng-click='newPasswordData.changePassword = false; newPasswordData.showForm = false'>Cancel</a>\n" +
+    "          <div class='mt-10' ng-if='newPasswordData.showForm'>\n" +
+    "            <form>\n" +
+    "              <input class='form-control' ng-model='newPasswordData.newPassword' placeholder='Enter new password' type='password'>\n" +
+    "              <input class='form-control' ng-model='newPasswordData.newPasswordConfirmation' placeholder='Confirm new password' type='password'>\n" +
+    "              <button class='ui-button block' ng-click='submitPasswordChange()'>Submit</button>\n" +
+    "            </form>\n" +
+    "          </div>\n" +
+    "        </div>\n" +
+    "        <p class='italic mt-10' ng-if='newPasswordData.status'>{{newPasswordData.status}}</p>\n" +
+    "      </section>\n" +
+    "      <a class='block mt-5' ng-click='showAdvanced = !showAdvanced'>Advanced</a>\n" +
+    "      <div ng-if='showAdvanced'>\n" +
+    "        <a class='block mt-15' href='{{dashboardURL()}}' target='_blank'>Data Dashboard</a>\n" +
+    "        <a class='block mt-5' ng-click='reencryptPressed()'>Re-encrypt All Items</a>\n" +
+    "        <a class='block mt-5' ng-click='showCredentials = !showCredentials'>Show Credentials</a>\n" +
+    "        <section class='gray-bg mt-10 medium-padding' ng-if='showCredentials'>\n" +
+    "          <label class='block'>\n" +
+    "            Encryption key:\n" +
+    "            <div class='wrap normal mt-1 selectable'>{{encryptionKey()}}</div>\n" +
+    "          </label>\n" +
+    "          <label class='block mt-5 mb-0'>\n" +
+    "            Authentication key:\n" +
+    "            <div class='wrap normal mt-1 selectable'>{{authKey() ? authKey() : 'Not available. Sign out then sign back in to compute.'}}</div>\n" +
+    "          </label>\n" +
+    "        </section>\n" +
+    "      </div>\n" +
+    "      <div ng-if='securityUpdateAvailable()'>\n" +
+    "        <a class='block mt-5' ng-click='clickedSecurityUpdate()'>Security Update Available</a>\n" +
+    "        <section class='gray-bg mt-10 medium-padding' ng-if='securityUpdateData.showForm'>\n" +
+    "          <p>\n" +
+    "            <a href='https://standardnotes.org/help/security-update' target='_blank'>Learn more.</a>\n" +
+    "          </p>\n" +
+    "          <div class='mt-10' ng-if='!securityUpdateData.processing'>\n" +
+    "            <p class='bold'>Enter your password to update:</p>\n" +
+    "            <form class='mt-5'>\n" +
+    "              <input class='form-control' ng-model='securityUpdateData.password' placeholder='Enter password' type='password'>\n" +
+    "              <button class='ui-button block' ng-click='submitSecurityUpdateForm()'>Update</button>\n" +
+    "            </form>\n" +
+    "          </div>\n" +
+    "          <div class='mt-5' ng-if='securityUpdateData.processing'>\n" +
+    "            <p class='tinted'>Processing...</p>\n" +
+    "          </div>\n" +
+    "        </section>\n" +
+    "      </div>\n" +
     "    </div>\n" +
+    "    <div class='mt-25'>\n" +
+    "      <h4>Encryption Status</h4>\n" +
+    "      <p>\n" +
+    "        {{encryptionStatusString()}}\n" +
+    "      </p>\n" +
+    "      <div class='mt-5' ng-if='encryptionEnabled()'>\n" +
+    "        <i>{{encryptionStatusForNotes()}}</i>\n" +
+    "      </div>\n" +
+    "    </div>\n" +
+    "    <div class='mt-25'>\n" +
+    "      <h4>Passcode Lock</h4>\n" +
+    "      <div ng-if='!hasPasscode() &amp;&amp; passcodeOptionAvailable()'>\n" +
+    "        <p>Add an app passcode to lock the app and encrypt on-device key storage.</p>\n" +
+    "        <a class='block mt-5' ng-click='addPasscodeClicked()' ng-if='!formData.showPasscodeForm'>Add Passcode</a>\n" +
+    "        <form class='mt-5' ng-if='formData.showPasscodeForm' ng-submit='submitPasscodeForm()'>\n" +
+    "          <p class='bold'>Choose a passcode:</p>\n" +
+    "          <input autofocus='true' class='form-control mt-10' ng-model='formData.passcode' placeholder='Passcode' type='password'>\n" +
+    "          <input class='form-control mt-10' ng-model='formData.confirmPasscode' placeholder='Confirm Passcode' type='password'>\n" +
+    "          <button class='standard ui-button block tinted mt-5' type='submit'>Set Passcode</button>\n" +
+    "        </form>\n" +
+    "      </div>\n" +
+    "      <div ng-if='hasPasscode()'>\n" +
+    "        <p>\n" +
+    "          Passcode lock is enabled.\n" +
+    "          <span ng-if='isDesktopApplication()'>Your passcode will be required on new sessions after app quit.</span>\n" +
+    "        </p>\n" +
+    "        <a class='block mt-5' ng-click='removePasscodePressed()'>Remove Passcode</a>\n" +
+    "      </div>\n" +
+    "      <div ng-if='!passcodeOptionAvailable()'>\n" +
+    "        <p>Passcode lock is only available to permanent sessions. (You chose not to stay signed in.)</p>\n" +
+    "      </div>\n" +
+    "    </div>\n" +
+    "    <div class='mt-25' ng-if='!importData.loading'>\n" +
+    "      <h4>Data Archives</h4>\n" +
+    "      <div class='mt-5' ng-if='encryptedBackupsAvailable()'>\n" +
+    "        <label class='normal inline'>\n" +
+    "          <input ng-change='archiveFormData.encrypted = true' ng-model='archiveFormData.encrypted' ng-value='true' type='radio'>\n" +
+    "          Encrypted\n" +
+    "        </label>\n" +
+    "        <label class='normal inline'>\n" +
+    "          <input ng-change='archiveFormData.encrypted = false' ng-model='archiveFormData.encrypted' ng-value='false' type='radio'>\n" +
+    "          Decrypted\n" +
+    "        </label>\n" +
+    "      </div>\n" +
+    "      <a class='block mt-5' ng-class=\"{'mt-5' : !user}\" ng-click='downloadDataArchive()'>Download Data Archive</a>\n" +
+    "      <label class='block mt-5'>\n" +
+    "        <input file-change='-&gt;' handler='importFileSelected(files)' style='display: none;' type='file'>\n" +
+    "        <div class='fake-link tinted'>Import Data from Archive</div>\n" +
+    "      </label>\n" +
+    "      <div ng-if='importData.requestPassword'>\n" +
+    "        <form ng-submit='submitImportPassword()'>\n" +
+    "          <p>Enter the account password associated with the import file.</p>\n" +
+    "          <input autofocus='true' class='form-control mt-5' ng-model='importData.password' type='password'>\n" +
+    "          <button class='standard ui-button block tinted mt-5' type='submit'>Decrypt & Import</button>\n" +
+    "        </form>\n" +
+    "      </div>\n" +
+    "      <p class='mt-5' ng-if='user'>Notes are downloaded in the Standard File format, which allows you to re-import back into this app easily. To download as plain text files, choose \"Decrypted\".</p>\n" +
+    "    </div>\n" +
+    "    <div class='spinner mt-10' ng-if='importData.loading'></div>\n" +
+    "    <a class='block mt-25 red' ng-click='destroyLocalData()'>{{ user ? \"Sign out and clear local data\" : \"Clear all local data\" }}</a>\n" +
     "  </div>\n" +
     "</div>\n"
   );
@@ -43938,21 +43891,21 @@ angular.module('app').directive('permissionsModal', function () {
 
 
   $templateCache.put('frontend/directives/contextual-menu.html',
-    "<div class='sn-component'>\n" +
-    "  <div class='menu-panel dropdown-menu'>\n" +
-    "    <div class='section' ng-repeat='extension in extensions'>\n" +
-    "      <div class='header' ng-click='extension.hide = !extension.hide'>\n" +
-    "        <div class='column'>\n" +
-    "          <h4 class='title'>{{extension.name}}</h4>\n" +
-    "          <div class='subtitle'>\n" +
-    "            Will submit your note\n" +
-    "            <strong>{{accessTypeForExtension(extension)}}</strong>\n" +
-    "          </div>\n" +
-    "          <div class='spinner loading' ng-if='extension.loading'></div>\n" +
-    "          <div ng-if='extension.hide'>…</div>\n" +
-    "        </div>\n" +
+    "<ul class='dropdown-menu sectioned-menu'>\n" +
+    "  <div class='extension' ng-repeat='extension in extensions'>\n" +
+    "    <div class='header' ng-click='extension.hide = !extension.hide'>\n" +
+    "      <div class='title'>{{extension.name}}</div>\n" +
+    "      <div class='subtitle'>\n" +
+    "        Will submit your note\n" +
+    "        <strong>{{accessTypeForExtension(extension)}}</strong>\n" +
     "      </div>\n" +
-    "      <menu-row ng-class=\"{'faded' : !isActionEnabled(action, extension)}\" ng-click='executeAction(action, extension);' ng-if='!extension.hide' ng-repeat='action in extension.actionsWithContextForItem(item)' subtitle='action.desc' title='action.label'>\n" +
+    "      <div class='spinner loading' ng-if='extension.loading'></div>\n" +
+    "      <div ng-if='extension.hide'>…</div>\n" +
+    "    </div>\n" +
+    "    <ul ng-if='!extension.hide'>\n" +
+    "      <li class='menu-item' ng-class=\"{'faded' : !isActionEnabled(action, extension)}\" ng-click='executeAction(action, extension);' ng-repeat='action in extension.actionsWithContextForItem(item)'>\n" +
+    "        <label class='menu-item-title'>{{action.label}}</label>\n" +
+    "        <div class='menu-item-subtitle'>{{action.desc}}</div>\n" +
     "        <div class='small normal' ng-if='!isActionEnabled(action, extension)'>\n" +
     "          Requires {{action.access_type}} access to this note.\n" +
     "        </div>\n" +
@@ -43970,70 +43923,58 @@ angular.module('app').directive('permissionsModal', function () {
     "        <span ng-if='action.running'>\n" +
     "          <div class='spinner' style='margin-top: 3px;'></div>\n" +
     "        </span>\n" +
-    "      </menu-row>\n" +
-    "    </div>\n" +
+    "      </li>\n" +
+    "    </ul>\n" +
     "  </div>\n" +
-    "  <div class='extension-render-modal' ng-click='renderData.showRenderModal = false' ng-if='renderData.showRenderModal'>\n" +
-    "    <div class='content'>\n" +
-    "      <h2>{{renderData.title}}</h2>\n" +
-    "      <p class='normal' style='white-space: pre-wrap; font-family: monospace; font-size: 16px;'>{{renderData.text}}</p>\n" +
-    "    </div>\n" +
+    "</ul>\n" +
+    "<div class='extension-render-modal' ng-click='renderData.showRenderModal = false' ng-if='renderData.showRenderModal'>\n" +
+    "  <div class='content'>\n" +
+    "    <h2>{{renderData.title}}</h2>\n" +
+    "    <p class='normal' style='white-space: pre-wrap; font-family: monospace; font-size: 16px;'>{{renderData.text}}</p>\n" +
     "  </div>\n" +
     "</div>\n"
   );
 
 
   $templateCache.put('frontend/directives/editor-menu.html',
-    "<div class='sn-component'>\n" +
-    "  <div class='menu-panel dropdown-menu'>\n" +
-    "    <div class='section'>\n" +
-    "      <div class='header'>\n" +
-    "        <h4 class='title'>Note Editor</h4>\n" +
-    "      </div>\n" +
-    "      <menu-row circle=\"selectedEditor == null &amp;&amp; 'success'\" ng-click='selectComponent($event, null)' title=\"'Plain Editor'\"></menu-row>\n" +
-    "      <menu-row button-action='toggleDefaultForEditor(editor)' button-class=\"defaultEditor == editor ? 'warning' : 'info'\" button-text=\"defaultEditor == editor ? 'Undefault' : 'Set Default'\" circle=\"selectedEditor === editor &amp;&amp; 'success'\" has-button='selectedEditor == editor || defaultEditor == editor' ng-click='selectComponent($event, editor)' ng-repeat='editor in editors' title='editor.name'>\n" +
-    "        <div class='row' ng-if='component.conflict_of || offlineAvailableForComponent(editor)'>\n" +
-    "          <div class='column'>\n" +
-    "            <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
-    "            <div class='sublabel' ng-if='offlineAvailableForComponent(editor)'>\n" +
-    "              Available Offline\n" +
-    "            </div>\n" +
-    "          </div>\n" +
-    "        </div>\n" +
-    "      </menu-row>\n" +
-    "      <a class='no-decoration' href='https://standardnotes.org/extensions' ng-if='editors.length == 0' target='blank'>\n" +
-    "        <menu-row title=\"'Download More Editors'\"></menu-row>\n" +
-    "      </a>\n" +
-    "    </div>\n" +
-    "    <div class='section' ng-if='stack.length &gt; 0'>\n" +
-    "      <div class='header'>\n" +
-    "        <h4 class='title'>Editor Stack</h4>\n" +
-    "      </div>\n" +
-    "      <menu-row circle=\"component.active ? 'success' : 'danger'\" ng-click='selectComponent($event, component)' ng-repeat='component in stack' title='component.name'>\n" +
-    "        <div class='row' ng-if='component.conflict_of || offlineAvailableForComponent(component)'>\n" +
-    "          <div class='column'>\n" +
-    "            <strong class='red medium' ng-if='component.conflict_of'>Conflicted copy</strong>\n" +
-    "            <div class='sublabel' ng-if='offlineAvailableForComponent(component)'>\n" +
-    "              Available Offline\n" +
-    "            </div>\n" +
-    "          </div>\n" +
-    "        </div>\n" +
-    "      </menu-row>\n" +
-    "    </div>\n" +
+    "<ul class='dropdown-menu sectioned-menu'>\n" +
+    "  <div class='header'>\n" +
+    "    <div class='title'>System Editor</div>\n" +
     "  </div>\n" +
-    "</div>\n"
+    "  <ul>\n" +
+    "    <li class='menu-item' ng-click='selectEditor($event, null)'>\n" +
+    "      <span class='pull-left mr-10' ng-if='selectedEditor == null'>✓</span>\n" +
+    "      <label class='menu-item-title pull-left'>Plain</label>\n" +
+    "    </li>\n" +
+    "  </ul>\n" +
+    "  <div ng-if='editors.length &gt; 0'>\n" +
+    "    <div class='header'>\n" +
+    "      <div class='title'>External Editors</div>\n" +
+    "      <div class='subtitle'>Can access your current note decrypted.</div>\n" +
+    "    </div>\n" +
+    "    <ul>\n" +
+    "      <li class='menu-item' ng-click='selectEditor($event, editor)' ng-repeat='editor in editors'>\n" +
+    "        <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
+    "        <label class='menu-item-title'>\n" +
+    "          <span class='inline tinted mr-10' ng-if='selectedEditor === editor'>✓</span>\n" +
+    "          {{editor.name}}\n" +
+    "        </label>\n" +
+    "      </li>\n" +
+    "    </ul>\n" +
+    "  </div>\n" +
+    "</ul>\n"
   );
 
 
   $templateCache.put('frontend/directives/global-extensions-menu.html',
-    "<div class='panel' id='global-ext-menu'>\n" +
+    "<div class='panel panel-default account-panel panel-right' id='global-ext-menu'>\n" +
     "  <div class='panel-body'>\n" +
     "    <div class='container'>\n" +
     "      <div class='float-group h20'>\n" +
     "        <h1 class='tinted pull-left'>Extensions</h1>\n" +
     "        <a class='block pull-right dashboard-link' href='https://dashboard.standardnotes.org' target='_blank'>Open Dashboard</a>\n" +
     "      </div>\n" +
-    "      <div class='clear' ng-if='!actionsManager.extensions.length &amp;&amp; !themeManager.themes.length &amp;&amp; !componentManager.components.length'>\n" +
+    "      <div class='clear' ng-if='!extensionManager.extensions.length &amp;&amp; !themeManager.themes.length &amp;&amp; !componentManager.components.length'>\n" +
     "        <p>Customize your experience with editors, themes, and actions.</p>\n" +
     "        <div class='tinted-box mt-10'>\n" +
     "          <h3>Available as part of the Extended subscription.</h3>\n" +
@@ -44056,9 +43997,11 @@ angular.module('app').directive('permissionsModal', function () {
     "        <li ng-click='clickedExtension(theme)' ng-repeat=\"theme in themeManager.themes | orderBy: 'name'\">\n" +
     "          <div class='container'>\n" +
     "            <h3>\n" +
-    "              <input class='bold' ng-if='theme.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(theme);' ng-model='theme.tempName' should-focus='true' sn-autofocus='true'>\n" +
+    "              <input class='bold' mb-autofocus='true' ng-if='theme.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(theme);' ng-model='theme.tempName' should-focus='true'>\n" +
     "              <span ng-if='!theme.rename'>{{theme.name}}</span>\n" +
     "            </h3>\n" +
+    "            <a ng-click='themeManager.activateTheme(theme); $event.stopPropagation();' ng-if='!themeManager.isThemeActive(theme)'>Activate</a>\n" +
+    "            <a ng-click='themeManager.deactivateTheme(theme); $event.stopPropagation();' ng-if='themeManager.isThemeActive(theme)'>Deactivate</a>\n" +
     "            <div class='mt-3' ng-if='theme.showDetails'>\n" +
     "              <div class='link-group'>\n" +
     "                <a ng-click='renameExtension(theme); $event.stopPropagation();'>Rename</a>\n" +
@@ -44073,16 +44016,16 @@ angular.module('app').directive('permissionsModal', function () {
     "        </li>\n" +
     "      </ul>\n" +
     "    </div>\n" +
-    "    <div ng-if='actionsManager.extensions.length'>\n" +
+    "    <div ng-if='extensionManager.extensions.length'>\n" +
     "      <div class='header container section-margin'>\n" +
     "        <h2>Actions</h2>\n" +
     "        <p style='margin-top: 3px;'>Choose \"Actions\" in the note editor to use installed actions.</p>\n" +
     "      </div>\n" +
     "      <ul>\n" +
-    "        <li ng-click='clickedExtension(extension)' ng-init='extension.formData = {}' ng-repeat=\"extension in actionsManager.extensions | orderBy: 'name'\">\n" +
+    "        <li ng-click='clickedExtension(extension)' ng-init='extension.formData = {}' ng-repeat=\"extension in extensionManager.extensions | orderBy: 'name'\">\n" +
     "          <div class='container'>\n" +
     "            <h3>\n" +
-    "              <input class='bold' ng-if='extension.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(extension);' ng-model='extension.tempName' should-focus='true' sn-autofocus='true'>\n" +
+    "              <input class='bold' mb-autofocus='true' ng-if='extension.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(extension);' ng-model='extension.tempName' should-focus='true'>\n" +
     "              <span ng-if='!extension.rename'>{{extension.name}}</span>\n" +
     "            </h3>\n" +
     "            <p class='small' ng-if='extension.description'>{{extension.description}}</p>\n" +
@@ -44118,8 +44061,8 @@ angular.module('app').directive('permissionsModal', function () {
     "                  </div>\n" +
     "                  <div>\n" +
     "                    <div class='mt-5' ng-if='action.repeat_mode'>\n" +
-    "                      <button class='light tinted' ng-click='actionsManager.disableRepeatAction(action, extension); $event.stopPropagation();' ng-if='actionsManager.isRepeatActionEnabled(action)'>Disable</button>\n" +
-    "                      <button class='light tinted' ng-click='actionsManager.enableRepeatAction(action, extension); $event.stopPropagation();' ng-if='!actionsManager.isRepeatActionEnabled(action)'>Enable</button>\n" +
+    "                      <button class='light tinted' ng-click='extensionManager.disableRepeatAction(action, extension); $event.stopPropagation();' ng-if='extensionManager.isRepeatActionEnabled(action)'>Disable</button>\n" +
+    "                      <button class='light tinted' ng-click='extensionManager.enableRepeatAction(action, extension); $event.stopPropagation();' ng-if='!extensionManager.isRepeatActionEnabled(action)'>Enable</button>\n" +
     "                    </div>\n" +
     "                    <button class='light mt-10' ng-click='selectedAction(action, extension); $event.stopPropagation();' ng-if='!action.running &amp;&amp; !action.repeat_mode'>\n" +
     "                      Perform Action\n" +
@@ -44151,7 +44094,7 @@ angular.module('app').directive('permissionsModal', function () {
     "        <li ng-click='clickedExtension(component)' ng-repeat=\"component in componentManager.components | orderBy: 'name'\">\n" +
     "          <div class='container'>\n" +
     "            <h3>\n" +
-    "              <input class='bold' ng-if='component.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(component);' ng-model='component.tempName' should-focus='true' sn-autofocus='true'>\n" +
+    "              <input class='bold' mb-autofocus='true' ng-if='component.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(component);' ng-model='component.tempName' should-focus='true'>\n" +
     "              <span ng-if='!component.rename'>{{component.name}}</span>\n" +
     "            </h3>\n" +
     "            <div ng-if='component.isEditor()'>\n" +
@@ -44249,37 +44192,28 @@ angular.module('app').directive('permissionsModal', function () {
 
 
   $templateCache.put('frontend/directives/permissions-modal.html',
-    "<div class='background' ng-click='deny()'></div>\n" +
-    "<div class='content' id='permissions-modal'>\n" +
-    "  <div class='sn-component'>\n" +
-    "    <div class='panel'>\n" +
-    "      <div class='header'>\n" +
-    "        <h1 class='title'>Activate Extension</h1>\n" +
-    "        <a class='close-button info' ng-click='deny()'>Cancel</a>\n" +
-    "      </div>\n" +
-    "      <div class='content'>\n" +
-    "        <div class='panel-section'>\n" +
-    "          <div class='panel-row'>\n" +
-    "            <h3>\n" +
-    "              <strong>{{component.name}}</strong>\n" +
-    "              would like to interact with your\n" +
-    "              <span ng-repeat='permission in formattedPermissions'>\n" +
-    "                {{permission}}.\n" +
-    "              </span>\n" +
-    "            </h3>\n" +
-    "          </div>\n" +
-    "          <div class='panel-row'>\n" +
-    "            <p>\n" +
-    "              Extensions use an offline messaging system to communicate. Learn more at\n" +
-    "              <a href='https://standardnotes.org/permissions' target='_blank'>https://standardnotes.org/permissions.</a>\n" +
-    "            </p>\n" +
-    "          </div>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "      <div class='footer'>\n" +
-    "        <div class='button info big block bold' ng-click='accept()'>Continue</div>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
+    "<div class='background' ng-click='dismiss()'></div>\n" +
+    "<div class='content'>\n" +
+    "  <h3>The following extension has requested these permissions:</h3>\n" +
+    "  <h4>Extension</h4>\n" +
+    "  <p>Name: {{component.name}}</p>\n" +
+    "  <p class='wrap'>URL: {{component.url}}</p>\n" +
+    "  <h4>Permissions</h4>\n" +
+    "  <div class='permission' ng-repeat='permission in formattedPermissions'>\n" +
+    "    <p>{{permission}}</p>\n" +
+    "  </div>\n" +
+    "  <h4>Status</h4>\n" +
+    "  <p class='status' ng-class=\"{'trusted tinted' : component.trusted}\">{{component.trusted ? 'Trusted' : 'Untrusted'}}</p>\n" +
+    "  <div class='learn-more'>\n" +
+    "    <h4>Details</h4>\n" +
+    "    <p>\n" +
+    "      Extensions use an offline messaging system to communicate. With <i>Trusted</i> extensions, data is never sent remotely without your consent. Learn more about extension permissions at\n" +
+    "      <a href='https://standardnotes.org/permissions' target='_blank'>https://standardnotes.org/permissions.</a>\n" +
+    "    </p>\n" +
+    "  </div>\n" +
+    "  <div class='buttons'>\n" +
+    "    <button class='standard white' ng-click='deny()'>Deny</button>\n" +
+    "    <button class='standard tinted' ng-click='accept()'>Accept</button>\n" +
     "  </div>\n" +
     "</div>\n"
   );
@@ -44326,123 +44260,115 @@ angular.module('app').directive('permissionsModal', function () {
 
 
   $templateCache.put('frontend/editor.html',
-    "<div class='section editor' id='editor-column'>\n" +
-    "  <div class='section-title-bar' id='editor-title-bar' ng-show='ctrl.note &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
+    "<div class='section editor' ng-class=\"{'fullscreen' : ctrl.fullscreen}\">\n" +
+    "  <div class='section-title-bar' id='editor-title-bar' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-show='ctrl.note &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
     "    <div class='title'>\n" +
-    "      <input class='input' id='note-title-editor' ng-blur='ctrl.onNameBlur()' ng-change='ctrl.nameChanged()' ng-focus='ctrl.onNameFocus()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTitle($event)' ng-model='ctrl.note.title' select-on-click='true'>\n" +
+    "      <input class='input' id='note-title-editor' ng-change='ctrl.nameChanged()' ng-focus='ctrl.onNameFocus()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTitle($event)' ng-model='ctrl.note.title' select-on-click='true'>\n" +
     "    </div>\n" +
-    "    <div id='save-status' ng-bind-html='ctrl.noteStatus' ng-class=\"{'red bold': ctrl.saveError, 'warning bold': ctrl.syncTakingTooLong}\"></div>\n" +
+    "    <div id='save-status' ng-bind-html='ctrl.noteStatus' ng-class=\"{'red bold': ctrl.saveError, 'orange bold': ctrl.syncTakingTooLong}\"></div>\n" +
     "    <div class='editor-tags'>\n" +
-    "      <div id='note-tags-component-container' ng-if='ctrl.tagsComponent'>\n" +
-    "        <component-view class='component-view' component='ctrl.tagsComponent'></component-view>\n" +
+    "      <div id='note-tags-component-container' ng-if='ctrl.tagsComponent &amp;&amp; ctrl.tagsComponent.active'>\n" +
+    "        <iframe data-component-id='{{ctrl.tagsComponent.uuid}}' frameBorder='0' id='note-tags-iframe' ng-src='{{ctrl.tagsComponent.url | trusted}}' sandbox='allow-scripts'></iframe>\n" +
     "      </div>\n" +
     "      <input class='tags-input' ng-blur='ctrl.updateTagsFromTagsString($event, ctrl.tagsString)' ng-if='!(ctrl.tagsComponent &amp;&amp; ctrl.tagsComponent.active)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur();' ng-model='ctrl.tagsString' placeholder='#tags' type='text'>\n" +
     "    </div>\n" +
     "  </div>\n" +
-    "  <div class='sn-component' ng-if='ctrl.note'>\n" +
-    "    <div class='app-bar no-edges'>\n" +
-    "      <div class='left'>\n" +
-    "        <div class='item' click-outside='ctrl.showMenu = false;' is-open='ctrl.showMenu' ng-class=\"{'selected' : ctrl.showMenu}\" ng-click='ctrl.showMenu = !ctrl.showMenu; ctrl.showExtensions = false; ctrl.showEditorMenu = false;'>\n" +
-    "          <div class='label'>Menu</div>\n" +
-    "          <div class='menu-panel dropdown-menu' ng-if='ctrl.showMenu'>\n" +
-    "            <div class='section'>\n" +
-    "              <div class='header'>\n" +
-    "                <h4 class='title'>Note Options</h4>\n" +
-    "              </div>\n" +
-    "              <menu-row ng-click='ctrl.selectedMenuItem($event); ctrl.togglePin()' title=\"ctrl.note.pinned ? 'Unpin' : 'Pin'\"></menu-row>\n" +
-    "              <menu-row ng-click='ctrl.selectedMenuItem($event); ctrl.toggleArchiveNote()' title=\"ctrl.note.archived ? 'Unarchive' : 'Archive'\"></menu-row>\n" +
-    "              <menu-row ng-click='ctrl.selectedMenuItem($event); ctrl.deleteNote()' title=\"'Delete'\"></menu-row>\n" +
-    "            </div>\n" +
-    "            <div class='section' ng-if='!ctrl.selectedEditor'>\n" +
-    "              <div class='header'>\n" +
-    "                <h4 class='title'>Display</h4>\n" +
-    "              </div>\n" +
-    "              <menu-row circle=\"ctrl.monospaceFont ? 'success' : 'default'\" ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('monospaceFont')\" title=\"'Monospace Font'\"></menu-row>\n" +
-    "            </div>\n" +
-    "          </div>\n" +
-    "        </div>\n" +
-    "        <div class='item' click-outside='ctrl.showEditorMenu = false;' is-open='ctrl.showEditorMenu' ng-class=\"{'selected' : ctrl.showEditorMenu}\" ng-click='ctrl.onEditorMenuClick()'>\n" +
-    "          <div class='label'>Editor</div>\n" +
-    "          <editor-menu callback='ctrl.editorMenuOnSelect' ng-if='ctrl.showEditorMenu' selected-editor='ctrl.selectedEditor'></editor-menu>\n" +
-    "        </div>\n" +
-    "        <div class='item' click-outside='ctrl.showExtensions = false;' is-open='ctrl.showExtensions' ng-class=\"{'selected' : ctrl.showExtensions}\" ng-click='ctrl.showExtensions = !ctrl.showExtensions; ctrl.showMenu = false; ctrl.showEditorMenu = false;'>\n" +
-    "          <div class='label'>Actions</div>\n" +
-    "          <actions-menu item='ctrl.note' ng-if='ctrl.showExtensions'></actions-menu>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "  <div class='editor-content' id='editor-content' ng-if='ctrl.noteReady &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
-    "    <panel-resizer class='left' control='ctrl.resizeControl' hoverable='true' min-width='300' on-resize-finish='ctrl.onPanelResizeFinish' panel-id=\"'editor-content'\" property=\"'left'\"></panel-resizer>\n" +
-    "    <component-view class='component-view' component='ctrl.selectedEditor' ng-if='ctrl.selectedEditor'></component-view>\n" +
-    "    <textarea class='editable' dir='auto' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.selectedEditor' ng-model='ctrl.note.text'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
-    "    <panel-resizer control='ctrl.resizeControl' hoverable='true' min-width='300' on-resize-finish='ctrl.onPanelResizeFinish' panel-id=\"'editor-content'\"></panel-resizer>\n" +
+    "  <ul class='section-menu-bar' ng-if='ctrl.note'>\n" +
+    "    <li click-outside='ctrl.showMenu = false;' is-open='ctrl.showMenu' ng-class=\"{'selected' : ctrl.showMenu}\">\n" +
+    "      <label ng-click='ctrl.showMenu = !ctrl.showMenu; ctrl.showExtensions = false; ctrl.showEditorMenu = false;'>Menu</label>\n" +
+    "      <ul class='dropdown-menu sectioned-menu' ng-if='ctrl.showMenu'>\n" +
+    "        <li>\n" +
+    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.togglePin()'>\n" +
+    "            <i class='icon ion-ios-flag'></i>\n" +
+    "            {{ctrl.note.pinned ? \"Unpin\" : \"Pin\"}}\n" +
+    "          </label>\n" +
+    "        </li>\n" +
+    "        <li>\n" +
+    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.toggleArchiveNote()'>\n" +
+    "            <i class='icon ion-ios-box'></i>\n" +
+    "            {{ctrl.note.archived ? \"Unarchive\" : \"Archive\"}}\n" +
+    "          </label>\n" +
+    "        </li>\n" +
+    "        <li>\n" +
+    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.deleteNote()'>\n" +
+    "            <i class='icon ion-trash-b'></i>\n" +
+    "            Delete\n" +
+    "          </label>\n" +
+    "        </li>\n" +
+    "        <li>\n" +
+    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.toggleFullScreen()'>\n" +
+    "            <i class='icon ion-arrow-expand'></i>\n" +
+    "            Toggle Fullscreen\n" +
+    "          </label>\n" +
+    "        </li>\n" +
+    "        <li ng-if='ctrl.hasDisabledStackComponents()'>\n" +
+    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.restoreDisabledStackComponents()'>Restore Disabled Components</label>\n" +
+    "        </li>\n" +
+    "      </ul>\n" +
+    "    </li>\n" +
+    "    <li click-outside='ctrl.showEditorMenu = false;' is-open='ctrl.showEditorMenu' ng-class=\"{'selected' : ctrl.showEditorMenu}\">\n" +
+    "      <label ng-click='ctrl.showEditorMenu = !ctrl.showEditorMenu; ctrl.showMenu = false; ctrl.showExtensions = false;'>Editor</label>\n" +
+    "      <editor-menu callback='ctrl.selectedEditor' ng-if='ctrl.showEditorMenu' selected-editor='ctrl.editorComponent'></editor-menu>\n" +
+    "    </li>\n" +
+    "    <li click-outside='ctrl.showExtensions = false;' is-open='ctrl.showExtensions' ng-class=\"{'selected' : ctrl.showExtensions}\" ng-if='ctrl.hasAvailableExtensions()'>\n" +
+    "      <label ng-click='ctrl.showExtensions = !ctrl.showExtensions; ctrl.showMenu = false; ctrl.showEditorMenu = false;'>Actions</label>\n" +
+    "      <contextual-extensions-menu item='ctrl.note' ng-if='ctrl.showExtensions'></contextual-extensions-menu>\n" +
+    "    </li>\n" +
+    "  </ul>\n" +
+    "  <div class='editor-content' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.noteReady &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
+    "    <iframe data-component-id='{{ctrl.editorComponent.uuid}}' frameBorder='0' id='editor-iframe' ng-if='ctrl.editorComponent &amp;&amp; ctrl.editorComponent.active' ng-src='{{ctrl.editorComponent.url | trusted}}' style='width: 100%;'>\n" +
+    "      Loading\n" +
+    "    </iframe>\n" +
+    "    <textarea class='editable' dir='auto' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.editorComponent' ng-model='ctrl.note.text'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
     "  </div>\n" +
     "  <section class='section' ng-if='ctrl.note.errorDecrypting'>\n" +
     "    <p class='medium-padding' style='padding-top: 0 !important;'>There was an error decrypting this item. Ensure you are running the latest version of this app, then sign out and sign back in to try again.</p>\n" +
     "  </section>\n" +
     "  <div id='editor-pane-component-stack'>\n" +
-    "    <component-view class='component-view component-stack-item' component='component' ng-if='component.active' ng-repeat='component in ctrl.componentStack'></component-view>\n" +
+    "    <div class='component component-stack-border' id=\"{{'component-' + component.uuid}}\" ng-if='component.active' ng-mouseleave='component.showExit = false' ng-mouseover='component.showExit = true' ng-repeat='component in ctrl.componentStack' ng-show='!component.ignoreEvents'>\n" +
+    "      <div class='exit-button body-text-color' ng-click='ctrl.disableComponentForCurrentItem(component, true)' ng-if='component.showExit'>×</div>\n" +
+    "      <iframe data-component-id='{{component.uuid}}' frameBorder='0' ng-src='{{component.url | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-modals'></iframe>\n" +
+    "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
   );
 
 
   $templateCache.put('frontend/footer.html',
-    "<div class='sn-component'>\n" +
-    "  <div class='app-bar no-edges' id='footer-bar'>\n" +
-    "    <div class='left'>\n" +
-    "      <div class='item' click-outside='ctrl.showAccountMenu = false;' is-open='ctrl.showAccountMenu'>\n" +
-    "        <div class='column'>\n" +
-    "          <div class='circle small' ng-class=\"ctrl.error ? 'danger' : (ctrl.getUser() ? 'info' : 'default')\"></div>\n" +
-    "        </div>\n" +
-    "        <div class='column' ng-click='ctrl.accountMenuPressed()'>\n" +
-    "          <div class='label title' ng-class='{red: ctrl.error}'>Account</div>\n" +
-    "        </div>\n" +
-    "        <account-menu close-function='ctrl.closeAccountMenu' ng-if='ctrl.showAccountMenu' on-successful-auth='ctrl.onAuthSuccess'></account-menu>\n" +
-    "      </div>\n" +
-    "      <div class='item' click-outside='ctrl.showExtensionsMenu = false;' is-open='ctrl.showExtensionsMenu'>\n" +
-    "        <div class='column' ng-click='ctrl.toggleExtensions()'>\n" +
-    "          <div class='label title'>Extensions</div>\n" +
-    "        </div>\n" +
-    "        <global-extensions-menu ng-if='ctrl.showExtensionsMenu'></global-extensions-menu>\n" +
-    "      </div>\n" +
-    "      <div class='item'>\n" +
-    "        <div class='label title' href='https://standardnotes.org/help' target='_blank'>\n" +
-    "          Help\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "      <div class='item border'></div>\n" +
-    "      <div class='item' ng-repeat='room in ctrl.rooms track by room.uuid'>\n" +
-    "        <div class='column' ng-click='ctrl.selectRoom(room)'>\n" +
-    "          <div class='label'>{{room.name}}</div>\n" +
-    "        </div>\n" +
-    "        <component-modal component='room' controller='room.directiveController' ng-if='room.showRoom'></component-modal>\n" +
-    "      </div>\n" +
+    "<div id='footer-bar'>\n" +
+    "  <div class='pull-left'>\n" +
+    "    <div class='footer-bar-link' click-outside='ctrl.showAccountMenu = false;' is-open='ctrl.showAccountMenu'>\n" +
+    "      <a ng-class='{red: ctrl.error}' ng-click='ctrl.accountMenuPressed()'>Account</a>\n" +
+    "      <account-menu ng-if='ctrl.showAccountMenu' on-successful-auth='ctrl.onAuthSuccess'></account-menu>\n" +
     "    </div>\n" +
-    "    <div class='right'>\n" +
-    "      <div class='item' ng-click='ctrl.clickedNewUpdateAnnouncement()' ng-if='ctrl.newUpdateAvailable'>\n" +
-    "        <span class='info normal'>New update downloaded. Installs on app restart.</span>\n" +
-    "      </div>\n" +
-    "      <div class='item no-pointer' ng-if='ctrl.lastSyncDate &amp;&amp; !ctrl.isRefreshing'>\n" +
-    "        <div class='label subtle'>\n" +
+    "    <div class='footer-bar-link' click-outside='ctrl.showExtensionsMenu = false;' is-open='ctrl.showExtensionsMenu'>\n" +
+    "      <a ng-click='ctrl.toggleExtensions()'>Extensions</a>\n" +
+    "      <global-extensions-menu ng-if='ctrl.showExtensionsMenu'></global-extensions-menu>\n" +
+    "    </div>\n" +
+    "    <div class='footer-bar-link'>\n" +
+    "      <a href='https://standardnotes.org/help' target='_blank'>\n" +
+    "        Help\n" +
+    "      </a>\n" +
+    "    </div>\n" +
+    "  </div>\n" +
+    "  <div class='pull-right'>\n" +
+    "    <div class='footer-bar-link' ng-click='ctrl.clickedNewUpdateAnnouncement()' ng-if='ctrl.newUpdateAvailable'>\n" +
+    "      <span class='tinted normal'>New update downloaded. Installs on app restart.</span>\n" +
+    "    </div>\n" +
+    "    <div class='footer-bar-link' style='margin-right: 5px;'>\n" +
+    "      <span ng-if='ctrl.lastSyncDate' style='float: left; font-weight: normal; margin-right: 8px;'>\n" +
+    "        <span ng-if='!ctrl.isRefreshing'>\n" +
     "          Last refreshed {{ctrl.lastSyncDate | appDateTime}}\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "      <div class='item' ng-if='ctrl.lastSyncDate &amp;&amp; ctrl.isRefreshing'>\n" +
-    "        <div class='spinner small'></div>\n" +
-    "      </div>\n" +
-    "      <div class='item' ng-if='ctrl.offline'>\n" +
-    "        <div class='label'>Offline</div>\n" +
-    "      </div>\n" +
-    "      <div class='item' ng-click='ctrl.refreshData()' ng-if='!ctrl.offline'>\n" +
-    "        <div class='label'>Refresh</div>\n" +
-    "      </div>\n" +
-    "      <div class='item' ng-if='ctrl.hasPasscode()'>\n" +
-    "        <div class='label'>\n" +
-    "          <i class='icon ion-locked' ng-click='ctrl.lockApp()' ng-if='ctrl.hasPasscode()'></i>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
+    "        </span>\n" +
+    "        <span ng-if='ctrl.isRefreshing'>\n" +
+    "          <div class='spinner' style='margin-top: 2px;'></div>\n" +
+    "        </span>\n" +
+    "      </span>\n" +
+    "      <strong ng-if='ctrl.offline'>Offline</strong>\n" +
+    "      <a ng-click='ctrl.refreshData()' ng-if='!ctrl.offline'>Refresh</a>\n" +
+    "      <span ng-if='ctrl.hasPasscode()'>\n" +
+    "        <i class='icon ion-locked' ng-click='ctrl.lockApp()' ng-if='ctrl.hasPasscode()'></i>\n" +
+    "      </span>\n" +
     "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
@@ -44452,7 +44378,7 @@ angular.module('app').directive('permissionsModal', function () {
   $templateCache.put('frontend/home.html',
     "<div class='main-ui-view'>\n" +
     "  <lock-screen ng-if='needsUnlock' on-success='onSuccessfulUnlock'></lock-screen>\n" +
-    "  <div class='app' id='app' ng-if='!needsUnlock'>\n" +
+    "  <div class='app' ng-if='!needsUnlock'>\n" +
     "    <tags-section add-new='tagsAddNew' all-tag='allTag' archive-tag='archiveTag' remove-tag='removeTag' save='tagsSave' selection-made='tagsSelectionMade' tags='tags' will-select='tagsWillMakeSelection'></tags-section>\n" +
     "    <notes-section add-new='notesAddNew' selection-made='notesSelectionMade' tag='selectedTag'></notes-section>\n" +
     "    <editor-section note='selectedNote' remove='deleteNote' save='saveNote' update-tags='updateTagsForNote'></editor-section>\n" +
@@ -44463,83 +44389,74 @@ angular.module('app').directive('permissionsModal', function () {
 
 
   $templateCache.put('frontend/lock-screen.html',
-    "<div class='sn-component' id='lock-screen'>\n" +
-    "  <div class='panel'>\n" +
-    "    <div class='header'>\n" +
-    "      <h1 class='title'>Passcode Required</h1>\n" +
-    "    </div>\n" +
-    "    <div class='content'>\n" +
-    "      <div class='panel-section'>\n" +
-    "        <form class='panel-form panel-row' ng-submit='submitPasscodeForm()'>\n" +
-    "          <div class='panel-column stretch'>\n" +
-    "            <input autocomplete='new-password' autofocus='true' class='panel-row' ng-model='formData.passcode' placeholder='Enter Passcode' should-focus='true' sn-autofocus='true' type='password'>\n" +
-    "            <div class='button-group stretch panel-row form-submit'>\n" +
-    "              <button class='button info' type='submit'>\n" +
-    "                <div class='label'>Unlock</div>\n" +
-    "              </button>\n" +
-    "            </div>\n" +
-    "          </div>\n" +
-    "        </form>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
+    "<div id='lock-screen'>\n" +
+    "  <div class='content'>\n" +
+    "    <h3 class='center-align'>Passcode Required</h3>\n" +
+    "    <form class='mt-20' ng-submit='submitPasscodeForm()'>\n" +
+    "      <input autocomplete='new-password' autofocus='true' class='form-control mt-10' ng-model='formData.passcode' placeholder='Enter Passcode' type='password'>\n" +
+    "      <button class='standard ui-button block tinted mt-5' type='submit'>Unlock</button>\n" +
+    "    </form>\n" +
     "  </div>\n" +
     "</div>\n"
   );
 
 
   $templateCache.put('frontend/notes.html',
-    "<div class='section notes' id='notes-column'>\n" +
+    "<div class='section notes'>\n" +
     "  <div class='content'>\n" +
     "    <div class='section-title-bar' id='notes-title-bar'>\n" +
-    "      <div class='padded'>\n" +
-    "        <div class='section-title-bar-header'>\n" +
-    "          <div class='title'>{{ctrl.panelTitle()}}</div>\n" +
-    "          <div class='add-button' id='notes-add-button' ng-click='ctrl.createNewNote()'>+</div>\n" +
-    "        </div>\n" +
-    "        <div class='filter-section'>\n" +
-    "          <input class='filter-bar mousetrap' id='search-bar' lowercase='true' ng-change='ctrl.filterTextChanged()' ng-model='ctrl.noteFilter.text' placeholder='Search' select-on-click='true'>\n" +
-    "            <div id='search-clear-button' ng-click=\"ctrl.noteFilter.text = ''; ctrl.filterTextChanged()\" ng-if='ctrl.noteFilter.text'>✕</div>\n" +
-    "          </input>\n" +
-    "        </div>\n" +
+    "      <div class='title'>{{ctrl.tag.title}} notes</div>\n" +
+    "      <div class='add-button' id='notes-add-button' ng-click='ctrl.createNewNote()'>+</div>\n" +
+    "      <br>\n" +
+    "      <div class='filter-section'>\n" +
+    "        <input class='filter-bar' lowercase='true' ng-change='ctrl.filterTextChanged()' ng-model='ctrl.noteFilter.text' placeholder='Search' select-on-click='true'>\n" +
+    "          <div id='search-clear-button' ng-click=\"ctrl.noteFilter.text = ''; ctrl.filterTextChanged()\" ng-if='ctrl.noteFilter.text'>✕</div>\n" +
+    "        </input>\n" +
     "      </div>\n" +
-    "      <div class='sn-component' id='notes-menu-bar'>\n" +
-    "        <div class='app-bar no-edges'>\n" +
-    "          <div class='left'>\n" +
-    "            <div class='item' ng-class=\"{'selected' : ctrl.showMenu}\" ng-click='ctrl.showMenu = !ctrl.showMenu'>\n" +
-    "              <div class='column'>\n" +
-    "                <div class='label'>\n" +
-    "                  Options\n" +
-    "                </div>\n" +
-    "              </div>\n" +
-    "              <div class='column'>\n" +
-    "                <div class='sublabel'>{{ctrl.optionsSubtitle()}}</div>\n" +
-    "              </div>\n" +
-    "            </div>\n" +
+    "      <ul class='section-menu-bar' id='notes-menu-bar'>\n" +
+    "        <li class='item-with-subtitle' ng-class=\"{'selected' : ctrl.showMenu}\">\n" +
+    "          <div class='wrapper' ng-click='ctrl.showMenu = !ctrl.showMenu'>\n" +
+    "            <label>Options</label>\n" +
+    "            <div class='subtitle'>{{ctrl.optionsSubtitle()}}</div>\n" +
     "          </div>\n" +
-    "          <div class='sn-component' ng-if='ctrl.showMenu'>\n" +
-    "            <div class='menu-panel dropdown-menu'>\n" +
-    "              <div class='section'>\n" +
-    "                <div class='header'>\n" +
-    "                  <h4 class='title'>Sort By</h4>\n" +
-    "                </div>\n" +
-    "                <menu-row circle=\"ctrl.sortBy == 'created_at' &amp;&amp; 'success'\" ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByCreated()' title=\"'Date Added'\"></menu-row>\n" +
-    "                <menu-row circle=\"ctrl.sortBy == 'updated_at' &amp;&amp; 'success'\" ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByUpdated()' title=\"'Date Modified'\"></menu-row>\n" +
-    "                <menu-row circle=\"ctrl.sortBy == 'title' &amp;&amp; 'success'\" ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByTitle()' title=\"'Title'\"></menu-row>\n" +
+    "          <div class='sectioned-menu dropdown-menu' ng-if='ctrl.showMenu'>\n" +
+    "            <ul>\n" +
+    "              <div class='header'>\n" +
+    "                <div class='title'>Sort by</div>\n" +
     "              </div>\n" +
-    "              <div class='section' ng-if='!ctrl.tag.archiveTag'>\n" +
-    "                <div class='header'>\n" +
-    "                  <h4 class='title'>Display</h4>\n" +
-    "                </div>\n" +
-    "                <menu-row circle=\"ctrl.showArchived ? 'success' : 'danger'\" ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('showArchived')\" title=\"'Archived Notes'\"></menu-row>\n" +
-    "                <menu-row circle=\"ctrl.hidePinned ? 'danger' : 'success'\" ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('hidePinned')\" title=\"'Pinned Notes'\"></menu-row>\n" +
-    "                <menu-row circle=\"ctrl.hideNotePreview ? 'danger' : 'success'\" ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('hideNotePreview')\" title=\"'Note Preview'\"></menu-row>\n" +
-    "                <menu-row circle=\"ctrl.hideDate ? 'danger' : 'success'\" ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('hideDate')\" title=\"'Date'\"></menu-row>\n" +
-    "                <menu-row circle=\"ctrl.hideTags ? 'danger' : 'success'\" ng-click=\"ctrl.selectedMenuItem($event); ctrl.toggleKey('hideTags')\" title=\"'Tags'\"></menu-row>\n" +
+    "              <li ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByCreated()'>\n" +
+    "                <label>\n" +
+    "                  <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'created_at'\">✓</span>\n" +
+    "                  By date added\n" +
+    "                </label>\n" +
+    "              </li>\n" +
+    "              <li ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByUpdated()'>\n" +
+    "                <label>\n" +
+    "                  <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'updated_at'\">✓</span>\n" +
+    "                  By date modified\n" +
+    "                </label>\n" +
+    "              </li>\n" +
+    "              <li ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByTitle()'>\n" +
+    "                <label>\n" +
+    "                  <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'title'\">✓</span>\n" +
+    "                  By title\n" +
+    "                </label>\n" +
+    "              </li>\n" +
+    "            </ul>\n" +
+    "            <ul ng-if='!ctrl.tag.archiveTag'>\n" +
+    "              <div class='header'>\n" +
+    "                <div class='title'>Archives</div>\n" +
     "              </div>\n" +
-    "            </div>\n" +
+    "              <li ng-click='ctrl.selectedMenuItem($event); ctrl.toggleShowArchived()'>\n" +
+    "                <label>\n" +
+    "                  <span class='top mt-5 mr-5' ng-if='ctrl.showArchived == true'>✓</span>\n" +
+    "                  Show archived notes\n" +
+    "                </label>\n" +
+    "              </li>\n" +
+    "            </ul>\n" +
     "          </div>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
+    "        </li>\n" +
+    "      </ul>\n" +
     "    </div>\n" +
     "    <div class='scrollable'>\n" +
     "      <div can-load='true' class='infinite-scroll' id='notes-scrollable' infinite-scroll='ctrl.paginate()' threshold='200'>\n" +
@@ -44547,23 +44464,23 @@ angular.module('app').directive('permissionsModal', function () {
     "          <strong class='red medium' ng-if='note.conflict_of'>Conflicted copy</strong>\n" +
     "          <strong class='red medium' ng-if='note.errorDecrypting'>Error decrypting</strong>\n" +
     "          <div class='pinned tinted' ng-class=\"{'tinted-selected' : ctrl.selectedNote == note}\" ng-if='note.pinned'>\n" +
-    "            <i class='icon ion-bookmark'></i>\n" +
+    "            <i class='icon ion-ios-flag'></i>\n" +
     "            <strong class='medium'>Pinned</strong>\n" +
     "          </div>\n" +
     "          <div class='archived tinted' ng-class=\"{'tinted-selected' : ctrl.selectedNote == note}\" ng-if='note.archived &amp;&amp; !ctrl.tag.archiveTag'>\n" +
     "            <i class='icon ion-ios-box'></i>\n" +
     "            <strong class='medium'>Archived</strong>\n" +
     "          </div>\n" +
-    "          <div class='tags-string' ng-if='ctrl.tag.all &amp;&amp; !ctrl.hideTags'>\n" +
+    "          <div class='tags-string' ng-if='ctrl.tag.all'>\n" +
     "            <div class='faded'>{{note.tagsString()}}</div>\n" +
     "          </div>\n" +
     "          <div class='name' ng-if='note.title'>\n" +
     "            {{note.title}}\n" +
     "          </div>\n" +
-    "          <div class='note-preview' ng-if='!ctrl.hideNotePreview'>\n" +
+    "          <div class='note-preview'>\n" +
     "            {{note.text}}\n" +
     "          </div>\n" +
-    "          <div class='date faded' ng-if='!ctrl.hideDate'>\n" +
+    "          <div class='date faded'>\n" +
     "            <span ng-if=\"ctrl.sortBy == 'updated_at'\">Modified {{note.updatedAtString() || 'Now'}}</span>\n" +
     "            <span ng-if=\"ctrl.sortBy != 'updated_at'\">{{note.createdAtString() || 'Now'}}</span>\n" +
     "          </div>\n" +
@@ -44571,22 +44488,17 @@ angular.module('app').directive('permissionsModal', function () {
     "      </div>\n" +
     "    </div>\n" +
     "  </div>\n" +
-    "  <panel-resizer collapsable='true' control='ctrl.panelController' hoverable='true' on-resize-finish='ctrl.onPanelResize' panel-id=\"'notes-column'\"></panel-resizer>\n" +
     "</div>\n"
   );
 
 
   $templateCache.put('frontend/tags.html',
     "<div class='section tags' id='tags-column'>\n" +
-    "  <div class='component-view-container' ng-if='ctrl.component'>\n" +
-    "    <component-view class='component-view' component='ctrl.component'></component-view>\n" +
-    "  </div>\n" +
+    "  <iframe frameBorder='0' id='tags-list-iframe' ng-if='ctrl.component &amp;&amp; ctrl.component.active' ng-src='{{ctrl.component.url | trusted}}' sandbox='allow-scripts' style='width: 100%; height: 100%;'></iframe>\n" +
     "  <div class='content' id='tags-content' ng-if='!(ctrl.component &amp;&amp; ctrl.component.active)'>\n" +
     "    <div class='section-title-bar' id='tags-title-bar'>\n" +
-    "      <div class='section-title-bar-header'>\n" +
-    "        <div class='title'>Tags</div>\n" +
-    "        <div class='add-button' id='tag-add-button' ng-click='ctrl.createNewTag()'>+</div>\n" +
-    "      </div>\n" +
+    "      <div class='title'>Tags</div>\n" +
+    "      <div class='add-button' id='tag-add-button' ng-click='ctrl.clickedAddNewTag()'>+</div>\n" +
     "    </div>\n" +
     "    <div class='scrollable'>\n" +
     "      <div class='tag' ng-class=\"{'selected' : ctrl.selectedTag == ctrl.allTag}\" ng-click='ctrl.selectTag(ctrl.allTag)' ng-if='ctrl.allTag'>\n" +
@@ -44597,7 +44509,7 @@ angular.module('app').directive('permissionsModal', function () {
     "      </div>\n" +
     "      <div class='tag' ng-class=\"{'selected' : ctrl.selectedTag == tag}\" ng-click='ctrl.selectTag(tag)' ng-repeat='tag in ctrl.tags track by tag.uuid'>\n" +
     "        <div class='info'>\n" +
-    "          <input class='title' ng-attr-id='tag-{{tag.uuid}}' ng-blur='ctrl.saveTag($event, tag)' ng-change='ctrl.tagTitleDidChange(tag)' ng-click='ctrl.selectTag(tag)' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTag($event, tag)' ng-model='tag.title' should-focus='ctrl.newTag || ctrl.editingTag == tag' sn-autofocus='true' spellcheck='false'>\n" +
+    "          <input class='title' mb-autofocus='true' ng-attr-id='tag-{{tag.uuid}}' ng-blur='ctrl.saveTag($event, tag)' ng-change='ctrl.tagTitleDidChange(tag)' ng-click='ctrl.selectTag(tag)' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTag($event, tag)' ng-model='tag.title' should-focus='ctrl.newTag || ctrl.editingTag == tag' spellcheck='false'>\n" +
     "          <div class='count'>{{ctrl.noteCount(tag)}}</div>\n" +
     "        </div>\n" +
     "        <div class='red small bold' ng-if='tag.conflict_of'>Conflicted copy</div>\n" +
@@ -44615,7 +44527,6 @@ angular.module('app').directive('permissionsModal', function () {
     "      </div>\n" +
     "    </div>\n" +
     "  </div>\n" +
-    "  <panel-resizer collapsable='true' control='ctrl.panelController' hoverable='true' on-resize-finish='ctrl.onPanelResize' panel-id=\"'tags-column'\"></panel-resizer>\n" +
     "</div>\n"
   );
 
