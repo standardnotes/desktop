@@ -1,5 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html ng-app="app.frontend">
+<html ng-app="app">
   <head>
     <meta charset="utf-8"/>
     <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
@@ -11,8 +11,11 @@
       try {
         const {ipcRenderer} = require('electron');
         window.ipcRenderer = ipcRenderer;
-        require("./javascripts/spellcheck.js")
-
+        try {
+          require("./javascripts/render/spellcheck.js")
+        } catch (e) {
+          console.error(e);
+        }
         // https://github.com/electron/electron/blob/master/docs/faq.md#i-can-not-use-jqueryrequirejsmeteorangularjs-in-electron
         window.nodeRequire = require;
         delete window.require;
@@ -53,14 +56,46 @@
 
       window._default_sf_server = "https://sync.standardnotes.org";
 
+      window._extensions_manager_location = "extensions/extensions-manager/dist/index.html";
+      // window._extensions_manager_location = "http://localhost:8080";
+
     </script>
 
     <script src="../compiled/compiled.js" debug="false"></script>
     <link rel="stylesheet" media="all" href="../stylesheets/app.css" debug="false" />
 
     <script>
+      const {app} = window.nodeRequire('electron').remote;
+      var userDataPath = app.getPath('userData');
+
       angular.element(document).ready(function () {
         var desktopManager = angular.element(document).injector().get('desktopManager');
+
+        desktopManager.desktop_setApplicationDataPath(userDataPath);
+
+        /*
+        Responses from packageManager
+        */
+        ipcRenderer.on('install-component-complete', function (event, data) {
+          console.log("install-component-complete", data.component.content.name, data.error && data.error.tag);
+          desktopManager.desktop_onComponentInstallationComplete(data.component, data.error);
+        });
+
+        /*
+        Actions triggered from the web code
+        */
+
+        /* Handled by PackageManager */
+        desktopManager.desktop_setComponentInstallationSyncHandler((componentsData) => {
+          ipcRenderer.send("sync-components", componentsData);
+        })
+
+        desktopManager.desktop_setInstallComponentHandler((componentData) => {
+          ipcRenderer.send("install-component", componentData);
+        });
+
+
+        /* Handled by ArchiveManager */
         desktopManager.desktop_setInitialDataLoadHandler(() => {
           ipcRenderer.send("initial-data-loaded");
         })
@@ -69,19 +104,35 @@
           ipcRenderer.send("major-data-change");
         })
       });
+
+      // For Mac inset window
+      if(process.platform == "darwin") {
+        var sheet = window.document.styleSheets[0];
+        sheet.insertRule('#tags-column { padding-top: 25px !important; }', sheet.cssRules.length);
+      }
+
     </script>
 
     <style>
-    .editor-content .editable {
-      font-family: Menlo, Consolas, 'DejaVu Sans Mono', monospace;
-      font-size: 16px;
-    }
+      .editor-content .editable {
+        font-family: Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+        font-size: 16px;
+      }
+
+      /* Required for BrowserWindow titleBarStyle: 'hiddenInset' */
+      .tags, #tags-title-bar, #notes-title-bar, #editor-title-bar, #lock-screen {
+        -webkit-app-region: drag;
+      }
+
+      input, .tags .content {
+        -webkit-app-region: no-drag;
+      }
     </style>
 
   </head>
 
   <body ng-class="bodyClass">
-    <div id="home" ng-controller="HomeCtrl" ng-include="'frontend/home.html'"></div>
+    <div id="home" ng-controller="HomeCtrl" ng-include="'home.html'"></div>
   </body>
 
 </html>

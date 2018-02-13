@@ -1,30 +1,162 @@
 @charset "UTF-8";
+html,
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  color: black;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100%;
+  height: 100%;
+  font-size: 14px;
+  margin: 0;
+  background-color: #e3e3e3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.tinted {
+  color: #086dd6;
+}
+
+.tinted-selected {
+  color: white;
+}
+
+*:focus {
+  outline: 0;
+}
+
+button:focus {
+  outline: 0;
+}
+
+input, button, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+a {
+  color: #086dd6;
+  text-decoration: none;
+}
+a.no-decoration {
+  color: inherit;
+}
+a:hover {
+  text-decoration: underline;
+}
+a:hover.no-decoration {
+  text-decoration: none;
+}
+
+p {
+  overflow: auto;
+}
+
+.main-ui-view {
+  min-height: 100vh;
+  height: 100vh;
+  overflow: auto;
+  background-color: #e3e3e3;
+}
+
+.app {
+  height: calc(100% - 32px);
+  width: 100%;
+  display: flex;
+  vertical-align: top;
+  overflow: hidden;
+  position: relative;
+}
+.app panel-resizer {
+  top: 0;
+  right: 0;
+  z-index: 1;
+  width: 8px;
+  height: 100%;
+  position: absolute;
+  cursor: col-resize;
+  background-color: #e0e0e0;
+  opacity: 0;
+}
+.app panel-resizer.left {
+  left: 0;
+  right: none;
+}
+.app panel-resizer.always-visible {
+  opacity: 1;
+}
+.app panel-resizer.collapsed {
+  opacity: 1;
+}
+.app panel-resizer.dragging {
+  opacity: 1;
+}
+.app panel-resizer.hoverable:hover {
+  opacity: 1;
+}
+.app .section {
+  padding-bottom: 0px;
+  height: 100%;
+  max-height: calc(100vh - 32px);
+  font-size: 17px;
+  position: relative;
+  overflow: hidden;
+}
+.app .section .scrollable {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.app .section > .content {
+  height: 100%;
+  max-height: 100%;
+  background-color: white;
+  position: relative;
+}
+.app .section .section-title-bar {
+  font-weight: bold;
+  font-size: 14px;
+}
+.app .section .section-title-bar .padded {
+  padding: 0 14px;
+}
+.app .section .section-title-bar .section-title-bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  overflow: hidden;
+}
+.app .section .section-title-bar .section-title-bar-header > .title {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  width: 80%;
+  overflow: hidden;
+}
+.app .section .section-title-bar .section-title-bar-header > .add-button {
+  color: #666666;
+  font-size: 18px;
+  width: 45px;
+  height: 24px;
+  cursor: pointer;
+  background-color: #e9e9e9;
+  border-radius: 4px;
+  font-weight: normal;
+  text-align: center;
+}
+.app .section .section-title-bar .section-title-bar-header > .add-button:hover {
+  background-color: gainsboro;
+  color: #666666;
+}
+
+.icon {
+  margin-right: 4px;
+}
+
 .selectable {
   user-select: text !important;
-}
-
-.clear {
-  clear: both;
-}
-
-.pull-left {
-  float: left !important;
-}
-
-.pull-right {
-  float: right !important;
-}
-
-.mt-1 {
-  margin-top: 1px !important;
-}
-
-.mt-2 {
-  margin-top: 2px !important;
-}
-
-.mt-3 {
-  margin-top: 3px !important;
+  cursor: text;
 }
 
 .mt-5 {
@@ -35,77 +167,12 @@
   margin-top: 10px !important;
 }
 
-.mt-15 {
-  margin-top: 15px !important;
-}
-
-.mt-20 {
-  margin-top: 20px !important;
-}
-
-.mt-25 {
-  margin-top: 25px !important;
-}
-
-.mt-50 {
-  margin-top: 50px !important;
-}
-
-.mt-100 {
-  margin-top: 100px !important;
-}
-
-.mb-0 {
-  margin-bottom: 0px !important;
-}
-
-.mb-5 {
-  margin-bottom: 5px !important;
-}
-
-.mb-10 {
-  margin-bottom: 10px !important;
-}
-
-.mr-5 {
-  margin-right: 5px;
-}
-
-.mr-10 {
-  margin-right: 10px;
-}
-
-.mr-15 {
-  margin-right: 15px;
-}
-
-.mr-20 {
-  margin-right: 20px;
-}
-
-.ml-2 {
-  margin-left: 2px;
-}
-
-.pb-0 {
-  padding-bottom: 0px !important;
-}
-
-.pt-5 {
-  padding-top: 5px;
-}
-
 .faded {
   opacity: 0.5;
 }
 
 .center-align {
   text-align: center !important;
-}
-
-.center {
-  margin-left: auto !important;
-  margin-right: auto !important;
 }
 
 .block {
@@ -117,57 +184,12 @@
   word-break: break-all;
 }
 
-.one-line-overflow {
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
-
-.small-v-space {
-  height: 6px;
-  display: block;
-}
-
-.medium-v-space {
-  height: 12px;
-  display: block;
-}
-
-.large-v-space {
-  height: 24px;
-  display: block;
-}
-
-.small-padding {
-  padding: 5px !important;
-}
-
 .medium-padding {
   padding: 10px !important;
 }
 
-.pb-4 {
-  padding-bottom: 4px !important;
-}
-
-.pb-6 {
-  padding-bottom: 6px !important;
-}
-
-.pb-10 {
-  padding-bottom: 10px !important;
-}
-
-.large-padding {
-  padding: 22px !important;
-}
-
 .red {
   color: red !important;
-}
-
-.orange {
-  color: orange !important;
 }
 
 .bold {
@@ -186,495 +208,45 @@
   font-size: 14px !important;
 }
 
-.inline {
-  display: inline-block !important;
-}
-.inline.top {
-  vertical-align: top;
-}
-.inline.middle {
-  vertical-align: middle;
-}
-
-button {
-  cursor: pointer;
-}
-
-input.form-control {
-  margin-bottom: 10px;
-  border-radius: 0px;
-  min-height: 39px;
-  font-size: 14px;
-  padding-left: 6px;
-}
-
-button {
-  border: none;
-}
-button.black {
-  font-weight: bold;
-  text-align: center;
-  padding: 10px;
-  font-size: 16px;
-  background-color: black;
-  color: white;
-}
-button.black:hover {
-  text-decoration: underline;
-}
-button.white {
-  font-weight: bold;
-  text-align: center;
-  padding: 10px;
-  font-size: 16px;
-  background-color: white;
-  color: black;
-  border: 1px solid rgba(128, 128, 128, 0.2);
-}
-button.white:hover {
-  text-decoration: underline;
-}
-
-.gray-bg {
-  background-color: #f6f6f6;
-  border: 1px solid #f2f2f2;
-}
-
-.white-bg {
-  background-color: white;
-  border: 1px solid rgba(128, 128, 128, 0.2);
-}
-
-.col-10 {
-  width: 10%;
-  display: inline-block;
-  vertical-align: top;
-  white-space: normal;
-}
-
-.col-15 {
-  width: 15%;
-  display: inline-block;
-  vertical-align: top;
-  white-space: normal;
-}
-
-.col-20 {
-  width: 20%;
-  display: inline-block;
-  vertical-align: top;
-  white-space: normal;
-}
-
-.col-45 {
-  width: 45%;
-  display: inline-block;
-  vertical-align: top;
-  white-space: normal;
-}
-
-.col-50 {
-  width: 50%;
-  display: inline-block;
-  vertical-align: top;
-  white-space: normal;
-}
-
-.col-80 {
-  width: 80%;
-  display: inline-block;
-  vertical-align: top;
-  white-space: normal;
-}
-
-.relative {
-  position: relative !important;
-}
-
-.absolute {
-  position: absolute !important;
-}
-
-.tinted {
-  color: #086dd6;
-}
-
-.tinted-selected {
-  color: white;
-}
-
-.tinted-box {
-  background-color: #086dd6;
-  color: white;
-  border-radius: 4px;
-  padding: 16px 20px;
-}
-.tinted-box button {
-  background-color: white;
-  color: #086dd6;
-  border-radius: 3px;
-  font-weight: bold;
-  padding: 6px 20px;
-  width: 100%;
-}
-.tinted-box button:hover {
-  text-decoration: underline;
-}
-
-html,
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-  color: black;
-  -webkit-font-smoothing: antialiased;
-  min-height: 100%;
-  height: 100%;
-  font-size: 20px;
-  margin: 0;
-  background-color: #e3e3e3;
-}
-
-.dark-button {
-  background-color: #2e2e2e;
-  border: 0;
-  padding: 6px 18px;
-  font-size: 16px;
-  cursor: pointer;
-  color: #fff;
-  border-radius: 2px;
-  border: 1px solid transparent;
-  -webkit-appearance: none;
-  -webkit-font-smoothing: antialiased;
-  -webkit-tap-highlight-color: transparent;
-}
-.dark-button:hover {
-  background-color: black;
-}
-
-a {
-  color: #086dd6;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-
-p {
-  overflow: auto;
-}
-
-.main-ui-view {
-  min-height: 100vh;
-  height: 100vh;
-  overflow: auto;
-  background-color: #e3e3e3;
-}
-
-.app {
-  height: calc(100% - 25px);
-  width: 100%;
-  display: flex;
-  vertical-align: top;
-  overflow: hidden;
-  position: relative;
-}
-.app .light-button {
-  background-color: #e3e3e3;
-  font-weight: bold;
-  color: black;
-  font-size: 16px;
-  text-align: center;
-  height: 35px;
-  border-radius: 4px;
-  padding-top: 6px;
-}
-.app .light-button:hover {
-  background-color: #cdcdcd;
-}
-.app .section {
-  padding-bottom: 0px;
-  height: 100%;
-  max-height: calc(100vh - 25px);
-  font-size: 17px;
-}
-.app .section .scrollable {
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-.app .section > .content {
-  height: 100%;
-  max-height: 100%;
-  background-color: white;
-  position: relative;
-}
-.app .section .section-title-bar {
-  padding: 20px;
-  height: 70px;
-  font-weight: bold;
-  font-size: 14px;
-}
-.app .section .section-title-bar > .title {
-  float: left;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  width: 80%;
-  overflow: hidden;
-}
-.app .section .section-title-bar > .add-button {
-  float: right;
-  font-size: 18px;
-  width: 45px;
-  height: 24px;
-  cursor: pointer;
-  background-color: #e9e9e9;
-  border-radius: 4px;
-  font-weight: normal;
-  text-align: center;
-  position: absolute;
-  right: 12px;
-}
-.app .section .section-title-bar > .add-button:hover {
-  background-color: rgba(233, 233, 233, 0.8);
-}
-
-.icon {
-  margin-right: 4px;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-*:focus {
-  outline: 0;
-}
-
-.float-group {
-  height: 15px;
-  clear: both;
-}
-.float-group.h10 {
-  height: 10px;
-}
-.float-group.h20 {
-  height: 20px;
-}
-.float-group.h30 {
-  height: 30px;
-}
-
-button:focus {
-  outline: 0;
-}
-
-.button-group {
-  clear: both;
-  height: 36px;
-}
-
-.ui-button {
-  background-color: #086dd6;
-  border: 0;
-  color: white;
-  font-weight: bold;
-  min-height: 36px;
-  font-size: 14px;
-}
-.ui-button.block {
-  width: 100%;
-}
-
-.panel {
-  position: absolute;
-  right: 0px;
-  min-width: 300px;
-  z-index: 1000;
-  margin-top: 10px;
-  box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
-  border: none;
-  background-color: white;
-}
-
-.panel-right {
-  left: 0px;
-}
-
-.panel-body {
-  padding: 15px;
-}
-
-.form-control {
-  display: block;
-  width: 100%;
-  height: 34px;
-  padding: 6px 12px;
-  font-size: 14px;
-  line-height: 1.42857;
-  color: #555555;
-  background-color: #fff;
-  background-image: none;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-shadow: 0;
-}
-
-input, button, select, textarea {
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
-}
-
-.checkbox {
-  font-size: 14px;
-  font-weight: bold;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 10px;
-}
-.checkbox input {
-  margin-left: 0px;
-}
-
-.fake-link {
-  font-weight: bold;
-  cursor: pointer;
-}
-.fake-link:hover {
-  text-decoration: underline;
-}
-
-h2 {
-  margin-bottom: 0px;
-  margin-top: 0px;
-}
-
 #footer-bar {
   position: relative;
   width: 100%;
-  padding: 5px;
-  background-color: #f1f1f1;
-  border-top: 1px solid rgba(0, 0, 0, 0.04);
-  height: 25px;
-  max-height: 25px;
+  height: 32px;
+  max-height: 32px;
   z-index: 100;
-  font-size: 10px;
-  color: #2e2e2e;
-}
-#footer-bar .medium-text {
-  font-size: 14px;
-}
-#footer-bar a {
-  font-weight: bold;
-  cursor: pointer;
-}
-#footer-bar a.gray {
-  color: #2e2e2e;
-}
-#footer-bar a.block {
-  display: block;
-}
-#footer-bar p {
-  margin: 2px 0px;
-  font-size: 12px;
-}
-#footer-bar label {
-  font-weight: bold;
-  margin-bottom: 4px;
-}
-#footer-bar h1 {
-  font-size: 16px;
-}
-#footer-bar h3 {
-  font-size: 14px;
-  margin-top: 4px;
-  margin-bottom: 3px;
-}
-#footer-bar h4 {
-  margin-bottom: 4px;
-  font-size: 13px;
-}
-#footer-bar section {
-  padding: 5px;
-  padding-bottom: 2px;
-  margin-top: 5px;
-}
-#footer-bar section.inline-h {
-  padding-top: 5px;
-  padding-left: 0;
-  padding-right: 0;
-}
-#footer-bar input {
-  border-radius: 0px;
 }
 
-#footer-bar .footer-bar-link {
-  font-size: 11px;
-  font-weight: bold;
-  margin-left: 8px;
-  color: #515263;
+#footer-bar .item {
   z-index: 1000;
-  display: inline-block;
   position: relative;
-  cursor: pointer;
   user-select: none;
 }
-#footer-bar .footer-bar-link > a {
-  color: #515263;
-}
-
-.footer-bar-link .panel {
-  font-weight: normal;
-  font-size: 12px;
+#footer-bar .item .panel {
   max-height: 85vh;
   position: absolute;
   right: 0px;
-  bottom: 20px;
+  left: 10px;
+  bottom: 40px;
   min-width: 300px;
   z-index: 1000;
   margin-top: 15px;
-  box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
-  border: none;
+  background-color: white;
+}
+
+#account-panel {
+  width: 400px;
+}
+
+.panel {
   cursor: default;
-  overflow: auto;
-  background-color: white;
-}
-
-button.light {
-  font-weight: bold;
-  margin-bottom: 0px;
-  font-size: 12px;
-  height: 30px;
-  padding-top: 3px;
-  text-align: center;
-  margin-bottom: 6px;
-  background-color: white;
-  display: block;
-  width: 100%;
-  border: 1px solid rgba(128, 128, 128, 0.15);
-  cursor: pointer;
-}
-button.light:hover {
-  background-color: rgba(128, 128, 128, 0.1);
-}
-
-.half-button {
-  width: calc(50% - 2px);
-  margin-left: 1px;
-  margin-right: 1px;
-  float: left;
-}
-
-.gray-bg {
-  background-color: #f6f6f6;
-  border: 1px solid #f2f2f2;
-}
-
-.white-bg {
-  background-color: white;
-  border: 1px solid rgba(128, 128, 128, 0.2);
 }
 
 a.disabled {
   pointer-events: none;
+}
+
+#lock-item {
+  margin-left: 3px;
 }
 
 .icon.ion-locked {
@@ -683,68 +255,39 @@ a.disabled {
   padding-left: 8px;
 }
 
-/* Global Ext Menu */
-.ext-section {
-  min-height: 50px;
-}
-.ext-section h1 {
-  margin: 0;
-  padding: 0;
-  padding-top: 5px;
-}
-.ext-section.opened h1 {
-  padding-top: 0px;
-}
-
-.spinner {
-  height: 10px;
-  width: 10px;
-  animation: rotate 0.8s infinite linear;
-  border: 1px solid #515263;
-  border-right-color: transparent;
-  border-radius: 50%;
-}
-.spinner.tinted {
-  border: 1px solid #086dd6;
-  border-right-color: transparent;
-}
-
-@keyframes rotate {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
 .tags {
-  flex: 1 10%;
-  max-width: 180px;
-  min-width: 100px;
   width: 180px;
-  user-select: none;
+  flex-grow: 0;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+}
+.tags, .tags #tags-content {
+  background-color: #f6f6f6;
+  display: flex;
+  flex-direction: column;
 }
 .tags #tags-title-bar {
   color: black;
-  height: 55px;
+  padding-top: 14px;
+  padding-bottom: 16px;
   padding-left: 12px;
   padding-right: 12px;
   font-size: 12px;
   color: rgba(0, 0, 0, 0.8);
 }
-.tags #tags-content {
-  background-color: #f6f6f6;
-}
 .tags #tag-add-button {
-  margin-top: -6px;
   background-color: #d7d7d7;
-  float: right;
 }
 .tags #tag-add-button:hover {
   background-color: rgba(215, 215, 215, 0.8);
 }
 .tags .scrollable {
-  height: calc(100vh - (55px + 25px));
+  height: 100%;
+}
+.tags .infinite-scroll {
+  overflow-x: hidden;
+  height: inherit;
 }
 .tags .tag {
   min-height: 30px;
@@ -814,43 +357,40 @@ a.disabled {
   color: black;
 }
 
-.notes {
+#notes-column, .notes {
   border-left: 1px solid #dddddd;
   border-right: 1px solid #dddddd;
-  flex: 1 20%;
-  max-width: 350px;
-  min-width: 170px;
+  width: 350px;
+  flex-grow: 0;
   user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
 }
-.notes #notes-title-bar {
-  color: rgba(0, 0, 0, 0.4);
+#notes-column .content, .notes .content {
+  display: flex;
+  flex-direction: column;
+}
+#notes-column #notes-title-bar, .notes #notes-title-bar {
   padding-top: 16px;
-  padding-left: 14px;
-  padding-right: 14px;
-  height: 148px;
   font-weight: normal;
   font-size: 18px;
 }
-.notes #notes-title-bar .title {
+#notes-column #notes-title-bar .section-title-bar-header .title, .notes #notes-title-bar .section-title-bar-header .title {
+  color: rgba(0, 0, 0, 0.4);
   width: calc(90% - 45px);
 }
-.notes #notes-add-button {
-  right: 14px;
-}
-.notes #notes-menu-bar {
+#notes-column #notes-menu-bar, .notes #notes-menu-bar {
   position: relative;
-  margin: 0 -14px;
   margin-top: 14px;
-  height: 45px;
-  width: auto;
 }
-.notes .filter-section {
+#notes-column .filter-section, .notes .filter-section {
   clear: left;
   height: 32px;
-  margin-top: 20px;
+  margin-top: 14px;
   position: relative;
 }
-.notes .filter-section .filter-bar {
+#notes-column .filter-section .filter-bar, .notes .filter-section .filter-bar {
   background-color: #e9e9e9;
   border-radius: 4px;
   height: 100%;
@@ -863,7 +403,7 @@ a.disabled {
   width: 100%;
   position: relative;
 }
-.notes .filter-section #search-clear-button {
+#notes-column .filter-section #search-clear-button, .notes .filter-section #search-clear-button {
   border-radius: 50%;
   width: 17px;
   height: 17px;
@@ -878,43 +418,43 @@ a.disabled {
   right: 8px;
   transition: background-color 0.15s linear;
 }
-.notes .filter-section #search-clear-button:hover {
+#notes-column .filter-section #search-clear-button:hover, .notes .filter-section #search-clear-button:hover {
   background-color: #086dd6;
 }
-.notes .scrollable {
-  height: calc(100vh - (148px + 25px));
+#notes-column .scrollable, .notes .scrollable {
+  height: 100%;
 }
-.notes .infinite-scroll {
+#notes-column .infinite-scroll, .notes .infinite-scroll {
   overflow-x: hidden;
   height: inherit;
 }
-.notes .note {
+#notes-column .note, .notes .note {
   width: 100%;
   padding: 15px;
   border-bottom: 1px solid #e3e3e3;
   cursor: pointer;
   background-color: white;
 }
-.notes .note > .name {
+#notes-column .note > .name, .notes .note > .name {
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.notes .note > .date {
+#notes-column .note > .date, .notes .note > .date {
   font-size: 12px;
   margin-top: 4px;
 }
-.notes .note .tags-string {
+#notes-column .note .tags-string, .notes .note .tags-string {
   margin-bottom: 4px;
   font-size: 13px;
 }
-.notes .note .pinned .icon {
+#notes-column .note .pinned .icon, .notes .note .pinned .icon {
   display: inline-block;
   vertical-align: top;
   margin-top: 2px;
   margin-right: 2px;
 }
-.notes .note .note-preview {
+#notes-column .note .note-preview, .notes .note .note-preview {
   font-size: 15px;
   margin-top: 1px;
   overflow: hidden;
@@ -928,33 +468,20 @@ a.disabled {
   max-height: calc(18px * 1);
   /* fallback */
 }
-.notes .note.selected {
+#notes-column .note.selected, .notes .note.selected {
   background-color: #086dd6;
   color: white;
 }
-.notes .note.selected .pinned {
+#notes-column .note.selected .pinned, .notes .note.selected .pinned {
   color: white;
 }
 
 .editor {
   flex: 1 50%;
-  min-width: 300px;
   display: flex;
   flex-direction: column;
   overflow-y: hidden;
   background-color: white;
-}
-.editor.fullscreen {
-  width: 100%;
-  position: absolute;
-  left: 0px;
-  top: 0px;
-  z-index: 200;
-  padding: 0;
-}
-.editor .section-menu-bar {
-  flex: 1 0 28px;
-  max-height: 28px;
 }
 
 #editor-title-bar {
@@ -968,9 +495,6 @@ a.disabled {
   z-index: 100;
   height: auto;
   overflow: visible;
-}
-#editor-title-bar.fullscreen {
-  position: relative;
 }
 #editor-title-bar > .title {
   font-size: 18px;
@@ -1013,7 +537,7 @@ a.disabled {
 #editor-title-bar .editor-tags #note-tags-component-container {
   height: 50px;
 }
-#editor-title-bar .editor-tags #note-tags-component-container #note-tags-iframe {
+#editor-title-bar .editor-tags #note-tags-component-container iframe {
   height: 50px;
   width: 100%;
   position: absolute;
@@ -1024,24 +548,21 @@ a.disabled {
   border: none;
 }
 
-.editor-content {
+.editor-content, #editor-content {
   flex: 1;
   z-index: 10;
   overflow-y: hidden;
   height: 100%;
   display: flex;
   background-color: white;
+  position: relative;
 }
-.editor-content.fullscreen {
-  padding-top: 0px;
-}
-.editor-content #editor-iframe {
+.editor-content #editor-iframe, #editor-content #editor-iframe {
   flex: 1;
   width: 100%;
 }
-.editor-content .editable {
+.editor-content .editable, #editor-content .editable {
   font-family: monospace;
-  flex: 1;
   overflow-y: scroll;
   width: 100%;
   border: none;
@@ -1051,186 +572,21 @@ a.disabled {
   font-size: 17px;
   resize: none;
 }
-.editor-content .editable.fullscreen {
-  padding: 85px 10%;
-  max-width: 1200px;
-  display: inline-block;
-  margin-left: auto;
-  margin-right: auto;
-}
 
 #editor-pane-component-stack {
   width: 100%;
 }
-#editor-pane-component-stack .component {
-  height: 50px;
+#editor-pane-component-stack .component-stack-item {
   width: 100%;
   position: relative;
-}
-#editor-pane-component-stack .component:not(:last-child) {
-  border-bottom: 1px solid #e3e3e3;
-}
-#editor-pane-component-stack .component:first-child {
   border-top: 1px solid #e3e3e3;
 }
-#editor-pane-component-stack .component .exit-button {
-  width: 15px;
-  height: 100%;
-  position: absolute;
-  right: 0;
-  background-color: transparent;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  color: rgba(0, 0, 0, 0.7);
-  text-align: center;
-  padding-left: 2px;
-}
-#editor-pane-component-stack .component .exit-button:hover {
-  background-color: rgba(128, 128, 128, 0.3);
-}
-#editor-pane-component-stack .component iframe {
+#editor-pane-component-stack .component-stack-item iframe {
   width: 100%;
 }
 
-.extension-render-modal {
-  position: fixed;
-  margin-left: auto;
-  margin-right: auto;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  z-index: 10000;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(128, 128, 128, 0.3);
-  color: black;
-}
-.extension-render-modal .content {
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
-  background-color: white;
-  width: 700px;
-  height: 500px;
-  margin: auto;
-  padding: 25px;
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  overflow-y: scroll;
-}
-
-#global-ext-menu {
-  color: black;
-}
-#global-ext-menu .panel-body {
-  padding: 0;
-}
-#global-ext-menu .container {
-  padding: 13px 18px;
-}
-#global-ext-menu .container.no-bottom {
-  padding-bottom: 0;
-}
-#global-ext-menu p {
-  font-size: 14px;
-}
-#global-ext-menu p.small {
-  font-size: 12px;
-}
-#global-ext-menu .link-group a {
-  margin-right: 2px;
-}
-#global-ext-menu .dashboard-link {
-  padding-top: 12px;
-  font-weight: normal;
-}
-#global-ext-menu .section-margin {
-  margin-top: 20px;
-}
-#global-ext-menu input {
-  border: 1px solid #086dd6;
-  border-radius: 2px;
-}
-#global-ext-menu .header {
-  padding-bottom: 12px;
-}
-#global-ext-menu ul {
-  border-top: 1px solid #e9e9e9;
-  border-bottom: 1px solid #e9e9e9;
-  margin: 0;
-  padding: 0;
-}
-#global-ext-menu ul li {
-  cursor: pointer;
-  background-color: rgba(233, 233, 233, 0.2);
-}
-#global-ext-menu ul li:hover {
-  background-color: rgba(233, 233, 233, 0.4);
-}
-#global-ext-menu ul li:not(:last-child) {
-  border-bottom: 1px solid #e9e9e9;
-}
-
-ul {
-  margin: 0;
-  padding: 0;
-}
-
-ul.section-menu-bar {
-  width: 100%;
-  padding-top: 0px;
-  padding-left: 6px;
-  padding-right: 21px;
-  user-select: none;
-  background-color: #f1f1f1;
-  color: black;
-  height: 28px;
-  cursor: default;
-  margin-top: 0px;
-  margin-bottom: 0;
-  list-style: none;
-  font-weight: bold;
-  font-size: 0;
-  /* trick to remove gaps between li inline-block elements */
-}
-ul.section-menu-bar > li {
-  padding: 6px 8px;
-  text-align: left;
-  display: inline-block;
+.app-bar .item {
   position: relative;
-  font-size: 13px;
-  font-weight: bold;
-  user-select: none;
-}
-ul.section-menu-bar > li.full-width {
-  width: 100%;
-}
-ul.section-menu-bar > li.item-with-subtitle label {
-  margin-right: 8px;
-}
-ul.section-menu-bar > li.item-with-subtitle .subtitle {
-  margin-top: 1px;
-  opacity: 0.5;
-  font-weight: normal;
-  font-size: 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-  /* number of lines to show */
-  line-height: 18px;
-  /* fallback */
-  max-height: calc(18px * 1);
-  /* fallback */
-}
-ul.section-menu-bar > li.selected {
-  background-color: #086dd6;
-  border-radius: 1px;
-  color: white;
 }
 
 .dropdown-menu {
@@ -1240,142 +596,36 @@ ul.section-menu-bar > li.selected {
   float: left;
   min-width: 160px;
   z-index: 100;
-  list-style: none;
-  font-size: 14px;
-  text-align: left;
-  padding: 0 0;
-  border: none;
+  margin-top: 5px;
   width: 280px;
-  -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
-  background-clip: padding-box;
-  background-color: white;
-  color: black;
-}
-.dropdown-menu li:hover {
-  background-color: #086dd6;
-  color: white;
-}
-.dropdown-menu > li {
-  width: 100%;
-  height: 40px;
-  padding-top: 3px;
-  overflow: hidden;
-  cursor: pointer;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  color: black;
-  float: left;
-}
-.dropdown-menu > li label {
-  padding: 10px;
-  padding-top: 8px;
-  width: 100%;
-  height: 100%;
-  display: block;
-  cursor: pointer;
-}
-.dropdown-menu > li .shortcut {
-  float: right;
-  font-size: 12px;
-  font-weight: normal;
-  opacity: 0.5;
-  margin-top: 10px;
-  padding-right: 10px;
-}
-
-.dropdown-menu.sectioned-menu {
-  overflow-y: scroll;
   max-height: calc(85vh - 90px);
-}
-.dropdown-menu.sectioned-menu ul {
-  margin-top: 0px;
-  margin-bottom: 0px;
-  padding-left: 0;
-  position: relative;
-}
-.dropdown-menu.sectioned-menu ul li {
-  cursor: pointer;
-  height: auto;
-  padding: 10px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  background-color: rgba(255, 255, 255, 0.9);
-  height: auto;
-}
-.dropdown-menu.sectioned-menu ul li .left-side {
-  left: 0;
-  width: 60%;
-  display: inline-block;
-  vertical-align: top;
-  user-select: text;
-}
-.dropdown-menu.sectioned-menu ul li .right-side {
-  right: 12px;
-  width: 30%;
-  display: inline-block;
-  vertical-align: top;
-  text-align: right;
-  position: absolute;
-}
-.dropdown-menu.sectioned-menu ul li:hover {
-  background-color: #086dd6;
-}
-.dropdown-menu.sectioned-menu ul li:hover .tinted {
-  color: white;
-}
-.dropdown-menu.sectioned-menu ul li:hover.nested-hover {
-  color: black;
-  background-color: #e9e9e9;
-}
-.dropdown-menu.sectioned-menu ul li.nested-hover {
-  color: black;
   background-color: white;
-}
-.dropdown-menu.sectioned-menu ul li .menu-item-title {
-  font-weight: bold;
-  font-size: 14px;
-  margin-bottom: 3px;
-}
-.dropdown-menu.sectioned-menu ul li .menu-item-subtitle {
-  font-weight: normal;
-  opacity: 0.5;
-  margin-top: 1px;
-  font-size: 12px;
-}
-.dropdown-menu.sectioned-menu .header {
-  background-color: #ededed;
-  border-bottom: 1px solid #d3d3d3;
-  position: relative;
-  padding-top: 12px;
-  padding-left: 10px;
-  padding-bottom: 10px;
-  cursor: pointer;
-  user-select: none;
-}
-.dropdown-menu.sectioned-menu .header > .title {
-  font-size: 14px;
-  font-weight: bold;
-}
-.dropdown-menu.sectioned-menu .header > .subtitle {
-  font-size: 12px;
-  opacity: 0.5;
-  font-weight: normal;
-  margin-top: 2px;
-}
-.dropdown-menu.sectioned-menu .header > .loading {
-  position: absolute;
-  height: 15px;
-  width: 15px;
-  right: 10px;
-  top: 20px;
-}
-.dropdown-menu.sectioned-menu .footer {
-  background-color: #ededed;
-  border-top: 1px solid #d3d3d3;
-  position: relative;
-  padding: 10px;
+  color: black;
 }
 
-.permissions-modal {
+#permissions-modal {
+  width: 350px;
+}
+#permissions-modal .panel {
+  border-radius: 0;
+  background-color: white;
+}
+#permissions-modal .content {
+  padding-top: 1.1rem;
+}
+#permissions-modal .footer {
+  padding-bottom: 1.4rem;
+}
+
+.panel {
+  background-color: white;
+}
+
+.header .subtitle {
+  font-size: 1.1rem;
+}
+
+.modal {
   position: fixed;
   margin-left: auto;
   margin-right: auto;
@@ -1388,62 +638,52 @@ ul.section-menu-bar > li.selected {
   height: 100vh;
   background-color: rgba(128, 128, 128, 0.3);
   color: black;
-  font-size: 16px;
   display: flex;
   align-items: center;
+  justify-content: center;
 }
-.permissions-modal .background {
+.modal .sn-component {
+  height: 100%;
+}
+.modal .sn-component .panel {
+  height: 100%;
+}
+.modal.medium > .content {
+  width: 700px;
+  height: 500px;
+}
+.modal .background {
   position: absolute;
   z-index: -1;
   width: 100%;
   height: 100%;
 }
-.permissions-modal .content {
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
-  background-color: white;
-  width: 700px;
-  margin: auto;
-  padding: 10px 30px;
-  padding-bottom: 30px;
-  overflow-y: scroll;
+.modal > .content {
+  overflow-y: auto;
+  width: auto;
+  padding: 0;
+  padding-bottom: 0;
+  min-width: 300px;
 }
-.permissions-modal .content p {
-  margin-bottom: 8px;
-  margin-top: 0;
+
+.component-view-container {
+  flex-grow: 1;
+  display: flex;
+  height: 100%;
+  width: 100%;
 }
-.permissions-modal .content h3 {
-  margin-bottom: 0;
+
+.component-view {
+  flex-grow: 1;
+  display: flex;
+  overflow: auto;
 }
-.permissions-modal .content h4 {
-  margin-bottom: 6px;
+.component-view .sn-component {
+  min-width: 100%;
 }
-.permissions-modal .learn-more {
-  margin-top: 20px;
-  line-height: 1.3;
-}
-.permissions-modal .status {
-  color: orange;
-}
-.permissions-modal .buttons {
-  margin-top: 35px;
-}
-.permissions-modal button.standard {
-  border-radius: 1px;
-  font-weight: bold;
-  padding: 6px 20px;
-  display: inline-block;
-}
-.permissions-modal button.standard:hover {
-  text-decoration: underline;
-}
-.permissions-modal button.standard.tinted {
-  background-color: #086dd6;
-  color: white;
-}
-.permissions-modal button.standard.white {
-  color: black;
-  background-color: white;
-  border: 1px solid gray;
+.component-view iframe {
+  flex: 1;
+  width: 100%;
 }
 
 #lock-screen {
@@ -1462,6 +702,7 @@ ul.section-menu-bar > li.selected {
   font-size: 16px;
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 #lock-screen .background {
   position: absolute;
@@ -1469,28 +710,32 @@ ul.section-menu-bar > li.selected {
   width: 100%;
   height: 100%;
 }
-#lock-screen .content {
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background-color: white;
-  width: 300px;
-  margin: auto;
-  padding: 10px 30px;
-  padding-bottom: 30px;
-  overflow-y: scroll;
+#lock-screen .panel {
+  width: 315px;
+  flex-grow: 0;
 }
-#lock-screen .content p {
-  margin-bottom: 8px;
-  margin-top: 0;
+#lock-screen .panel .header {
+  justify-content: center;
 }
-#lock-screen .content h3 {
-  margin-bottom: 0;
+
+.panel {
+  color: black;
 }
-#lock-screen .content h4 {
-  margin-bottom: 6px;
+.panel .header .close-button:hover {
+  text-decoration: none;
+}
+.panel input {
+  min-height: 39px;
+}
+.panel .button-group.stretch .button:not(.featured) {
+  padding: 9px;
+}
+.panel a {
+  color: #086dd6;
 }
 
 /*!
-  Ionicons, v2.0.0
+  Ionicons, v2.0.1
   Created by Ben Sperry for the Ionic Framework, http://ionicons.com/
   https://twitter.com/benjsperry  https://twitter.com/ionicframework
   MIT License: https://github.com/driftyco/ionicons
@@ -1503,11 +748,11 @@ ul.section-menu-bar > li.selected {
 @font-face {
   font-family: "Ionicons";
   src: url("../assets/ionicons.eot?v=2.0.0");
-  src: url("../assets/ionicons.eot?v=2.0.0#iefix") format("embedded-opentype"), url("../assets/ionicons.ttf?v=2.0.0") format("truetype"), url("../assets/ionicons.woff?v=2.0.0") format("woff"), url("../assets/ionicons.svg?v=2.0.0#Ionicons") format("svg");
+  src: url("../assets/ionicons.eot?v=2.0.1#iefix") format("embedded-opentype"), url("../assets/ionicons.ttf?v=2.0.1") format("truetype"), url("../assets/ionicons.woff?v=2.0.1") format("woff"), url("../assets/ionicons.svg?v=2.0.1#Ionicons") format("svg");
   font-weight: normal;
   font-style: normal;
 }
-.ion, .ionicons, .ion-alert:before, .ion-alert-circled:before, .ion-android-add:before, .ion-android-add-circle:before, .ion-android-alarm-clock:before, .ion-android-alert:before, .ion-android-apps:before, .ion-android-archive:before, .ion-android-arrow-back:before, .ion-android-arrow-down:before, .ion-android-arrow-dropdown:before, .ion-android-arrow-dropdown-circle:before, .ion-android-arrow-dropleft:before, .ion-android-arrow-dropleft-circle:before, .ion-android-arrow-dropright:before, .ion-android-arrow-dropright-circle:before, .ion-android-arrow-dropup:before, .ion-android-arrow-dropup-circle:before, .ion-android-arrow-forward:before, .ion-android-arrow-up:before, .ion-android-attach:before, .ion-android-bar:before, .ion-android-bicycle:before, .ion-android-boat:before, .ion-android-bookmark:before, .ion-android-bulb:before, .ion-android-bus:before, .ion-android-calendar:before, .ion-android-call:before, .ion-android-camera:before, .ion-android-cancel:before, .ion-android-car:before, .ion-android-cart:before, .ion-android-chat:before, .ion-android-checkbox:before, .ion-android-checkbox-blank:before, .ion-android-checkbox-outline:before, .ion-android-checkbox-outline-blank:before, .ion-android-checkmark-circle:before, .ion-android-clipboard:before, .ion-android-close:before, .ion-android-cloud:before, .ion-android-cloud-circle:before, .ion-android-cloud-done:before, .ion-android-cloud-outline:before, .ion-android-color-palette:before, .ion-android-compass:before, .ion-android-contact:before, .ion-android-contacts:before, .ion-android-contract:before, .ion-android-create:before, .ion-android-delete:before, .ion-android-desktop:before, .ion-android-document:before, .ion-android-done:before, .ion-android-done-all:before, .ion-android-download:before, .ion-android-drafts:before, .ion-android-exit:before, .ion-android-expand:before, .ion-android-favorite:before, .ion-android-favorite-outline:before, .ion-android-film:before, .ion-android-folder:before, .ion-android-folder-open:before, .ion-android-funnel:before, .ion-android-globe:before, .ion-android-hand:before, .ion-android-hangout:before, .ion-android-happy:before, .ion-android-home:before, .ion-android-image:before, .ion-android-laptop:before, .ion-android-list:before, .ion-android-locate:before, .ion-android-lock:before, .ion-android-mail:before, .ion-android-map:before, .ion-android-menu:before, .ion-android-microphone:before, .ion-android-microphone-off:before, .ion-android-more-horizontal:before, .ion-android-more-vertical:before, .ion-android-navigate:before, .ion-android-notifications:before, .ion-android-notifications-none:before, .ion-android-notifications-off:before, .ion-android-open:before, .ion-android-options:before, .ion-android-people:before, .ion-android-person:before, .ion-android-person-add:before, .ion-android-phone-landscape:before, .ion-android-phone-portrait:before, .ion-android-pin:before, .ion-android-plane:before, .ion-android-playstore:before, .ion-android-print:before, .ion-android-radio-button-off:before, .ion-android-radio-button-on:before, .ion-android-refresh:before, .ion-android-remove:before, .ion-android-remove-circle:before, .ion-android-restaurant:before, .ion-android-sad:before, .ion-android-search:before, .ion-android-send:before, .ion-android-settings:before, .ion-android-share:before, .ion-android-share-alt:before, .ion-android-star:before, .ion-android-star-half:before, .ion-android-star-outline:before, .ion-android-stopwatch:before, .ion-android-subway:before, .ion-android-sunny:before, .ion-android-sync:before, .ion-android-textsms:before, .ion-android-time:before, .ion-android-train:before, .ion-android-unlock:before, .ion-android-upload:before, .ion-android-volume-down:before, .ion-android-volume-mute:before, .ion-android-volume-off:before, .ion-android-volume-up:before, .ion-android-walk:before, .ion-android-warning:before, .ion-android-watch:before, .ion-android-wifi:before, .ion-aperture:before, .ion-archive:before, .ion-arrow-down-a:before, .ion-arrow-down-b:before, .ion-arrow-down-c:before, .ion-arrow-expand:before, .ion-arrow-graph-down-left:before, .ion-arrow-graph-down-right:before, .ion-arrow-graph-up-left:before, .ion-arrow-graph-up-right:before, .ion-arrow-left-a:before, .ion-arrow-left-b:before, .ion-arrow-left-c:before, .ion-arrow-move:before, .ion-arrow-resize:before, .ion-arrow-return-left:before, .ion-arrow-return-right:before, .ion-arrow-right-a:before, .ion-arrow-right-b:before, .ion-arrow-right-c:before, .ion-arrow-shrink:before, .ion-arrow-swap:before, .ion-arrow-up-a:before, .ion-arrow-up-b:before, .ion-arrow-up-c:before, .ion-asterisk:before, .ion-at:before, .ion-backspace:before, .ion-backspace-outline:before, .ion-bag:before, .ion-battery-charging:before, .ion-battery-empty:before, .ion-battery-full:before, .ion-battery-half:before, .ion-battery-low:before, .ion-beaker:before, .ion-beer:before, .ion-bluetooth:before, .ion-bonfire:before, .ion-bookmark:before, .ion-bowtie:before, .ion-briefcase:before, .ion-bug:before, .ion-calculator:before, .ion-calendar:before, .ion-camera:before, .ion-card:before, .ion-cash:before, .ion-chatbox:before, .ion-chatbox-working:before, .ion-chatboxes:before, .ion-chatbubble:before, .ion-chatbubble-working:before, .ion-chatbubbles:before, .ion-checkmark:before, .ion-checkmark-circled:before, .ion-checkmark-round:before, .ion-chevron-down:before, .ion-chevron-left:before, .ion-chevron-right:before, .ion-chevron-up:before, .ion-clipboard:before, .ion-clock:before, .ion-close:before, .ion-close-circled:before, .ion-close-round:before, .ion-closed-captioning:before, .ion-cloud:before, .ion-code:before, .ion-code-download:before, .ion-code-working:before, .ion-coffee:before, .ion-compass:before, .ion-compose:before, .ion-connection-bars:before, .ion-contrast:before, .ion-crop:before, .ion-cube:before, .ion-disc:before, .ion-document:before, .ion-document-text:before, .ion-drag:before, .ion-earth:before, .ion-easel:before, .ion-edit:before, .ion-egg:before, .ion-eject:before, .ion-email:before, .ion-email-unread:before, .ion-erlenmeyer-flask:before, .ion-erlenmeyer-flask-bubbles:before, .ion-eye:before, .ion-eye-disabled:before, .ion-female:before, .ion-filing:before, .ion-film-marker:before, .ion-fireball:before, .ion-flag:before, .ion-flame:before, .ion-flash:before, .ion-flash-off:before, .ion-folder:before, .ion-fork:before, .ion-fork-repo:before, .ion-forward:before, .ion-funnel:before, .ion-gear-a:before, .ion-gear-b:before, .ion-grid:before, .ion-hammer:before, .ion-happy:before, .ion-happy-outline:before, .ion-headphone:before, .ion-heart:before, .ion-heart-broken:before, .ion-help:before, .ion-help-buoy:before, .ion-help-circled:before, .ion-home:before, .ion-icecream:before, .ion-image:before, .ion-images:before, .ion-information:before, .ion-information-circled:before, .ion-ionic:before, .ion-ios-alarm:before, .ion-ios-alarm-outline:before, .ion-ios-albums:before, .ion-ios-albums-outline:before, .ion-ios-americanfootball:before, .ion-ios-americanfootball-outline:before, .ion-ios-analytics:before, .ion-ios-analytics-outline:before, .ion-ios-arrow-back:before, .ion-ios-arrow-down:before, .ion-ios-arrow-forward:before, .ion-ios-arrow-left:before, .ion-ios-arrow-right:before, .ion-ios-arrow-thin-down:before, .ion-ios-arrow-thin-left:before, .ion-ios-arrow-thin-right:before, .ion-ios-arrow-thin-up:before, .ion-ios-arrow-up:before, .ion-ios-at:before, .ion-ios-at-outline:before, .ion-ios-barcode:before, .ion-ios-barcode-outline:before, .ion-ios-baseball:before, .ion-ios-baseball-outline:before, .ion-ios-basketball:before, .ion-ios-basketball-outline:before, .ion-ios-bell:before, .ion-ios-bell-outline:before, .ion-ios-body:before, .ion-ios-body-outline:before, .ion-ios-bolt:before, .ion-ios-bolt-outline:before, .ion-ios-book:before, .ion-ios-book-outline:before, .ion-ios-bookmarks:before, .ion-ios-bookmarks-outline:before, .ion-ios-box:before, .ion-ios-box-outline:before, .ion-ios-briefcase:before, .ion-ios-briefcase-outline:before, .ion-ios-browsers:before, .ion-ios-browsers-outline:before, .ion-ios-calculator:before, .ion-ios-calculator-outline:before, .ion-ios-calendar:before, .ion-ios-calendar-outline:before, .ion-ios-camera:before, .ion-ios-camera-outline:before, .ion-ios-cart:before, .ion-ios-cart-outline:before, .ion-ios-chatboxes:before, .ion-ios-chatboxes-outline:before, .ion-ios-chatbubble:before, .ion-ios-chatbubble-outline:before, .ion-ios-checkmark:before, .ion-ios-checkmark-empty:before, .ion-ios-checkmark-outline:before, .ion-ios-circle-filled:before, .ion-ios-circle-outline:before, .ion-ios-clock:before, .ion-ios-clock-outline:before, .ion-ios-close:before, .ion-ios-close-empty:before, .ion-ios-close-outline:before, .ion-ios-cloud:before, .ion-ios-cloud-download:before, .ion-ios-cloud-download-outline:before, .ion-ios-cloud-outline:before, .ion-ios-cloud-upload:before, .ion-ios-cloud-upload-outline:before, .ion-ios-cloudy:before, .ion-ios-cloudy-night:before, .ion-ios-cloudy-night-outline:before, .ion-ios-cloudy-outline:before, .ion-ios-cog:before, .ion-ios-cog-outline:before, .ion-ios-color-filter:before, .ion-ios-color-filter-outline:before, .ion-ios-color-wand:before, .ion-ios-color-wand-outline:before, .ion-ios-compose:before, .ion-ios-compose-outline:before, .ion-ios-contact:before, .ion-ios-contact-outline:before, .ion-ios-copy:before, .ion-ios-copy-outline:before, .ion-ios-crop:before, .ion-ios-crop-strong:before, .ion-ios-download:before, .ion-ios-download-outline:before, .ion-ios-drag:before, .ion-ios-email:before, .ion-ios-email-outline:before, .ion-ios-eye:before, .ion-ios-eye-outline:before, .ion-ios-fastforward:before, .ion-ios-fastforward-outline:before, .ion-ios-filing:before, .ion-ios-filing-outline:before, .ion-ios-film:before, .ion-ios-film-outline:before, .ion-ios-flag:before, .ion-ios-flag-outline:before, .ion-ios-flame:before, .ion-ios-flame-outline:before, .ion-ios-flask:before, .ion-ios-flask-outline:before, .ion-ios-flower:before, .ion-ios-flower-outline:before, .ion-ios-folder:before, .ion-ios-folder-outline:before, .ion-ios-football:before, .ion-ios-football-outline:before, .ion-ios-game-controller-a:before, .ion-ios-game-controller-a-outline:before, .ion-ios-game-controller-b:before, .ion-ios-game-controller-b-outline:before, .ion-ios-gear:before, .ion-ios-gear-outline:before, .ion-ios-glasses:before, .ion-ios-glasses-outline:before, .ion-ios-grid-view:before, .ion-ios-grid-view-outline:before, .ion-ios-heart:before, .ion-ios-heart-outline:before, .ion-ios-help:before, .ion-ios-help-empty:before, .ion-ios-help-outline:before, .ion-ios-home:before, .ion-ios-home-outline:before, .ion-ios-infinite:before, .ion-ios-infinite-outline:before, .ion-ios-information:before, .ion-ios-information-empty:before, .ion-ios-information-outline:before, .ion-ios-ionic-outline:before, .ion-ios-keypad:before, .ion-ios-keypad-outline:before, .ion-ios-lightbulb:before, .ion-ios-lightbulb-outline:before, .ion-ios-list:before, .ion-ios-list-outline:before, .ion-ios-location:before, .ion-ios-location-outline:before, .ion-ios-locked:before, .ion-ios-locked-outline:before, .ion-ios-loop:before, .ion-ios-loop-strong:before, .ion-ios-medical:before, .ion-ios-medical-outline:before, .ion-ios-medkit:before, .ion-ios-medkit-outline:before, .ion-ios-mic:before, .ion-ios-mic-off:before, .ion-ios-mic-outline:before, .ion-ios-minus:before, .ion-ios-minus-empty:before, .ion-ios-minus-outline:before, .ion-ios-monitor:before, .ion-ios-monitor-outline:before, .ion-ios-moon:before, .ion-ios-moon-outline:before, .ion-ios-more:before, .ion-ios-more-outline:before, .ion-ios-musical-note:before, .ion-ios-musical-notes:before, .ion-ios-navigate:before, .ion-ios-navigate-outline:before, .ion-ios-nutrition:before, .ion-ios-nutrition-outline:before, .ion-ios-paper:before, .ion-ios-paper-outline:before, .ion-ios-paperplane:before, .ion-ios-paperplane-outline:before, .ion-ios-partlysunny:before, .ion-ios-partlysunny-outline:before, .ion-ios-pause:before, .ion-ios-pause-outline:before, .ion-ios-paw:before, .ion-ios-paw-outline:before, .ion-ios-people:before, .ion-ios-people-outline:before, .ion-ios-person:before, .ion-ios-person-outline:before, .ion-ios-personadd:before, .ion-ios-personadd-outline:before, .ion-ios-photos:before, .ion-ios-photos-outline:before, .ion-ios-pie:before, .ion-ios-pie-outline:before, .ion-ios-pint:before, .ion-ios-pint-outline:before, .ion-ios-play:before, .ion-ios-play-outline:before, .ion-ios-plus:before, .ion-ios-plus-empty:before, .ion-ios-plus-outline:before, .ion-ios-pricetag:before, .ion-ios-pricetag-outline:before, .ion-ios-pricetags:before, .ion-ios-pricetags-outline:before, .ion-ios-printer:before, .ion-ios-printer-outline:before, .ion-ios-pulse:before, .ion-ios-pulse-strong:before, .ion-ios-rainy:before, .ion-ios-rainy-outline:before, .ion-ios-recording:before, .ion-ios-recording-outline:before, .ion-ios-redo:before, .ion-ios-redo-outline:before, .ion-ios-refresh:before, .ion-ios-refresh-empty:before, .ion-ios-refresh-outline:before, .ion-ios-reload:before, .ion-ios-reverse-camera:before, .ion-ios-reverse-camera-outline:before, .ion-ios-rewind:before, .ion-ios-rewind-outline:before, .ion-ios-rose:before, .ion-ios-rose-outline:before, .ion-ios-search:before, .ion-ios-search-strong:before, .ion-ios-settings:before, .ion-ios-settings-strong:before, .ion-ios-shuffle:before, .ion-ios-shuffle-strong:before, .ion-ios-skipbackward:before, .ion-ios-skipbackward-outline:before, .ion-ios-skipforward:before, .ion-ios-skipforward-outline:before, .ion-ios-snowy:before, .ion-ios-speedometer:before, .ion-ios-speedometer-outline:before, .ion-ios-star:before, .ion-ios-star-half:before, .ion-ios-star-outline:before, .ion-ios-stopwatch:before, .ion-ios-stopwatch-outline:before, .ion-ios-sunny:before, .ion-ios-sunny-outline:before, .ion-ios-telephone:before, .ion-ios-telephone-outline:before, .ion-ios-tennisball:before, .ion-ios-tennisball-outline:before, .ion-ios-thunderstorm:before, .ion-ios-thunderstorm-outline:before, .ion-ios-time:before, .ion-ios-time-outline:before, .ion-ios-timer:before, .ion-ios-timer-outline:before, .ion-ios-toggle:before, .ion-ios-toggle-outline:before, .ion-ios-trash:before, .ion-ios-trash-outline:before, .ion-ios-undo:before, .ion-ios-undo-outline:before, .ion-ios-unlocked:before, .ion-ios-unlocked-outline:before, .ion-ios-upload:before, .ion-ios-upload-outline:before, .ion-ios-videocam:before, .ion-ios-videocam-outline:before, .ion-ios-volume-high:before, .ion-ios-volume-low:before, .ion-ios-wineglass:before, .ion-ios-wineglass-outline:before, .ion-ios-world:before, .ion-ios-world-outline:before, .ion-ipad:before, .ion-iphone:before, .ion-ipod:before, .ion-jet:before, .ion-key:before, .ion-knife:before, .ion-laptop:before, .ion-leaf:before, .ion-levels:before, .ion-lightbulb:before, .ion-link:before, .ion-load-a:before, .ion-load-b:before, .ion-load-c:before, .ion-load-d:before, .ion-location:before, .ion-lock-combination:before, .ion-locked:before, .ion-log-in:before, .ion-log-out:before, .ion-loop:before, .ion-magnet:before, .ion-male:before, .ion-man:before, .ion-map:before, .ion-medkit:before, .ion-merge:before, .ion-mic-a:before, .ion-mic-b:before, .ion-mic-c:before, .ion-minus:before, .ion-minus-circled:before, .ion-minus-round:before, .ion-model-s:before, .ion-monitor:before, .ion-more:before, .ion-mouse:before, .ion-music-note:before, .ion-navicon:before, .ion-navicon-round:before, .ion-navigate:before, .ion-network:before, .ion-no-smoking:before, .ion-nuclear:before, .ion-outlet:before, .ion-paintbrush:before, .ion-paintbucket:before, .ion-paper-airplane:before, .ion-paperclip:before, .ion-pause:before, .ion-person:before, .ion-person-add:before, .ion-person-stalker:before, .ion-pie-graph:before, .ion-pin:before, .ion-pinpoint:before, .ion-pizza:before, .ion-plane:before, .ion-planet:before, .ion-play:before, .ion-playstation:before, .ion-plus:before, .ion-plus-circled:before, .ion-plus-round:before, .ion-podium:before, .ion-pound:before, .ion-power:before, .ion-pricetag:before, .ion-pricetags:before, .ion-printer:before, .ion-pull-request:before, .ion-qr-scanner:before, .ion-quote:before, .ion-radio-waves:before, .ion-record:before, .ion-refresh:before, .ion-reply:before, .ion-reply-all:before, .ion-ribbon-a:before, .ion-ribbon-b:before, .ion-sad:before, .ion-sad-outline:before, .ion-scissors:before, .ion-search:before, .ion-settings:before, .ion-share:before, .ion-shuffle:before, .ion-skip-backward:before, .ion-skip-forward:before, .ion-social-android:before, .ion-social-android-outline:before, .ion-social-angular:before, .ion-social-angular-outline:before, .ion-social-apple:before, .ion-social-apple-outline:before, .ion-social-bitcoin:before, .ion-social-bitcoin-outline:before, .ion-social-buffer:before, .ion-social-buffer-outline:before, .ion-social-chrome:before, .ion-social-chrome-outline:before, .ion-social-codepen:before, .ion-social-codepen-outline:before, .ion-social-css3:before, .ion-social-css3-outline:before, .ion-social-designernews:before, .ion-social-designernews-outline:before, .ion-social-dribbble:before, .ion-social-dribbble-outline:before, .ion-social-dropbox:before, .ion-social-dropbox-outline:before, .ion-social-euro:before, .ion-social-euro-outline:before, .ion-social-facebook:before, .ion-social-facebook-outline:before, .ion-social-foursquare:before, .ion-social-foursquare-outline:before, .ion-social-freebsd-devil:before, .ion-social-github:before, .ion-social-github-outline:before, .ion-social-google:before, .ion-social-google-outline:before, .ion-social-googleplus:before, .ion-social-googleplus-outline:before, .ion-social-hackernews:before, .ion-social-hackernews-outline:before, .ion-social-html5:before, .ion-social-html5-outline:before, .ion-social-instagram:before, .ion-social-instagram-outline:before, .ion-social-javascript:before, .ion-social-javascript-outline:before, .ion-social-linkedin:before, .ion-social-linkedin-outline:before, .ion-social-markdown:before, .ion-social-nodejs:before, .ion-social-octocat:before, .ion-social-pinterest:before, .ion-social-pinterest-outline:before, .ion-social-python:before, .ion-social-reddit:before, .ion-social-reddit-outline:before, .ion-social-rss:before, .ion-social-rss-outline:before, .ion-social-sass:before, .ion-social-skype:before, .ion-social-skype-outline:before, .ion-social-snapchat:before, .ion-social-snapchat-outline:before, .ion-social-tumblr:before, .ion-social-tumblr-outline:before, .ion-social-tux:before, .ion-social-twitch:before, .ion-social-twitch-outline:before, .ion-social-twitter:before, .ion-social-twitter-outline:before, .ion-social-usd:before, .ion-social-usd-outline:before, .ion-social-vimeo:before, .ion-social-vimeo-outline:before, .ion-social-whatsapp:before, .ion-social-whatsapp-outline:before, .ion-social-windows:before, .ion-social-windows-outline:before, .ion-social-wordpress:before, .ion-social-wordpress-outline:before, .ion-social-yahoo:before, .ion-social-yahoo-outline:before, .ion-social-yen:before, .ion-social-yen-outline:before, .ion-social-youtube:before, .ion-social-youtube-outline:before, .ion-soup-can:before, .ion-soup-can-outline:before, .ion-speakerphone:before, .ion-speedometer:before, .ion-spoon:before, .ion-star:before, .ion-stats-bars:before, .ion-steam:before, .ion-stop:before, .ion-thermometer:before, .ion-thumbsdown:before, .ion-thumbsup:before, .ion-toggle:before, .ion-toggle-filled:before, .ion-transgender:before, .ion-trash-a:before, .ion-trash-b:before, .ion-trophy:before, .ion-tshirt:before, .ion-tshirt-outline:before, .ion-umbrella:before, .ion-university:before, .ion-unlocked:before, .ion-upload:before, .ion-usb:before, .ion-videocamera:before, .ion-volume-high:before, .ion-volume-low:before, .ion-volume-medium:before, .ion-volume-mute:before, .ion-wand:before, .ion-waterdrop:before, .ion-wifi:before, .ion-wineglass:before, .ion-woman:before, .ion-wrench:before, .ion-xbox:before {
+.ion, .ionicons, .ion-ios-box:before, .ion-bookmark:before, .ion-locked:before {
   display: inline-block;
   font-family: "Ionicons";
   speak: none;
@@ -1521,2938 +766,738 @@ ul.section-menu-bar > li.selected {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.ion-alert:before {
-  content: "\f101";
-}
-
-.ion-alert-circled:before {
-  content: "\f100";
-}
-
-.ion-android-add:before {
-  content: "\f2c7";
-}
-
-.ion-android-add-circle:before {
-  content: "\f359";
-}
-
-.ion-android-alarm-clock:before {
-  content: "\f35a";
-}
-
-.ion-android-alert:before {
-  content: "\f35b";
-}
-
-.ion-android-apps:before {
-  content: "\f35c";
-}
-
-.ion-android-archive:before {
-  content: "\f2c9";
-}
-
-.ion-android-arrow-back:before {
-  content: "\f2ca";
-}
-
-.ion-android-arrow-down:before {
-  content: "\f35d";
-}
-
-.ion-android-arrow-dropdown:before {
-  content: "\f35f";
-}
-
-.ion-android-arrow-dropdown-circle:before {
-  content: "\f35e";
-}
-
-.ion-android-arrow-dropleft:before {
-  content: "\f361";
-}
-
-.ion-android-arrow-dropleft-circle:before {
-  content: "\f360";
-}
-
-.ion-android-arrow-dropright:before {
-  content: "\f363";
-}
-
-.ion-android-arrow-dropright-circle:before {
-  content: "\f362";
-}
-
-.ion-android-arrow-dropup:before {
-  content: "\f365";
-}
-
-.ion-android-arrow-dropup-circle:before {
-  content: "\f364";
-}
-
-.ion-android-arrow-forward:before {
-  content: "\f30f";
-}
-
-.ion-android-arrow-up:before {
-  content: "\f366";
-}
-
-.ion-android-attach:before {
-  content: "\f367";
-}
-
-.ion-android-bar:before {
-  content: "\f368";
-}
-
-.ion-android-bicycle:before {
-  content: "\f369";
-}
-
-.ion-android-boat:before {
-  content: "\f36a";
-}
-
-.ion-android-bookmark:before {
-  content: "\f36b";
-}
-
-.ion-android-bulb:before {
-  content: "\f36c";
-}
-
-.ion-android-bus:before {
-  content: "\f36d";
-}
-
-.ion-android-calendar:before {
-  content: "\f2d1";
-}
-
-.ion-android-call:before {
-  content: "\f2d2";
-}
-
-.ion-android-camera:before {
-  content: "\f2d3";
-}
-
-.ion-android-cancel:before {
-  content: "\f36e";
-}
-
-.ion-android-car:before {
-  content: "\f36f";
-}
-
-.ion-android-cart:before {
-  content: "\f370";
-}
-
-.ion-android-chat:before {
-  content: "\f2d4";
-}
-
-.ion-android-checkbox:before {
-  content: "\f374";
-}
-
-.ion-android-checkbox-blank:before {
-  content: "\f371";
-}
-
-.ion-android-checkbox-outline:before {
-  content: "\f373";
-}
-
-.ion-android-checkbox-outline-blank:before {
-  content: "\f372";
-}
-
-.ion-android-checkmark-circle:before {
-  content: "\f375";
-}
-
-.ion-android-clipboard:before {
-  content: "\f376";
-}
-
-.ion-android-close:before {
-  content: "\f2d7";
-}
-
-.ion-android-cloud:before {
-  content: "\f37a";
-}
-
-.ion-android-cloud-circle:before {
-  content: "\f377";
-}
-
-.ion-android-cloud-done:before {
-  content: "\f378";
-}
-
-.ion-android-cloud-outline:before {
-  content: "\f379";
-}
-
-.ion-android-color-palette:before {
-  content: "\f37b";
-}
-
-.ion-android-compass:before {
-  content: "\f37c";
-}
-
-.ion-android-contact:before {
-  content: "\f2d8";
-}
-
-.ion-android-contacts:before {
-  content: "\f2d9";
-}
-
-.ion-android-contract:before {
-  content: "\f37d";
-}
-
-.ion-android-create:before {
-  content: "\f37e";
-}
-
-.ion-android-delete:before {
-  content: "\f37f";
-}
-
-.ion-android-desktop:before {
-  content: "\f380";
-}
-
-.ion-android-document:before {
-  content: "\f381";
-}
-
-.ion-android-done:before {
-  content: "\f383";
-}
-
-.ion-android-done-all:before {
-  content: "\f382";
-}
-
-.ion-android-download:before {
-  content: "\f2dd";
-}
-
-.ion-android-drafts:before {
-  content: "\f384";
-}
-
-.ion-android-exit:before {
-  content: "\f385";
-}
-
-.ion-android-expand:before {
-  content: "\f386";
-}
-
-.ion-android-favorite:before {
-  content: "\f388";
-}
-
-.ion-android-favorite-outline:before {
-  content: "\f387";
-}
-
-.ion-android-film:before {
-  content: "\f389";
-}
-
-.ion-android-folder:before {
-  content: "\f2e0";
-}
-
-.ion-android-folder-open:before {
-  content: "\f38a";
-}
-
-.ion-android-funnel:before {
-  content: "\f38b";
-}
-
-.ion-android-globe:before {
-  content: "\f38c";
-}
-
-.ion-android-hand:before {
-  content: "\f2e3";
-}
-
-.ion-android-hangout:before {
-  content: "\f38d";
-}
-
-.ion-android-happy:before {
-  content: "\f38e";
-}
-
-.ion-android-home:before {
-  content: "\f38f";
-}
-
-.ion-android-image:before {
-  content: "\f2e4";
-}
-
-.ion-android-laptop:before {
-  content: "\f390";
-}
-
-.ion-android-list:before {
-  content: "\f391";
-}
-
-.ion-android-locate:before {
-  content: "\f2e9";
-}
-
-.ion-android-lock:before {
-  content: "\f392";
-}
-
-.ion-android-mail:before {
-  content: "\f2eb";
-}
-
-.ion-android-map:before {
-  content: "\f393";
-}
-
-.ion-android-menu:before {
-  content: "\f394";
-}
-
-.ion-android-microphone:before {
-  content: "\f2ec";
-}
-
-.ion-android-microphone-off:before {
-  content: "\f395";
-}
-
-.ion-android-more-horizontal:before {
-  content: "\f396";
-}
-
-.ion-android-more-vertical:before {
-  content: "\f397";
-}
-
-.ion-android-navigate:before {
-  content: "\f398";
-}
-
-.ion-android-notifications:before {
-  content: "\f39b";
-}
-
-.ion-android-notifications-none:before {
-  content: "\f399";
-}
-
-.ion-android-notifications-off:before {
-  content: "\f39a";
-}
-
-.ion-android-open:before {
-  content: "\f39c";
-}
-
-.ion-android-options:before {
-  content: "\f39d";
-}
-
-.ion-android-people:before {
-  content: "\f39e";
-}
-
-.ion-android-person:before {
-  content: "\f3a0";
-}
-
-.ion-android-person-add:before {
-  content: "\f39f";
-}
-
-.ion-android-phone-landscape:before {
-  content: "\f3a1";
-}
-
-.ion-android-phone-portrait:before {
-  content: "\f3a2";
-}
-
-.ion-android-pin:before {
-  content: "\f3a3";
-}
-
-.ion-android-plane:before {
-  content: "\f3a4";
-}
-
-.ion-android-playstore:before {
-  content: "\f2f0";
-}
-
-.ion-android-print:before {
-  content: "\f3a5";
-}
-
-.ion-android-radio-button-off:before {
-  content: "\f3a6";
-}
-
-.ion-android-radio-button-on:before {
-  content: "\f3a7";
-}
-
-.ion-android-refresh:before {
-  content: "\f3a8";
-}
-
-.ion-android-remove:before {
-  content: "\f2f4";
-}
-
-.ion-android-remove-circle:before {
-  content: "\f3a9";
-}
-
-.ion-android-restaurant:before {
-  content: "\f3aa";
-}
-
-.ion-android-sad:before {
-  content: "\f3ab";
-}
-
-.ion-android-search:before {
-  content: "\f2f5";
-}
-
-.ion-android-send:before {
-  content: "\f2f6";
-}
-
-.ion-android-settings:before {
-  content: "\f2f7";
-}
-
-.ion-android-share:before {
-  content: "\f2f8";
-}
-
-.ion-android-share-alt:before {
-  content: "\f3ac";
-}
-
-.ion-android-star:before {
-  content: "\f2fc";
-}
-
-.ion-android-star-half:before {
-  content: "\f3ad";
-}
-
-.ion-android-star-outline:before {
-  content: "\f3ae";
-}
-
-.ion-android-stopwatch:before {
-  content: "\f2fd";
-}
-
-.ion-android-subway:before {
-  content: "\f3af";
-}
-
-.ion-android-sunny:before {
-  content: "\f3b0";
-}
-
-.ion-android-sync:before {
-  content: "\f3b1";
-}
-
-.ion-android-textsms:before {
-  content: "\f3b2";
-}
-
-.ion-android-time:before {
-  content: "\f3b3";
-}
-
-.ion-android-train:before {
-  content: "\f3b4";
-}
-
-.ion-android-unlock:before {
-  content: "\f3b5";
-}
-
-.ion-android-upload:before {
-  content: "\f3b6";
-}
-
-.ion-android-volume-down:before {
-  content: "\f3b7";
-}
-
-.ion-android-volume-mute:before {
-  content: "\f3b8";
-}
-
-.ion-android-volume-off:before {
-  content: "\f3b9";
-}
-
-.ion-android-volume-up:before {
-  content: "\f3ba";
-}
-
-.ion-android-walk:before {
-  content: "\f3bb";
-}
-
-.ion-android-warning:before {
-  content: "\f3bc";
-}
-
-.ion-android-watch:before {
-  content: "\f3bd";
-}
-
-.ion-android-wifi:before {
-  content: "\f305";
-}
-
-.ion-aperture:before {
-  content: "\f313";
-}
-
-.ion-archive:before {
-  content: "\f102";
-}
-
-.ion-arrow-down-a:before {
-  content: "\f103";
-}
-
-.ion-arrow-down-b:before {
-  content: "\f104";
-}
-
-.ion-arrow-down-c:before {
-  content: "\f105";
-}
-
-.ion-arrow-expand:before {
-  content: "\f25e";
-}
-
-.ion-arrow-graph-down-left:before {
-  content: "\f25f";
-}
-
-.ion-arrow-graph-down-right:before {
-  content: "\f260";
-}
-
-.ion-arrow-graph-up-left:before {
-  content: "\f261";
-}
-
-.ion-arrow-graph-up-right:before {
-  content: "\f262";
-}
-
-.ion-arrow-left-a:before {
-  content: "\f106";
-}
-
-.ion-arrow-left-b:before {
-  content: "\f107";
-}
-
-.ion-arrow-left-c:before {
-  content: "\f108";
-}
-
-.ion-arrow-move:before {
-  content: "\f263";
-}
-
-.ion-arrow-resize:before {
-  content: "\f264";
-}
-
-.ion-arrow-return-left:before {
-  content: "\f265";
-}
-
-.ion-arrow-return-right:before {
-  content: "\f266";
-}
-
-.ion-arrow-right-a:before {
-  content: "\f109";
-}
-
-.ion-arrow-right-b:before {
-  content: "\f10a";
-}
-
-.ion-arrow-right-c:before {
-  content: "\f10b";
-}
-
-.ion-arrow-shrink:before {
-  content: "\f267";
-}
-
-.ion-arrow-swap:before {
-  content: "\f268";
-}
-
-.ion-arrow-up-a:before {
-  content: "\f10c";
-}
-
-.ion-arrow-up-b:before {
-  content: "\f10d";
-}
-
-.ion-arrow-up-c:before {
-  content: "\f10e";
-}
-
-.ion-asterisk:before {
-  content: "\f314";
-}
-
-.ion-at:before {
-  content: "\f10f";
-}
-
-.ion-backspace:before {
-  content: "\f3bf";
-}
-
-.ion-backspace-outline:before {
-  content: "\f3be";
-}
-
-.ion-bag:before {
-  content: "\f110";
-}
-
-.ion-battery-charging:before {
-  content: "\f111";
-}
-
-.ion-battery-empty:before {
-  content: "\f112";
-}
-
-.ion-battery-full:before {
-  content: "\f113";
-}
-
-.ion-battery-half:before {
-  content: "\f114";
-}
-
-.ion-battery-low:before {
-  content: "\f115";
-}
-
-.ion-beaker:before {
-  content: "\f269";
-}
-
-.ion-beer:before {
-  content: "\f26a";
-}
-
-.ion-bluetooth:before {
-  content: "\f116";
-}
-
-.ion-bonfire:before {
-  content: "\f315";
-}
-
-.ion-bookmark:before {
-  content: "\f26b";
-}
-
-.ion-bowtie:before {
-  content: "\f3c0";
-}
-
-.ion-briefcase:before {
-  content: "\f26c";
-}
-
-.ion-bug:before {
-  content: "\f2be";
-}
-
-.ion-calculator:before {
-  content: "\f26d";
-}
-
-.ion-calendar:before {
-  content: "\f117";
-}
-
-.ion-camera:before {
-  content: "\f118";
-}
-
-.ion-card:before {
-  content: "\f119";
-}
-
-.ion-cash:before {
-  content: "\f316";
-}
-
-.ion-chatbox:before {
-  content: "\f11b";
-}
-
-.ion-chatbox-working:before {
-  content: "\f11a";
-}
-
-.ion-chatboxes:before {
-  content: "\f11c";
-}
-
-.ion-chatbubble:before {
-  content: "\f11e";
-}
-
-.ion-chatbubble-working:before {
-  content: "\f11d";
-}
-
-.ion-chatbubbles:before {
-  content: "\f11f";
-}
-
-.ion-checkmark:before {
-  content: "\f122";
-}
-
-.ion-checkmark-circled:before {
-  content: "\f120";
-}
-
-.ion-checkmark-round:before {
-  content: "\f121";
-}
-
-.ion-chevron-down:before {
-  content: "\f123";
-}
-
-.ion-chevron-left:before {
-  content: "\f124";
-}
-
-.ion-chevron-right:before {
-  content: "\f125";
-}
-
-.ion-chevron-up:before {
-  content: "\f126";
-}
-
-.ion-clipboard:before {
-  content: "\f127";
-}
-
-.ion-clock:before {
-  content: "\f26e";
-}
-
-.ion-close:before {
-  content: "\f12a";
-}
-
-.ion-close-circled:before {
-  content: "\f128";
-}
-
-.ion-close-round:before {
-  content: "\f129";
-}
-
-.ion-closed-captioning:before {
-  content: "\f317";
-}
-
-.ion-cloud:before {
-  content: "\f12b";
-}
-
-.ion-code:before {
-  content: "\f271";
-}
-
-.ion-code-download:before {
-  content: "\f26f";
-}
-
-.ion-code-working:before {
-  content: "\f270";
-}
-
-.ion-coffee:before {
-  content: "\f272";
-}
-
-.ion-compass:before {
-  content: "\f273";
-}
-
-.ion-compose:before {
-  content: "\f12c";
-}
-
-.ion-connection-bars:before {
-  content: "\f274";
-}
-
-.ion-contrast:before {
-  content: "\f275";
-}
-
-.ion-crop:before {
-  content: "\f3c1";
-}
-
-.ion-cube:before {
-  content: "\f318";
-}
-
-.ion-disc:before {
-  content: "\f12d";
-}
-
-.ion-document:before {
-  content: "\f12f";
-}
-
-.ion-document-text:before {
-  content: "\f12e";
-}
-
-.ion-drag:before {
-  content: "\f130";
-}
-
-.ion-earth:before {
-  content: "\f276";
-}
-
-.ion-easel:before {
-  content: "\f3c2";
-}
-
-.ion-edit:before {
-  content: "\f2bf";
-}
-
-.ion-egg:before {
-  content: "\f277";
-}
-
-.ion-eject:before {
-  content: "\f131";
-}
-
-.ion-email:before {
-  content: "\f132";
-}
-
-.ion-email-unread:before {
-  content: "\f3c3";
-}
-
-.ion-erlenmeyer-flask:before {
-  content: "\f3c5";
-}
-
-.ion-erlenmeyer-flask-bubbles:before {
-  content: "\f3c4";
-}
-
-.ion-eye:before {
-  content: "\f133";
-}
-
-.ion-eye-disabled:before {
-  content: "\f306";
-}
-
-.ion-female:before {
-  content: "\f278";
-}
-
-.ion-filing:before {
-  content: "\f134";
-}
-
-.ion-film-marker:before {
-  content: "\f135";
-}
-
-.ion-fireball:before {
-  content: "\f319";
-}
-
-.ion-flag:before {
-  content: "\f279";
-}
-
-.ion-flame:before {
-  content: "\f31a";
-}
-
-.ion-flash:before {
-  content: "\f137";
-}
-
-.ion-flash-off:before {
-  content: "\f136";
-}
-
-.ion-folder:before {
-  content: "\f139";
-}
-
-.ion-fork:before {
-  content: "\f27a";
-}
-
-.ion-fork-repo:before {
-  content: "\f2c0";
-}
-
-.ion-forward:before {
-  content: "\f13a";
-}
-
-.ion-funnel:before {
-  content: "\f31b";
-}
-
-.ion-gear-a:before {
-  content: "\f13d";
-}
-
-.ion-gear-b:before {
-  content: "\f13e";
-}
-
-.ion-grid:before {
-  content: "\f13f";
-}
-
-.ion-hammer:before {
-  content: "\f27b";
-}
-
-.ion-happy:before {
-  content: "\f31c";
-}
-
-.ion-happy-outline:before {
-  content: "\f3c6";
-}
-
-.ion-headphone:before {
-  content: "\f140";
-}
-
-.ion-heart:before {
-  content: "\f141";
-}
-
-.ion-heart-broken:before {
-  content: "\f31d";
-}
-
-.ion-help:before {
-  content: "\f143";
-}
-
-.ion-help-buoy:before {
-  content: "\f27c";
-}
-
-.ion-help-circled:before {
-  content: "\f142";
-}
-
-.ion-home:before {
-  content: "\f144";
-}
-
-.ion-icecream:before {
-  content: "\f27d";
-}
-
-.ion-image:before {
-  content: "\f147";
-}
-
-.ion-images:before {
-  content: "\f148";
-}
-
-.ion-information:before {
-  content: "\f14a";
-}
-
-.ion-information-circled:before {
-  content: "\f149";
-}
-
-.ion-ionic:before {
-  content: "\f14b";
-}
-
-.ion-ios-alarm:before {
-  content: "\f3c8";
-}
-
-.ion-ios-alarm-outline:before {
-  content: "\f3c7";
-}
-
-.ion-ios-albums:before {
-  content: "\f3ca";
-}
-
-.ion-ios-albums-outline:before {
-  content: "\f3c9";
-}
-
-.ion-ios-americanfootball:before {
-  content: "\f3cc";
-}
-
-.ion-ios-americanfootball-outline:before {
-  content: "\f3cb";
-}
-
-.ion-ios-analytics:before {
-  content: "\f3ce";
-}
-
-.ion-ios-analytics-outline:before {
-  content: "\f3cd";
-}
-
-.ion-ios-arrow-back:before {
-  content: "\f3cf";
-}
-
-.ion-ios-arrow-down:before {
-  content: "\f3d0";
-}
-
-.ion-ios-arrow-forward:before {
-  content: "\f3d1";
-}
-
-.ion-ios-arrow-left:before {
-  content: "\f3d2";
-}
-
-.ion-ios-arrow-right:before {
-  content: "\f3d3";
-}
-
-.ion-ios-arrow-thin-down:before {
-  content: "\f3d4";
-}
-
-.ion-ios-arrow-thin-left:before {
-  content: "\f3d5";
-}
-
-.ion-ios-arrow-thin-right:before {
-  content: "\f3d6";
-}
-
-.ion-ios-arrow-thin-up:before {
-  content: "\f3d7";
-}
-
-.ion-ios-arrow-up:before {
-  content: "\f3d8";
-}
-
-.ion-ios-at:before {
-  content: "\f3da";
-}
-
-.ion-ios-at-outline:before {
-  content: "\f3d9";
-}
-
-.ion-ios-barcode:before {
-  content: "\f3dc";
-}
-
-.ion-ios-barcode-outline:before {
-  content: "\f3db";
-}
-
-.ion-ios-baseball:before {
-  content: "\f3de";
-}
-
-.ion-ios-baseball-outline:before {
-  content: "\f3dd";
-}
-
-.ion-ios-basketball:before {
-  content: "\f3e0";
-}
-
-.ion-ios-basketball-outline:before {
-  content: "\f3df";
-}
-
-.ion-ios-bell:before {
-  content: "\f3e2";
-}
-
-.ion-ios-bell-outline:before {
-  content: "\f3e1";
-}
-
-.ion-ios-body:before {
-  content: "\f3e4";
-}
-
-.ion-ios-body-outline:before {
-  content: "\f3e3";
-}
-
-.ion-ios-bolt:before {
-  content: "\f3e6";
-}
-
-.ion-ios-bolt-outline:before {
-  content: "\f3e5";
-}
-
-.ion-ios-book:before {
-  content: "\f3e8";
-}
-
-.ion-ios-book-outline:before {
-  content: "\f3e7";
-}
-
-.ion-ios-bookmarks:before {
-  content: "\f3ea";
-}
-
-.ion-ios-bookmarks-outline:before {
-  content: "\f3e9";
-}
-
 .ion-ios-box:before {
   content: "\f3ec";
-}
-
-.ion-ios-box-outline:before {
-  content: "\f3eb";
-}
-
-.ion-ios-briefcase:before {
-  content: "\f3ee";
-}
-
-.ion-ios-briefcase-outline:before {
-  content: "\f3ed";
-}
-
-.ion-ios-browsers:before {
-  content: "\f3f0";
-}
-
-.ion-ios-browsers-outline:before {
-  content: "\f3ef";
-}
-
-.ion-ios-calculator:before {
-  content: "\f3f2";
-}
-
-.ion-ios-calculator-outline:before {
-  content: "\f3f1";
-}
-
-.ion-ios-calendar:before {
-  content: "\f3f4";
-}
-
-.ion-ios-calendar-outline:before {
-  content: "\f3f3";
-}
-
-.ion-ios-camera:before {
-  content: "\f3f6";
-}
-
-.ion-ios-camera-outline:before {
-  content: "\f3f5";
-}
-
-.ion-ios-cart:before {
-  content: "\f3f8";
-}
-
-.ion-ios-cart-outline:before {
-  content: "\f3f7";
-}
-
-.ion-ios-chatboxes:before {
-  content: "\f3fa";
-}
-
-.ion-ios-chatboxes-outline:before {
-  content: "\f3f9";
-}
-
-.ion-ios-chatbubble:before {
-  content: "\f3fc";
-}
-
-.ion-ios-chatbubble-outline:before {
-  content: "\f3fb";
-}
-
-.ion-ios-checkmark:before {
-  content: "\f3ff";
-}
-
-.ion-ios-checkmark-empty:before {
-  content: "\f3fd";
-}
-
-.ion-ios-checkmark-outline:before {
-  content: "\f3fe";
-}
-
-.ion-ios-circle-filled:before {
-  content: "\f400";
-}
-
-.ion-ios-circle-outline:before {
-  content: "\f401";
-}
-
-.ion-ios-clock:before {
-  content: "\f403";
-}
-
-.ion-ios-clock-outline:before {
-  content: "\f402";
-}
-
-.ion-ios-close:before {
-  content: "\f406";
-}
-
-.ion-ios-close-empty:before {
-  content: "\f404";
-}
-
-.ion-ios-close-outline:before {
-  content: "\f405";
-}
-
-.ion-ios-cloud:before {
-  content: "\f40c";
-}
-
-.ion-ios-cloud-download:before {
-  content: "\f408";
-}
-
-.ion-ios-cloud-download-outline:before {
-  content: "\f407";
-}
-
-.ion-ios-cloud-outline:before {
-  content: "\f409";
-}
-
-.ion-ios-cloud-upload:before {
-  content: "\f40b";
-}
-
-.ion-ios-cloud-upload-outline:before {
-  content: "\f40a";
-}
-
-.ion-ios-cloudy:before {
-  content: "\f410";
-}
-
-.ion-ios-cloudy-night:before {
-  content: "\f40e";
-}
-
-.ion-ios-cloudy-night-outline:before {
-  content: "\f40d";
-}
-
-.ion-ios-cloudy-outline:before {
-  content: "\f40f";
-}
-
-.ion-ios-cog:before {
-  content: "\f412";
-}
-
-.ion-ios-cog-outline:before {
-  content: "\f411";
-}
-
-.ion-ios-color-filter:before {
-  content: "\f414";
-}
-
-.ion-ios-color-filter-outline:before {
-  content: "\f413";
-}
-
-.ion-ios-color-wand:before {
-  content: "\f416";
-}
-
-.ion-ios-color-wand-outline:before {
-  content: "\f415";
-}
-
-.ion-ios-compose:before {
-  content: "\f418";
-}
-
-.ion-ios-compose-outline:before {
-  content: "\f417";
-}
-
-.ion-ios-contact:before {
-  content: "\f41a";
-}
-
-.ion-ios-contact-outline:before {
-  content: "\f419";
-}
-
-.ion-ios-copy:before {
-  content: "\f41c";
-}
-
-.ion-ios-copy-outline:before {
-  content: "\f41b";
-}
-
-.ion-ios-crop:before {
-  content: "\f41e";
-}
-
-.ion-ios-crop-strong:before {
-  content: "\f41d";
-}
-
-.ion-ios-download:before {
-  content: "\f420";
-}
-
-.ion-ios-download-outline:before {
-  content: "\f41f";
-}
-
-.ion-ios-drag:before {
-  content: "\f421";
-}
-
-.ion-ios-email:before {
-  content: "\f423";
-}
-
-.ion-ios-email-outline:before {
-  content: "\f422";
-}
-
-.ion-ios-eye:before {
-  content: "\f425";
-}
-
-.ion-ios-eye-outline:before {
-  content: "\f424";
-}
-
-.ion-ios-fastforward:before {
-  content: "\f427";
-}
-
-.ion-ios-fastforward-outline:before {
-  content: "\f426";
-}
-
-.ion-ios-filing:before {
-  content: "\f429";
-}
-
-.ion-ios-filing-outline:before {
-  content: "\f428";
-}
-
-.ion-ios-film:before {
-  content: "\f42b";
-}
-
-.ion-ios-film-outline:before {
-  content: "\f42a";
-}
-
-.ion-ios-flag:before {
-  content: "\f42d";
-}
-
-.ion-ios-flag-outline:before {
-  content: "\f42c";
-}
-
-.ion-ios-flame:before {
-  content: "\f42f";
-}
-
-.ion-ios-flame-outline:before {
-  content: "\f42e";
-}
-
-.ion-ios-flask:before {
-  content: "\f431";
-}
-
-.ion-ios-flask-outline:before {
-  content: "\f430";
-}
-
-.ion-ios-flower:before {
-  content: "\f433";
-}
-
-.ion-ios-flower-outline:before {
-  content: "\f432";
-}
-
-.ion-ios-folder:before {
-  content: "\f435";
-}
-
-.ion-ios-folder-outline:before {
-  content: "\f434";
-}
-
-.ion-ios-football:before {
-  content: "\f437";
-}
-
-.ion-ios-football-outline:before {
-  content: "\f436";
-}
-
-.ion-ios-game-controller-a:before {
-  content: "\f439";
-}
-
-.ion-ios-game-controller-a-outline:before {
-  content: "\f438";
-}
-
-.ion-ios-game-controller-b:before {
-  content: "\f43b";
-}
-
-.ion-ios-game-controller-b-outline:before {
-  content: "\f43a";
-}
-
-.ion-ios-gear:before {
-  content: "\f43d";
-}
-
-.ion-ios-gear-outline:before {
-  content: "\f43c";
-}
-
-.ion-ios-glasses:before {
-  content: "\f43f";
-}
-
-.ion-ios-glasses-outline:before {
-  content: "\f43e";
-}
-
-.ion-ios-grid-view:before {
-  content: "\f441";
-}
-
-.ion-ios-grid-view-outline:before {
-  content: "\f440";
-}
-
-.ion-ios-heart:before {
-  content: "\f443";
-}
-
-.ion-ios-heart-outline:before {
-  content: "\f442";
-}
-
-.ion-ios-help:before {
-  content: "\f446";
-}
-
-.ion-ios-help-empty:before {
-  content: "\f444";
-}
-
-.ion-ios-help-outline:before {
-  content: "\f445";
-}
-
-.ion-ios-home:before {
-  content: "\f448";
-}
-
-.ion-ios-home-outline:before {
-  content: "\f447";
-}
-
-.ion-ios-infinite:before {
-  content: "\f44a";
-}
-
-.ion-ios-infinite-outline:before {
-  content: "\f449";
-}
-
-.ion-ios-information:before {
-  content: "\f44d";
-}
-
-.ion-ios-information-empty:before {
-  content: "\f44b";
-}
-
-.ion-ios-information-outline:before {
-  content: "\f44c";
-}
-
-.ion-ios-ionic-outline:before {
-  content: "\f44e";
-}
-
-.ion-ios-keypad:before {
-  content: "\f450";
-}
-
-.ion-ios-keypad-outline:before {
-  content: "\f44f";
-}
-
-.ion-ios-lightbulb:before {
-  content: "\f452";
-}
-
-.ion-ios-lightbulb-outline:before {
-  content: "\f451";
-}
-
-.ion-ios-list:before {
-  content: "\f454";
-}
-
-.ion-ios-list-outline:before {
-  content: "\f453";
-}
-
-.ion-ios-location:before {
-  content: "\f456";
-}
-
-.ion-ios-location-outline:before {
-  content: "\f455";
-}
-
-.ion-ios-locked:before {
-  content: "\f458";
-}
-
-.ion-ios-locked-outline:before {
-  content: "\f457";
-}
-
-.ion-ios-loop:before {
-  content: "\f45a";
-}
-
-.ion-ios-loop-strong:before {
-  content: "\f459";
-}
-
-.ion-ios-medical:before {
-  content: "\f45c";
-}
-
-.ion-ios-medical-outline:before {
-  content: "\f45b";
-}
-
-.ion-ios-medkit:before {
-  content: "\f45e";
-}
-
-.ion-ios-medkit-outline:before {
-  content: "\f45d";
-}
-
-.ion-ios-mic:before {
-  content: "\f461";
-}
-
-.ion-ios-mic-off:before {
-  content: "\f45f";
-}
-
-.ion-ios-mic-outline:before {
-  content: "\f460";
-}
-
-.ion-ios-minus:before {
-  content: "\f464";
-}
-
-.ion-ios-minus-empty:before {
-  content: "\f462";
-}
-
-.ion-ios-minus-outline:before {
-  content: "\f463";
-}
-
-.ion-ios-monitor:before {
-  content: "\f466";
-}
-
-.ion-ios-monitor-outline:before {
-  content: "\f465";
-}
-
-.ion-ios-moon:before {
-  content: "\f468";
-}
-
-.ion-ios-moon-outline:before {
-  content: "\f467";
-}
-
-.ion-ios-more:before {
-  content: "\f46a";
-}
-
-.ion-ios-more-outline:before {
-  content: "\f469";
-}
-
-.ion-ios-musical-note:before {
-  content: "\f46b";
-}
-
-.ion-ios-musical-notes:before {
-  content: "\f46c";
-}
-
-.ion-ios-navigate:before {
-  content: "\f46e";
-}
-
-.ion-ios-navigate-outline:before {
-  content: "\f46d";
-}
-
-.ion-ios-nutrition:before {
-  content: "\f470";
-}
-
-.ion-ios-nutrition-outline:before {
-  content: "\f46f";
-}
-
-.ion-ios-paper:before {
-  content: "\f472";
-}
-
-.ion-ios-paper-outline:before {
-  content: "\f471";
-}
-
-.ion-ios-paperplane:before {
-  content: "\f474";
-}
-
-.ion-ios-paperplane-outline:before {
-  content: "\f473";
-}
-
-.ion-ios-partlysunny:before {
-  content: "\f476";
-}
-
-.ion-ios-partlysunny-outline:before {
-  content: "\f475";
-}
-
-.ion-ios-pause:before {
-  content: "\f478";
-}
-
-.ion-ios-pause-outline:before {
-  content: "\f477";
-}
-
-.ion-ios-paw:before {
-  content: "\f47a";
-}
-
-.ion-ios-paw-outline:before {
-  content: "\f479";
-}
-
-.ion-ios-people:before {
-  content: "\f47c";
-}
-
-.ion-ios-people-outline:before {
-  content: "\f47b";
-}
-
-.ion-ios-person:before {
-  content: "\f47e";
-}
-
-.ion-ios-person-outline:before {
-  content: "\f47d";
-}
-
-.ion-ios-personadd:before {
-  content: "\f480";
-}
-
-.ion-ios-personadd-outline:before {
-  content: "\f47f";
-}
-
-.ion-ios-photos:before {
-  content: "\f482";
-}
-
-.ion-ios-photos-outline:before {
-  content: "\f481";
-}
-
-.ion-ios-pie:before {
-  content: "\f484";
-}
-
-.ion-ios-pie-outline:before {
-  content: "\f483";
-}
-
-.ion-ios-pint:before {
-  content: "\f486";
-}
-
-.ion-ios-pint-outline:before {
-  content: "\f485";
-}
-
-.ion-ios-play:before {
-  content: "\f488";
-}
-
-.ion-ios-play-outline:before {
-  content: "\f487";
-}
-
-.ion-ios-plus:before {
-  content: "\f48b";
-}
-
-.ion-ios-plus-empty:before {
-  content: "\f489";
-}
-
-.ion-ios-plus-outline:before {
-  content: "\f48a";
-}
-
-.ion-ios-pricetag:before {
-  content: "\f48d";
-}
-
-.ion-ios-pricetag-outline:before {
-  content: "\f48c";
-}
-
-.ion-ios-pricetags:before {
-  content: "\f48f";
-}
-
-.ion-ios-pricetags-outline:before {
-  content: "\f48e";
-}
-
-.ion-ios-printer:before {
-  content: "\f491";
-}
-
-.ion-ios-printer-outline:before {
-  content: "\f490";
-}
-
-.ion-ios-pulse:before {
-  content: "\f493";
-}
-
-.ion-ios-pulse-strong:before {
-  content: "\f492";
-}
-
-.ion-ios-rainy:before {
-  content: "\f495";
-}
-
-.ion-ios-rainy-outline:before {
-  content: "\f494";
-}
-
-.ion-ios-recording:before {
-  content: "\f497";
-}
-
-.ion-ios-recording-outline:before {
-  content: "\f496";
-}
-
-.ion-ios-redo:before {
-  content: "\f499";
-}
-
-.ion-ios-redo-outline:before {
-  content: "\f498";
-}
-
-.ion-ios-refresh:before {
-  content: "\f49c";
-}
-
-.ion-ios-refresh-empty:before {
-  content: "\f49a";
-}
-
-.ion-ios-refresh-outline:before {
-  content: "\f49b";
-}
-
-.ion-ios-reload:before {
-  content: "\f49d";
-}
-
-.ion-ios-reverse-camera:before {
-  content: "\f49f";
-}
-
-.ion-ios-reverse-camera-outline:before {
-  content: "\f49e";
-}
-
-.ion-ios-rewind:before {
-  content: "\f4a1";
-}
-
-.ion-ios-rewind-outline:before {
-  content: "\f4a0";
-}
-
-.ion-ios-rose:before {
-  content: "\f4a3";
-}
-
-.ion-ios-rose-outline:before {
-  content: "\f4a2";
-}
-
-.ion-ios-search:before {
-  content: "\f4a5";
-}
-
-.ion-ios-search-strong:before {
-  content: "\f4a4";
-}
-
-.ion-ios-settings:before {
-  content: "\f4a7";
-}
-
-.ion-ios-settings-strong:before {
-  content: "\f4a6";
-}
-
-.ion-ios-shuffle:before {
-  content: "\f4a9";
-}
-
-.ion-ios-shuffle-strong:before {
-  content: "\f4a8";
-}
-
-.ion-ios-skipbackward:before {
-  content: "\f4ab";
-}
-
-.ion-ios-skipbackward-outline:before {
-  content: "\f4aa";
-}
-
-.ion-ios-skipforward:before {
-  content: "\f4ad";
-}
-
-.ion-ios-skipforward-outline:before {
-  content: "\f4ac";
-}
-
-.ion-ios-snowy:before {
-  content: "\f4ae";
-}
-
-.ion-ios-speedometer:before {
-  content: "\f4b0";
-}
-
-.ion-ios-speedometer-outline:before {
-  content: "\f4af";
-}
-
-.ion-ios-star:before {
-  content: "\f4b3";
-}
-
-.ion-ios-star-half:before {
-  content: "\f4b1";
-}
-
-.ion-ios-star-outline:before {
-  content: "\f4b2";
-}
-
-.ion-ios-stopwatch:before {
-  content: "\f4b5";
-}
-
-.ion-ios-stopwatch-outline:before {
-  content: "\f4b4";
-}
-
-.ion-ios-sunny:before {
-  content: "\f4b7";
-}
-
-.ion-ios-sunny-outline:before {
-  content: "\f4b6";
-}
-
-.ion-ios-telephone:before {
-  content: "\f4b9";
-}
-
-.ion-ios-telephone-outline:before {
-  content: "\f4b8";
-}
-
-.ion-ios-tennisball:before {
-  content: "\f4bb";
-}
-
-.ion-ios-tennisball-outline:before {
-  content: "\f4ba";
-}
-
-.ion-ios-thunderstorm:before {
-  content: "\f4bd";
-}
-
-.ion-ios-thunderstorm-outline:before {
-  content: "\f4bc";
-}
-
-.ion-ios-time:before {
-  content: "\f4bf";
-}
-
-.ion-ios-time-outline:before {
-  content: "\f4be";
-}
-
-.ion-ios-timer:before {
-  content: "\f4c1";
-}
-
-.ion-ios-timer-outline:before {
-  content: "\f4c0";
-}
-
-.ion-ios-toggle:before {
-  content: "\f4c3";
-}
-
-.ion-ios-toggle-outline:before {
-  content: "\f4c2";
-}
-
-.ion-ios-trash:before {
-  content: "\f4c5";
-}
-
-.ion-ios-trash-outline:before {
-  content: "\f4c4";
-}
-
-.ion-ios-undo:before {
-  content: "\f4c7";
-}
-
-.ion-ios-undo-outline:before {
-  content: "\f4c6";
-}
-
-.ion-ios-unlocked:before {
-  content: "\f4c9";
-}
-
-.ion-ios-unlocked-outline:before {
-  content: "\f4c8";
-}
-
-.ion-ios-upload:before {
-  content: "\f4cb";
-}
-
-.ion-ios-upload-outline:before {
-  content: "\f4ca";
-}
-
-.ion-ios-videocam:before {
-  content: "\f4cd";
-}
-
-.ion-ios-videocam-outline:before {
-  content: "\f4cc";
-}
-
-.ion-ios-volume-high:before {
-  content: "\f4ce";
-}
-
-.ion-ios-volume-low:before {
-  content: "\f4cf";
-}
-
-.ion-ios-wineglass:before {
-  content: "\f4d1";
-}
-
-.ion-ios-wineglass-outline:before {
-  content: "\f4d0";
-}
-
-.ion-ios-world:before {
-  content: "\f4d3";
-}
-
-.ion-ios-world-outline:before {
-  content: "\f4d2";
-}
-
-.ion-ipad:before {
-  content: "\f1f9";
-}
-
-.ion-iphone:before {
-  content: "\f1fa";
-}
-
-.ion-ipod:before {
-  content: "\f1fb";
-}
-
-.ion-jet:before {
-  content: "\f295";
-}
-
-.ion-key:before {
-  content: "\f296";
-}
-
-.ion-knife:before {
-  content: "\f297";
-}
-
-.ion-laptop:before {
-  content: "\f1fc";
-}
-
-.ion-leaf:before {
-  content: "\f1fd";
-}
-
-.ion-levels:before {
-  content: "\f298";
-}
-
-.ion-lightbulb:before {
-  content: "\f299";
-}
-
-.ion-link:before {
-  content: "\f1fe";
-}
-
-.ion-load-a:before {
-  content: "\f29a";
-}
-
-.ion-load-b:before {
-  content: "\f29b";
-}
-
-.ion-load-c:before {
-  content: "\f29c";
-}
-
-.ion-load-d:before {
-  content: "\f29d";
-}
-
-.ion-location:before {
-  content: "\f1ff";
-}
-
-.ion-lock-combination:before {
-  content: "\f4d4";
 }
 
 .ion-locked:before {
   content: "\f200";
 }
 
-.ion-log-in:before {
-  content: "\f29e";
-}
-
-.ion-log-out:before {
-  content: "\f29f";
-}
-
-.ion-loop:before {
-  content: "\f201";
-}
-
-.ion-magnet:before {
-  content: "\f2a0";
-}
-
-.ion-male:before {
-  content: "\f2a1";
-}
-
-.ion-man:before {
-  content: "\f202";
-}
-
-.ion-map:before {
-  content: "\f203";
-}
-
-.ion-medkit:before {
-  content: "\f2a2";
-}
-
-.ion-merge:before {
-  content: "\f33f";
-}
-
-.ion-mic-a:before {
-  content: "\f204";
-}
-
-.ion-mic-b:before {
-  content: "\f205";
-}
-
-.ion-mic-c:before {
-  content: "\f206";
-}
-
-.ion-minus:before {
-  content: "\f209";
-}
-
-.ion-minus-circled:before {
-  content: "\f207";
-}
-
-.ion-minus-round:before {
-  content: "\f208";
-}
-
-.ion-model-s:before {
-  content: "\f2c1";
-}
-
-.ion-monitor:before {
-  content: "\f20a";
-}
-
-.ion-more:before {
-  content: "\f20b";
-}
-
-.ion-mouse:before {
-  content: "\f340";
-}
-
-.ion-music-note:before {
-  content: "\f20c";
-}
-
-.ion-navicon:before {
-  content: "\f20e";
-}
-
-.ion-navicon-round:before {
-  content: "\f20d";
-}
-
-.ion-navigate:before {
-  content: "\f2a3";
-}
-
-.ion-network:before {
-  content: "\f341";
-}
-
-.ion-no-smoking:before {
-  content: "\f2c2";
-}
-
-.ion-nuclear:before {
-  content: "\f2a4";
-}
-
-.ion-outlet:before {
-  content: "\f342";
-}
-
-.ion-paintbrush:before {
-  content: "\f4d5";
-}
-
-.ion-paintbucket:before {
-  content: "\f4d6";
-}
-
-.ion-paper-airplane:before {
-  content: "\f2c3";
-}
-
-.ion-paperclip:before {
-  content: "\f20f";
-}
-
-.ion-pause:before {
-  content: "\f210";
-}
-
-.ion-person:before {
-  content: "\f213";
-}
-
-.ion-person-add:before {
-  content: "\f211";
-}
-
-.ion-person-stalker:before {
-  content: "\f212";
-}
-
-.ion-pie-graph:before {
-  content: "\f2a5";
-}
-
-.ion-pin:before {
-  content: "\f2a6";
-}
-
-.ion-pinpoint:before {
-  content: "\f2a7";
-}
-
-.ion-pizza:before {
-  content: "\f2a8";
-}
-
-.ion-plane:before {
-  content: "\f214";
-}
-
-.ion-planet:before {
-  content: "\f343";
-}
-
-.ion-play:before {
-  content: "\f215";
-}
-
-.ion-playstation:before {
-  content: "\f30a";
-}
-
-.ion-plus:before {
-  content: "\f218";
-}
-
-.ion-plus-circled:before {
-  content: "\f216";
-}
-
-.ion-plus-round:before {
-  content: "\f217";
-}
-
-.ion-podium:before {
-  content: "\f344";
-}
-
-.ion-pound:before {
-  content: "\f219";
-}
-
-.ion-power:before {
-  content: "\f2a9";
-}
-
-.ion-pricetag:before {
-  content: "\f2aa";
-}
-
-.ion-pricetags:before {
-  content: "\f2ab";
-}
-
-.ion-printer:before {
-  content: "\f21a";
-}
-
-.ion-pull-request:before {
-  content: "\f345";
-}
-
-.ion-qr-scanner:before {
-  content: "\f346";
-}
-
-.ion-quote:before {
-  content: "\f347";
-}
-
-.ion-radio-waves:before {
-  content: "\f2ac";
-}
-
-.ion-record:before {
-  content: "\f21b";
-}
-
-.ion-refresh:before {
-  content: "\f21c";
-}
-
-.ion-reply:before {
-  content: "\f21e";
-}
-
-.ion-reply-all:before {
-  content: "\f21d";
-}
-
-.ion-ribbon-a:before {
-  content: "\f348";
-}
-
-.ion-ribbon-b:before {
-  content: "\f349";
-}
-
-.ion-sad:before {
-  content: "\f34a";
-}
-
-.ion-sad-outline:before {
-  content: "\f4d7";
-}
-
-.ion-scissors:before {
-  content: "\f34b";
-}
-
-.ion-search:before {
-  content: "\f21f";
-}
-
-.ion-settings:before {
-  content: "\f2ad";
-}
-
-.ion-share:before {
-  content: "\f220";
-}
-
-.ion-shuffle:before {
-  content: "\f221";
-}
-
-.ion-skip-backward:before {
-  content: "\f222";
-}
-
-.ion-skip-forward:before {
-  content: "\f223";
-}
-
-.ion-social-android:before {
-  content: "\f225";
-}
-
-.ion-social-android-outline:before {
-  content: "\f224";
-}
-
-.ion-social-angular:before {
-  content: "\f4d9";
-}
-
-.ion-social-angular-outline:before {
-  content: "\f4d8";
-}
-
-.ion-social-apple:before {
-  content: "\f227";
-}
-
-.ion-social-apple-outline:before {
-  content: "\f226";
-}
-
-.ion-social-bitcoin:before {
-  content: "\f2af";
-}
-
-.ion-social-bitcoin-outline:before {
-  content: "\f2ae";
-}
-
-.ion-social-buffer:before {
-  content: "\f229";
-}
-
-.ion-social-buffer-outline:before {
-  content: "\f228";
-}
-
-.ion-social-chrome:before {
-  content: "\f4db";
-}
-
-.ion-social-chrome-outline:before {
-  content: "\f4da";
-}
-
-.ion-social-codepen:before {
-  content: "\f4dd";
-}
-
-.ion-social-codepen-outline:before {
-  content: "\f4dc";
-}
-
-.ion-social-css3:before {
-  content: "\f4df";
-}
-
-.ion-social-css3-outline:before {
-  content: "\f4de";
-}
-
-.ion-social-designernews:before {
-  content: "\f22b";
-}
-
-.ion-social-designernews-outline:before {
-  content: "\f22a";
-}
-
-.ion-social-dribbble:before {
-  content: "\f22d";
-}
-
-.ion-social-dribbble-outline:before {
-  content: "\f22c";
-}
-
-.ion-social-dropbox:before {
-  content: "\f22f";
-}
-
-.ion-social-dropbox-outline:before {
-  content: "\f22e";
-}
-
-.ion-social-euro:before {
-  content: "\f4e1";
-}
-
-.ion-social-euro-outline:before {
-  content: "\f4e0";
-}
-
-.ion-social-facebook:before {
-  content: "\f231";
-}
-
-.ion-social-facebook-outline:before {
-  content: "\f230";
-}
-
-.ion-social-foursquare:before {
-  content: "\f34d";
-}
-
-.ion-social-foursquare-outline:before {
-  content: "\f34c";
-}
-
-.ion-social-freebsd-devil:before {
-  content: "\f2c4";
-}
-
-.ion-social-github:before {
-  content: "\f233";
-}
-
-.ion-social-github-outline:before {
-  content: "\f232";
-}
-
-.ion-social-google:before {
-  content: "\f34f";
-}
-
-.ion-social-google-outline:before {
-  content: "\f34e";
-}
-
-.ion-social-googleplus:before {
-  content: "\f235";
-}
-
-.ion-social-googleplus-outline:before {
-  content: "\f234";
-}
-
-.ion-social-hackernews:before {
-  content: "\f237";
-}
-
-.ion-social-hackernews-outline:before {
-  content: "\f236";
-}
-
-.ion-social-html5:before {
-  content: "\f4e3";
-}
-
-.ion-social-html5-outline:before {
-  content: "\f4e2";
-}
-
-.ion-social-instagram:before {
-  content: "\f351";
-}
-
-.ion-social-instagram-outline:before {
-  content: "\f350";
-}
-
-.ion-social-javascript:before {
-  content: "\f4e5";
-}
-
-.ion-social-javascript-outline:before {
-  content: "\f4e4";
-}
-
-.ion-social-linkedin:before {
-  content: "\f239";
-}
-
-.ion-social-linkedin-outline:before {
-  content: "\f238";
-}
-
-.ion-social-markdown:before {
-  content: "\f4e6";
-}
-
-.ion-social-nodejs:before {
-  content: "\f4e7";
-}
-
-.ion-social-octocat:before {
-  content: "\f4e8";
-}
-
-.ion-social-pinterest:before {
-  content: "\f2b1";
-}
-
-.ion-social-pinterest-outline:before {
-  content: "\f2b0";
-}
-
-.ion-social-python:before {
-  content: "\f4e9";
-}
-
-.ion-social-reddit:before {
-  content: "\f23b";
-}
-
-.ion-social-reddit-outline:before {
-  content: "\f23a";
-}
-
-.ion-social-rss:before {
-  content: "\f23d";
-}
-
-.ion-social-rss-outline:before {
-  content: "\f23c";
-}
-
-.ion-social-sass:before {
-  content: "\f4ea";
-}
-
-.ion-social-skype:before {
-  content: "\f23f";
-}
-
-.ion-social-skype-outline:before {
-  content: "\f23e";
-}
-
-.ion-social-snapchat:before {
-  content: "\f4ec";
-}
-
-.ion-social-snapchat-outline:before {
-  content: "\f4eb";
-}
-
-.ion-social-tumblr:before {
-  content: "\f241";
-}
-
-.ion-social-tumblr-outline:before {
-  content: "\f240";
-}
-
-.ion-social-tux:before {
-  content: "\f2c5";
-}
-
-.ion-social-twitch:before {
-  content: "\f4ee";
-}
-
-.ion-social-twitch-outline:before {
-  content: "\f4ed";
-}
-
-.ion-social-twitter:before {
-  content: "\f243";
-}
-
-.ion-social-twitter-outline:before {
-  content: "\f242";
-}
-
-.ion-social-usd:before {
-  content: "\f353";
-}
-
-.ion-social-usd-outline:before {
-  content: "\f352";
-}
-
-.ion-social-vimeo:before {
-  content: "\f245";
-}
-
-.ion-social-vimeo-outline:before {
-  content: "\f244";
-}
-
-.ion-social-whatsapp:before {
-  content: "\f4f0";
-}
-
-.ion-social-whatsapp-outline:before {
-  content: "\f4ef";
-}
-
-.ion-social-windows:before {
-  content: "\f247";
-}
-
-.ion-social-windows-outline:before {
-  content: "\f246";
-}
-
-.ion-social-wordpress:before {
-  content: "\f249";
-}
-
-.ion-social-wordpress-outline:before {
-  content: "\f248";
-}
-
-.ion-social-yahoo:before {
-  content: "\f24b";
-}
-
-.ion-social-yahoo-outline:before {
-  content: "\f24a";
-}
-
-.ion-social-yen:before {
-  content: "\f4f2";
-}
-
-.ion-social-yen-outline:before {
-  content: "\f4f1";
-}
-
-.ion-social-youtube:before {
-  content: "\f24d";
-}
-
-.ion-social-youtube-outline:before {
-  content: "\f24c";
-}
-
-.ion-soup-can:before {
-  content: "\f4f4";
-}
-
-.ion-soup-can-outline:before {
-  content: "\f4f3";
-}
-
-.ion-speakerphone:before {
-  content: "\f2b2";
-}
-
-.ion-speedometer:before {
-  content: "\f2b3";
-}
-
-.ion-spoon:before {
-  content: "\f2b4";
-}
-
-.ion-star:before {
-  content: "\f24e";
-}
-
-.ion-stats-bars:before {
-  content: "\f2b5";
-}
-
-.ion-steam:before {
-  content: "\f30b";
-}
-
-.ion-stop:before {
-  content: "\f24f";
-}
-
-.ion-thermometer:before {
-  content: "\f2b6";
-}
-
-.ion-thumbsdown:before {
-  content: "\f250";
-}
-
-.ion-thumbsup:before {
-  content: "\f251";
-}
-
-.ion-toggle:before {
-  content: "\f355";
-}
-
-.ion-toggle-filled:before {
-  content: "\f354";
-}
-
-.ion-transgender:before {
-  content: "\f4f5";
-}
-
-.ion-trash-a:before {
-  content: "\f252";
-}
-
-.ion-trash-b:before {
-  content: "\f253";
-}
-
-.ion-trophy:before {
-  content: "\f356";
-}
-
-.ion-tshirt:before {
-  content: "\f4f7";
-}
-
-.ion-tshirt-outline:before {
-  content: "\f4f6";
-}
-
-.ion-umbrella:before {
-  content: "\f2b7";
-}
-
-.ion-university:before {
-  content: "\f357";
-}
-
-.ion-unlocked:before {
-  content: "\f254";
-}
-
-.ion-upload:before {
-  content: "\f255";
-}
-
-.ion-usb:before {
-  content: "\f2b8";
-}
-
-.ion-videocamera:before {
-  content: "\f256";
-}
-
-.ion-volume-high:before {
-  content: "\f257";
-}
-
-.ion-volume-low:before {
-  content: "\f258";
-}
-
-.ion-volume-medium:before {
-  content: "\f259";
-}
-
-.ion-volume-mute:before {
-  content: "\f25a";
-}
-
-.ion-wand:before {
-  content: "\f358";
-}
-
-.ion-waterdrop:before {
-  content: "\f25b";
-}
-
-.ion-wifi:before {
-  content: "\f25c";
-}
-
-.ion-wineglass:before {
-  content: "\f2b9";
-}
-
-.ion-woman:before {
-  content: "\f25d";
-}
-
-.ion-wrench:before {
-  content: "\f2ba";
-}
-
-.ion-xbox:before {
-  content: "\f30c";
+.ion-bookmark:before {
+  content: "\f26b";
 }
 
 /*# sourceMappingURL=ionicons.css.map */
 
 /*# sourceMappingURL=app.css.map */
+.sn-component {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+.sn-component .panel {
+  box-shadow: 0px 2px 13px #C8C8C8;
+  border-radius: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  flex-grow: 1;
+}
+.sn-component .panel a:hover {
+  text-decoration: underline;
+}
+.sn-component .panel.static {
+  box-shadow: none;
+  border: none;
+  border-radius: 0;
+}
+.sn-component .panel .header {
+  flex-shrink: 0;
+  /* Don't allow to condense in height */
+  display: flex;
+  justify-content: space-between;
+  padding: 1.1rem 2rem;
+  border-bottom: 1px solid #E1E1E1;
+  background-color: #F6F6F6;
+  align-items: center;
+}
+.sn-component .panel .header .close-button {
+  font-weight: bold;
+}
+.sn-component .panel .footer, .sn-component .panel .panel-footer {
+  padding: 1rem 2rem;
+  border-top: 1px solid #E1E1E1;
+  box-sizing: border-box;
+}
+.sn-component .panel .footer .left, .sn-component .panel .panel-footer .left {
+  text-align: right;
+  display: block;
+}
+.sn-component .panel .footer .right, .sn-component .panel .panel-footer .right {
+  text-align: right;
+  display: block;
+}
+.sn-component .panel .content {
+  padding: 1.6rem 2rem;
+  padding-bottom: 0;
+  flex-grow: 1;
+  overflow: scroll;
+  height: 100%;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+}
+.sn-component .panel .content p, .sn-component .panel .content li {
+  color: #454545;
+  line-height: 1.3;
+}
+.sn-component .panel .content .label, .sn-component .panel .content .panel-section .subtitle, .sn-component .panel-section .panel .content .subtitle {
+  font-weight: bold;
+}
+.sn-component .panel-section {
+  padding-bottom: 1.6rem;
+  display: flex;
+  flex-direction: column;
+}
+.sn-component .panel-section.hero {
+  text-align: center;
+}
+.sn-component .panel-section p:last-child {
+  margin-bottom: 0;
+}
+.sn-component .panel-section:not(:last-child) {
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #DDDDDD;
+}
+.sn-component .panel-section:not(:last-child).no-border {
+  border-bottom: none;
+}
+.sn-component .panel-section:last-child {
+  margin-bottom: 0.5rem;
+}
+.sn-component .panel-section.no-bottom-pad {
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+.sn-component .panel-section .outer-title {
+  border-bottom: 1px solid #DDDDDD;
+  padding-bottom: 0.9rem;
+  margin-top: 2.1rem;
+  margin-bottom: 15px;
+}
+.sn-component .panel-section .subtitle {
+  margin-top: -0.5rem;
+}
+.sn-component .panel-section .subtitle.subtle {
+  font-weight: normal;
+  opacity: 0.6;
+}
+.sn-component .panel-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.4rem;
+}
+.sn-component .panel-row.centered {
+  justify-content: center;
+}
+.sn-component .panel-row.justify-right {
+  justify-content: flex-end;
+}
+.sn-component .panel-row.justify-left {
+  justify-content: flex-start;
+}
+.sn-component .panel-row.align-top {
+  align-items: flex-start;
+}
+.sn-component .panel-row .panel-column.stretch {
+  width: 100%;
+}
+.sn-component .panel-row.default-padding, .sn-component .panel-row:not(:last-child) {
+  padding-bottom: 0.4rem;
+}
+.sn-component .panel-row.default-padding.condensed, .sn-component .panel-row:not(:last-child).condensed {
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+}
+.sn-component .panel-row p {
+  margin: 0;
+  padding: 0;
+}
+.sn-component .panel-form {
+  width: 100%;
+}
+.sn-component .panel-form.half {
+  width: 50%;
+}
+.sn-component .panel-form .form-submit {
+  margin-top: 0.15rem;
+}
+.sn-component .right-aligned {
+  justify-content: flex-end;
+  text-align: right;
+}
+.sn-component .menu-panel {
+  box-shadow: 0px 4px 4px #C8C8C8;
+  border-radius: 0.6rem;
+  overflow: scroll;
+  user-select: none;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+}
+.sn-component .menu-panel .header {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid #e2e2e2;
+  background-color: #f1f1f1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sn-component .menu-panel .header .subtitle {
+  font-size: 0.95rem;
+  margin-top: 0.2rem;
+  opacity: 0.6;
+}
+.sn-component .menu-panel .row {
+  padding: 1rem 1rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  border-bottom: 1px solid #eaeaea;
+}
+.sn-component .menu-panel .row:hover {
+  background-color: #efefef;
+}
+.sn-component .menu-panel .row .column {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  /* Nested row */
+}
+.sn-component .menu-panel .row .column:not(:first-child) {
+  padding-left: 1.0rem;
+  padding-right: 0.15rem;
+}
+.sn-component .menu-panel .row .column.stretch {
+  width: 100%;
+}
+.sn-component .menu-panel .row .column .subrows {
+  margin-top: 1rem;
+}
+.sn-component .menu-panel .row .column .row, .sn-component .menu-panel .row .column .subrow {
+  border: 1px solid #DDDDDD;
+  margin-top: -1px;
+}
+.sn-component .menu-panel .row .column .row:hover, .sn-component .menu-panel .row .column .subrow:hover {
+  background-color: #f7f7f7;
+}
+.sn-component .menu-panel .row .column .left {
+  display: flex;
+}
+.sn-component .menu-panel .row .button .label, .sn-component .menu-panel .row .box .label, .sn-component .menu-panel .row .circle .label, .sn-component .menu-panel .row .button .panel-section .subtitle, .sn-component .panel-section .menu-panel .row .button .subtitle, .sn-component .menu-panel .row .box .panel-section .subtitle, .sn-component .panel-section .menu-panel .row .box .subtitle, .sn-component .menu-panel .row .circle .panel-section .subtitle, .sn-component .panel-section .menu-panel .row .circle .subtitle {
+  font-size: 0.8rem;
+  font-weight: normal;
+}
+.sn-component .menu-panel .row .label, .sn-component .menu-panel .row .panel-section .subtitle, .sn-component .panel-section .menu-panel .row .subtitle {
+  font-size: 1rem;
+  font-weight: bold;
+}
+.sn-component .menu-panel .row .sublabel {
+  font-size: 0.9rem;
+  margin-top: 0.2rem;
+  opacity: 0.6;
+}
+.sn-component .red {
+  color: #F80324;
+}
+.sn-component .tinted {
+  color: #086DD6;
+}
+.sn-component .selectable {
+  user-select: text !important;
+}
+.sn-component h1, .sn-component h2, .sn-component h3, .sn-component h4, .sn-component h5 {
+  margin: 0;
+  padding: 0;
+}
+.sn-component h1 {
+  font-weight: 500;
+  font-size: 1.3rem;
+  line-height: 1.9rem;
+}
+.sn-component h2 {
+  font-size: 1.2rem;
+  line-height: 1.8rem;
+}
+.sn-component h3 {
+  font-weight: normal;
+  font-size: 1.2rem;
+  line-height: 1.7rem;
+}
+.sn-component h4 {
+  font-weight: bold;
+  font-size: 0.95rem;
+  line-height: 1.4rem;
+}
+.sn-component h5 {
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+.sn-component a {
+  cursor: pointer;
+}
+.sn-component .wrap {
+  word-wrap: break-word;
+}
+.sn-component *.info {
+  color: #086DD6;
+}
+.sn-component *.warning {
+  color: #f6a200;
+}
+.sn-component *.danger {
+  color: #F80324;
+}
+.sn-component *.success {
+  color: #2B9612;
+}
+.sn-component *.clear {
+  background-color: transparent;
+  border: none;
+}
+.sn-component .center-text {
+  text-align: center !important;
+  justify-content: center !important;
+}
+.sn-component p {
+  margin: 0.5rem 0;
+}
+.sn-component input {
+  box-sizing: border-box;
+  padding: 0.75rem 0.8rem;
+  margin: 0.30rem 0;
+  border-radius: 3px;
+  border: 1px solid #e1e1e1;
+  font-size: 1.1rem;
+  width: 100%;
+  outline: 0;
+  resize: none;
+}
+.sn-component input.info {
+  border-color: #086DD6;
+  background-color: transparent;
+  color: #086DD6;
+}
+.sn-component input.info::-webkit-input-placeholder {
+  color: rgba(8, 109, 214, 0.5);
+}
+.sn-component label {
+  margin: 0.7rem 0;
+  display: block;
+  font-size: 1.1rem;
+}
+.sn-component label input[type='checkbox'], .sn-component input[type='radio'] {
+  width: auto;
+  margin-right: 0.45rem;
+  /* Space after checkbox */
+  vertical-align: middle;
+}
+.sn-component .horizontal-group > *, .sn-component .input-group > * {
+  display: inline-block;
+  vertical-align: middle;
+}
+.sn-component .horizontal-group > *:not(:first-child), .sn-component .input-group > *:not(:first-child) {
+  margin-left: 0.9rem;
+}
+.sn-component .border-bottom {
+  border-bottom: 1px solid #DDDDDD;
+}
+.sn-component .checkbox-group {
+  padding-top: 0.5rem;
+  padding-bottom: 0.3rem;
+}
+.sn-component ::placeholder {
+  /* Chrome, Firefox, Opera, Safari 10.1+ */
+  color: #c4c4c4;
+}
+.sn-component :-ms-input-placeholder {
+  /* Internet Explorer 10-11 */
+  color: #c4c4c4;
+}
+.sn-component ::-ms-input-placeholder {
+  /* Microsoft Edge */
+  color: #c4c4c4;
+}
+.sn-component .button-group.stretch {
+  display: flex;
+  width: 100%;
+}
+.sn-component .button-group.stretch .button, .sn-component .button-group.stretch .box, .sn-component .button-group.stretch .circle {
+  display: block;
+  flex-grow: 1;
+  text-align: center;
+}
+.sn-component .button-group .button, .sn-component .button-group .box, .sn-component .button-group .circle {
+  display: inline-block;
+}
+.sn-component .button-group .button:not(:last-child), .sn-component .button-group .box:not(:last-child), .sn-component .button-group .circle:not(:last-child) {
+  margin-right: 5px;
+}
+.sn-component .button-group .button:not(:last-child).featured, .sn-component .button-group .box:not(:last-child).featured, .sn-component .button-group .circle:not(:last-child).featured {
+  margin-right: 8px;
+}
+.sn-component .box-group .box {
+  display: inline-block;
+}
+.sn-component .box-group .box:not(:last-child) {
+  margin-right: 5px;
+}
+.sn-component a.button, .sn-component a.box, .sn-component a.circle {
+  text-decoration: none;
+}
+.sn-component .button, .sn-component .box, .sn-component .circle {
+  display: table;
+  border-radius: 3px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: center;
+  border: 1px solid;
+}
+.sn-component .button .label, .sn-component .box .label, .sn-component .circle .label, .sn-component .button .panel-section .subtitle, .sn-component .panel-section .button .subtitle, .sn-component .box .panel-section .subtitle, .sn-component .panel-section .box .subtitle, .sn-component .circle .panel-section .subtitle, .sn-component .panel-section .circle .subtitle {
+  font-weight: bold;
+  display: block;
+  text-align: center;
+}
+.sn-component .button.big, .sn-component .big.box, .sn-component .big.circle {
+  font-size: 1.1rem;
+  padding: 0.7rem 2.5rem;
+}
+.sn-component .box {
+  padding: 2.5rem 1.5rem;
+}
+.sn-component .button.default, .sn-component .default.box, .sn-component .default.circle, .sn-component .box.default, .sn-component .circle.default {
+  background-color: rgba(139, 139, 139, 0.1);
+  border-color: #8b8b8b;
+  color: #8b8b8b;
+}
+.sn-component .button.default:hover, .sn-component .default.box:hover, .sn-component .default.circle:hover, .sn-component .box.default:hover, .sn-component .circle.default:hover {
+  background-color: white;
+  color: #939393;
+}
+.sn-component .button.default.featured, .sn-component .default.featured.box, .sn-component .default.featured.circle, .sn-component .box.default.featured, .sn-component .circle.default.featured {
+  background-color: #8b8b8b;
+  border: none;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  font-size: 1.1rem;
+}
+.sn-component .button.default.featured:hover, .sn-component .default.featured.box:hover, .sn-component .default.featured.circle:hover, .sn-component .box.default.featured:hover, .sn-component .circle.default.featured:hover {
+  background-color: #9f9f9f;
+}
+.sn-component .button.info, .sn-component .info.box, .sn-component .info.circle, .sn-component .box.info, .sn-component .circle.info {
+  background-color: rgba(8, 109, 214, 0.1);
+  border-color: #086DD6;
+  color: #086DD6;
+}
+.sn-component .button.info:hover, .sn-component .info.box:hover, .sn-component .info.circle:hover, .sn-component .box.info:hover, .sn-component .circle.info:hover {
+  background-color: #d5e9fd;
+  color: #0975e5;
+}
+.sn-component .button.info.featured, .sn-component .info.featured.box, .sn-component .info.featured.circle, .sn-component .box.info.featured, .sn-component .circle.info.featured {
+  background-color: #086DD6;
+  border: none;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  font-size: 1.1rem;
+}
+.sn-component .button.info.featured:hover, .sn-component .info.featured.box:hover, .sn-component .info.featured.circle:hover, .sn-component .box.info.featured:hover, .sn-component .circle.info.featured:hover {
+  background-color: #1181f6;
+}
+.sn-component .button.warning, .sn-component .warning.box, .sn-component .warning.circle, .sn-component .box.warning, .sn-component .circle.warning {
+  background-color: rgba(246, 162, 0, 0.1);
+  border-color: #f6a200;
+  color: #f6a200;
+}
+.sn-component .button.warning:hover, .sn-component .warning.box:hover, .sn-component .warning.circle:hover, .sn-component .box.warning:hover, .sn-component .circle.warning:hover {
+  background-color: #fff8ec;
+  color: #ffaa06;
+}
+.sn-component .button.warning.featured, .sn-component .warning.featured.box, .sn-component .warning.featured.circle, .sn-component .box.warning.featured, .sn-component .circle.warning.featured {
+  background-color: #f6a200;
+  border: none;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  font-size: 1.1rem;
+}
+.sn-component .button.warning.featured:hover, .sn-component .warning.featured.box:hover, .sn-component .warning.featured.circle:hover, .sn-component .box.warning.featured:hover, .sn-component .circle.warning.featured:hover {
+  background-color: #ffb320;
+}
+.sn-component .button.danger, .sn-component .danger.box, .sn-component .danger.circle, .sn-component .box.danger, .sn-component .circle.danger {
+  background-color: rgba(248, 3, 36, 0.1);
+  border-color: #F80324;
+  color: #F80324;
+}
+.sn-component .button.danger:hover, .sn-component .danger.box:hover, .sn-component .danger.circle:hover, .sn-component .box.danger:hover, .sn-component .circle.danger:hover {
+  background-color: #fff1f3;
+  color: #fc0e2e;
+}
+.sn-component .button.danger.featured, .sn-component .danger.featured.box, .sn-component .danger.featured.circle, .sn-component .box.danger.featured, .sn-component .circle.danger.featured {
+  background-color: #F80324;
+  border: none;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  font-size: 1.1rem;
+}
+.sn-component .button.danger.featured:hover, .sn-component .danger.featured.box:hover, .sn-component .danger.featured.circle:hover, .sn-component .box.danger.featured:hover, .sn-component .circle.danger.featured:hover {
+  background-color: #fc2744;
+}
+.sn-component .button.success, .sn-component .success.box, .sn-component .success.circle, .sn-component .box.success, .sn-component .circle.success {
+  background-color: rgba(43, 150, 18, 0.1);
+  border-color: #2B9612;
+  color: #2B9612;
+}
+.sn-component .button.success:hover, .sn-component .success.box:hover, .sn-component .success.circle:hover, .sn-component .box.success:hover, .sn-component .circle.success:hover {
+  background-color: #b7f5a8;
+  color: #2fa414;
+}
+.sn-component .button.success.featured, .sn-component .success.featured.box, .sn-component .success.featured.circle, .sn-component .box.success.featured, .sn-component .circle.success.featured {
+  background-color: #2B9612;
+  border: none;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  font-size: 1.1rem;
+}
+.sn-component .button.success.featured:hover, .sn-component .success.featured.box:hover, .sn-component .success.featured.circle:hover, .sn-component .box.success.featured:hover, .sn-component .circle.success.featured:hover {
+  background-color: #35ba16;
+}
+.sn-component .notification.default {
+  background-color: #F6F6F6;
+  border-color: #DDDDDD;
+}
+.sn-component .notification.info {
+  background-color: rgba(8, 109, 214, 0.1);
+  border-color: #086DD6;
+  color: #086DD6;
+}
+.sn-component .notification.info.featured {
+  background-color: #086DD6;
+  border: none;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  font-size: 1.1rem;
+}
+.sn-component .notification.info.featured:hover {
+  background-color: #1181f6;
+}
+.sn-component .notification.warning {
+  background-color: rgba(246, 162, 0, 0.1);
+  border-color: #f6a200;
+  color: #f6a200;
+}
+.sn-component .notification.warning.featured {
+  background-color: #f6a200;
+  border: none;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  font-size: 1.1rem;
+}
+.sn-component .notification.warning.featured:hover {
+  background-color: #ffb320;
+}
+.sn-component .notification.danger {
+  background-color: rgba(248, 3, 36, 0.1);
+  border-color: #F80324;
+  color: #F80324;
+}
+.sn-component .notification.danger.featured {
+  background-color: #F80324;
+  border: none;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  font-size: 1.1rem;
+}
+.sn-component .notification.danger.featured:hover {
+  background-color: #fc2744;
+}
+.sn-component .notification.success {
+  background-color: rgba(43, 150, 18, 0.1);
+  border-color: #2B9612;
+  color: #2B9612;
+}
+.sn-component .notification.success.featured {
+  background-color: #2B9612;
+  border: none;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  font-size: 1.1rem;
+}
+.sn-component .notification.success.featured:hover {
+  background-color: #35ba16;
+}
+.sn-component .notification {
+  border: 1px solid;
+  padding: 1.1rem 1rem;
+  margin: 1.4rem 0;
+  text-align: left;
+  border-radius: 0.2rem;
+  cursor: default;
+}
+.sn-component .notification.one-line {
+  padding: 0rem 0.4rem;
+}
+.sn-component .notification.stretch {
+  width: 100%;
+}
+.sn-component .notification.dashed {
+  border-style: dashed;
+}
+.sn-component .notification .text {
+  line-height: 1.5rem;
+  font-size: 1.05rem;
+  text-align: left;
+  font-weight: normal;
+}
+.sn-component .circle {
+  border-color: #DDDDDD;
+  background-color: #F6F6F6;
+  padding: 0;
+  border-radius: 50%;
+}
+.sn-component .circle.small {
+  width: 11px;
+  height: 11px;
+}
+.sn-component .spinner {
+  border: 1px solid #515263;
+  border-radius: 50%;
+  animation: rotate 0.8s infinite linear;
+  border-right-color: transparent;
+}
+.sn-component .spinner.small {
+  width: 12px;
+  height: 12px;
+}
+.sn-component .spinner.info {
+  border-color: #086DD6;
+  border-right-color: transparent;
+}
+.sn-component .spinner.warning {
+  border-color: #f6a200;
+  border-right-color: transparent;
+}
+.sn-component .spinner.danger {
+  border-color: #F80324;
+  border-right-color: transparent;
+}
+.sn-component .spinner.success {
+  border-color: #2B9612;
+  border-right-color: transparent;
+}
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+.sn-component .app-bar {
+  display: flex;
+  width: 100%;
+  height: 2rem;
+  padding: 0.1rem 0.8rem;
+  background-color: #F6F6F6;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #DDDDDD;
+  user-select: none;
+}
+.sn-component .app-bar.no-edges {
+  border-left: 0;
+  border-right: 0;
+}
+.sn-component .app-bar .left, .sn-component .app-bar .right {
+  display: flex;
+  height: 100%;
+}
+.sn-component .app-bar .item {
+  flex-grow: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sn-component .app-bar .item:not(:first-child) {
+  margin-left: 1rem;
+}
+.sn-component .app-bar .item.border {
+  border-left: 1px solid #DDDDDD;
+}
+.sn-component .app-bar .item > .column {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+.sn-component .app-bar .item > .column:not(:first-child) {
+  margin-left: 0.5rem;
+}
+.sn-component .app-bar .item.no-pointer {
+  cursor: default;
+}
+.sn-component .app-bar .item:hover > .label:not(.subtle), .sn-component .app-bar .panel-section .item:hover > .subtitle:not(.subtle), .sn-component .panel-section .app-bar .item:hover > .subtitle:not(.subtle), .sn-component .app-bar .item:hover > .sublabel:not(.subtle), .sn-component .app-bar .item:hover > .column > .label:not(.subtle), .sn-component .app-bar .panel-section .item:hover > .column > .subtitle:not(.subtle), .sn-component .panel-section .app-bar .item:hover > .column > .subtitle:not(.subtle), .sn-component .app-bar .item:hover > .column > .sublabel:not(.subtle) {
+  color: #086DD6;
+}
+.sn-component .app-bar .item > .label, .sn-component .app-bar .panel-section .item > .subtitle, .sn-component .panel-section .app-bar .item > .subtitle, .sn-component .app-bar .item > .column > .label, .sn-component .app-bar .panel-section .item > .column > .subtitle, .sn-component .panel-section .app-bar .item > .column > .subtitle {
+  font-weight: bold;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+.sn-component .app-bar .item > .sublabel, .sn-component .app-bar .item > .column > .sublabel {
+  font-size: 0.9rem;
+  font-weight: normal;
+  white-space: nowrap;
+}
+.sn-component .app-bar .item .subtle {
+  font-weight: normal;
+  opacity: 0.6;
+}
+.sn-component .panel-table {
+  display: flex;
+  flex-wrap: wrap;
+  padding-left: 1px;
+  padding-top: 1px;
+}
+.sn-component .panel-table .table-item {
+  flex: 45%;
+  flex-flow: wrap;
+  border: 1px solid #DDDDDD;
+  padding: 1rem;
+  margin-left: -1px;
+  margin-top: -1px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.sn-component .panel-table .table-item img {
+  max-width: 100%;
+  margin-bottom: 1rem;
+}
+.sn-component .panel-table .table-item .item-content {
+  display: flex;
+  flex-direction: row;
+}
+.sn-component .panel-table .table-item .item-column {
+  align-items: center;
+}
+.sn-component .panel-table .table-item .item-column.stretch {
+  width: 100%;
+}
+.sn-component .panel-table .table-item .item-column:not(:first-child) {
+  padding-left: 0.75rem;
+}
+.sn-component .panel-table .table-item .item-column.quarter {
+  flex-basis: 25%;
+}
+.sn-component .panel-table .table-item .item-column.three-quarters {
+  flex-basis: 75%;
+}
+.sn-component .panel-table .table-item .item-footer {
+  margin-top: 1.25rem;
+}
+.sn-component .panel-table .table-item.no-border {
+  border: none;
+}
+
+/*# sourceMappingURL=stylekit.css.map */
