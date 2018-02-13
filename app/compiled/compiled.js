@@ -33458,6 +33458,9 @@ var EncryptionHelper = function () {
 
       // return if uuid in auth hash does not match item uuid. Signs of tampering.
       if (keyParams.uuid && keyParams.uuid !== item.uuid) {
+        if (!item.errorDecrypting) {
+          item.errorDecryptingValueChanged = true;
+        }
         item.errorDecrypting = true;
         return;
       }
@@ -33465,6 +33468,9 @@ var EncryptionHelper = function () {
       var item_key = Neeto.crypto.decryptText(keyParams, requiresAuth);
 
       if (!item_key) {
+        if (!item.errorDecrypting) {
+          item.errorDecryptingValueChanged = true;
+        }
         item.errorDecrypting = true;
         return;
       }
@@ -33476,6 +33482,9 @@ var EncryptionHelper = function () {
 
       // return if uuid in auth hash does not match item uuid. Signs of tampering.
       if (itemParams.uuid && itemParams.uuid !== item.uuid) {
+        if (!item.errorDecrypting) {
+          item.errorDecryptingValueChanged = true;
+        }
         item.errorDecrypting = true;
         return;
       }
@@ -33487,11 +33496,18 @@ var EncryptionHelper = function () {
 
       var content = Neeto.crypto.decryptText(itemParams, true);
       if (!content) {
+        if (!item.errorDecrypting) {
+          item.errorDecryptingValueChanged = true;
+        }
         item.errorDecrypting = true;
       } else {
+        if (item.errorDecrypting == true) {
+          item.errorDecryptingValueChanged = true;
+        }
+        // Content should only be set if it was successfully decrypted, and should otherwise remain unchanged.
         item.errorDecrypting = false;
+        item.content = content;
       }
-      item.content = content;
     }
   }, {
     key: 'decryptMultipleItems',
@@ -33513,6 +33529,9 @@ var EncryptionHelper = function () {
             try {
               this.decryptItem(item, keys);
             } catch (e) {
+              if (!item.errorDecrypting) {
+                item.errorDecryptingValueChanged = true;
+              }
               item.errorDecrypting = true;
               if (throws) {
                 throw e;
@@ -36644,19 +36663,26 @@ var ItemParams = function () {
       console.assert(!this.item.dummy, "Item is dummy, should not have gotten here.", this.item.dummy);
 
       var params = { uuid: this.item.uuid, content_type: this.item.content_type, deleted: this.item.deleted, created_at: this.item.created_at };
-      if (this.keys && !this.item.doNotEncrypt()) {
-        var encryptedParams = EncryptionHelper.encryptItem(this.item, this.keys, this.version);
-        _.merge(params, encryptedParams);
+      if (!this.item.errorDecrypting) {
+        if (this.keys && !this.item.doNotEncrypt()) {
+          var encryptedParams = EncryptionHelper.encryptItem(this.item, this.keys, this.version);
+          _.merge(params, encryptedParams);
 
-        if (this.version !== "001") {
-          params.auth_hash = null;
+          if (this.version !== "001") {
+            params.auth_hash = null;
+          }
+        } else {
+          params.content = this.forExportFile ? this.item.createContentJSONFromProperties() : "000" + Neeto.crypto.base64(JSON.stringify(this.item.createContentJSONFromProperties()));
+          if (!this.forExportFile) {
+            params.enc_item_key = null;
+            params.auth_hash = null;
+          }
         }
       } else {
-        params.content = this.forExportFile ? this.item.createContentJSONFromProperties() : "000" + Neeto.crypto.base64(JSON.stringify(this.item.createContentJSONFromProperties()));
-        if (!this.forExportFile) {
-          params.enc_item_key = null;
-          params.auth_hash = null;
-        }
+        // Error decrypting, keep "content" and related fields as is (and do not try to encrypt, otherwise that would be undefined behavior)
+        params.content = this.item.content;
+        params.enc_item_key = this.item.enc_item_key;
+        params.auth_hash = this.item.auth_hash;
       }
 
       if (this.additionalFields) {
@@ -37067,7 +37093,8 @@ angular.module('app').service('actionsManager', ActionsManager);
 
     this.saveKeys = function (keys) {
       this._keys = keys;
-      storageManager.setItem("pw", keys.pw);
+      // Doesn't need to be saved.
+      // storageManager.setItem("pw", keys.pw);
       storageManager.setItem("mk", keys.mk);
       storageManager.setItem("ak", keys.ak);
     };
@@ -39341,7 +39368,35 @@ var ModelManager = function () {
             continue;
           }
 
-          json_obj = _.omit(json_obj, omitFields || []);
+          // Lodash's _.omit, which was previously used, seems to cause unexpected behavior
+          // when json_obj is an ES6 item class. So we instead manually omit each key.
+          if (Array.isArray(omitFields)) {
+            var _iteratorNormalCompletion43 = true;
+            var _didIteratorError43 = false;
+            var _iteratorError43 = undefined;
+
+            try {
+              for (var _iterator43 = omitFields[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
+                var key = _step43.value;
+
+                delete json_obj[key];
+              }
+            } catch (err) {
+              _didIteratorError43 = true;
+              _iteratorError43 = err;
+            } finally {
+              try {
+                if (!_iteratorNormalCompletion43 && _iterator43.return) {
+                  _iterator43.return();
+                }
+              } finally {
+                if (_didIteratorError43) {
+                  throw _iteratorError43;
+                }
+              }
+            }
+          }
+
           var item = this.findItem(json_obj.uuid);
 
           if (item) {
@@ -39409,26 +39464,26 @@ var ModelManager = function () {
   }, {
     key: 'notifySyncObserversOfModels',
     value: function notifySyncObserversOfModels(models, source) {
-      var _iteratorNormalCompletion43 = true;
-      var _didIteratorError43 = false;
-      var _iteratorError43 = undefined;
+      var _iteratorNormalCompletion44 = true;
+      var _didIteratorError44 = false;
+      var _iteratorError44 = undefined;
 
       try {
-        for (var _iterator43 = this.itemSyncObservers[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
-          var observer = _step43.value;
+        for (var _iterator44 = this.itemSyncObservers[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
+          var observer = _step44.value;
 
           var allRelevantItems = models.filter(function (item) {
             return item.content_type == observer.type || observer.type == "*";
           });
           var validItems = [],
               deletedItems = [];
-          var _iteratorNormalCompletion44 = true;
-          var _didIteratorError44 = false;
-          var _iteratorError44 = undefined;
+          var _iteratorNormalCompletion45 = true;
+          var _didIteratorError45 = false;
+          var _iteratorError45 = undefined;
 
           try {
-            for (var _iterator44 = allRelevantItems[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
-              var item = _step44.value;
+            for (var _iterator45 = allRelevantItems[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
+              var item = _step45.value;
 
               if (item.deleted) {
                 deletedItems.push(item);
@@ -39437,16 +39492,16 @@ var ModelManager = function () {
               }
             }
           } catch (err) {
-            _didIteratorError44 = true;
-            _iteratorError44 = err;
+            _didIteratorError45 = true;
+            _iteratorError45 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion44 && _iterator44.return) {
-                _iterator44.return();
+              if (!_iteratorNormalCompletion45 && _iterator45.return) {
+                _iterator45.return();
               }
             } finally {
-              if (_didIteratorError44) {
-                throw _iteratorError44;
+              if (_didIteratorError45) {
+                throw _iteratorError45;
               }
             }
           }
@@ -39456,16 +39511,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError43 = true;
-        _iteratorError43 = err;
+        _didIteratorError44 = true;
+        _iteratorError44 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion43 && _iterator43.return) {
-            _iterator43.return();
+          if (!_iteratorNormalCompletion44 && _iterator44.return) {
+            _iterator44.return();
           }
         } finally {
-          if (_didIteratorError43) {
-            throw _iteratorError43;
+          if (_didIteratorError44) {
+            throw _iteratorError44;
           }
         }
       }
@@ -39473,13 +39528,13 @@ var ModelManager = function () {
   }, {
     key: 'notifyItemChangeObserversOfModels',
     value: function notifyItemChangeObserversOfModels(models) {
-      var _iteratorNormalCompletion45 = true;
-      var _didIteratorError45 = false;
-      var _iteratorError45 = undefined;
+      var _iteratorNormalCompletion46 = true;
+      var _didIteratorError46 = false;
+      var _iteratorError46 = undefined;
 
       try {
-        for (var _iterator45 = this.itemChangeObservers[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
-          var observer = _step45.value;
+        for (var _iterator46 = this.itemChangeObservers[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
+          var observer = _step46.value;
 
           var relevantItems = models.filter(function (item) {
             return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
@@ -39490,16 +39545,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError45 = true;
-        _iteratorError45 = err;
+        _didIteratorError46 = true;
+        _iteratorError46 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion45 && _iterator45.return) {
-            _iterator45.return();
+          if (!_iteratorNormalCompletion46 && _iterator46.return) {
+            _iterator46.return();
           }
         } finally {
-          if (_didIteratorError45) {
-            throw _iteratorError45;
+          if (_didIteratorError46) {
+            throw _iteratorError46;
           }
         }
       }
@@ -39602,13 +39657,13 @@ var ModelManager = function () {
         return;
       }
 
-      var _iteratorNormalCompletion46 = true;
-      var _didIteratorError46 = false;
-      var _iteratorError46 = undefined;
+      var _iteratorNormalCompletion47 = true;
+      var _didIteratorError47 = false;
+      var _iteratorError47 = undefined;
 
       try {
-        for (var _iterator46 = contentObject.references[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
-          var reference = _step46.value;
+        for (var _iterator47 = contentObject.references[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
+          var reference = _step47.value;
 
           var referencedItem = this.findItem(reference.uuid);
           if (referencedItem) {
@@ -39619,16 +39674,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError46 = true;
-        _iteratorError46 = err;
+        _didIteratorError47 = true;
+        _iteratorError47 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion46 && _iterator46.return) {
-            _iterator46.return();
+          if (!_iteratorNormalCompletion47 && _iterator47.return) {
+            _iterator47.return();
           }
         } finally {
-          if (_didIteratorError46) {
-            throw _iteratorError46;
+          if (_didIteratorError47) {
+            throw _iteratorError47;
           }
         }
       }
@@ -39664,27 +39719,27 @@ var ModelManager = function () {
   }, {
     key: 'clearDirtyItems',
     value: function clearDirtyItems(items) {
-      var _iteratorNormalCompletion47 = true;
-      var _didIteratorError47 = false;
-      var _iteratorError47 = undefined;
+      var _iteratorNormalCompletion48 = true;
+      var _didIteratorError48 = false;
+      var _iteratorError48 = undefined;
 
       try {
-        for (var _iterator47 = items[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
-          var item = _step47.value;
+        for (var _iterator48 = items[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
+          var item = _step48.value;
 
           item.setDirty(false);
         }
       } catch (err) {
-        _didIteratorError47 = true;
-        _iteratorError47 = err;
+        _didIteratorError48 = true;
+        _iteratorError48 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion47 && _iterator47.return) {
-            _iterator47.return();
+          if (!_iteratorNormalCompletion48 && _iterator48.return) {
+            _iterator48.return();
           }
         } finally {
-          if (_didIteratorError47) {
-            throw _iteratorError47;
+          if (_didIteratorError48) {
+            throw _iteratorError48;
           }
         }
       }
@@ -39713,27 +39768,27 @@ var ModelManager = function () {
         return _.includes(this.acceptableContentTypes, item.content_type);
       }.bind(this));
 
-      var _iteratorNormalCompletion48 = true;
-      var _didIteratorError48 = false;
-      var _iteratorError48 = undefined;
+      var _iteratorNormalCompletion49 = true;
+      var _didIteratorError49 = false;
+      var _iteratorError49 = undefined;
 
       try {
-        for (var _iterator48 = relevantItems[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
-          var item = _step48.value;
+        for (var _iterator49 = relevantItems[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
+          var item = _step49.value;
 
           item.setDirty(true);
         }
       } catch (err) {
-        _didIteratorError48 = true;
-        _iteratorError48 = err;
+        _didIteratorError49 = true;
+        _iteratorError49 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion48 && _iterator48.return) {
-            _iterator48.return();
+          if (!_iteratorNormalCompletion49 && _iterator49.return) {
+            _iterator49.return();
           }
         } finally {
-          if (_didIteratorError48) {
-            throw _iteratorError48;
+          if (_didIteratorError49) {
+            throw _iteratorError49;
           }
         }
       }
@@ -40116,13 +40171,13 @@ var SingletonManager = function () {
             // The item that will be chosen to be kept
 
             if (retrievedSingletonItems.length > 0) {
-              var _iteratorNormalCompletion50 = true;
-              var _didIteratorError50 = false;
-              var _iteratorError50 = undefined;
+              var _iteratorNormalCompletion51 = true;
+              var _didIteratorError51 = false;
+              var _iteratorError51 = undefined;
 
               try {
-                for (var _iterator50 = allExtantItemsMatchingPredicate[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
-                  var extantItem = _step50.value;
+                for (var _iterator51 = allExtantItemsMatchingPredicate[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
+                  var extantItem = _step51.value;
 
                   if (!retrievedSingletonItems.includes(extantItem)) {
                     // Delete it
@@ -40132,16 +40187,16 @@ var SingletonManager = function () {
 
                 // Sort incoming singleton items by most recently updated first, then delete all the rest
               } catch (err) {
-                _didIteratorError50 = true;
-                _iteratorError50 = err;
+                _didIteratorError51 = true;
+                _iteratorError51 = err;
               } finally {
                 try {
-                  if (!_iteratorNormalCompletion50 && _iterator50.return) {
-                    _iterator50.return();
+                  if (!_iteratorNormalCompletion51 && _iterator51.return) {
+                    _iterator51.return();
                   }
                 } finally {
-                  if (_didIteratorError50) {
-                    throw _iteratorError50;
+                  if (_didIteratorError51) {
+                    throw _iteratorError51;
                   }
                 }
               }
@@ -40163,27 +40218,27 @@ var SingletonManager = function () {
             // Delete everything but the first one
             toDelete = toDelete.concat(sorted.slice(1, sorted.length));
 
-            var _iteratorNormalCompletion51 = true;
-            var _didIteratorError51 = false;
-            var _iteratorError51 = undefined;
+            var _iteratorNormalCompletion52 = true;
+            var _didIteratorError52 = false;
+            var _iteratorError52 = undefined;
 
             try {
-              for (var _iterator51 = toDelete[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
-                d = _step51.value;
+              for (var _iterator52 = toDelete[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
+                d = _step52.value;
 
                 _this43.modelManager.setItemToBeDeleted(d);
               }
             } catch (err) {
-              _didIteratorError51 = true;
-              _iteratorError51 = err;
+              _didIteratorError52 = true;
+              _iteratorError52 = err;
             } finally {
               try {
-                if (!_iteratorNormalCompletion51 && _iterator51.return) {
-                  _iterator51.return();
+                if (!_iteratorNormalCompletion52 && _iterator52.return) {
+                  _iterator52.return();
                 }
               } finally {
-                if (_didIteratorError51) {
-                  throw _iteratorError51;
+                if (_didIteratorError52) {
+                  throw _iteratorError52;
                 }
               }
             }
@@ -40217,13 +40272,13 @@ var SingletonManager = function () {
         }
       };
 
-      var _iteratorNormalCompletion49 = true;
-      var _didIteratorError49 = false;
-      var _iteratorError49 = undefined;
+      var _iteratorNormalCompletion50 = true;
+      var _didIteratorError50 = false;
+      var _iteratorError50 = undefined;
 
       try {
-        for (var _iterator49 = this.singletonHandlers[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
-          var singletonHandler = _step49.value;
+        for (var _iterator50 = this.singletonHandlers[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
+          var singletonHandler = _step50.value;
           var predicate;
           var allExtantItemsMatchingPredicate;
           var toDelete;
@@ -40234,16 +40289,16 @@ var SingletonManager = function () {
           _loop4(singletonHandler);
         }
       } catch (err) {
-        _didIteratorError49 = true;
-        _iteratorError49 = err;
+        _didIteratorError50 = true;
+        _iteratorError50 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion49 && _iterator49.return) {
-            _iterator49.return();
+          if (!_iteratorNormalCompletion50 && _iterator50.return) {
+            _iterator50.return();
           }
         } finally {
-          if (_didIteratorError49) {
-            throw _iteratorError49;
+          if (_didIteratorError50) {
+            throw _iteratorError50;
           }
         }
       }
@@ -40468,27 +40523,27 @@ var StorageManager = function () {
       EncryptionHelper.decryptItem(stored, this.encryptedStorageKeys);
       var encryptedStorage = new EncryptedStorage(stored);
 
-      var _iteratorNormalCompletion52 = true;
-      var _didIteratorError52 = false;
-      var _iteratorError52 = undefined;
+      var _iteratorNormalCompletion53 = true;
+      var _didIteratorError53 = false;
+      var _iteratorError53 = undefined;
 
       try {
-        for (var _iterator52 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
-          var key = _step52.value;
+        for (var _iterator53 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
+          var key = _step53.value;
 
           this.setItem(key, encryptedStorage.storage[key]);
         }
       } catch (err) {
-        _didIteratorError52 = true;
-        _iteratorError52 = err;
+        _didIteratorError53 = true;
+        _iteratorError53 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion52 && _iterator52.return) {
-            _iterator52.return();
+          if (!_iteratorNormalCompletion53 && _iterator53.return) {
+            _iterator53.return();
           }
         } finally {
-          if (_didIteratorError52) {
-            throw _iteratorError52;
+          if (_didIteratorError53) {
+            throw _iteratorError53;
           }
         }
       }
@@ -40629,29 +40684,29 @@ var SyncManager = function () {
     value: function syncOffline(items, callback) {
       this.writeItemsToLocalStorage(items, true, function (responseItems) {
         // delete anything needing to be deleted
-        var _iteratorNormalCompletion53 = true;
-        var _didIteratorError53 = false;
-        var _iteratorError53 = undefined;
+        var _iteratorNormalCompletion54 = true;
+        var _didIteratorError54 = false;
+        var _iteratorError54 = undefined;
 
         try {
-          for (var _iterator53 = items[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
-            var item = _step53.value;
+          for (var _iterator54 = items[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
+            var item = _step54.value;
 
             if (item.deleted) {
               this.modelManager.removeItemLocally(item);
             }
           }
         } catch (err) {
-          _didIteratorError53 = true;
-          _iteratorError53 = err;
+          _didIteratorError54 = true;
+          _iteratorError54 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion53 && _iterator53.return) {
-              _iterator53.return();
+            if (!_iteratorNormalCompletion54 && _iterator54.return) {
+              _iterator54.return();
             }
           } finally {
-            if (_didIteratorError53) {
-              throw _iteratorError53;
+            if (_didIteratorError54) {
+              throw _iteratorError54;
             }
           }
         }
@@ -40679,31 +40734,33 @@ var SyncManager = function () {
       var _this45 = this;
 
       // use a copy, as alternating uuid will affect array
-      var originalItems = this.modelManager.allItems.slice();
+      var originalItems = this.modelManager.allItems.filter(function (item) {
+        return !item.errorDecrypting;
+      }).slice();
 
       var block = function block() {
         var allItems = _this45.modelManager.allItems;
-        var _iteratorNormalCompletion54 = true;
-        var _didIteratorError54 = false;
-        var _iteratorError54 = undefined;
+        var _iteratorNormalCompletion55 = true;
+        var _didIteratorError55 = false;
+        var _iteratorError55 = undefined;
 
         try {
-          for (var _iterator54 = allItems[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
-            var item = _step54.value;
+          for (var _iterator55 = allItems[Symbol.iterator](), _step55; !(_iteratorNormalCompletion55 = (_step55 = _iterator55.next()).done); _iteratorNormalCompletion55 = true) {
+            var item = _step55.value;
 
             item.setDirty(true);
           }
         } catch (err) {
-          _didIteratorError54 = true;
-          _iteratorError54 = err;
+          _didIteratorError55 = true;
+          _iteratorError55 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion54 && _iterator54.return) {
-              _iterator54.return();
+            if (!_iteratorNormalCompletion55 && _iterator55.return) {
+              _iterator55.return();
             }
           } finally {
-            if (_didIteratorError54) {
-              throw _iteratorError54;
+            if (_didIteratorError55) {
+              throw _iteratorError55;
             }
           }
         }
@@ -40752,27 +40809,27 @@ var SyncManager = function () {
         allCallbacks.push(currentCallback);
       }
       if (allCallbacks.length) {
-        var _iteratorNormalCompletion55 = true;
-        var _didIteratorError55 = false;
-        var _iteratorError55 = undefined;
+        var _iteratorNormalCompletion56 = true;
+        var _didIteratorError56 = false;
+        var _iteratorError56 = undefined;
 
         try {
-          for (var _iterator55 = allCallbacks[Symbol.iterator](), _step55; !(_iteratorNormalCompletion55 = (_step55 = _iterator55.next()).done); _iteratorNormalCompletion55 = true) {
-            var eachCallback = _step55.value;
+          for (var _iterator56 = allCallbacks[Symbol.iterator](), _step56; !(_iteratorNormalCompletion56 = (_step56 = _iterator56.next()).done); _iteratorNormalCompletion56 = true) {
+            var eachCallback = _step56.value;
 
             eachCallback(response);
           }
         } catch (err) {
-          _didIteratorError55 = true;
-          _iteratorError55 = err;
+          _didIteratorError56 = true;
+          _iteratorError56 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion55 && _iterator55.return) {
-              _iterator55.return();
+            if (!_iteratorNormalCompletion56 && _iterator56.return) {
+              _iterator56.return();
             }
           } finally {
-            if (_didIteratorError55) {
-              throw _iteratorError55;
+            if (_didIteratorError56) {
+              throw _iteratorError56;
             }
           }
         }
@@ -41000,7 +41057,31 @@ var SyncManager = function () {
       var keys = this.authManager.keys() || this.passcodeManager.keys();
       EncryptionHelper.decryptMultipleItems(responseItems, keys);
       var items = this.modelManager.mapResponseItemsToLocalModelsOmittingFields(responseItems, omitFields, source);
+
+      // During the decryption process, items may be marked as "errorDecrypting". If so, we want to be sure
+      // to persist this new state by writing these items back to local storage. When an item's "errorDecrypting"
+      // flag is changed, its "errorDecryptingValueChanged" flag will be set, so we can find these items by filtering (then unsetting) below:
+      var itemsWithErrorStatusChange = items.filter(function (item) {
+        var valueChanged = item.errorDecryptingValueChanged;
+        // unset after consuming value
+        item.errorDecryptingValueChanged = false;
+        return valueChanged;
+      });
+      if (itemsWithErrorStatusChange.length > 0) {
+        this.writeItemsToLocalStorage(itemsWithErrorStatusChange, false, null);
+      }
+
       return items;
+    }
+  }, {
+    key: 'refreshErroredItems',
+    value: function refreshErroredItems() {
+      var erroredItems = this.modelManager.allItems.filter(function (item) {
+        return item.errorDecrypting == true;
+      });
+      if (erroredItems.length > 0) {
+        this.handleItemsResponse(erroredItems, null, ModelManager.MappingSourceLocalRetrieved);
+      }
     }
   }, {
     key: 'handleUnsavedItemsResponse',
@@ -41582,6 +41663,7 @@ var AccountMenu = function () {
         var block = function block() {
           $timeout(function () {
             $scope.onSuccessfulAuth()();
+            syncManager.refreshErroredItems();
             syncManager.sync("onAuthSuccess");
           });
         };
@@ -42031,27 +42113,27 @@ var ActionsMenu = function () {
         });
       };
 
-      var _iteratorNormalCompletion56 = true;
-      var _didIteratorError56 = false;
-      var _iteratorError56 = undefined;
+      var _iteratorNormalCompletion57 = true;
+      var _didIteratorError57 = false;
+      var _iteratorError57 = undefined;
 
       try {
-        for (var _iterator56 = $scope.extensions[Symbol.iterator](), _step56; !(_iteratorNormalCompletion56 = (_step56 = _iterator56.next()).done); _iteratorNormalCompletion56 = true) {
-          var ext = _step56.value;
+        for (var _iterator57 = $scope.extensions[Symbol.iterator](), _step57; !(_iteratorNormalCompletion57 = (_step57 = _iterator57.next()).done); _iteratorNormalCompletion57 = true) {
+          var ext = _step57.value;
 
           _loop5(ext);
         }
       } catch (err) {
-        _didIteratorError56 = true;
-        _iteratorError56 = err;
+        _didIteratorError57 = true;
+        _iteratorError57 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion56 && _iterator56.return) {
-            _iterator56.return();
+          if (!_iteratorNormalCompletion57 && _iterator57.return) {
+            _iterator57.return();
           }
         } finally {
-          if (_didIteratorError56) {
-            throw _iteratorError56;
+          if (_didIteratorError57) {
+            throw _iteratorError57;
           }
         }
       }
@@ -43625,186 +43707,186 @@ angular.module('app').directive('permissionsModal', function () {
 
   $templateCache.put('frontend/directives/account-menu.html',
     "<div class='panel panel-default panel-right account-data-menu'>\n" +
-    "  <div class='panel-body large-padding'>\n" +
-    "    <div ng-if='!user'>\n" +
-    "      <div class='mb-10'>\n" +
-    "        <div class='step-one' ng-if='!formData.showLogin &amp;&amp; !formData.showRegister'>\n" +
-    "          <h3>Sign in or register to enable sync and end-to-end encryption.</h3>\n" +
-    "          <div class='small-v-space'></div>\n" +
-    "          <div class='button-group mt-5'>\n" +
-    "            <button class='ui-button half-button' ng-click='formData.showLogin = true'>\n" +
-    "              <span>Sign In</span>\n" +
-    "            </button>\n" +
-    "            <button class='ui-button half-button' ng-click='formData.showRegister = true'>\n" +
-    "              <span>Register</span>\n" +
-    "            </button>\n" +
-    "          </div>\n" +
-    "        </div>\n" +
-    "        <div class='step-two' ng-if='formData.showLogin || formData.showRegister'>\n" +
-    "          <div class='float-group h20'>\n" +
-    "            <h3 class='pull-left'>{{formData.showLogin ? \"Sign In\" : \"Register (free)\"}}</h3>\n" +
-    "            <a class='pull-right pt-5' ng-click='formData.showLogin = false; formData.showRegister = false;'>Cancel</a>\n" +
-    "          </div>\n" +
-    "          <form class='mt-5'>\n" +
-    "            <input autofocus='autofocus' class='form-control mt-10' name='email' ng-model='formData.email' placeholder='Email' required type='email'>\n" +
-    "            <input class='form-control' name='password' ng-model='formData.user_password' placeholder='Password' required type='password'>\n" +
-    "            <input class='form-control' name='password' ng-if='formData.showRegister' ng-model='formData.password_conf' placeholder='Confirm Password' required type='password'>\n" +
-    "            <a class='block' ng-click='formData.showAdvanced = !formData.showAdvanced'>Advanced Options</a>\n" +
-    "            <div class='advanced-options mt-10' ng-if='formData.showAdvanced'>\n" +
-    "              <div class='float-group'>\n" +
-    "                <label class='pull-left'>Sync Server Domain</label>\n" +
-    "              </div>\n" +
-    "              <input class='form-control mt-5' name='server' ng-model='formData.url' placeholder='Server URL' required type='text'>\n" +
-    "            </div>\n" +
-    "            <div class='checkbox mt-10'>\n" +
-    "              <p>\n" +
-    "                <input ng-false-value='true' ng-model='formData.ephemeral' ng-true-value='false' type='checkbox'>\n" +
-    "                  Stay signed in\n" +
-    "                </input>\n" +
-    "              </p>\n" +
-    "            </div>\n" +
-    "            <div class='checkbox mt-10' ng-if='notesAndTagsCount() &gt; 0'>\n" +
-    "              <p>\n" +
-    "                <input ng-bind='true' ng-change='mergeLocalChanged()' ng-model='formData.mergeLocal' type='checkbox'>\n" +
-    "                  Merge local data ({{notesAndTagsCount()}} notes and tags)\n" +
-    "                </input>\n" +
-    "              </p>\n" +
-    "            </div>\n" +
-    "            <button class='ui-button block mt-10' ng-click='submitAuthForm()'>{{formData.showLogin ? \"Sign In\" : \"Register\"}}</button>\n" +
-    "          </form>\n" +
-    "        </div>\n" +
-    "        <div class='mt-15' ng-if='formData.showRegister'>\n" +
-    "          <h3>No Password Reset.</h3>\n" +
-    "          <p class='mt-5'>Because your notes are encrypted using your password, Standard Notes does not have a password reset option. You cannot forget your password.</p>\n" +
-    "        </div>\n" +
-    "        <em class='block center-align mt-10' ng-if='formData.status' style='font-size: 14px;'>{{formData.status}}</em>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
-    "    <div ng-if='user'>\n" +
-    "      <h2>{{user.email}}</h2>\n" +
-    "      <p>{{server}}</p>\n" +
-    "      <div class='bold mt-10 tinted' delay-hide='true' delay='1000' show='syncStatus.syncOpInProgress || syncStatus.needsMoreSync'>\n" +
-    "        <div class='spinner inline mr-5 tinted'></div>\n" +
-    "        {{\"Syncing\" + (syncStatus.total > 0 ? \":\" : \"\")}}\n" +
-    "        <span ng-if='syncStatus.total &gt; 0'>{{syncStatus.current}}/{{syncStatus.total}}</span>\n" +
-    "      </div>\n" +
-    "      <p class='bold mt-10 red block' ng-if='syncStatus.error'>Error syncing: {{syncStatus.error.message}}</p>\n" +
-    "      <a class='block mt-5' ng-click='newPasswordData.changePassword = !newPasswordData.changePassword'>Change Password</a>\n" +
-    "      <section class='gray-bg mt-10 medium-padding' ng-if='newPasswordData.changePassword'>\n" +
-    "        <p class='bold'>Change Password (Beta)</p>\n" +
-    "        <p class='mt-10'>Since your encryption key is based on your password, changing your password requires all your notes and tags to be re-encrypted using your new key.</p>\n" +
-    "        <p class='mt-5'>If you have thousands of items, this can take several minutes — you must keep the application window open during this process.</p>\n" +
-    "        <p class='mt-5'>After changing your password, you must log out of all other applications currently signed in to your account.</p>\n" +
-    "        <p class='bold mt-5'>It is highly recommended you download a backup of your data before proceeding.</p>\n" +
-    "        <div class='mt-10' ng-if='!newPasswordData.status'>\n" +
-    "          <a class='red mr-5' ng-click='showPasswordChangeForm()' ng-if='!newPasswordData.showForm'>Continue</a>\n" +
-    "          <a ng-click='newPasswordData.changePassword = false; newPasswordData.showForm = false'>Cancel</a>\n" +
-    "          <div class='mt-10' ng-if='newPasswordData.showForm'>\n" +
-    "            <form>\n" +
-    "              <input class='form-control' ng-model='newPasswordData.newPassword' placeholder='Enter new password' type='password'>\n" +
-    "              <input class='form-control' ng-model='newPasswordData.newPasswordConfirmation' placeholder='Confirm new password' type='password'>\n" +
-    "              <button class='ui-button block' ng-click='submitPasswordChange()'>Submit</button>\n" +
-    "            </form>\n" +
-    "          </div>\n" +
-    "        </div>\n" +
-    "        <p class='italic mt-10' ng-if='newPasswordData.status'>{{newPasswordData.status}}</p>\n" +
-    "      </section>\n" +
-    "      <a class='block mt-5' ng-click='showAdvanced = !showAdvanced'>Advanced</a>\n" +
-    "      <div ng-if='showAdvanced'>\n" +
-    "        <a class='block mt-15' href='{{dashboardURL()}}' target='_blank'>Data Dashboard</a>\n" +
-    "        <a class='block mt-5' ng-click='reencryptPressed()'>Re-encrypt All Items</a>\n" +
-    "        <a class='block mt-5' ng-click='showCredentials = !showCredentials'>Show Credentials</a>\n" +
-    "        <section class='gray-bg mt-10 medium-padding' ng-if='showCredentials'>\n" +
-    "          <label class='block'>\n" +
-    "            Encryption key:\n" +
-    "            <div class='wrap normal mt-1 selectable'>{{encryptionKey()}}</div>\n" +
-    "          </label>\n" +
-    "          <label class='block mt-5 mb-0'>\n" +
-    "            Authentication key:\n" +
-    "            <div class='wrap normal mt-1 selectable'>{{authKey() ? authKey() : 'Not available. Sign out then sign back in to compute.'}}</div>\n" +
-    "          </label>\n" +
-    "        </section>\n" +
-    "      </div>\n" +
-    "      <div ng-if='securityUpdateAvailable()'>\n" +
-    "        <a class='block mt-5' ng-click='clickedSecurityUpdate()'>Security Update Available</a>\n" +
-    "        <section class='gray-bg mt-10 medium-padding' ng-if='securityUpdateData.showForm'>\n" +
-    "          <p>\n" +
-    "            <a href='https://standardnotes.org/help/security-update' target='_blank'>Learn more.</a>\n" +
-    "          </p>\n" +
-    "          <div class='mt-10' ng-if='!securityUpdateData.processing'>\n" +
-    "            <p class='bold'>Enter your password to update:</p>\n" +
-    "            <form class='mt-5'>\n" +
-    "              <input class='form-control' ng-model='securityUpdateData.password' placeholder='Enter password' type='password'>\n" +
-    "              <button class='ui-button block' ng-click='submitSecurityUpdateForm()'>Update</button>\n" +
-    "            </form>\n" +
-    "          </div>\n" +
-    "          <div class='mt-5' ng-if='securityUpdateData.processing'>\n" +
-    "            <p class='tinted'>Processing...</p>\n" +
-    "          </div>\n" +
-    "        </section>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
-    "    <div class='mt-25'>\n" +
-    "      <h4>Encryption Status</h4>\n" +
-    "      <p>\n" +
-    "        {{encryptionStatusString()}}\n" +
-    "      </p>\n" +
-    "      <div class='mt-5' ng-if='encryptionEnabled()'>\n" +
-    "        <i>{{encryptionStatusForNotes()}}</i>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
-    "    <div class='mt-25'>\n" +
-    "      <h4>Passcode Lock</h4>\n" +
-    "      <div ng-if='!hasPasscode() &amp;&amp; passcodeOptionAvailable()'>\n" +
-    "        <p>Add an app passcode to lock the app and encrypt on-device key storage.</p>\n" +
-    "        <a class='block mt-5' ng-click='addPasscodeClicked()' ng-if='!formData.showPasscodeForm'>Add Passcode</a>\n" +
-    "        <form class='mt-5' ng-if='formData.showPasscodeForm' ng-submit='submitPasscodeForm()'>\n" +
-    "          <p class='bold'>Choose a passcode:</p>\n" +
-    "          <input autofocus='true' class='form-control mt-10' ng-model='formData.passcode' placeholder='Passcode' type='password'>\n" +
-    "          <input class='form-control mt-10' ng-model='formData.confirmPasscode' placeholder='Confirm Passcode' type='password'>\n" +
-    "          <button class='standard ui-button block tinted mt-5' type='submit'>Set Passcode</button>\n" +
-    "        </form>\n" +
-    "      </div>\n" +
-    "      <div ng-if='hasPasscode()'>\n" +
-    "        <p>\n" +
-    "          Passcode lock is enabled.\n" +
-    "          <span ng-if='isDesktopApplication()'>Your passcode will be required on new sessions after app quit.</span>\n" +
-    "        </p>\n" +
-    "        <a class='block mt-5' ng-click='removePasscodePressed()'>Remove Passcode</a>\n" +
-    "      </div>\n" +
-    "      <div ng-if='!passcodeOptionAvailable()'>\n" +
-    "        <p>Passcode lock is only available to permanent sessions. (You chose not to stay signed in.)</p>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
-    "    <div class='mt-25' ng-if='!importData.loading'>\n" +
-    "      <h4>Data Archives</h4>\n" +
-    "      <div class='mt-5' ng-if='encryptedBackupsAvailable()'>\n" +
-    "        <label class='normal inline'>\n" +
-    "          <input ng-change='archiveFormData.encrypted = true' ng-model='archiveFormData.encrypted' ng-value='true' type='radio'>\n" +
-    "          Encrypted\n" +
-    "        </label>\n" +
-    "        <label class='normal inline'>\n" +
-    "          <input ng-change='archiveFormData.encrypted = false' ng-model='archiveFormData.encrypted' ng-value='false' type='radio'>\n" +
-    "          Decrypted\n" +
-    "        </label>\n" +
-    "      </div>\n" +
-    "      <a class='block mt-5' ng-class=\"{'mt-5' : !user}\" ng-click='downloadDataArchive()'>Download Data Archive</a>\n" +
-    "      <label class='block mt-5'>\n" +
-    "        <input file-change='-&gt;' handler='importFileSelected(files)' style='display: none;' type='file'>\n" +
-    "        <div class='fake-link tinted'>Import Data from Archive</div>\n" +
-    "      </label>\n" +
-    "      <div ng-if='importData.requestPassword'>\n" +
-    "        <form ng-submit='submitImportPassword()'>\n" +
-    "          <p>Enter the account password associated with the import file.</p>\n" +
-    "          <input autofocus='true' class='form-control mt-5' ng-model='importData.password' type='password'>\n" +
-    "          <button class='standard ui-button block tinted mt-5' type='submit'>Decrypt & Import</button>\n" +
-    "        </form>\n" +
-    "      </div>\n" +
-    "      <p class='mt-5' ng-if='user'>Notes are downloaded in the Standard File format, which allows you to re-import back into this app easily. To download as plain text files, choose \"Decrypted\".</p>\n" +
-    "    </div>\n" +
-    "    <div class='spinner mt-10' ng-if='importData.loading'></div>\n" +
-    "    <a class='block mt-25 red' ng-click='destroyLocalData()'>{{ user ? \"Sign out and clear local data\" : \"Clear all local data\" }}</a>\n" +
-    "  </div>\n" +
+    "<div class='panel-body large-padding'>\n" +
+    "<div ng-if='!user'>\n" +
+    "<div class='mb-10'>\n" +
+    "<div class='step-one' ng-if='!formData.showLogin &amp;&amp; !formData.showRegister'>\n" +
+    "<h3>Sign in or register to enable sync and end-to-end encryption.</h3>\n" +
+    "<div class='small-v-space'></div>\n" +
+    "<div class='button-group mt-5'>\n" +
+    "<button class='ui-button half-button' ng-click='formData.showLogin = true'>\n" +
+    "<span>Sign In</span>\n" +
+    "</button>\n" +
+    "<button class='ui-button half-button' ng-click='formData.showRegister = true'>\n" +
+    "<span>Register</span>\n" +
+    "</button>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "<div class='step-two' ng-if='formData.showLogin || formData.showRegister'>\n" +
+    "<div class='float-group h20'>\n" +
+    "<h3 class='pull-left'>{{formData.showLogin ? \"Sign In\" : \"Register (free)\"}}</h3>\n" +
+    "<a class='pull-right pt-5' ng-click='formData.showLogin = false; formData.showRegister = false;'>Cancel</a>\n" +
+    "</div>\n" +
+    "<form class='mt-5'>\n" +
+    "<input autofocus='autofocus' class='form-control mt-10' name='email' ng-model='formData.email' placeholder='Email' required type='email'>\n" +
+    "<input class='form-control' name='password' ng-model='formData.user_password' placeholder='Password' required type='password'>\n" +
+    "<input class='form-control' name='password' ng-if='formData.showRegister' ng-model='formData.password_conf' placeholder='Confirm Password' required type='password'>\n" +
+    "<a class='block' ng-click='formData.showAdvanced = !formData.showAdvanced'>Advanced Options</a>\n" +
+    "<div class='advanced-options mt-10' ng-if='formData.showAdvanced'>\n" +
+    "<div class='float-group'>\n" +
+    "<label class='pull-left'>Sync Server Domain</label>\n" +
+    "</div>\n" +
+    "<input class='form-control mt-5' name='server' ng-model='formData.url' placeholder='Server URL' required type='text'>\n" +
+    "</div>\n" +
+    "<div class='checkbox mt-10'>\n" +
+    "<p>\n" +
+    "<input ng-false-value='true' ng-model='formData.ephemeral' ng-true-value='false' type='checkbox'>\n" +
+    "Stay signed in\n" +
+    "</input>\n" +
+    "</p>\n" +
+    "</div>\n" +
+    "<div class='checkbox mt-10' ng-if='notesAndTagsCount() &gt; 0'>\n" +
+    "<p>\n" +
+    "<input ng-bind='true' ng-change='mergeLocalChanged()' ng-model='formData.mergeLocal' type='checkbox'>\n" +
+    "Merge local data ({{notesAndTagsCount()}} notes and tags)\n" +
+    "</input>\n" +
+    "</p>\n" +
+    "</div>\n" +
+    "<button class='ui-button block mt-10' ng-click='submitAuthForm()'>{{formData.showLogin ? \"Sign In\" : \"Register\"}}</button>\n" +
+    "</form>\n" +
+    "</div>\n" +
+    "<div class='mt-15' ng-if='formData.showRegister'>\n" +
+    "<h3>No Password Reset.</h3>\n" +
+    "<p class='mt-5'>Because your notes are encrypted using your password, Standard Notes does not have a password reset option. You cannot forget your password.</p>\n" +
+    "</div>\n" +
+    "<em class='block center-align mt-10' ng-if='formData.status' style='font-size: 14px;'>{{formData.status}}</em>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "<div ng-if='user'>\n" +
+    "<h2>{{user.email}}</h2>\n" +
+    "<p>{{server}}</p>\n" +
+    "<div class='bold mt-10 tinted' delay-hide='true' delay='1000' show='syncStatus.syncOpInProgress || syncStatus.needsMoreSync'>\n" +
+    "<div class='spinner inline mr-5 tinted'></div>\n" +
+    "{{\"Syncing\" + (syncStatus.total > 0 ? \":\" : \"\")}}\n" +
+    "<span ng-if='syncStatus.total &gt; 0'>{{syncStatus.current}}/{{syncStatus.total}}</span>\n" +
+    "</div>\n" +
+    "<p class='bold mt-10 red block' ng-if='syncStatus.error'>Error syncing: {{syncStatus.error.message}}</p>\n" +
+    "<a class='block mt-5' ng-click='newPasswordData.changePassword = !newPasswordData.changePassword'>Change Password</a>\n" +
+    "<section class='gray-bg mt-10 medium-padding' ng-if='newPasswordData.changePassword'>\n" +
+    "<p class='bold'>Change Password (Beta)</p>\n" +
+    "<p class='mt-10'>Since your encryption key is based on your password, changing your password requires all your notes and tags to be re-encrypted using your new key.</p>\n" +
+    "<p class='mt-5'>If you have thousands of items, this can take several minutes — you must keep the application window open during this process.</p>\n" +
+    "<p class='mt-5'>After changing your password, you must log out of all other applications currently signed in to your account.</p>\n" +
+    "<p class='bold mt-5'>It is highly recommended you download a backup of your data before proceeding.</p>\n" +
+    "<div class='mt-10' ng-if='!newPasswordData.status'>\n" +
+    "<a class='red mr-5' ng-click='showPasswordChangeForm()' ng-if='!newPasswordData.showForm'>Continue</a>\n" +
+    "<a ng-click='newPasswordData.changePassword = false; newPasswordData.showForm = false'>Cancel</a>\n" +
+    "<div class='mt-10' ng-if='newPasswordData.showForm'>\n" +
+    "<form>\n" +
+    "<input class='form-control' ng-model='newPasswordData.newPassword' placeholder='Enter new password' type='password'>\n" +
+    "<input class='form-control' ng-model='newPasswordData.newPasswordConfirmation' placeholder='Confirm new password' type='password'>\n" +
+    "<button class='ui-button block' ng-click='submitPasswordChange()'>Submit</button>\n" +
+    "</form>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "<p class='italic mt-10' ng-if='newPasswordData.status'>{{newPasswordData.status}}</p>\n" +
+    "</section>\n" +
+    "<a class='block mt-5' ng-click='showAdvanced = !showAdvanced'>Advanced</a>\n" +
+    "<div ng-if='showAdvanced'>\n" +
+    "<a class='block mt-15' href='{{dashboardURL()}}' target='_blank'>Data Dashboard</a>\n" +
+    "<a class='block mt-5' ng-click='reencryptPressed()'>Re-encrypt All Items</a>\n" +
+    "<a class='block mt-5' ng-click='showCredentials = !showCredentials'>Show Credentials</a>\n" +
+    "<section class='gray-bg mt-10 medium-padding' ng-if='showCredentials'>\n" +
+    "<label class='block'>\n" +
+    "Encryption key:\n" +
+    "<div class='wrap normal mt-1 selectable'>{{encryptionKey()}}</div>\n" +
+    "</label>\n" +
+    "<label class='block mt-5 mb-0'>\n" +
+    "Authentication key:\n" +
+    "<div class='wrap normal mt-1 selectable'>{{authKey() ? authKey() : 'Not available. Sign out then sign back in to compute.'}}</div>\n" +
+    "</label>\n" +
+    "</section>\n" +
+    "</div>\n" +
+    "<div ng-if='securityUpdateAvailable()'>\n" +
+    "<a class='block mt-5' ng-click='clickedSecurityUpdate()'>Security Update Available</a>\n" +
+    "<section class='gray-bg mt-10 medium-padding' ng-if='securityUpdateData.showForm'>\n" +
+    "<p>\n" +
+    "<a href='https://standardnotes.org/help/security-update' target='_blank'>Learn more.</a>\n" +
+    "</p>\n" +
+    "<div class='mt-10' ng-if='!securityUpdateData.processing'>\n" +
+    "<p class='bold'>Enter your password to update:</p>\n" +
+    "<form class='mt-5'>\n" +
+    "<input class='form-control' ng-model='securityUpdateData.password' placeholder='Enter password' type='password'>\n" +
+    "<button class='ui-button block' ng-click='submitSecurityUpdateForm()'>Update</button>\n" +
+    "</form>\n" +
+    "</div>\n" +
+    "<div class='mt-5' ng-if='securityUpdateData.processing'>\n" +
+    "<p class='tinted'>Processing...</p>\n" +
+    "</div>\n" +
+    "</section>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "<div class='mt-25'>\n" +
+    "<h4>Encryption Status</h4>\n" +
+    "<p>\n" +
+    "{{encryptionStatusString()}}\n" +
+    "</p>\n" +
+    "<div class='mt-5' ng-if='encryptionEnabled()'>\n" +
+    "<i>{{encryptionStatusForNotes()}}</i>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "<div class='mt-25'>\n" +
+    "<h4>Passcode Lock</h4>\n" +
+    "<div ng-if='!hasPasscode() &amp;&amp; passcodeOptionAvailable()'>\n" +
+    "<p>Add an app passcode to lock the app and encrypt on-device key storage.</p>\n" +
+    "<a class='block mt-5' ng-click='addPasscodeClicked()' ng-if='!formData.showPasscodeForm'>Add Passcode</a>\n" +
+    "<form class='mt-5' ng-if='formData.showPasscodeForm' ng-submit='submitPasscodeForm()'>\n" +
+    "<p class='bold'>Choose a passcode:</p>\n" +
+    "<input autofocus='true' class='form-control mt-10' ng-model='formData.passcode' placeholder='Passcode' type='password'>\n" +
+    "<input class='form-control mt-10' ng-model='formData.confirmPasscode' placeholder='Confirm Passcode' type='password'>\n" +
+    "<button class='standard ui-button block tinted mt-5' type='submit'>Set Passcode</button>\n" +
+    "</form>\n" +
+    "</div>\n" +
+    "<div ng-if='hasPasscode()'>\n" +
+    "<p>\n" +
+    "Passcode lock is enabled.\n" +
+    "<span ng-if='isDesktopApplication()'>Your passcode will be required on new sessions after app quit.</span>\n" +
+    "</p>\n" +
+    "<a class='block mt-5' ng-click='removePasscodePressed()'>Remove Passcode</a>\n" +
+    "</div>\n" +
+    "<div ng-if='!passcodeOptionAvailable()'>\n" +
+    "<p>Passcode lock is only available to permanent sessions. (You chose not to stay signed in.)</p>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "<div class='mt-25' ng-if='!importData.loading'>\n" +
+    "<h4>Data Archives</h4>\n" +
+    "<div class='mt-5' ng-if='encryptedBackupsAvailable()'>\n" +
+    "<label class='normal inline'>\n" +
+    "<input ng-change='archiveFormData.encrypted = true' ng-model='archiveFormData.encrypted' ng-value='true' type='radio'>\n" +
+    "Encrypted\n" +
+    "</label>\n" +
+    "<label class='normal inline'>\n" +
+    "<input ng-change='archiveFormData.encrypted = false' ng-model='archiveFormData.encrypted' ng-value='false' type='radio'>\n" +
+    "Decrypted\n" +
+    "</label>\n" +
+    "</div>\n" +
+    "<a class='block mt-5' ng-class='{&#39;mt-5&#39; : !user}' ng-click='downloadDataArchive()'>Download Data Archive</a>\n" +
+    "<label class='block mt-5'>\n" +
+    "<input file-change='-&gt;' handler='importFileSelected(files)' style='display: none;' type='file'>\n" +
+    "<div class='fake-link tinted'>Import Data from Archive</div>\n" +
+    "</label>\n" +
+    "<div ng-if='importData.requestPassword'>\n" +
+    "<form ng-submit='submitImportPassword()'>\n" +
+    "<p>Enter the account password associated with the import file.</p>\n" +
+    "<input autofocus='true' class='form-control mt-5' ng-model='importData.password' type='password'>\n" +
+    "<button class='standard ui-button block tinted mt-5' type='submit'>Decrypt & Import</button>\n" +
+    "</form>\n" +
+    "</div>\n" +
+    "<p class='mt-5' ng-if='user'>Notes are downloaded in the Standard File format, which allows you to re-import back into this app easily. To download as plain text files, choose \"Decrypted\".</p>\n" +
+    "</div>\n" +
+    "<div class='spinner mt-10' ng-if='importData.loading'></div>\n" +
+    "<a class='block mt-25 red' ng-click='destroyLocalData()'>{{ user ? \"Sign out and clear local data\" : \"Clear all local data\" }}</a>\n" +
+    "</div>\n" +
     "</div>\n"
   );
 
