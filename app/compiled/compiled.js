@@ -33771,7 +33771,60 @@ Array.prototype.containsObjectSubset = function (array) {
   return !array.some(function (val) {
     return !_.find(_this4, val);
   });
-};angular.module('app').config(['$locationProvider', function ($locationProvider) {
+};
+
+// https://tc39.github.io/ecma262/#sec-array.prototype.includes
+if (!Array.prototype.includes) {
+  Object.defineProperty(Array.prototype, 'includes', {
+    value: function value(searchElement, fromIndex) {
+
+      if (this == null) {
+        throw new TypeError('"this" is null or not defined');
+      }
+
+      // 1. Let O be ? ToObject(this value).
+      var o = Object(this);
+
+      // 2. Let len be ? ToLength(? Get(O, "length")).
+      var len = o.length >>> 0;
+
+      // 3. If len is 0, return false.
+      if (len === 0) {
+        return false;
+      }
+
+      // 4. Let n be ? ToInteger(fromIndex).
+      //    (If fromIndex is undefined, this step produces the value 0.)
+      var n = fromIndex | 0;
+
+      // 5. If n ≥ 0, then
+      //  a. Let k be n.
+      // 6. Else n < 0,
+      //  a. Let k be len + n.
+      //  b. If k < 0, let k be 0.
+      var k = Math.max(n >= 0 ? n : len - Math.abs(n), 0);
+
+      function sameValueZero(x, y) {
+        return x === y || typeof x === 'number' && typeof y === 'number' && isNaN(x) && isNaN(y);
+      }
+
+      // 7. Repeat, while k < len
+      while (k < len) {
+        // a. Let elementK be the result of ? Get(O, ! ToString(k)).
+        // b. If SameValueZero(searchElement, elementK) is true, return true.
+        if (sameValueZero(o[k], searchElement)) {
+          return true;
+        }
+        // c. Increase k by 1.
+        k++;
+      }
+
+      // 8. Return false
+      return false;
+    }
+  });
+}
+;angular.module('app').config(['$locationProvider', function ($locationProvider) {
 
   if (!isDesktopApplication()) {
     if (window.history && window.history.pushState) {
@@ -36293,6 +36346,8 @@ var Note = function (_Item5) {
   }, {
     key: 'addItemAsRelationship',
     value: function addItemAsRelationship(item) {
+      this.savedTagsString = null;
+
       if (item.content_type == "Tag") {
         if (!_.find(this.tags, item)) {
           this.tags.push(item);
@@ -36303,6 +36358,8 @@ var Note = function (_Item5) {
   }, {
     key: 'removeItemAsRelationship',
     value: function removeItemAsRelationship(item) {
+      this.savedTagsString = null;
+
       if (item.content_type == "Tag") {
         _.pull(this.tags, item);
       }
@@ -36311,6 +36368,8 @@ var Note = function (_Item5) {
   }, {
     key: 'removeAndDirtyAllRelationships',
     value: function removeAndDirtyAllRelationships() {
+      this.savedTagsString = null;
+
       this.tags.forEach(function (tag) {
         _.pull(tag.notes, this);
         tag.setDirty(true);
@@ -36320,6 +36379,8 @@ var Note = function (_Item5) {
   }, {
     key: 'removeReferencesNotPresentIn',
     value: function removeReferencesNotPresentIn(references) {
+      this.savedTagsString = null;
+
       _get(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'removeReferencesNotPresentIn', this).call(this, references);
 
       var uuids = references.map(function (ref) {
@@ -36392,7 +36453,8 @@ var Note = function (_Item5) {
   }, {
     key: 'tagsString',
     value: function tagsString() {
-      return Tag.arrayToDisplayString(this.tags);
+      this.savedTagsString = Tag.arrayToDisplayString(this.tags);
+      return this.savedTagsString;
     }
   }, {
     key: 'content_type',
@@ -38492,30 +38554,25 @@ var ComponentManager = function () {
       }
     }
   }, {
-    key: 'deleteComponent',
-    value: function deleteComponent(component) {
-      this.modelManager.setItemToBeDeleted(component);
-      this.syncManager.sync("deleteComponent");
-    }
-  }, {
-    key: 'isComponentActive',
-    value: function isComponentActive(component) {
-      return component.active;
-    }
-  }, {
-    key: 'iframeForComponent',
-    value: function iframeForComponent(component) {
+    key: 'reloadComponent',
+    value: function reloadComponent(component) {
+      var _this34 = this;
+
+      //
+      // Do soft deactivate
+      //
+      component.active = false;
+
       var _iteratorNormalCompletion34 = true;
       var _didIteratorError34 = false;
       var _iteratorError34 = undefined;
 
       try {
-        for (var _iterator34 = Array.from(document.getElementsByTagName("iframe"))[Symbol.iterator](), _step34; !(_iteratorNormalCompletion34 = (_step34 = _iterator34.next()).done); _iteratorNormalCompletion34 = true) {
-          var frame = _step34.value;
+        for (var _iterator34 = this.handlers[Symbol.iterator](), _step34; !(_iteratorNormalCompletion34 = (_step34 = _iterator34.next()).done); _iteratorNormalCompletion34 = true) {
+          var handler = _step34.value;
 
-          var componentId = frame.dataset.componentId;
-          if (componentId === component.uuid) {
-            return frame;
+          if (handler.areas.includes(component.area) || handler.areas.includes("*")) {
+            handler.activationHandler(component);
           }
         }
       } catch (err) {
@@ -38532,33 +38589,121 @@ var ComponentManager = function () {
           }
         }
       }
+
+      if (component.area == "themes") {
+        this.postActiveThemeToAllComponents();
+      }
+
+      //
+      // Do soft activate
+      //
+
+      this.timeout(function () {
+        component.active = true;
+        var _iteratorNormalCompletion35 = true;
+        var _didIteratorError35 = false;
+        var _iteratorError35 = undefined;
+
+        try {
+          for (var _iterator35 = _this34.handlers[Symbol.iterator](), _step35; !(_iteratorNormalCompletion35 = (_step35 = _iterator35.next()).done); _iteratorNormalCompletion35 = true) {
+            var handler = _step35.value;
+
+            if (handler.areas.includes(component.area) || handler.areas.includes("*")) {
+              handler.activationHandler(component);
+            }
+          }
+        } catch (err) {
+          _didIteratorError35 = true;
+          _iteratorError35 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion35 && _iterator35.return) {
+              _iterator35.return();
+            }
+          } finally {
+            if (_didIteratorError35) {
+              throw _iteratorError35;
+            }
+          }
+        }
+
+        if (!_this34.activeComponents.includes(component)) {
+          _this34.activeComponents.push(component);
+        }
+
+        if (component.area == "themes") {
+          _this34.postActiveThemeToAllComponents();
+        }
+      });
+    }
+  }, {
+    key: 'deleteComponent',
+    value: function deleteComponent(component) {
+      this.modelManager.setItemToBeDeleted(component);
+      this.syncManager.sync("deleteComponent");
+    }
+  }, {
+    key: 'isComponentActive',
+    value: function isComponentActive(component) {
+      return component.active;
+    }
+  }, {
+    key: 'iframeForComponent',
+    value: function iframeForComponent(component) {
+      var _iteratorNormalCompletion36 = true;
+      var _didIteratorError36 = false;
+      var _iteratorError36 = undefined;
+
+      try {
+        for (var _iterator36 = Array.from(document.getElementsByTagName("iframe"))[Symbol.iterator](), _step36; !(_iteratorNormalCompletion36 = (_step36 = _iterator36.next()).done); _iteratorNormalCompletion36 = true) {
+          var frame = _step36.value;
+
+          var componentId = frame.dataset.componentId;
+          if (componentId === component.uuid) {
+            return frame;
+          }
+        }
+      } catch (err) {
+        _didIteratorError36 = true;
+        _iteratorError36 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion36 && _iterator36.return) {
+            _iterator36.return();
+          }
+        } finally {
+          if (_didIteratorError36) {
+            throw _iteratorError36;
+          }
+        }
+      }
     }
   }, {
     key: 'focusChangedForComponent',
     value: function focusChangedForComponent(component) {
       var focused = document.activeElement == this.iframeForComponent(component);
-      var _iteratorNormalCompletion35 = true;
-      var _didIteratorError35 = false;
-      var _iteratorError35 = undefined;
+      var _iteratorNormalCompletion37 = true;
+      var _didIteratorError37 = false;
+      var _iteratorError37 = undefined;
 
       try {
-        for (var _iterator35 = this.handlers[Symbol.iterator](), _step35; !(_iteratorNormalCompletion35 = (_step35 = _iterator35.next()).done); _iteratorNormalCompletion35 = true) {
-          var handler = _step35.value;
+        for (var _iterator37 = this.handlers[Symbol.iterator](), _step37; !(_iteratorNormalCompletion37 = (_step37 = _iterator37.next()).done); _iteratorNormalCompletion37 = true) {
+          var handler = _step37.value;
 
           // Notify all handlers, and not just ones that match this component type
           handler.focusHandler && handler.focusHandler(component, focused);
         }
       } catch (err) {
-        _didIteratorError35 = true;
-        _iteratorError35 = err;
+        _didIteratorError37 = true;
+        _iteratorError37 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion35 && _iterator35.return) {
-            _iterator35.return();
+          if (!_iteratorNormalCompletion37 && _iterator37.return) {
+            _iterator37.return();
           }
         } finally {
-          if (_didIteratorError35) {
-            throw _iteratorError35;
+          if (_didIteratorError37) {
+            throw _iteratorError37;
           }
         }
       }
@@ -38777,7 +38922,7 @@ angular.module('app').service('dbManager', DBManager);
 var DesktopManager = function () {
   DesktopManager.$inject = ['$rootScope', '$timeout', 'modelManager', 'syncManager', 'authManager', 'passcodeManager'];
   function DesktopManager($rootScope, $timeout, modelManager, syncManager, authManager, passcodeManager) {
-    var _this34 = this;
+    var _this35 = this;
 
     _classCallCheck(this, DesktopManager);
 
@@ -38792,15 +38937,15 @@ var DesktopManager = function () {
     this.isDesktop = isDesktopApplication();
 
     $rootScope.$on("initial-data-loaded", function () {
-      _this34.dataLoaded = true;
-      if (_this34.dataLoadHandler) {
-        _this34.dataLoadHandler();
+      _this35.dataLoaded = true;
+      if (_this35.dataLoadHandler) {
+        _this35.dataLoadHandler();
       }
     });
 
     $rootScope.$on("major-data-change", function () {
-      if (_this34.majorDataChangeHandler) {
-        _this34.majorDataChangeHandler();
+      if (_this35.majorDataChangeHandler) {
+        _this35.majorDataChangeHandler();
       }
     });
   }
@@ -38825,12 +38970,12 @@ var DesktopManager = function () {
   }, {
     key: 'syncComponentsInstallation',
     value: function syncComponentsInstallation(components) {
-      var _this35 = this;
+      var _this36 = this;
 
       if (!this.isDesktop) return;
 
       var data = components.map(function (component) {
-        return _this35.convertComponentForTransmission(component);
+        return _this36.convertComponentForTransmission(component);
       });
       this.installationSyncHandler(data);
     }
@@ -38854,7 +38999,7 @@ var DesktopManager = function () {
   }, {
     key: 'desktop_onComponentInstallationComplete',
     value: function desktop_onComponentInstallationComplete(componentData, error) {
-      var _this36 = this;
+      var _this37 = this;
 
       console.log("Web|Component Installation/Update Complete", componentData, error);
 
@@ -38870,27 +39015,27 @@ var DesktopManager = function () {
       if (error) {
         component.setAppDataItem("installError", error);
       } else {
-        var _iteratorNormalCompletion36 = true;
-        var _didIteratorError36 = false;
-        var _iteratorError36 = undefined;
+        var _iteratorNormalCompletion38 = true;
+        var _didIteratorError38 = false;
+        var _iteratorError38 = undefined;
 
         try {
-          for (var _iterator36 = permissableKeys[Symbol.iterator](), _step36; !(_iteratorNormalCompletion36 = (_step36 = _iterator36.next()).done); _iteratorNormalCompletion36 = true) {
-            var key = _step36.value;
+          for (var _iterator38 = permissableKeys[Symbol.iterator](), _step38; !(_iteratorNormalCompletion38 = (_step38 = _iterator38.next()).done); _iteratorNormalCompletion38 = true) {
+            var key = _step38.value;
 
             component[key] = componentData.content[key];
           }
         } catch (err) {
-          _didIteratorError36 = true;
-          _iteratorError36 = err;
+          _didIteratorError38 = true;
+          _iteratorError38 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion36 && _iterator36.return) {
-              _iterator36.return();
+            if (!_iteratorNormalCompletion38 && _iterator38.return) {
+              _iterator38.return();
             }
           } finally {
-            if (_didIteratorError36) {
-              throw _iteratorError36;
+            if (_didIteratorError38) {
+              throw _iteratorError38;
             }
           }
         }
@@ -38902,27 +39047,27 @@ var DesktopManager = function () {
       this.syncManager.sync("onComponentInstallationComplete");
 
       this.timeout(function () {
-        var _iteratorNormalCompletion37 = true;
-        var _didIteratorError37 = false;
-        var _iteratorError37 = undefined;
+        var _iteratorNormalCompletion39 = true;
+        var _didIteratorError39 = false;
+        var _iteratorError39 = undefined;
 
         try {
-          for (var _iterator37 = _this36.updateObservers[Symbol.iterator](), _step37; !(_iteratorNormalCompletion37 = (_step37 = _iterator37.next()).done); _iteratorNormalCompletion37 = true) {
-            var observer = _step37.value;
+          for (var _iterator39 = _this37.updateObservers[Symbol.iterator](), _step39; !(_iteratorNormalCompletion39 = (_step39 = _iterator39.next()).done); _iteratorNormalCompletion39 = true) {
+            var observer = _step39.value;
 
             observer.callback(component);
           }
         } catch (err) {
-          _didIteratorError37 = true;
-          _iteratorError37 = err;
+          _didIteratorError39 = true;
+          _iteratorError39 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion37 && _iterator37.return) {
-              _iterator37.return();
+            if (!_iteratorNormalCompletion39 && _iterator39.return) {
+              _iterator39.return();
             }
           } finally {
-            if (_didIteratorError37) {
-              throw _iteratorError37;
+            if (_didIteratorError39) {
+              throw _iteratorError39;
             }
           }
         }
@@ -39076,7 +39221,7 @@ angular.module('app').service('httpManager', HttpManager);
 var MigrationManager = function () {
   MigrationManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'componentManager'];
   function MigrationManager($rootScope, modelManager, syncManager, componentManager) {
-    var _this37 = this;
+    var _this38 = this;
 
     _classCallCheck(this, MigrationManager);
 
@@ -39090,13 +39235,13 @@ var MigrationManager = function () {
     this.addEditorToComponentMigrator();
 
     this.modelManager.addItemSyncObserver("migration-manager", "*", function (allItems, validItems, deletedItems) {
-      var _iteratorNormalCompletion38 = true;
-      var _didIteratorError38 = false;
-      var _iteratorError38 = undefined;
+      var _iteratorNormalCompletion40 = true;
+      var _didIteratorError40 = false;
+      var _iteratorError40 = undefined;
 
       try {
-        for (var _iterator38 = _this37.migrators[Symbol.iterator](), _step38; !(_iteratorNormalCompletion38 = (_step38 = _iterator38.next()).done); _iteratorNormalCompletion38 = true) {
-          var migrator = _step38.value;
+        for (var _iterator40 = _this38.migrators[Symbol.iterator](), _step40; !(_iteratorNormalCompletion40 = (_step40 = _iterator40.next()).done); _iteratorNormalCompletion40 = true) {
+          var migrator = _step40.value;
 
           var items = allItems.filter(function (item) {
             return item.content_type == migrator.content_type;
@@ -39106,16 +39251,16 @@ var MigrationManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError38 = true;
-        _iteratorError38 = err;
+        _didIteratorError40 = true;
+        _iteratorError40 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion38 && _iterator38.return) {
-            _iterator38.return();
+          if (!_iteratorNormalCompletion40 && _iterator40.return) {
+            _iterator40.return();
           }
         } finally {
-          if (_didIteratorError38) {
-            throw _iteratorError38;
+          if (_didIteratorError40) {
+            throw _iteratorError40;
           }
         }
       }
@@ -39130,24 +39275,24 @@ var MigrationManager = function () {
   _createClass(MigrationManager, [{
     key: 'addEditorToComponentMigrator',
     value: function addEditorToComponentMigrator() {
-      var _this38 = this;
+      var _this39 = this;
 
       this.migrators.push({
         content_type: "SN|Editor",
 
         handler: function handler(editors) {
           // Convert editors to components
-          var _iteratorNormalCompletion39 = true;
-          var _didIteratorError39 = false;
-          var _iteratorError39 = undefined;
+          var _iteratorNormalCompletion41 = true;
+          var _didIteratorError41 = false;
+          var _iteratorError41 = undefined;
 
           try {
-            for (var _iterator39 = editors[Symbol.iterator](), _step39; !(_iteratorNormalCompletion39 = (_step39 = _iterator39.next()).done); _iteratorNormalCompletion39 = true) {
-              var editor = _step39.value;
+            for (var _iterator41 = editors[Symbol.iterator](), _step41; !(_iteratorNormalCompletion41 = (_step41 = _iterator41.next()).done); _iteratorNormalCompletion41 = true) {
+              var editor = _step41.value;
 
               // If there's already a component for this url, then skip this editor
-              if (editor.url && !_this38.componentManager.componentForUrl(editor.url)) {
-                var component = _this38.modelManager.createItem({
+              if (editor.url && !_this39.componentManager.componentForUrl(editor.url)) {
+                var component = _this39.modelManager.createItem({
                   content_type: "SN|Component",
                   url: editor.url,
                   name: editor.name,
@@ -39155,50 +39300,50 @@ var MigrationManager = function () {
                 });
                 component.setAppDataItem("data", editor.data);
                 component.setDirty(true);
-                _this38.modelManager.addItem(component);
+                _this39.modelManager.addItem(component);
               }
             }
           } catch (err) {
-            _didIteratorError39 = true;
-            _iteratorError39 = err;
+            _didIteratorError41 = true;
+            _iteratorError41 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion39 && _iterator39.return) {
-                _iterator39.return();
+              if (!_iteratorNormalCompletion41 && _iterator41.return) {
+                _iterator41.return();
               }
             } finally {
-              if (_didIteratorError39) {
-                throw _iteratorError39;
+              if (_didIteratorError41) {
+                throw _iteratorError41;
               }
             }
           }
 
-          var _iteratorNormalCompletion40 = true;
-          var _didIteratorError40 = false;
-          var _iteratorError40 = undefined;
+          var _iteratorNormalCompletion42 = true;
+          var _didIteratorError42 = false;
+          var _iteratorError42 = undefined;
 
           try {
-            for (var _iterator40 = editors[Symbol.iterator](), _step40; !(_iteratorNormalCompletion40 = (_step40 = _iterator40.next()).done); _iteratorNormalCompletion40 = true) {
-              var _editor = _step40.value;
+            for (var _iterator42 = editors[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
+              var _editor = _step42.value;
 
-              _this38.modelManager.setItemToBeDeleted(_editor);
+              _this39.modelManager.setItemToBeDeleted(_editor);
             }
           } catch (err) {
-            _didIteratorError40 = true;
-            _iteratorError40 = err;
+            _didIteratorError42 = true;
+            _iteratorError42 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion40 && _iterator40.return) {
-                _iterator40.return();
+              if (!_iteratorNormalCompletion42 && _iterator42.return) {
+                _iterator42.return();
               }
             } finally {
-              if (_didIteratorError40) {
-                throw _iteratorError40;
+              if (_didIteratorError42) {
+                throw _iteratorError42;
               }
             }
           }
 
-          _this38.syncManager.sync("addEditorToComponentMigrator");
+          _this39.syncManager.sync("addEditorToComponentMigrator");
         }
       });
     }
@@ -39245,7 +39390,7 @@ var ModelManager = function () {
   }, {
     key: 'alternateUUIDForItem',
     value: function alternateUUIDForItem(item, callback, removeOriginal) {
-      var _this39 = this;
+      var _this40 = this;
 
       // we need to clone this item and give it a new uuid, then delete item with old uuid from db (you can't mofidy uuid's in our indexeddb setup)
       var newItem = this.createItem(item);
@@ -39260,7 +39405,7 @@ var ModelManager = function () {
       console.log(item.uuid, "-->", newItem.uuid);
 
       var block = function block() {
-        _this39.addItem(newItem);
+        _this40.addItem(newItem);
         newItem.setDirty(true);
         newItem.markAllReferencesDirty();
         callback();
@@ -39282,27 +39427,27 @@ var ModelManager = function () {
       // for example, editors have a one way relationship with notes. When a note changes its UUID, it has no way to inform the editor
       // to update its relationships
 
-      var _iteratorNormalCompletion41 = true;
-      var _didIteratorError41 = false;
-      var _iteratorError41 = undefined;
+      var _iteratorNormalCompletion43 = true;
+      var _didIteratorError43 = false;
+      var _iteratorError43 = undefined;
 
       try {
-        for (var _iterator41 = this.items[Symbol.iterator](), _step41; !(_iteratorNormalCompletion41 = (_step41 = _iterator41.next()).done); _iteratorNormalCompletion41 = true) {
-          var model = _step41.value;
+        for (var _iterator43 = this.items[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
+          var model = _step43.value;
 
           model.potentialItemOfInterestHasChangedItsUUID(newItem, oldUUID, newUUID);
         }
       } catch (err) {
-        _didIteratorError41 = true;
-        _iteratorError41 = err;
+        _didIteratorError43 = true;
+        _iteratorError43 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion41 && _iterator41.return) {
-            _iterator41.return();
+          if (!_iteratorNormalCompletion43 && _iterator43.return) {
+            _iterator43.return();
           }
         } finally {
-          if (_didIteratorError41) {
-            throw _iteratorError41;
+          if (_didIteratorError43) {
+            throw _iteratorError43;
           }
         }
       }
@@ -39354,13 +39499,13 @@ var ModelManager = function () {
           modelsToNotifyObserversOf = [];
 
       // first loop should add and process items
-      var _iteratorNormalCompletion42 = true;
-      var _didIteratorError42 = false;
-      var _iteratorError42 = undefined;
+      var _iteratorNormalCompletion44 = true;
+      var _didIteratorError44 = false;
+      var _iteratorError44 = undefined;
 
       try {
-        for (var _iterator42 = items[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
-          var json_obj = _step42.value;
+        for (var _iterator44 = items[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
+          var json_obj = _step44.value;
 
           if ((!json_obj.content_type || !json_obj.content) && !json_obj.deleted && !json_obj.errorDecrypting) {
             // An item that is not deleted should never have empty content
@@ -39371,27 +39516,27 @@ var ModelManager = function () {
           // Lodash's _.omit, which was previously used, seems to cause unexpected behavior
           // when json_obj is an ES6 item class. So we instead manually omit each key.
           if (Array.isArray(omitFields)) {
-            var _iteratorNormalCompletion43 = true;
-            var _didIteratorError43 = false;
-            var _iteratorError43 = undefined;
+            var _iteratorNormalCompletion45 = true;
+            var _didIteratorError45 = false;
+            var _iteratorError45 = undefined;
 
             try {
-              for (var _iterator43 = omitFields[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
-                var key = _step43.value;
+              for (var _iterator45 = omitFields[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
+                var key = _step45.value;
 
                 delete json_obj[key];
               }
             } catch (err) {
-              _didIteratorError43 = true;
-              _iteratorError43 = err;
+              _didIteratorError45 = true;
+              _iteratorError45 = err;
             } finally {
               try {
-                if (!_iteratorNormalCompletion43 && _iterator43.return) {
-                  _iterator43.return();
+                if (!_iteratorNormalCompletion45 && _iterator45.return) {
+                  _iterator45.return();
                 }
               } finally {
-                if (_didIteratorError43) {
-                  throw _iteratorError43;
+                if (_didIteratorError45) {
+                  throw _iteratorError45;
                 }
               }
             }
@@ -39433,16 +39578,16 @@ var ModelManager = function () {
 
         // second loop should process references
       } catch (err) {
-        _didIteratorError42 = true;
-        _iteratorError42 = err;
+        _didIteratorError44 = true;
+        _iteratorError44 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion42 && _iterator42.return) {
-            _iterator42.return();
+          if (!_iteratorNormalCompletion44 && _iterator44.return) {
+            _iterator44.return();
           }
         } finally {
-          if (_didIteratorError42) {
-            throw _iteratorError42;
+          if (_didIteratorError44) {
+            throw _iteratorError44;
           }
         }
       }
@@ -39464,26 +39609,26 @@ var ModelManager = function () {
   }, {
     key: 'notifySyncObserversOfModels',
     value: function notifySyncObserversOfModels(models, source) {
-      var _iteratorNormalCompletion44 = true;
-      var _didIteratorError44 = false;
-      var _iteratorError44 = undefined;
+      var _iteratorNormalCompletion46 = true;
+      var _didIteratorError46 = false;
+      var _iteratorError46 = undefined;
 
       try {
-        for (var _iterator44 = this.itemSyncObservers[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
-          var observer = _step44.value;
+        for (var _iterator46 = this.itemSyncObservers[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
+          var observer = _step46.value;
 
           var allRelevantItems = models.filter(function (item) {
             return item.content_type == observer.type || observer.type == "*";
           });
           var validItems = [],
               deletedItems = [];
-          var _iteratorNormalCompletion45 = true;
-          var _didIteratorError45 = false;
-          var _iteratorError45 = undefined;
+          var _iteratorNormalCompletion47 = true;
+          var _didIteratorError47 = false;
+          var _iteratorError47 = undefined;
 
           try {
-            for (var _iterator45 = allRelevantItems[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
-              var item = _step45.value;
+            for (var _iterator47 = allRelevantItems[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
+              var item = _step47.value;
 
               if (item.deleted) {
                 deletedItems.push(item);
@@ -39492,56 +39637,22 @@ var ModelManager = function () {
               }
             }
           } catch (err) {
-            _didIteratorError45 = true;
-            _iteratorError45 = err;
+            _didIteratorError47 = true;
+            _iteratorError47 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion45 && _iterator45.return) {
-                _iterator45.return();
+              if (!_iteratorNormalCompletion47 && _iterator47.return) {
+                _iterator47.return();
               }
             } finally {
-              if (_didIteratorError45) {
-                throw _iteratorError45;
+              if (_didIteratorError47) {
+                throw _iteratorError47;
               }
             }
           }
 
           if (allRelevantItems.length > 0) {
             observer.callback(allRelevantItems, validItems, deletedItems, source);
-          }
-        }
-      } catch (err) {
-        _didIteratorError44 = true;
-        _iteratorError44 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion44 && _iterator44.return) {
-            _iterator44.return();
-          }
-        } finally {
-          if (_didIteratorError44) {
-            throw _iteratorError44;
-          }
-        }
-      }
-    }
-  }, {
-    key: 'notifyItemChangeObserversOfModels',
-    value: function notifyItemChangeObserversOfModels(models) {
-      var _iteratorNormalCompletion46 = true;
-      var _didIteratorError46 = false;
-      var _iteratorError46 = undefined;
-
-      try {
-        for (var _iterator46 = this.itemChangeObservers[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
-          var observer = _step46.value;
-
-          var relevantItems = models.filter(function (item) {
-            return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
-          });
-
-          if (relevantItems.length > 0) {
-            observer.callback(relevantItems);
           }
         }
       } catch (err) {
@@ -39555,6 +39666,40 @@ var ModelManager = function () {
         } finally {
           if (_didIteratorError46) {
             throw _iteratorError46;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'notifyItemChangeObserversOfModels',
+    value: function notifyItemChangeObserversOfModels(models) {
+      var _iteratorNormalCompletion48 = true;
+      var _didIteratorError48 = false;
+      var _iteratorError48 = undefined;
+
+      try {
+        for (var _iterator48 = this.itemChangeObservers[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
+          var observer = _step48.value;
+
+          var relevantItems = models.filter(function (item) {
+            return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
+          });
+
+          if (relevantItems.length > 0) {
+            observer.callback(relevantItems);
+          }
+        }
+      } catch (err) {
+        _didIteratorError48 = true;
+        _iteratorError48 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion48 && _iterator48.return) {
+            _iterator48.return();
+          }
+        } finally {
+          if (_didIteratorError48) {
+            throw _iteratorError48;
           }
         }
       }
@@ -39657,13 +39802,13 @@ var ModelManager = function () {
         return;
       }
 
-      var _iteratorNormalCompletion47 = true;
-      var _didIteratorError47 = false;
-      var _iteratorError47 = undefined;
+      var _iteratorNormalCompletion49 = true;
+      var _didIteratorError49 = false;
+      var _iteratorError49 = undefined;
 
       try {
-        for (var _iterator47 = contentObject.references[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
-          var reference = _step47.value;
+        for (var _iterator49 = contentObject.references[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
+          var reference = _step49.value;
 
           var referencedItem = this.findItem(reference.uuid);
           if (referencedItem) {
@@ -39674,16 +39819,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError47 = true;
-        _iteratorError47 = err;
+        _didIteratorError49 = true;
+        _iteratorError49 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion47 && _iterator47.return) {
-            _iterator47.return();
+          if (!_iteratorNormalCompletion49 && _iterator49.return) {
+            _iterator49.return();
           }
         } finally {
-          if (_didIteratorError47) {
-            throw _iteratorError47;
+          if (_didIteratorError49) {
+            throw _iteratorError49;
           }
         }
       }
@@ -39719,27 +39864,27 @@ var ModelManager = function () {
   }, {
     key: 'clearDirtyItems',
     value: function clearDirtyItems(items) {
-      var _iteratorNormalCompletion48 = true;
-      var _didIteratorError48 = false;
-      var _iteratorError48 = undefined;
+      var _iteratorNormalCompletion50 = true;
+      var _didIteratorError50 = false;
+      var _iteratorError50 = undefined;
 
       try {
-        for (var _iterator48 = items[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
-          var item = _step48.value;
+        for (var _iterator50 = items[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
+          var item = _step50.value;
 
           item.setDirty(false);
         }
       } catch (err) {
-        _didIteratorError48 = true;
-        _iteratorError48 = err;
+        _didIteratorError50 = true;
+        _iteratorError50 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion48 && _iterator48.return) {
-            _iterator48.return();
+          if (!_iteratorNormalCompletion50 && _iterator50.return) {
+            _iterator50.return();
           }
         } finally {
-          if (_didIteratorError48) {
-            throw _iteratorError48;
+          if (_didIteratorError50) {
+            throw _iteratorError50;
           }
         }
       }
@@ -39768,27 +39913,27 @@ var ModelManager = function () {
         return _.includes(this.acceptableContentTypes, item.content_type);
       }.bind(this));
 
-      var _iteratorNormalCompletion49 = true;
-      var _didIteratorError49 = false;
-      var _iteratorError49 = undefined;
+      var _iteratorNormalCompletion51 = true;
+      var _didIteratorError51 = false;
+      var _iteratorError51 = undefined;
 
       try {
-        for (var _iterator49 = relevantItems[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
-          var item = _step49.value;
+        for (var _iterator51 = relevantItems[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
+          var item = _step51.value;
 
           item.setDirty(true);
         }
       } catch (err) {
-        _didIteratorError49 = true;
-        _iteratorError49 = err;
+        _didIteratorError51 = true;
+        _iteratorError51 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion49 && _iterator49.return) {
-            _iterator49.return();
+          if (!_iteratorNormalCompletion51 && _iterator51.return) {
+            _iterator51.return();
           }
         } finally {
-          if (_didIteratorError49) {
-            throw _iteratorError49;
+          if (_didIteratorError51) {
+            throw _iteratorError51;
           }
         }
       }
@@ -39921,11 +40066,11 @@ var NativeExtManager = function () {
   }, {
     key: 'resolveExtensionsManager',
     value: function resolveExtensionsManager() {
-      var _this40 = this;
+      var _this41 = this;
 
       this.singletonManager.registerSingleton({ content_type: "SN|Component", package_info: { identifier: this.extensionsIdentifier } }, function (resolvedSingleton) {
         // Resolved Singleton
-        _this40.systemExtensions.push(resolvedSingleton.uuid);
+        _this41.systemExtensions.push(resolvedSingleton.uuid);
 
         var needsSync = false;
         if (isDesktopApplication()) {
@@ -39942,7 +40087,7 @@ var NativeExtManager = function () {
 
         if (needsSync) {
           resolvedSingleton.setDirty(true);
-          _this40.syncManager.sync("resolveExtensionsManager");
+          _this41.syncManager.sync("resolveExtensionsManager");
         }
       }, function (valueCallback) {
         // Safe to create. Create and return object.
@@ -39955,7 +40100,7 @@ var NativeExtManager = function () {
 
         var packageInfo = {
           name: "Extensions",
-          identifier: _this40.extensionsIdentifier
+          identifier: _this41.extensionsIdentifier
         };
 
         var item = {
@@ -39977,13 +40122,13 @@ var NativeExtManager = function () {
           item.content.hosted_url = window._extensions_manager_location;
         }
 
-        var component = _this40.modelManager.createItem(item);
-        _this40.modelManager.addItem(component);
+        var component = _this41.modelManager.createItem(item);
+        _this41.modelManager.addItem(component);
 
         component.setDirty(true);
-        _this40.syncManager.sync("resolveExtensionsManager createNew");
+        _this41.syncManager.sync("resolveExtensionsManager createNew");
 
-        _this40.systemExtensions.push(component.uuid);
+        _this41.systemExtensions.push(component.uuid);
 
         valueCallback(component);
       });
@@ -40001,7 +40146,7 @@ angular.module('app').service('nativeExtManager', NativeExtManager);
   }];
 
   function PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
-    var _this41 = this;
+    var _this42 = this;
 
     this._hasPasscode = storageManager.getItem("offlineParams", StorageManager.Fixed) != null;
     this._locked = this._hasPasscode;
@@ -40053,11 +40198,11 @@ angular.module('app').service('nativeExtManager', NativeExtManager);
         // After it's cleared, it's safe to write to it
         storageManager.setItem("offlineParams", JSON.stringify(defaultParams), StorageManager.Fixed);
         callback(true);
-      }.bind(_this41));
+      }.bind(_this42));
     };
 
     this.changePasscode = function (newPasscode, callback) {
-      _this41.setPasscode(newPasscode, callback);
+      _this42.setPasscode(newPasscode, callback);
     };
 
     this.clearPasscode = function () {
@@ -40092,7 +40237,7 @@ angular.module('app').service('nativeExtManager', NativeExtManager);
 var SingletonManager = function () {
   SingletonManager.$inject = ['$rootScope', 'modelManager'];
   function SingletonManager($rootScope, modelManager) {
-    var _this42 = this;
+    var _this43 = this;
 
     _classCallCheck(this, SingletonManager);
 
@@ -40101,7 +40246,7 @@ var SingletonManager = function () {
     this.singletonHandlers = [];
 
     $rootScope.$on("initial-data-loaded", function (event, data) {
-      _this42.resolveSingletons(modelManager.allItems, null, true);
+      _this43.resolveSingletons(modelManager.allItems, null, true);
     });
 
     $rootScope.$on("sync:completed", function (event, data) {
@@ -40114,7 +40259,7 @@ var SingletonManager = function () {
       // the whole purpose of this thing.
 
       // Updated solution: resolveSingletons will now evaluate both of these arrays separately.
-      _this42.resolveSingletons(data.retrievedItems, data.savedItems);
+      _this43.resolveSingletons(data.retrievedItems, data.savedItems);
     });
   }
 
@@ -40135,7 +40280,7 @@ var SingletonManager = function () {
   }, {
     key: 'resolveSingletons',
     value: function resolveSingletons(retrievedItems, savedItems, initialLoad) {
-      var _this43 = this;
+      var _this44 = this;
 
       retrievedItems = retrievedItems || [];
       savedItems = savedItems || [];
@@ -40143,12 +40288,12 @@ var SingletonManager = function () {
       var _loop4 = function _loop4(singletonHandler) {
         predicate = singletonHandler.predicate;
 
-        var retrievedSingletonItems = _this43.filterItemsWithPredicate(retrievedItems, predicate);
+        var retrievedSingletonItems = _this44.filterItemsWithPredicate(retrievedItems, predicate);
 
         // We only want to consider saved items count to see if it's more than 0, and do nothing else with it.
         // This way we know there was some action and things need to be resolved. The saved items will come up
         // in filterItemsWithPredicate(this.modelManager.allItems) and be deleted anyway
-        var savedSingletonItemsCount = _this43.filterItemsWithPredicate(savedItems, predicate).length;
+        var savedSingletonItemsCount = _this44.filterItemsWithPredicate(savedItems, predicate).length;
 
         if (retrievedSingletonItems.length > 0 || savedSingletonItemsCount > 0) {
           /*
@@ -40157,7 +40302,7 @@ var SingletonManager = function () {
             However, as stated in the header comment, retrievedItems take precendence over existing items,
             even if they have a lower updated_at value
           */
-          allExtantItemsMatchingPredicate = _this43.filterItemsWithPredicate(_this43.modelManager.allItems, predicate);
+          allExtantItemsMatchingPredicate = _this44.filterItemsWithPredicate(_this44.modelManager.allItems, predicate);
 
           /*
             If there are more than 1 matches, delete everything not in `retrievedSingletonItems`,
@@ -40171,13 +40316,13 @@ var SingletonManager = function () {
             // The item that will be chosen to be kept
 
             if (retrievedSingletonItems.length > 0) {
-              var _iteratorNormalCompletion51 = true;
-              var _didIteratorError51 = false;
-              var _iteratorError51 = undefined;
+              var _iteratorNormalCompletion53 = true;
+              var _didIteratorError53 = false;
+              var _iteratorError53 = undefined;
 
               try {
-                for (var _iterator51 = allExtantItemsMatchingPredicate[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
-                  var extantItem = _step51.value;
+                for (var _iterator53 = allExtantItemsMatchingPredicate[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
+                  var extantItem = _step53.value;
 
                   if (!retrievedSingletonItems.includes(extantItem)) {
                     // Delete it
@@ -40187,16 +40332,16 @@ var SingletonManager = function () {
 
                 // Sort incoming singleton items by most recently updated first, then delete all the rest
               } catch (err) {
-                _didIteratorError51 = true;
-                _iteratorError51 = err;
+                _didIteratorError53 = true;
+                _iteratorError53 = err;
               } finally {
                 try {
-                  if (!_iteratorNormalCompletion51 && _iterator51.return) {
-                    _iterator51.return();
+                  if (!_iteratorNormalCompletion53 && _iterator53.return) {
+                    _iterator53.return();
                   }
                 } finally {
-                  if (_didIteratorError51) {
-                    throw _iteratorError51;
+                  if (_didIteratorError53) {
+                    throw _iteratorError53;
                   }
                 }
               }
@@ -40218,32 +40363,32 @@ var SingletonManager = function () {
             // Delete everything but the first one
             toDelete = toDelete.concat(sorted.slice(1, sorted.length));
 
-            var _iteratorNormalCompletion52 = true;
-            var _didIteratorError52 = false;
-            var _iteratorError52 = undefined;
+            var _iteratorNormalCompletion54 = true;
+            var _didIteratorError54 = false;
+            var _iteratorError54 = undefined;
 
             try {
-              for (var _iterator52 = toDelete[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
-                d = _step52.value;
+              for (var _iterator54 = toDelete[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
+                d = _step54.value;
 
-                _this43.modelManager.setItemToBeDeleted(d);
+                _this44.modelManager.setItemToBeDeleted(d);
               }
             } catch (err) {
-              _didIteratorError52 = true;
-              _iteratorError52 = err;
+              _didIteratorError54 = true;
+              _iteratorError54 = err;
             } finally {
               try {
-                if (!_iteratorNormalCompletion52 && _iterator52.return) {
-                  _iterator52.return();
+                if (!_iteratorNormalCompletion54 && _iterator54.return) {
+                  _iterator54.return();
                 }
               } finally {
-                if (_didIteratorError52) {
-                  throw _iteratorError52;
+                if (_didIteratorError54) {
+                  throw _iteratorError54;
                 }
               }
             }
 
-            _this43.$rootScope.sync("resolveSingletons");
+            _this44.$rootScope.sync("resolveSingletons");
 
             // Send remaining item to callback
             singletonHandler.singleton = winningItem;
@@ -40272,13 +40417,13 @@ var SingletonManager = function () {
         }
       };
 
-      var _iteratorNormalCompletion50 = true;
-      var _didIteratorError50 = false;
-      var _iteratorError50 = undefined;
+      var _iteratorNormalCompletion52 = true;
+      var _didIteratorError52 = false;
+      var _iteratorError52 = undefined;
 
       try {
-        for (var _iterator50 = this.singletonHandlers[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
-          var singletonHandler = _step50.value;
+        for (var _iterator52 = this.singletonHandlers[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
+          var singletonHandler = _step52.value;
           var predicate;
           var allExtantItemsMatchingPredicate;
           var toDelete;
@@ -40289,16 +40434,16 @@ var SingletonManager = function () {
           _loop4(singletonHandler);
         }
       } catch (err) {
-        _didIteratorError50 = true;
-        _iteratorError50 = err;
+        _didIteratorError52 = true;
+        _iteratorError52 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion50 && _iterator50.return) {
-            _iterator50.return();
+          if (!_iteratorNormalCompletion52 && _iterator52.return) {
+            _iterator52.return();
           }
         } finally {
-          if (_didIteratorError50) {
-            throw _iteratorError50;
+          if (_didIteratorError52) {
+            throw _iteratorError52;
           }
         }
       }
@@ -40306,10 +40451,10 @@ var SingletonManager = function () {
   }, {
     key: 'filterItemsWithPredicate',
     value: function filterItemsWithPredicate(items, predicate) {
-      var _this44 = this;
+      var _this45 = this;
 
       return items.filter(function (candidate) {
-        return _this44.itemSatisfiesPredicate(candidate, predicate);
+        return _this45.itemSatisfiesPredicate(candidate, predicate);
       });
     }
   }, {
@@ -40523,27 +40668,27 @@ var StorageManager = function () {
       EncryptionHelper.decryptItem(stored, this.encryptedStorageKeys);
       var encryptedStorage = new EncryptedStorage(stored);
 
-      var _iteratorNormalCompletion53 = true;
-      var _didIteratorError53 = false;
-      var _iteratorError53 = undefined;
+      var _iteratorNormalCompletion55 = true;
+      var _didIteratorError55 = false;
+      var _iteratorError55 = undefined;
 
       try {
-        for (var _iterator53 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
-          var key = _step53.value;
+        for (var _iterator55 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step55; !(_iteratorNormalCompletion55 = (_step55 = _iterator55.next()).done); _iteratorNormalCompletion55 = true) {
+          var key = _step55.value;
 
           this.setItem(key, encryptedStorage.storage[key]);
         }
       } catch (err) {
-        _didIteratorError53 = true;
-        _iteratorError53 = err;
+        _didIteratorError55 = true;
+        _iteratorError55 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion53 && _iterator53.return) {
-            _iterator53.return();
+          if (!_iteratorNormalCompletion55 && _iterator55.return) {
+            _iterator55.return();
           }
         } finally {
-          if (_didIteratorError53) {
-            throw _iteratorError53;
+          if (_didIteratorError55) {
+            throw _iteratorError55;
           }
         }
       }
@@ -40684,29 +40829,29 @@ var SyncManager = function () {
     value: function syncOffline(items, callback) {
       this.writeItemsToLocalStorage(items, true, function (responseItems) {
         // delete anything needing to be deleted
-        var _iteratorNormalCompletion54 = true;
-        var _didIteratorError54 = false;
-        var _iteratorError54 = undefined;
+        var _iteratorNormalCompletion56 = true;
+        var _didIteratorError56 = false;
+        var _iteratorError56 = undefined;
 
         try {
-          for (var _iterator54 = items[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
-            var item = _step54.value;
+          for (var _iterator56 = items[Symbol.iterator](), _step56; !(_iteratorNormalCompletion56 = (_step56 = _iterator56.next()).done); _iteratorNormalCompletion56 = true) {
+            var item = _step56.value;
 
             if (item.deleted) {
               this.modelManager.removeItemLocally(item);
             }
           }
         } catch (err) {
-          _didIteratorError54 = true;
-          _iteratorError54 = err;
+          _didIteratorError56 = true;
+          _iteratorError56 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion54 && _iterator54.return) {
-              _iterator54.return();
+            if (!_iteratorNormalCompletion56 && _iterator56.return) {
+              _iterator56.return();
             }
           } finally {
-            if (_didIteratorError54) {
-              throw _iteratorError54;
+            if (_didIteratorError56) {
+              throw _iteratorError56;
             }
           }
         }
@@ -40731,7 +40876,7 @@ var SyncManager = function () {
   }, {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback, alternateUUIDs) {
-      var _this45 = this;
+      var _this46 = this;
 
       // use a copy, as alternating uuid will affect array
       var originalItems = this.modelManager.allItems.filter(function (item) {
@@ -40739,33 +40884,33 @@ var SyncManager = function () {
       }).slice();
 
       var block = function block() {
-        var allItems = _this45.modelManager.allItems;
-        var _iteratorNormalCompletion55 = true;
-        var _didIteratorError55 = false;
-        var _iteratorError55 = undefined;
+        var allItems = _this46.modelManager.allItems;
+        var _iteratorNormalCompletion57 = true;
+        var _didIteratorError57 = false;
+        var _iteratorError57 = undefined;
 
         try {
-          for (var _iterator55 = allItems[Symbol.iterator](), _step55; !(_iteratorNormalCompletion55 = (_step55 = _iterator55.next()).done); _iteratorNormalCompletion55 = true) {
-            var item = _step55.value;
+          for (var _iterator57 = allItems[Symbol.iterator](), _step57; !(_iteratorNormalCompletion57 = (_step57 = _iterator57.next()).done); _iteratorNormalCompletion57 = true) {
+            var item = _step57.value;
 
             item.setDirty(true);
           }
         } catch (err) {
-          _didIteratorError55 = true;
-          _iteratorError55 = err;
+          _didIteratorError57 = true;
+          _iteratorError57 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion55 && _iterator55.return) {
-              _iterator55.return();
+            if (!_iteratorNormalCompletion57 && _iterator57.return) {
+              _iterator57.return();
             }
           } finally {
-            if (_didIteratorError55) {
-              throw _iteratorError55;
+            if (_didIteratorError57) {
+              throw _iteratorError57;
             }
           }
         }
 
-        _this45.writeItemsToLocalStorage(allItems, false, callback);
+        _this46.writeItemsToLocalStorage(allItems, false, callback);
       };
 
       if (alternateUUIDs) {
@@ -40788,7 +40933,7 @@ var SyncManager = function () {
           // but for some reason retained their data (This happens in Firefox when using private mode).
           // In this case, we should pass false so that both copies are kept. However, it's difficult to
           // detect when the app has entered this state. We will just use true to remove original items for now.
-          _this45.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
+          _this46.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
         };
 
         alternateNextItem();
@@ -40809,27 +40954,27 @@ var SyncManager = function () {
         allCallbacks.push(currentCallback);
       }
       if (allCallbacks.length) {
-        var _iteratorNormalCompletion56 = true;
-        var _didIteratorError56 = false;
-        var _iteratorError56 = undefined;
+        var _iteratorNormalCompletion58 = true;
+        var _didIteratorError58 = false;
+        var _iteratorError58 = undefined;
 
         try {
-          for (var _iterator56 = allCallbacks[Symbol.iterator](), _step56; !(_iteratorNormalCompletion56 = (_step56 = _iterator56.next()).done); _iteratorNormalCompletion56 = true) {
-            var eachCallback = _step56.value;
+          for (var _iterator58 = allCallbacks[Symbol.iterator](), _step58; !(_iteratorNormalCompletion58 = (_step58 = _iterator58.next()).done); _iteratorNormalCompletion58 = true) {
+            var eachCallback = _step58.value;
 
             eachCallback(response);
           }
         } catch (err) {
-          _didIteratorError56 = true;
-          _iteratorError56 = err;
+          _didIteratorError58 = true;
+          _iteratorError58 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion56 && _iterator56.return) {
-              _iterator56.return();
+            if (!_iteratorNormalCompletion58 && _iterator58.return) {
+              _iterator58.return();
             }
           } finally {
-            if (_didIteratorError56) {
-              throw _iteratorError56;
+            if (_didIteratorError58) {
+              throw _iteratorError58;
             }
           }
         }
@@ -41086,7 +41231,7 @@ var SyncManager = function () {
   }, {
     key: 'handleUnsavedItemsResponse',
     value: function handleUnsavedItemsResponse(unsaved) {
-      var _this46 = this;
+      var _this47 = this;
 
       if (unsaved.length == 0) {
         return;
@@ -41098,14 +41243,14 @@ var SyncManager = function () {
       var handleNext = function handleNext() {
         if (i >= unsaved.length) {
           // Handled all items
-          _this46.sync(null, { additionalFields: ["created_at", "updated_at"] });
+          _this47.sync(null, { additionalFields: ["created_at", "updated_at"] });
           return;
         }
 
         var mapping = unsaved[i];
         var itemResponse = mapping.item;
-        EncryptionHelper.decryptMultipleItems([itemResponse], _this46.authManager.keys());
-        var item = _this46.modelManager.findItem(itemResponse.uuid);
+        EncryptionHelper.decryptMultipleItems([itemResponse], _this47.authManager.keys());
+        var item = _this47.modelManager.findItem(itemResponse.uuid);
 
         if (!item) {
           // Could be deleted
@@ -41117,7 +41262,7 @@ var SyncManager = function () {
         if (error.tag === "uuid_conflict") {
           // UUID conflicts can occur if a user attempts to
           // import an old data archive with uuids from the old account into a new account
-          _this46.modelManager.alternateUUIDForItem(item, function () {
+          _this47.modelManager.alternateUUIDForItem(item, function () {
             i++;
             handleNext();
           }, true);
@@ -41127,9 +41272,9 @@ var SyncManager = function () {
           // We want a new uuid for the new item. Note that this won't neccessarily adjust references.
           itemResponse.uuid = null;
 
-          var dup = _this46.modelManager.createDuplicateItem(itemResponse, item);
+          var dup = _this47.modelManager.createDuplicateItem(itemResponse, item);
           if (!itemResponse.deleted && !item.isItemContentEqualWith(dup)) {
-            _this46.modelManager.addItem(dup);
+            _this47.modelManager.addItem(dup);
             dup.conflict_of = item.uuid;
             dup.setDirty(true);
           }
@@ -41219,7 +41364,7 @@ angular.module('app').service('syncManager', SyncManager);
 var ThemeManager = function () {
   ThemeManager.$inject = ['componentManager', 'desktopManager'];
   function ThemeManager(componentManager, desktopManager) {
-    var _this47 = this;
+    var _this48 = this;
 
     _classCallCheck(this, ThemeManager);
 
@@ -41228,18 +41373,18 @@ var ThemeManager = function () {
     desktopManager.registerUpdateObserver(function (component) {
       // Reload theme if active
       if (component.active && component.isTheme()) {
-        _this47.deactivateTheme(component);
+        _this48.deactivateTheme(component);
         setTimeout(function () {
-          _this47.activateTheme(component);
+          _this48.activateTheme(component);
         }, 10);
       }
     });
 
     componentManager.registerHandler({ identifier: "themeManager", areas: ["themes"], activationHandler: function activationHandler(component) {
         if (component.active) {
-          _this47.activateTheme(component);
+          _this48.activateTheme(component);
         } else {
-          _this47.deactivateTheme(component);
+          _this48.deactivateTheme(component);
         }
       } });
   }
@@ -42113,27 +42258,27 @@ var ActionsMenu = function () {
         });
       };
 
-      var _iteratorNormalCompletion57 = true;
-      var _didIteratorError57 = false;
-      var _iteratorError57 = undefined;
+      var _iteratorNormalCompletion59 = true;
+      var _didIteratorError59 = false;
+      var _iteratorError59 = undefined;
 
       try {
-        for (var _iterator57 = $scope.extensions[Symbol.iterator](), _step57; !(_iteratorNormalCompletion57 = (_step57 = _iterator57.next()).done); _iteratorNormalCompletion57 = true) {
-          var ext = _step57.value;
+        for (var _iterator59 = $scope.extensions[Symbol.iterator](), _step59; !(_iteratorNormalCompletion59 = (_step59 = _iterator59.next()).done); _iteratorNormalCompletion59 = true) {
+          var ext = _step59.value;
 
           _loop5(ext);
         }
       } catch (err) {
-        _didIteratorError57 = true;
-        _iteratorError57 = err;
+        _didIteratorError59 = true;
+        _iteratorError59 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion57 && _iterator57.return) {
-            _iterator57.return();
+          if (!_iteratorNormalCompletion59 && _iterator59.return) {
+            _iterator59.return();
           }
         } finally {
-          if (_didIteratorError57) {
-            throw _iteratorError57;
+          if (_didIteratorError59) {
+            throw _iteratorError59;
           }
         }
       }
@@ -42178,7 +42323,7 @@ var ActionsMenu = function () {
       };
 
       $scope.subRowsForAction = function (parentAction, extension) {
-        var _this48 = this;
+        var _this49 = this;
 
         if (!parentAction.subactions) {
           return null;
@@ -42186,7 +42331,7 @@ var ActionsMenu = function () {
         return parentAction.subactions.map(function (subaction) {
           return {
             onClick: function onClick($event) {
-              _this48.executeAction(subaction, extension, parentAction);
+              _this49.executeAction(subaction, extension, parentAction);
               $event.stopPropagation();
             },
             title: subaction.label,
@@ -42264,7 +42409,7 @@ var ComponentView = function () {
   _createClass(ComponentView, [{
     key: 'link',
     value: function link($scope, el, attrs, ctrl) {
-      var _this49 = this;
+      var _this50 = this;
 
       $scope.el = el;
 
@@ -42274,19 +42419,19 @@ var ComponentView = function () {
 
       this.componentManager.registerHandler({ identifier: $scope.identifier, areas: [$scope.component.area], activationHandler: function activationHandler(component) {
           if (component.active) {
-            _this49.timeout(function () {
-              var iframe = _this49.componentManager.iframeForComponent(component);
+            _this50.timeout(function () {
+              var iframe = _this50.componentManager.iframeForComponent(component);
               if (iframe) {
                 iframe.onload = function () {
                   this.componentManager.registerComponentWindow(component, iframe.contentWindow);
-                }.bind(_this49);
+                }.bind(_this50);
               }
             });
           }
         },
         actionHandler: function actionHandler(component, action, data) {
           if (action == "set-size") {
-            _this49.componentManager.handleSetSizeEvent(component, data);
+            _this50.componentManager.handleSetSizeEvent(component, data);
           }
         } });
 
@@ -42321,10 +42466,7 @@ var ComponentView = function () {
 
       $scope.reloadComponent = function () {
         console.log("Reloading component", $scope.component);
-        componentManager.deactivateComponent($scope.component);
-        $timeout(function () {
-          componentManager.activateComponent($scope.component);
-        });
+        componentManager.reloadComponent($scope.component);
       };
 
       $scope.reloadStatus = function () {
@@ -44719,7 +44861,7 @@ angular.module('app').directive('permissionsModal', function () {
     "<strong class='medium'>Archived</strong>\n" +
     "</div>\n" +
     "<div class='tags-string' ng-if='ctrl.shouldShowTags(note)'>\n" +
-    "<div class='faded'>{{note.tagsString()}}</div>\n" +
+    "<div class='faded'>{{note.savedTagsString || note.tagsString()}}</div>\n" +
     "</div>\n" +
     "<div class='name' ng-if='note.title'>\n" +
     "{{note.title}}\n" +

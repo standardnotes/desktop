@@ -121,6 +121,12 @@ class MenuManager {
             click () { shell.openExternal('mailto:hello@standardnotes.org') }
           },
           {
+            label: "Toggle Error Console",
+            click () {
+              window.webContents.toggleDevTools();
+             }
+          },
+          {
             label: 'Open Data Directory',
             click () {
               var userDataPath = app.getPath('userData');
