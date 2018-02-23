@@ -23,7 +23,3 @@ On Linux, download the latest AppImage from the [Releases](https://github.com/st
 The Standard Notes desktop client is also available through a variety of package managers:
 
 * [unofficial] **AUR:** [sn-bin](https://aur.archlinux.org/packages/sn-bin/), currently maintained by [JoshuaRLi](https://github.com/JoshuaRLi)
-
-## License
-
-Licensed under the GPLv3: http://www.gnu.org/licenses/gpl-3.0.html
