@@ -249,10 +249,10 @@ a.disabled {
   margin-left: 3px;
 }
 
-.icon.ion-locked {
+#footer-lock-icon {
   margin-left: 5px;
-  border-left: 1px solid gray;
   padding-left: 8px;
+  border-left: 1px solid gray;
 }
 
 .tags {
@@ -288,6 +288,10 @@ a.disabled {
 .tags .infinite-scroll {
   overflow-x: hidden;
   height: inherit;
+  overflow-y: hidden;
+}
+.tags .infinite-scroll:hover {
+  overflow-y: scroll;
 }
 .tags .tag {
   min-height: 30px;
@@ -427,6 +431,10 @@ a.disabled {
 #notes-column .infinite-scroll, .notes .infinite-scroll {
   overflow-x: hidden;
   height: inherit;
+  overflow-y: hidden;
+}
+#notes-column .infinite-scroll:hover, .notes .infinite-scroll:hover {
+  overflow-y: scroll;
 }
 #notes-column .note, .notes .note {
   width: 100%;
@@ -482,6 +490,10 @@ a.disabled {
   flex-direction: column;
   overflow-y: hidden;
   background-color: white;
+}
+
+.locked {
+  opacity: 0.8;
 }
 
 #editor-title-bar {

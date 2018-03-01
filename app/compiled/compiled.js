@@ -34151,6 +34151,12 @@ if (!Array.prototype.includes) {
     this.changesMade();
   };
 
+  this.toggleLockNote = function () {
+    this.note.setAppDataItem("locked", !this.note.locked);
+    this.note.setDirty(true);
+    this.changesMade();
+  };
+
   this.toggleArchiveNote = function () {
     this.note.setAppDataItem("archived", !this.note.archived);
     this.note.setDirty(true);
@@ -35818,6 +35824,11 @@ var Item = function () {
     key: 'archived',
     get: function get() {
       return this.getAppDataItem("archived");
+    }
+  }, {
+    key: 'locked',
+    get: function get() {
+      return this.getAppDataItem("locked");
     }
   }], [{
     key: 'sortItemsByDate',
@@ -37851,7 +37862,7 @@ var ComponentManager = function () {
         }
       }
       // Don't allow component to overwrite these properties.
-      var privateProperties = ["appData", "autoupdateDisabled", "permissions", "active"];
+      var privateProperties = ["autoupdateDisabled", "permissions", "active"];
       if (options) {
         if (options.includeUrls) {
           privateProperties = privateProperties.concat(["url", "hosted_url", "local_url"]);
@@ -38141,7 +38152,7 @@ var ComponentManager = function () {
           item.setDomainDataItem(component.url || component.uuid, responseItem.clientData, ClientDataDomain);
         }
         _this30.modelManager.addItem(item);
-        _this30.modelManager.resolveReferencesForItem(item);
+        _this30.modelManager.resolveReferencesForItem(item, true);
         item.setDirty(true);
         _this30.syncManager.sync("handleCreateItemMessage");
         _this30.replyToMessage(component, message, { item: _this30.jsonForItem(item, component) });
@@ -38711,26 +38722,29 @@ var ComponentManager = function () {
   }, {
     key: 'handleSetSizeEvent',
     value: function handleSetSizeEvent(component, data) {
+
       var setSize = function setSize(element, size) {
         var widthString = typeof size.width === 'string' ? size.width : data.width + 'px';
         var heightString = typeof size.height === 'string' ? size.height : data.height + 'px';
-        element.setAttribute("style", 'width:' + widthString + '; height:' + heightString + '; ');
+        element.setAttribute("style", 'width:' + widthString + '; height:' + heightString + ';');
       };
 
-      if (data.type === "content") {
+      if (component.area == "rooms" || component.area == "modal") {
+        var selector = component.area == "rooms" ? "inner" : "outer";
+        var content = document.getElementById('component-content-' + selector + '-' + component.uuid);
+        if (content) {
+          setSize(content, data);
+        }
+      } else {
         var iframe = this.iframeForComponent(component);
         var width = data.width;
         var height = data.height;
         iframe.width = width;
         iframe.height = height;
 
-        setSize(iframe, data);
-      } else {
-        var container = document.getElementById("component-" + component.uuid);
-        if (container) {
-          // in the case of Modals, sometimes they may be "active" because they were so in another session,
-          // but no longer actually visible. So check to make sure the container exists
-          setSize(container, data);
+        var content = document.getElementById('component-iframe-' + component.uuid);
+        if (content) {
+          setSize(content, data);
         }
       }
     }
@@ -39791,6 +39805,8 @@ var ModelManager = function () {
   }, {
     key: 'resolveReferencesForItem',
     value: function resolveReferencesForItem(item) {
+      var markReferencesDirty = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
 
       var contentObject = item.contentObject;
 
@@ -39814,6 +39830,10 @@ var ModelManager = function () {
           if (referencedItem) {
             item.addItemAsRelationship(referencedItem);
             referencedItem.addItemAsRelationship(item);
+
+            if (markReferencesDirty) {
+              referencedItem.setDirty(true);
+            }
           } else {
             // console.log("Unable to find reference:", reference.uuid, "for item:", item);
           }
@@ -40052,10 +40072,12 @@ var NativeExtManager = function () {
     this.syncManager = syncManager;
     this.singletonManager = singletonManager;
 
-    this.extensionsIdentifier = "org.standardnotes.extensions-manager";
+    this.extensionsManagerIdentifier = "org.standardnotes.extensions-manager";
+    this.batchManagerIdentifier = "org.standardnotes.batch-manager";
     this.systemExtensions = [];
 
     this.resolveExtensionsManager();
+    this.resolveBatchManager();
   }
 
   _createClass(NativeExtManager, [{
@@ -40068,7 +40090,7 @@ var NativeExtManager = function () {
     value: function resolveExtensionsManager() {
       var _this41 = this;
 
-      this.singletonManager.registerSingleton({ content_type: "SN|Component", package_info: { identifier: this.extensionsIdentifier } }, function (resolvedSingleton) {
+      this.singletonManager.registerSingleton({ content_type: "SN|Component", package_info: { identifier: this.extensionsManagerIdentifier } }, function (resolvedSingleton) {
         // Resolved Singleton
         _this41.systemExtensions.push(resolvedSingleton.uuid);
 
@@ -40100,7 +40122,7 @@ var NativeExtManager = function () {
 
         var packageInfo = {
           name: "Extensions",
-          identifier: _this41.extensionsIdentifier
+          identifier: _this41.extensionsManagerIdentifier
         };
 
         var item = {
@@ -40133,6 +40155,76 @@ var NativeExtManager = function () {
         valueCallback(component);
       });
     }
+  }, {
+    key: 'resolveBatchManager',
+    value: function resolveBatchManager() {
+      var _this42 = this;
+
+      this.singletonManager.registerSingleton({ content_type: "SN|Component", package_info: { identifier: this.batchManagerIdentifier } }, function (resolvedSingleton) {
+        // Resolved Singleton
+        _this42.systemExtensions.push(resolvedSingleton.uuid);
+
+        var needsSync = false;
+        if (isDesktopApplication()) {
+          if (!resolvedSingleton.local_url) {
+            resolvedSingleton.local_url = window._batch_manager_location;
+            needsSync = true;
+          }
+        } else {
+          if (!resolvedSingleton.hosted_url) {
+            resolvedSingleton.hosted_url = window._batch_manager_location;
+            needsSync = true;
+          }
+        }
+
+        if (needsSync) {
+          resolvedSingleton.setDirty(true);
+          _this42.syncManager.sync("resolveExtensionsManager");
+        }
+      }, function (valueCallback) {
+        // Safe to create. Create and return object.
+        var url = window._batch_manager_location;
+        console.log("Installing Batch Manager from URL", url);
+        if (!url) {
+          console.error("window._batch_manager_location must be set.");
+          return;
+        }
+
+        var packageInfo = {
+          name: "Batch Manager",
+          identifier: _this42.batchManagerIdentifier
+        };
+
+        var item = {
+          content_type: "SN|Component",
+          content: {
+            name: packageInfo.name,
+            area: "modal",
+            package_info: packageInfo,
+            permissions: [{
+              name: "stream-items",
+              content_types: ["Note", "Tag", "SN|Component", "SN|Theme", "SF|Extension", "Extension", "SF|MFA", "SN|Editor"]
+            }]
+          }
+        };
+
+        if (isDesktopApplication()) {
+          item.content.local_url = window._batch_manager_location;
+        } else {
+          item.content.hosted_url = window._batch_manager_location;
+        }
+
+        var component = _this42.modelManager.createItem(item);
+        _this42.modelManager.addItem(component);
+
+        component.setDirty(true);
+        _this42.syncManager.sync("resolveBatchManager createNew");
+
+        _this42.systemExtensions.push(component.uuid);
+
+        valueCallback(component);
+      });
+    }
   }]);
 
   return NativeExtManager;
@@ -40146,7 +40238,7 @@ angular.module('app').service('nativeExtManager', NativeExtManager);
   }];
 
   function PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
-    var _this42 = this;
+    var _this43 = this;
 
     this._hasPasscode = storageManager.getItem("offlineParams", StorageManager.Fixed) != null;
     this._locked = this._hasPasscode;
@@ -40198,11 +40290,11 @@ angular.module('app').service('nativeExtManager', NativeExtManager);
         // After it's cleared, it's safe to write to it
         storageManager.setItem("offlineParams", JSON.stringify(defaultParams), StorageManager.Fixed);
         callback(true);
-      }.bind(_this42));
+      }.bind(_this43));
     };
 
     this.changePasscode = function (newPasscode, callback) {
-      _this42.setPasscode(newPasscode, callback);
+      _this43.setPasscode(newPasscode, callback);
     };
 
     this.clearPasscode = function () {
@@ -40237,7 +40329,7 @@ angular.module('app').service('nativeExtManager', NativeExtManager);
 var SingletonManager = function () {
   SingletonManager.$inject = ['$rootScope', 'modelManager'];
   function SingletonManager($rootScope, modelManager) {
-    var _this43 = this;
+    var _this44 = this;
 
     _classCallCheck(this, SingletonManager);
 
@@ -40246,7 +40338,7 @@ var SingletonManager = function () {
     this.singletonHandlers = [];
 
     $rootScope.$on("initial-data-loaded", function (event, data) {
-      _this43.resolveSingletons(modelManager.allItems, null, true);
+      _this44.resolveSingletons(modelManager.allItems, null, true);
     });
 
     $rootScope.$on("sync:completed", function (event, data) {
@@ -40259,7 +40351,7 @@ var SingletonManager = function () {
       // the whole purpose of this thing.
 
       // Updated solution: resolveSingletons will now evaluate both of these arrays separately.
-      _this43.resolveSingletons(data.retrievedItems, data.savedItems);
+      _this44.resolveSingletons(data.retrievedItems, data.savedItems);
     });
   }
 
@@ -40280,7 +40372,7 @@ var SingletonManager = function () {
   }, {
     key: 'resolveSingletons',
     value: function resolveSingletons(retrievedItems, savedItems, initialLoad) {
-      var _this44 = this;
+      var _this45 = this;
 
       retrievedItems = retrievedItems || [];
       savedItems = savedItems || [];
@@ -40288,12 +40380,12 @@ var SingletonManager = function () {
       var _loop4 = function _loop4(singletonHandler) {
         predicate = singletonHandler.predicate;
 
-        var retrievedSingletonItems = _this44.filterItemsWithPredicate(retrievedItems, predicate);
+        var retrievedSingletonItems = _this45.filterItemsWithPredicate(retrievedItems, predicate);
 
         // We only want to consider saved items count to see if it's more than 0, and do nothing else with it.
         // This way we know there was some action and things need to be resolved. The saved items will come up
         // in filterItemsWithPredicate(this.modelManager.allItems) and be deleted anyway
-        var savedSingletonItemsCount = _this44.filterItemsWithPredicate(savedItems, predicate).length;
+        var savedSingletonItemsCount = _this45.filterItemsWithPredicate(savedItems, predicate).length;
 
         if (retrievedSingletonItems.length > 0 || savedSingletonItemsCount > 0) {
           /*
@@ -40302,7 +40394,7 @@ var SingletonManager = function () {
             However, as stated in the header comment, retrievedItems take precendence over existing items,
             even if they have a lower updated_at value
           */
-          allExtantItemsMatchingPredicate = _this44.filterItemsWithPredicate(_this44.modelManager.allItems, predicate);
+          allExtantItemsMatchingPredicate = _this45.filterItemsWithPredicate(_this45.modelManager.allItems, predicate);
 
           /*
             If there are more than 1 matches, delete everything not in `retrievedSingletonItems`,
@@ -40371,7 +40463,7 @@ var SingletonManager = function () {
               for (var _iterator54 = toDelete[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
                 d = _step54.value;
 
-                _this44.modelManager.setItemToBeDeleted(d);
+                _this45.modelManager.setItemToBeDeleted(d);
               }
             } catch (err) {
               _didIteratorError54 = true;
@@ -40388,7 +40480,7 @@ var SingletonManager = function () {
               }
             }
 
-            _this44.$rootScope.sync("resolveSingletons");
+            _this45.$rootScope.sync("resolveSingletons");
 
             // Send remaining item to callback
             singletonHandler.singleton = winningItem;
@@ -40451,10 +40543,10 @@ var SingletonManager = function () {
   }, {
     key: 'filterItemsWithPredicate',
     value: function filterItemsWithPredicate(items, predicate) {
-      var _this45 = this;
+      var _this46 = this;
 
       return items.filter(function (candidate) {
-        return _this45.itemSatisfiesPredicate(candidate, predicate);
+        return _this46.itemSatisfiesPredicate(candidate, predicate);
       });
     }
   }, {
@@ -40876,7 +40968,7 @@ var SyncManager = function () {
   }, {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback, alternateUUIDs) {
-      var _this46 = this;
+      var _this47 = this;
 
       // use a copy, as alternating uuid will affect array
       var originalItems = this.modelManager.allItems.filter(function (item) {
@@ -40884,7 +40976,7 @@ var SyncManager = function () {
       }).slice();
 
       var block = function block() {
-        var allItems = _this46.modelManager.allItems;
+        var allItems = _this47.modelManager.allItems;
         var _iteratorNormalCompletion57 = true;
         var _didIteratorError57 = false;
         var _iteratorError57 = undefined;
@@ -40910,7 +41002,7 @@ var SyncManager = function () {
           }
         }
 
-        _this46.writeItemsToLocalStorage(allItems, false, callback);
+        _this47.writeItemsToLocalStorage(allItems, false, callback);
       };
 
       if (alternateUUIDs) {
@@ -40933,7 +41025,7 @@ var SyncManager = function () {
           // but for some reason retained their data (This happens in Firefox when using private mode).
           // In this case, we should pass false so that both copies are kept. However, it's difficult to
           // detect when the app has entered this state. We will just use true to remove original items for now.
-          _this46.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
+          _this47.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
         };
 
         alternateNextItem();
@@ -41231,7 +41323,7 @@ var SyncManager = function () {
   }, {
     key: 'handleUnsavedItemsResponse',
     value: function handleUnsavedItemsResponse(unsaved) {
-      var _this47 = this;
+      var _this48 = this;
 
       if (unsaved.length == 0) {
         return;
@@ -41243,14 +41335,14 @@ var SyncManager = function () {
       var handleNext = function handleNext() {
         if (i >= unsaved.length) {
           // Handled all items
-          _this47.sync(null, { additionalFields: ["created_at", "updated_at"] });
+          _this48.sync(null, { additionalFields: ["created_at", "updated_at"] });
           return;
         }
 
         var mapping = unsaved[i];
         var itemResponse = mapping.item;
-        EncryptionHelper.decryptMultipleItems([itemResponse], _this47.authManager.keys());
-        var item = _this47.modelManager.findItem(itemResponse.uuid);
+        EncryptionHelper.decryptMultipleItems([itemResponse], _this48.authManager.keys());
+        var item = _this48.modelManager.findItem(itemResponse.uuid);
 
         if (!item) {
           // Could be deleted
@@ -41262,7 +41354,7 @@ var SyncManager = function () {
         if (error.tag === "uuid_conflict") {
           // UUID conflicts can occur if a user attempts to
           // import an old data archive with uuids from the old account into a new account
-          _this47.modelManager.alternateUUIDForItem(item, function () {
+          _this48.modelManager.alternateUUIDForItem(item, function () {
             i++;
             handleNext();
           }, true);
@@ -41272,9 +41364,9 @@ var SyncManager = function () {
           // We want a new uuid for the new item. Note that this won't neccessarily adjust references.
           itemResponse.uuid = null;
 
-          var dup = _this47.modelManager.createDuplicateItem(itemResponse, item);
+          var dup = _this48.modelManager.createDuplicateItem(itemResponse, item);
           if (!itemResponse.deleted && !item.isItemContentEqualWith(dup)) {
-            _this47.modelManager.addItem(dup);
+            _this48.modelManager.addItem(dup);
             dup.conflict_of = item.uuid;
             dup.setDirty(true);
           }
@@ -41364,7 +41456,7 @@ angular.module('app').service('syncManager', SyncManager);
 var ThemeManager = function () {
   ThemeManager.$inject = ['componentManager', 'desktopManager'];
   function ThemeManager(componentManager, desktopManager) {
-    var _this48 = this;
+    var _this49 = this;
 
     _classCallCheck(this, ThemeManager);
 
@@ -41373,18 +41465,18 @@ var ThemeManager = function () {
     desktopManager.registerUpdateObserver(function (component) {
       // Reload theme if active
       if (component.active && component.isTheme()) {
-        _this48.deactivateTheme(component);
+        _this49.deactivateTheme(component);
         setTimeout(function () {
-          _this48.activateTheme(component);
+          _this49.activateTheme(component);
         }, 10);
       }
     });
 
     componentManager.registerHandler({ identifier: "themeManager", areas: ["themes"], activationHandler: function activationHandler(component) {
         if (component.active) {
-          _this48.activateTheme(component);
+          _this49.activateTheme(component);
         } else {
-          _this48.deactivateTheme(component);
+          _this49.deactivateTheme(component);
         }
       } });
   }
@@ -42323,7 +42415,7 @@ var ActionsMenu = function () {
       };
 
       $scope.subRowsForAction = function (parentAction, extension) {
-        var _this49 = this;
+        var _this50 = this;
 
         if (!parentAction.subactions) {
           return null;
@@ -42331,7 +42423,7 @@ var ActionsMenu = function () {
         return parentAction.subactions.map(function (subaction) {
           return {
             onClick: function onClick($event) {
-              _this49.executeAction(subaction, extension, parentAction);
+              _this50.executeAction(subaction, extension, parentAction);
               $event.stopPropagation();
             },
             title: subaction.label,
@@ -42409,7 +42501,7 @@ var ComponentView = function () {
   _createClass(ComponentView, [{
     key: 'link',
     value: function link($scope, el, attrs, ctrl) {
-      var _this50 = this;
+      var _this51 = this;
 
       $scope.el = el;
 
@@ -42419,19 +42511,19 @@ var ComponentView = function () {
 
       this.componentManager.registerHandler({ identifier: $scope.identifier, areas: [$scope.component.area], activationHandler: function activationHandler(component) {
           if (component.active) {
-            _this50.timeout(function () {
-              var iframe = _this50.componentManager.iframeForComponent(component);
+            _this51.timeout(function () {
+              var iframe = _this51.componentManager.iframeForComponent(component);
               if (iframe) {
                 iframe.onload = function () {
                   this.componentManager.registerComponentWindow(component, iframe.contentWindow);
-                }.bind(_this50);
+                }.bind(_this51);
               }
             });
           }
         },
         actionHandler: function actionHandler(component, action, data) {
           if (action == "set-size") {
-            _this50.componentManager.handleSetSizeEvent(component, data);
+            _this51.componentManager.handleSetSizeEvent(component, data);
           }
         } });
 
@@ -43328,9 +43420,9 @@ angular.module('app').directive('permissionsModal', function () {
 
   $templateCache.put('directives/component-modal.html',
     "<div class='background' ng-click='dismiss()'></div>\n" +
-    "<div class='content'>\n" +
+    "<div class='content' ng-attr-id='component-content-outer-{{component.uuid}}'>\n" +
     "<div class='sn-component'>\n" +
-    "<div class='panel' ng-attr-id='component-{{component.uuid}}'>\n" +
+    "<div class='panel' ng-attr-id='component-content-inner-{{component.uuid}}'>\n" +
     "<div class='header'>\n" +
     "<h1 class='title'>\n" +
     "{{component.name}}\n" +
@@ -43428,7 +43520,7 @@ angular.module('app').directive('permissionsModal', function () {
     "</div>\n" +
     "</div>\n" +
     "</div>\n" +
-    "<iframe data-component-id='{{component.uuid}}' frameBorder='0' ng-attr-id='component-{{component.uuid}}' ng-if='component &amp;&amp; componentValid' ng-src='{{getUrl() | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-modals allow-forms'>\n" +
+    "<iframe data-component-id='{{component.uuid}}' frameBorder='0' ng-attr-id='component-iframe-{{component.uuid}}' ng-if='component &amp;&amp; componentValid' ng-src='{{getUrl() | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-modals allow-forms'>\n" +
     "Loading\n" +
     "</iframe>\n"
   );
@@ -43728,16 +43820,28 @@ angular.module('app').directive('permissionsModal', function () {
 
   $templateCache.put('editor.html',
     "<div class='section editor' id='editor-column'>\n" +
-    "<div class='section-title-bar' id='editor-title-bar' ng-show='ctrl.note &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
+    "<div class='sn-component'>\n" +
+    "<div class='app-bar no-edges' ng-if='ctrl.note.locked' ng-init='ctrl.lockText = &#39;Note Locked&#39;' ng-mouseleave='ctrl.lockText = &#39;Note Locked&#39;' ng-mouseover='ctrl.lockText = &#39;Unlock&#39;'>\n" +
+    "<div class='left'>\n" +
+    "<div class='item' ng-click='ctrl.toggleLockNote()'>\n" +
+    "<div class='label warning'>\n" +
+    "<i class='icon ion-locked'></i>\n" +
+    "{{ctrl.lockText}}\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "<div class='section-title-bar' id='editor-title-bar' ng-class='{&#39;locked&#39; : ctrl.note.locked }' ng-show='ctrl.note &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
     "<div class='title'>\n" +
-    "<input class='input' id='note-title-editor' ng-blur='ctrl.onNameBlur()' ng-change='ctrl.nameChanged()' ng-focus='ctrl.onNameFocus()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTitle($event)' ng-model='ctrl.note.title' select-on-click='true'>\n" +
+    "<input class='input' id='note-title-editor' ng-blur='ctrl.onNameBlur()' ng-change='ctrl.nameChanged()' ng-disabled='ctrl.note.locked' ng-focus='ctrl.onNameFocus()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTitle($event)' ng-model='ctrl.note.title' select-on-click='true'>\n" +
     "</div>\n" +
     "<div id='save-status' ng-bind-html='ctrl.noteStatus' ng-class='{&#39;red bold&#39;: ctrl.saveError, &#39;warning bold&#39;: ctrl.syncTakingTooLong}'></div>\n" +
     "<div class='editor-tags'>\n" +
     "<div id='note-tags-component-container' ng-if='ctrl.tagsComponent'>\n" +
-    "<component-view class='component-view' component='ctrl.tagsComponent'></component-view>\n" +
+    "<component-view class='component-view' component='ctrl.tagsComponent' ng-class='{&#39;locked&#39; : ctrl.note.locked }' ng-style='ctrl.note.locked &amp;&amp; {&#39;pointer-events&#39; : &#39;none&#39;}'></component-view>\n" +
     "</div>\n" +
-    "<input class='tags-input' ng-blur='ctrl.updateTagsFromTagsString($event, ctrl.tagsString)' ng-if='!(ctrl.tagsComponent &amp;&amp; ctrl.tagsComponent.active)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur();' ng-model='ctrl.tagsString' placeholder='#tags' spellcheck='false' type='text'>\n" +
+    "<input class='tags-input' ng-blur='ctrl.updateTagsFromTagsString($event, ctrl.tagsString)' ng-disabled='ctrl.note.locked' ng-if='!(ctrl.tagsComponent &amp;&amp; ctrl.tagsComponent.active)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur();' ng-model='ctrl.tagsString' placeholder='#tags' spellcheck='false' type='text'>\n" +
     "</div>\n" +
     "</div>\n" +
     "<div class='sn-component' ng-if='ctrl.note'>\n" +
@@ -43752,6 +43856,7 @@ angular.module('app').directive('permissionsModal', function () {
     "</div>\n" +
     "<menu-row ng-click='ctrl.selectedMenuItem($event, true); ctrl.togglePin()' title='ctrl.note.pinned ? &#39;Unpin&#39; : &#39;Pin&#39;'></menu-row>\n" +
     "<menu-row ng-click='ctrl.selectedMenuItem($event, true); ctrl.toggleArchiveNote()' title='ctrl.note.archived ? &#39;Unarchive&#39; : &#39;Archive&#39;'></menu-row>\n" +
+    "<menu-row ng-click='ctrl.selectedMenuItem($event, true); ctrl.toggleLockNote()' title='ctrl.note.locked ? &#39;Unlock&#39; : &#39;Lock&#39;'></menu-row>\n" +
     "<menu-row ng-click='ctrl.selectedMenuItem($event); ctrl.deleteNote()' title='&#39;Delete&#39;'></menu-row>\n" +
     "</div>\n" +
     "<div class='section' ng-if='!ctrl.selectedEditor'>\n" +
@@ -43776,8 +43881,8 @@ angular.module('app').directive('permissionsModal', function () {
     "</div>\n" +
     "<div class='editor-content' id='editor-content' ng-if='ctrl.noteReady &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
     "<panel-resizer class='left' control='ctrl.resizeControl' hoverable='true' min-width='300' on-resize-finish='ctrl.onPanelResizeFinish' panel-id='&#39;editor-content&#39;' property='&#39;left&#39;'></panel-resizer>\n" +
-    "<component-view class='component-view' component='ctrl.selectedEditor' ng-if='ctrl.selectedEditor'></component-view>\n" +
-    "<textarea class='editable' dir='auto' id='note-text-editor' ng-attr-spellcheck='{{ctrl.spellcheck}}' ng-change='ctrl.contentChanged()' ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.selectedEditor' ng-model='ctrl.note.text' ng-trim='false'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
+    "<component-view class='component-view' component='ctrl.selectedEditor' ng-class='{&#39;locked&#39; : ctrl.note.locked }' ng-if='ctrl.selectedEditor' ng-style='ctrl.note.locked &amp;&amp; {&#39;pointer-events&#39; : &#39;none&#39;}'></component-view>\n" +
+    "<textarea class='editable' dir='auto' id='note-text-editor' ng-attr-spellcheck='{{ctrl.spellcheck}}' ng-change='ctrl.contentChanged()' ng-click='ctrl.clickedTextArea()' ng-disabled='ctrl.note.locked' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.selectedEditor' ng-model='ctrl.note.text' ng-trim='false'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
     "<panel-resizer control='ctrl.resizeControl' hoverable='true' min-width='300' on-resize-finish='ctrl.onPanelResizeFinish' panel-id='&#39;editor-content&#39;' property='&#39;right&#39;'></panel-resizer>\n" +
     "</div>\n" +
     "<section class='section' ng-if='ctrl.note.errorDecrypting'>\n" +
@@ -43838,7 +43943,7 @@ angular.module('app').directive('permissionsModal', function () {
     "</div>\n" +
     "<div class='item' id='lock-item' ng-if='ctrl.hasPasscode()'>\n" +
     "<div class='label'>\n" +
-    "<i class='icon ion-locked' ng-click='ctrl.lockApp()' ng-if='ctrl.hasPasscode()'></i>\n" +
+    "<i class='icon ion-locked' id='footer-lock-icon' ng-click='ctrl.lockApp()' ng-if='ctrl.hasPasscode()'></i>\n" +
     "</div>\n" +
     "</div>\n" +
     "</div>\n" +
@@ -44895,6 +45000,7 @@ angular.module('app').directive('permissionsModal', function () {
     "</div>\n" +
     "</div>\n" +
     "<div class='scrollable'>\n" +
+    "<div class='infinite-scroll'>\n" +
     "<div class='tag' ng-class='{&#39;selected&#39; : ctrl.selectedTag == ctrl.allTag}' ng-click='ctrl.selectTag(ctrl.allTag)' ng-if='ctrl.allTag'>\n" +
     "<div class='info'>\n" +
     "<input class='title' ng-disabled='true' ng-model='ctrl.allTag.title'>\n" +
@@ -44917,6 +45023,7 @@ angular.module('app').directive('permissionsModal', function () {
     "<div class='tag faded' ng-class='{&#39;selected&#39; : ctrl.selectedTag == ctrl.archiveTag}' ng-click='ctrl.selectTag(ctrl.archiveTag)' ng-if='ctrl.archiveTag'>\n" +
     "<div class='info'>\n" +
     "<input class='title' ng-disabled='true' ng-model='ctrl.archiveTag.title'>\n" +
+    "</div>\n" +
     "</div>\n" +
     "</div>\n" +
     "</div>\n" +
