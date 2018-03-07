@@ -1,5 +1,12 @@
 This application makes use of the core JS/CSS/HTML code found in the [web repo](https://github.com/standardnotes/web). For issues related to the actual app experience, please post issues in the web repo.
 
+## Running Locally
+
+```
+npm install
+npm run start
+```
+
 ## Building
 
 Build for all platforms:
@@ -24,4 +31,3 @@ The Standard Notes desktop client is also available through a variety of package
 
 * [unofficial] **AUR:** [sn-bin](https://aur.archlinux.org/packages/sn-bin/), binary package, currently maintained by [JoshuaRLi](https://github.com/JoshuaRLi)
 * [unofficial] **AUR:** [standardnotes-desktop](https://aur.archlinux.org/packages/standardnotes-desktop/), non binary package - built from source, currently maintained by [danielhass](https://github.com/danielhass)
-
