@@ -34670,6 +34670,22 @@ if (!Array.prototype.includes) {
 
   storageManager.initialize(passcodeManager.hasPasscode(), authManager.isEphemeralSession());
 
+  try {
+    $scope.platform = function () {
+      var platform = navigator.platform.toLowerCase();
+      var trimmed = "";
+      if (platform.indexOf("mac") !== -1) {
+        trimmed = "mac";
+      } else if (platform.indexOf("win") !== -1) {
+        trimmed = "windows";
+      }if (platform.indexOf("linux") !== -1) {
+        trimmed = "linux";
+      }
+
+      return trimmed + (isDesktopApplication() ? "-desktop" : "-web");
+    }();
+  } catch (e) {}
+
   $scope.onUpdateAvailable = function (version) {
     $rootScope.$broadcast('new-update-available', version);
   };
@@ -44862,7 +44878,7 @@ angular.module('app').directive('permissionsModal', function () {
 
 
   $templateCache.put('home.html',
-    "<div class='main-ui-view'>\n" +
+    "<div class='main-ui-view' ng-class='platform'>\n" +
     "<lock-screen ng-if='needsUnlock' on-success='onSuccessfulUnlock'></lock-screen>\n" +
     "<div class='app' id='app' ng-if='!needsUnlock'>\n" +
     "<tags-section add-new='tagsAddNew' all-tag='allTag' archive-tag='archiveTag' remove-tag='removeTag' save='tagsSave' selection-made='tagsSelectionMade' tags='tags' will-select='tagsWillMakeSelection'></tags-section>\n" +
