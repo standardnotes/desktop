@@ -35106,7 +35106,7 @@ angular.module('app').directive('lockScreen', function () {
       });
     }
   };
-}).controller('NotesCtrl', ['authManager', '$timeout', '$rootScope', 'modelManager', 'storageManager', function (authManager, $timeout, $rootScope, modelManager, storageManager) {
+}).controller('NotesCtrl', ['authManager', '$timeout', '$rootScope', 'modelManager', 'storageManager', 'desktopManager', function (authManager, $timeout, $rootScope, modelManager, storageManager, desktopManager) {
   var _this13 = this;
 
   this.panelController = {};
@@ -35309,6 +35309,18 @@ angular.module('app').directive('lockScreen', function () {
 
     return note.visible;
   }.bind(this);
+
+  this.onFilterEnter = function () {
+    // For Desktop, performing a search right away causes input to lose focus.
+    // We wait until user explicity hits enter before highlighting desktop search results.
+    desktopManager.searchText(this.noteFilter.text);
+  };
+
+  this.clearFilterText = function () {
+    this.noteFilter.text = '';
+    this.onFilterEnter();
+    this.filterTextChanged();
+  };
 
   this.filterTextChanged = function () {
     $timeout(function () {
@@ -39023,9 +39035,25 @@ var DesktopManager = function () {
       return observer;
     }
   }, {
+    key: 'searchText',
+    value: function searchText(text) {
+      if (!this.isDesktop) {
+        return;
+      }
+      this.searchHandler(text);
+    }
+  }, {
     key: 'deregisterUpdateObserver',
     value: function deregisterUpdateObserver(observer) {
       _.pull(this.updateObservers, observer);
+    }
+
+    // Pass null to cancel search
+
+  }, {
+    key: 'desktop_setSearchHandler',
+    value: function desktop_setSearchHandler(handler) {
+      this.searchHandler = handler;
     }
   }, {
     key: 'desktop_onComponentInstallationComplete',
@@ -44925,8 +44953,8 @@ angular.module('app').directive('permissionsModal', function () {
     "<div class='add-button' id='notes-add-button' ng-click='ctrl.createNewNote()'>+</div>\n" +
     "</div>\n" +
     "<div class='filter-section'>\n" +
-    "<input class='filter-bar mousetrap' id='search-bar' lowercase='true' ng-change='ctrl.filterTextChanged()' ng-model='ctrl.noteFilter.text' placeholder='Search' select-on-click='true'>\n" +
-    "<div id='search-clear-button' ng-click='ctrl.noteFilter.text = &#39;&#39;; ctrl.filterTextChanged()' ng-if='ctrl.noteFilter.text'>✕</div>\n" +
+    "<input class='filter-bar mousetrap' id='search-bar' lowercase='true' ng-blur='ctrl.onFilterEnter()' ng-change='ctrl.filterTextChanged()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.onFilterEnter();' ng-model='ctrl.noteFilter.text' placeholder='Search' select-on-click='true'>\n" +
+    "<div id='search-clear-button' ng-click='ctrl.clearFilterText();' ng-if='ctrl.noteFilter.text'>✕</div>\n" +
     "</input>\n" +
     "</div>\n" +
     "</div>\n" +

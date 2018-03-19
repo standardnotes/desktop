@@ -95,6 +95,10 @@
           ipcRenderer.send("install-component", componentData);
         });
 
+        desktopManager.desktop_setSearchHandler((text) => {
+          ipcRenderer.send("search-text", text);
+        });
+
 
         /* Handled by ArchiveManager */
         desktopManager.desktop_setInitialDataLoadHandler(() => {

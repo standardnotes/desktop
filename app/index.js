@@ -9,6 +9,7 @@ const shell = require('electron').shell;
 import menuManager from './javascripts/main/menuManager.js'
 import archiveManager from './javascripts/main/archiveManager.js';
 import packageManager from './javascripts/main/packageManager.js';
+import searchManager from './javascripts/main/searchManager.js';
 
 ipcMain.on('initial-data-loaded', () => {
   archiveManager.beginBackups();
@@ -69,6 +70,7 @@ function createWindow () {
     titleBarStyle: 'hiddenInset'
   })
 
+  searchManager.setWindow(win);
   archiveManager.setWindow(win);
   packageManager.setWindow(win);
 
