@@ -24,6 +24,9 @@
     "linux": {
       "category": "Office",
       "icon": "build/icon/",
+      "desktop": {
+        "StartupWMClass": "standard notes"
+      },
       "target": [
         "AppImage",
         "deb"
