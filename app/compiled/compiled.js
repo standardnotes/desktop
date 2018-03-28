@@ -35264,6 +35264,8 @@ angular.module('app').directive('lockScreen', function () {
   };
 
   this.selectNote = function (note) {
+    var viaClick = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
     if (!note) {
       return;
     }
@@ -35271,6 +35273,10 @@ angular.module('app').directive('lockScreen', function () {
     note.conflict_of = null; // clear conflict
     this.selectionMade()(note);
     this.selectedIndex = this.visibleNotes().indexOf(note);
+
+    if (viaClick && this.noteFilter.text) {
+      desktopManager.searchText(this.noteFilter.text);
+    }
   };
 
   this.createNewNote = function () {
@@ -44999,7 +45005,7 @@ angular.module('app').directive('permissionsModal', function () {
     "</div>\n" +
     "<div class='scrollable'>\n" +
     "<div can-load='true' class='infinite-scroll' id='notes-scrollable' infinite-scroll='ctrl.paginate()' threshold='200'>\n" +
-    "<div class='note' ng-class='{&#39;selected&#39; : ctrl.selectedNote == note}' ng-click='ctrl.selectNote(note)' ng-repeat='note in (ctrl.sortedNotes = (ctrl.tag.notes | filter: ctrl.filterNotes | sortBy: ctrl.sortBy | limitTo:ctrl.notesToDisplay)) track by note.uuid'>\n" +
+    "<div class='note' ng-class='{&#39;selected&#39; : ctrl.selectedNote == note}' ng-click='ctrl.selectNote(note, true)' ng-repeat='note in (ctrl.sortedNotes = (ctrl.tag.notes | filter: ctrl.filterNotes | sortBy: ctrl.sortBy | limitTo:ctrl.notesToDisplay)) track by note.uuid'>\n" +
     "<strong class='red medium' ng-if='note.conflict_of'>Conflicted copy</strong>\n" +
     "<strong class='red medium' ng-if='note.errorDecrypting'>Error decrypting</strong>\n" +
     "<div class='pinned tinted' ng-class='{&#39;tinted-selected&#39; : ctrl.selectedNote == note}' ng-if='note.pinned'>\n" +
