@@ -132,7 +132,11 @@ function createWindow () {
 
 function checkForUpdates() {
   if(!isDev) {
-    autoUpdater.checkForUpdates();
+    try {
+      autoUpdater.checkForUpdates();
+    } catch (e) {
+      console.log("Exception caught while checking for updates:", e);
+    }
   }
 }
 
