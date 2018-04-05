@@ -34510,8 +34510,31 @@ if (!Array.prototype.includes) {
       });
     }
   };
-}]).controller('FooterCtrl', ['$rootScope', 'authManager', 'modelManager', '$timeout', 'dbManager', 'syncManager', 'storageManager', 'passcodeManager', 'componentManager', 'singletonManager', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager, componentManager, singletonManager) {
+}]).controller('FooterCtrl', ['$rootScope', 'authManager', 'modelManager', '$timeout', 'dbManager', 'syncManager', 'storageManager', 'passcodeManager', 'componentManager', 'singletonManager', 'nativeExtManager', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager, componentManager, singletonManager, nativeExtManager) {
   var _this11 = this;
+
+  $rootScope.$on("reload-ext-data", function () {
+    if (_this11.reloadInProgress) {
+      return;
+    }
+    _this11.reloadInProgress = true;
+
+    // A reload occurs when the extensions manager window is opened. We can close it after a delay
+    var extWindow = _this11.rooms.find(function (room) {
+      return room.package_info.identifier == nativeExtManager.extensionsManagerIdentifier;
+    });
+    if (!extWindow) {
+      return;
+    }
+
+    _this11.selectRoom(extWindow);
+
+    $timeout(function () {
+      _this11.selectRoom(extWindow);
+      _this11.reloadInProgress = false;
+      $rootScope.$broadcast("ext-reload-complete");
+    }, 2000);
+  });
 
   this.getUser = function () {
     return authManager.user;
@@ -35175,13 +35198,18 @@ angular.module('app').directive('lockScreen', function () {
   var MinNoteHeight = 51.0; // This is the height of a note cell with nothing but the title, which *is* a display option
   this.DefaultNotesToDisplayValue = document.documentElement.clientHeight / MinNoteHeight || 20;
 
-  this.notesToDisplay = this.DefaultNotesToDisplayValue;
   this.paginate = function () {
     this.notesToDisplay += this.DefaultNotesToDisplayValue;
   };
 
+  this.resetPagination = function () {
+    this.notesToDisplay = this.DefaultNotesToDisplayValue;
+  };
+
+  this.resetPagination();
+
   this.panelTitle = function () {
-    if (this.noteFilter.text.length) {
+    if (this.isFiltering()) {
       return this.tag.notes.filter(function (i) {
         return i.visible;
       }).length + ' search results';
@@ -35224,7 +35252,7 @@ angular.module('app').directive('lockScreen', function () {
       scrollable.scrollLeft = 0;
     }
 
-    this.notesToDisplay = this.DefaultNotesToDisplayValue;
+    this.resetPagination();
 
     this.showMenu = false;
 
@@ -35274,9 +35302,13 @@ angular.module('app').directive('lockScreen', function () {
     this.selectionMade()(note);
     this.selectedIndex = this.visibleNotes().indexOf(note);
 
-    if (viaClick && this.noteFilter.text) {
+    if (viaClick && this.isFiltering()) {
       desktopManager.searchText(this.noteFilter.text);
     }
+  };
+
+  this.isFiltering = function () {
+    return this.noteFilter.text && this.noteFilter.text.length > 0;
   };
 
   this.createNewNote = function () {
@@ -35326,6 +35358,9 @@ angular.module('app').directive('lockScreen', function () {
     this.noteFilter.text = '';
     this.onFilterEnter();
     this.filterTextChanged();
+
+    // Reset loaded notes
+    this.resetPagination();
   };
 
   this.filterTextChanged = function () {
@@ -42534,7 +42569,7 @@ angular.module('app').directive('componentModal', function () {
 });
 ;
 var ComponentView = function () {
-  function ComponentView(componentManager, desktopManager, $timeout) {
+  function ComponentView($rootScope, componentManager, desktopManager, $timeout) {
     _classCallCheck(this, ComponentView);
 
     this.restrict = "E";
@@ -42544,6 +42579,7 @@ var ComponentView = function () {
       manualDealloc: "="
     };
 
+    this.$rootScope = $rootScope;
     this.componentManager = componentManager;
     this.desktopManager = desktopManager;
     this.timeout = $timeout;
@@ -42590,7 +42626,7 @@ var ComponentView = function () {
     }
   }, {
     key: 'controller',
-    value: ['$scope', '$timeout', 'componentManager', 'desktopManager', function controller($scope, $timeout, componentManager, desktopManager) {
+    value: ['$scope', '$rootScope', '$timeout', 'componentManager', 'desktopManager', function controller($scope, $rootScope, $timeout, componentManager, desktopManager) {
       'ngInject';
 
       this.componentValueChanging = function (component, prevComponent) {
@@ -42606,6 +42642,10 @@ var ComponentView = function () {
           $scope.reloadStatus();
         }
       };
+
+      $scope.$on("ext-reload-complete", function () {
+        $scope.reloadStatus();
+      });
 
       $scope.reloadComponent = function () {
         console.log("Reloading component", $scope.component);
@@ -42635,6 +42675,12 @@ var ComponentView = function () {
           }
         }
 
+        if (expired && !$scope.triedReloading) {
+          // Try reloading, handled by footer, which will open Extensions window momentarily to pull in latest data
+          $scope.triedReloading = true;
+          $rootScope.$broadcast("reload-ext-data");
+        }
+
         $timeout(function () {
           $scope.reloading = false;
         }, 500);
@@ -42661,8 +42707,8 @@ var ComponentView = function () {
   return ComponentView;
 }();
 
-angular.module('app').directive('componentView', ['componentManager', 'desktopManager', '$timeout', function (componentManager, desktopManager, $timeout) {
-  return new ComponentView(componentManager, desktopManager, $timeout);
+angular.module('app').directive('componentView', ['$rootScope', 'componentManager', 'desktopManager', '$timeout', function ($rootScope, componentManager, desktopManager, $timeout) {
+  return new ComponentView($rootScope, componentManager, desktopManager, $timeout);
 }]);
 ;
 var EditorMenu = function () {
@@ -43497,9 +43543,25 @@ angular.module('app').directive('permissionsModal', function () {
     "<p>\n" +
     "Please visit\n" +
     "<a href='https://dashboard.standardnotes.org' target='_blank'>dashboard.standardnotes.org</a>\n" +
-    "to renew your subscription, then open the \"Extensions\" menu via the bottom menu of the app to refresh your account data.\n" +
-    "Afterwards, press the button below to attempt to reload this component.\n" +
+    "to renew your subscription.\n" +
     "</p>\n" +
+    "<div class='panel-row'>\n" +
+    "<div class='panel-column'>\n" +
+    "<p>\n" +
+    "<strong>To reload your account status:</strong>\n" +
+    "</p>\n" +
+    "<p>\n" +
+    "<ol>\n" +
+    "<li>\n" +
+    "Open the\n" +
+    "<strong>Extensions</strong>\n" +
+    "menu located in the lower left corner of the app to refresh your account status.\n" +
+    "</li>\n" +
+    "<li>Click Reload below.</li>\n" +
+    "</ol>\n" +
+    "</p>\n" +
+    "</div>\n" +
+    "</div>\n" +
     "<div class='panel-row'>\n" +
     "<div class='button info' ng-click='reloadStatus()' ng-if='!reloading'>\n" +
     "<div class='label'>Reload</div>\n" +
