@@ -34588,7 +34588,7 @@ if (!Array.prototype.includes) {
       } else {
         _this12.syncUpdated();
       }
-    }, null, "refreshData");
+    }, { force: true }, "refreshData");
   };
 
   this.syncUpdated = function () {
@@ -36389,6 +36389,13 @@ var Note = function (_Item5) {
     _classCallCheck(this, Note);
 
     var _this21 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
+
+    if (!_this21.text) {
+      // Some external editors can't handle a null value for text.
+      // Notes created on mobile with no text have a null value for it,
+      // so we'll just set a default here.
+      _this21.text = "";
+    }
 
     if (!_this21.tags) {
       _this21.tags = [];
@@ -41197,7 +41204,9 @@ var SyncManager = function () {
 
       var allDirtyItems = this.modelManager.getDirtyItems();
 
-      if (this.syncStatus.syncOpInProgress) {
+      // When a user hits the physical refresh button, we want to force refresh, in case
+      // the sync engine is stuck in some inProgress loop.
+      if (this.syncStatus.syncOpInProgress && !options.force) {
         this.repeatOnCompletion = true;
         if (callback) {
           this.queuedCallbacks.push(callback);
