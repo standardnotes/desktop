@@ -41373,7 +41373,7 @@ var SyncManager = function () {
 
           // The number of changed items that constitute a major change
           // This is used by the desktop app to create backups
-          var majorDataChangeThreshold = 5;
+          var majorDataChangeThreshold = 10;
           if (this.allRetreivedItems.length >= majorDataChangeThreshold || saved.length >= majorDataChangeThreshold || unsaved.length >= majorDataChangeThreshold) {
             this.$rootScope.$broadcast("major-data-change");
           }
