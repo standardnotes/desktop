@@ -43491,6 +43491,7 @@ angular.module('app').directive('permissionsModal', function () {
     "<div class='label'>Import From Backup</div>\n" +
     "</label>\n" +
     "</div>\n" +
+    "<span ng-if='isDesktopApplication()'>Backups are automatically created on desktop and can be managed via the \"Backups\" top-level menu.</span>\n" +
     "<div ng-if='importData.requestPassword'>\n" +
     "<form class='panel-form stretch' ng-submit='submitImportPassword()'>\n" +
     "<p>Enter the account password associated with the import file.</p>\n" +
