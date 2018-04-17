@@ -33520,7 +33520,10 @@ var EncryptionHelper = function () {
         for (var _iterator = items[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
           var item = _step.value;
 
-          if (item.deleted == true) {
+
+          // 4/15/18: Adding item.content == null clause. We still want to decrypt deleted items incase
+          // they were marked as dirty but not yet synced. Not yet sure why we had this requirement.
+          if (item.deleted == true && item.content == null) {
             continue;
           }
 
@@ -38799,7 +38802,6 @@ var ComponentManager = function () {
   }, {
     key: 'handleSetSizeEvent',
     value: function handleSetSizeEvent(component, data) {
-
       var setSize = function setSize(element, size) {
         var widthString = typeof size.width === 'string' ? size.width : data.width + 'px';
         var heightString = typeof size.height === 'string' ? size.height : data.height + 'px';
@@ -39664,19 +39666,27 @@ var ModelManager = function () {
 
           var contentType = json_obj["content_type"] || item && item.content_type;
           var unknownContentType = !_.includes(this.acceptableContentTypes, contentType);
+          var isDirtyItemPendingDelete = false;
           if (json_obj.deleted == true || unknownContentType) {
-            if (item && !unknownContentType) {
-              modelsToNotifyObserversOf.push(item);
-              this.removeItemLocally(item);
+            if (json_obj.deleted && json_obj.dirty) {
+              // Item was marked as deleted but not yet synced
+              // We need to create this item as usual, but just not add it to indivudal arrays
+              // i.e add to this.items but not this.notes (so that it can be retrieved with getDirtyItems)
+              isDirtyItemPendingDelete = true;
+            } else {
+              if (item && !unknownContentType) {
+                modelsToNotifyObserversOf.push(item);
+                this.removeItemLocally(item);
+              }
+              continue;
             }
-            continue;
           }
 
           if (!item) {
             item = this.createItem(json_obj, true);
           }
 
-          this.addItem(item);
+          this.addItem(item, isDirtyItemPendingDelete);
 
           modelsToNotifyObserversOf.push(item);
           models.push(item);
@@ -39858,22 +39868,35 @@ var ModelManager = function () {
       return dup;
     }
   }, {
+    key: 'addItem',
+    value: function addItem(item) {
+      var globalOnly = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+      this.addItems([item], globalOnly);
+    }
+  }, {
     key: 'addItems',
     value: function addItems(items) {
+      var globalOnly = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
       items.forEach(function (item) {
-        if (item.content_type == "Tag") {
-          if (!_.find(this.tags, { uuid: item.uuid })) {
-            this.tags.splice(_.sortedIndexBy(this.tags, item, function (item) {
-              if (item.title) return item.title.toLowerCase();else return '';
-            }), 0, item);
-          }
-        } else if (item.content_type == "Note") {
-          if (!_.find(this.notes, { uuid: item.uuid })) {
-            this.notes.unshift(item);
-          }
-        } else if (item.content_type == "Extension") {
-          if (!_.find(this._extensions, { uuid: item.uuid })) {
-            this._extensions.unshift(item);
+        // In some cases, you just want to add the item to this.items, and not to the individual arrays
+        // This applies when you want to keep an item syncable, but not display it via the individual arrays
+        if (!globalOnly) {
+          if (item.content_type == "Tag") {
+            if (!_.find(this.tags, { uuid: item.uuid })) {
+              this.tags.splice(_.sortedIndexBy(this.tags, item, function (item) {
+                if (item.title) return item.title.toLowerCase();else return '';
+              }), 0, item);
+            }
+          } else if (item.content_type == "Note") {
+            if (!_.find(this.notes, { uuid: item.uuid })) {
+              this.notes.unshift(item);
+            }
+          } else if (item.content_type == "Extension") {
+            if (!_.find(this._extensions, { uuid: item.uuid })) {
+              this._extensions.unshift(item);
+            }
           }
         }
 
@@ -39889,11 +39912,6 @@ var ModelManager = function () {
       this.tags.splice(_.sortedIndexBy(this.tags, tag, function (tag) {
         if (tag.title) return tag.title.toLowerCase();else return '';
       }), 0, tag);
-    }
-  }, {
-    key: 'addItem',
-    value: function addItem(item) {
-      this.addItems([item]);
     }
   }, {
     key: 'resolveReferencesForItem',
@@ -40014,6 +40032,17 @@ var ModelManager = function () {
       if (!item.dummy) {
         item.setDirty(true);
       }
+
+      // remove from relevant array, but don't remove from all items.
+      // This way, it's removed from the display, but still synced via get dirty items
+      if (item.content_type == "Tag") {
+        _.pull(this.tags, item);
+      } else if (item.content_type == "Note") {
+        _.pull(this.notes, item);
+      } else if (item.content_type == "Extension") {
+        _.pull(this._extensions, item);
+      }
+
       item.removeAndDirtyAllRelationships();
     }
 
@@ -42638,14 +42667,25 @@ var ComponentView = function () {
     value: ['$scope', '$rootScope', '$timeout', 'componentManager', 'desktopManager', function controller($scope, $rootScope, $timeout, componentManager, desktopManager) {
       'ngInject';
 
+      /*
+      General note regarding activation/deactivation of components:
+      We pass `true` to componentManager.ac/detivateComponent for the `dontSync` parameter.
+      The activation we do in here is not global, but just local, so we don't need to sync the state.
+      For example, if we activate an editor, we just need to do that for display purposes, but dont
+      need to perform a sync to propagate that .active flag.
+      */
+
       this.componentValueChanging = function (component, prevComponent) {
+        //
+        // See comment above about passing true to componentManager.ac/detivateComponent
+        //
         if (prevComponent && component !== prevComponent) {
           // Deactive old component
-          componentManager.deactivateComponent(prevComponent);
+          componentManager.deactivateComponent(prevComponent, true);
         }
 
         if (component) {
-          componentManager.activateComponent(component);
+          componentManager.activateComponent(component, true);
           console.log("Loading", $scope.component.name, $scope.getUrl(), component.valid_until);
 
           $scope.reloadStatus();
@@ -42680,7 +42720,7 @@ var ComponentView = function () {
 
         if ($scope.componentValid !== previouslyValid) {
           if ($scope.componentValid) {
-            componentManager.activateComponent(component);
+            componentManager.activateComponent(component, true);
           }
         }
 
@@ -42705,7 +42745,7 @@ var ComponentView = function () {
         // console.log("Deregistering handler", $scope.identifier, $scope.component.name);
         componentManager.deregisterHandler($scope.identifier);
         if ($scope.component && !$scope.manualDealloc) {
-          componentManager.deactivateComponent($scope.component);
+          componentManager.deactivateComponent($scope.component, true);
         }
 
         desktopManager.deregisterUpdateObserver($scope.updateObserver);

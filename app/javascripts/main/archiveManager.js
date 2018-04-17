@@ -16,6 +16,7 @@ class ArchiveManager {
     });
 
     this.backupsLocation = store.get("backupsLocation");
+    this.backupsDisabled = store.get("backupsDisabled");
   }
 
   defaultLocation() {
@@ -41,6 +42,11 @@ class ArchiveManager {
   }
 
   writeDataToFile(data) {
+    if(this.backupsDisabled) {
+      console.log("Backups are disabled; returning.")
+      return;
+    }
+
     // We want to create this directory, even if data is empty,
     // just so it's there and the user can open it.
     let dir = this.getBackupsLocation();
@@ -56,7 +62,7 @@ class ArchiveManager {
 
     var find = ':';
     var re = new RegExp(find, 'g');
-    let name = (new Date()).toString().replace(re, "-") + ".txt";
+    let name = (new Date()).toISOString().replace(re, "-") + ".txt";
 
     let filePath = path.join(dir, name);
 
@@ -64,7 +70,7 @@ class ArchiveManager {
         if(err){
           console.log("An error ocurred saving backup file: " + err.message)
         } else {
-          console.log("Data backup succesfully saved.");
+          console.log("Data backup succesfully saved: ", name);
         }
     });
   }
@@ -89,7 +95,20 @@ class ArchiveManager {
   }
 
   performBackup() {
+    if(this.backupsDisabled) {
+      console.log("Backups are disabled; returning.")
+      return;
+    }
     this.window.webContents.send("download-backup");
+  }
+
+  isBackupsEnabled() {
+    return !this.backupsDisabled;
+  }
+
+  toggleBackupsStatus() {
+    this.backupsDisabled = !this.backupsDisabled;
+    store.set("backupsDisabled", this.backupsDisabled);
   }
 
 }

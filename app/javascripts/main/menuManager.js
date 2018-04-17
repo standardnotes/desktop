@@ -5,6 +5,11 @@ const path = require('path')
 class MenuManager {
 
   loadMenu(window, archiveManager) {
+
+    const reload = () => {
+      this.loadMenu(window, archiveManager);
+    }
+
     const template = [
       {
         label: 'Edit',
@@ -91,6 +96,13 @@ class MenuManager {
       {
         label: 'Backups',
         submenu: [
+          {label: (archiveManager.isBackupsEnabled() ? 'Disable' : 'Enable') + ' Automatic Backups', click() {
+            archiveManager.toggleBackupsStatus();
+            reload();
+          }},
+          {
+            type: 'separator'
+          },
           {label: 'Change Backups Location', click() {
             archiveManager.changeBackupsLocation();
           }},

@@ -548,7 +548,7 @@ a.disabled {
 }
 #editor-title-bar .editor-tags #note-tags-component-container {
   height: 50px;
-  overflow: scroll;
+  overflow: auto;
 }
 #editor-title-bar .editor-tags #note-tags-component-container iframe {
   height: 50px;
@@ -689,7 +689,6 @@ a.disabled {
 .component-view {
   flex-grow: 1;
   display: flex;
-  overflow: auto;
 }
 .component-view .sn-component {
   min-width: 100%;
