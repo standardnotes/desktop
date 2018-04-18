@@ -35620,6 +35620,18 @@ var Item = function () {
     value: function setDirty(dirty) {
       this.dirty = dirty;
 
+      // Allows the syncManager to check if an item has been marked dirty after a sync has been started
+      // This prevents it from clearing it as a dirty item after sync completion, if someone else has marked it dirty
+      // again after an ongoing sync.
+      if (!this.dirtyCount) {
+        this.dirtyCount = 0;
+      }
+      if (dirty) {
+        this.dirtyCount++;
+      } else {
+        this.dirtyCount = 0;
+      }
+
       if (dirty) {
         this.notifyObserversOfChange();
       }
@@ -41300,6 +41312,33 @@ var SyncManager = function () {
         return itemParams.paramsForSync();
       }.bind(this));
 
+      var _iteratorNormalCompletion59 = true;
+      var _didIteratorError59 = false;
+      var _iteratorError59 = undefined;
+
+      try {
+        for (var _iterator59 = subItems[Symbol.iterator](), _step59; !(_iteratorNormalCompletion59 = (_step59 = _iterator59.next()).done); _iteratorNormalCompletion59 = true) {
+          var item = _step59.value;
+
+          // Reset dirty counter to 0, since we're about to sync it.
+          // This means anyone marking the item as dirty after this will cause it so sync again and not be cleared on sync completion.
+          item.dirtyCount = 0;
+        }
+      } catch (err) {
+        _didIteratorError59 = true;
+        _iteratorError59 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion59 && _iterator59.return) {
+            _iterator59.return();
+          }
+        } finally {
+          if (_didIteratorError59) {
+            throw _iteratorError59;
+          }
+        }
+      }
+
       params.sync_token = this.syncToken;
       params.cursor_token = this.cursorToken;
 
@@ -41308,7 +41347,37 @@ var SyncManager = function () {
       }.bind(this);
 
       var onSyncSuccess = function (response) {
-        this.modelManager.clearDirtyItems(subItems);
+        // Check to make sure any subItem hasn't been marked as dirty again while a sync was ongoing
+        var itemsToClearAsDirty = [];
+        var _iteratorNormalCompletion60 = true;
+        var _didIteratorError60 = false;
+        var _iteratorError60 = undefined;
+
+        try {
+          for (var _iterator60 = subItems[Symbol.iterator](), _step60; !(_iteratorNormalCompletion60 = (_step60 = _iterator60.next()).done); _iteratorNormalCompletion60 = true) {
+            var item = _step60.value;
+
+            if (item.dirtyCount == 0) {
+              // Safe to clear as dirty
+              itemsToClearAsDirty.push(item);
+            }
+          }
+        } catch (err) {
+          _didIteratorError60 = true;
+          _iteratorError60 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion60 && _iterator60.return) {
+              _iterator60.return();
+            }
+          } finally {
+            if (_didIteratorError60) {
+              throw _iteratorError60;
+            }
+          }
+        }
+
+        this.modelManager.clearDirtyItems(itemsToClearAsDirty);
         this.syncStatus.error = null;
 
         this.$rootScope.$broadcast("sync:updated_token", this.syncToken);
@@ -42474,27 +42543,27 @@ var ActionsMenu = function () {
         });
       };
 
-      var _iteratorNormalCompletion59 = true;
-      var _didIteratorError59 = false;
-      var _iteratorError59 = undefined;
+      var _iteratorNormalCompletion61 = true;
+      var _didIteratorError61 = false;
+      var _iteratorError61 = undefined;
 
       try {
-        for (var _iterator59 = $scope.extensions[Symbol.iterator](), _step59; !(_iteratorNormalCompletion59 = (_step59 = _iterator59.next()).done); _iteratorNormalCompletion59 = true) {
-          var ext = _step59.value;
+        for (var _iterator61 = $scope.extensions[Symbol.iterator](), _step61; !(_iteratorNormalCompletion61 = (_step61 = _iterator61.next()).done); _iteratorNormalCompletion61 = true) {
+          var ext = _step61.value;
 
           _loop5(ext);
         }
       } catch (err) {
-        _didIteratorError59 = true;
-        _iteratorError59 = err;
+        _didIteratorError61 = true;
+        _iteratorError61 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion59 && _iterator59.return) {
-            _iterator59.return();
+          if (!_iteratorNormalCompletion61 && _iterator61.return) {
+            _iterator61.return();
           }
         } finally {
-          if (_didIteratorError59) {
-            throw _iteratorError59;
+          if (_didIteratorError61) {
+            throw _iteratorError61;
           }
         }
       }
