@@ -729,6 +729,12 @@ a.disabled {
 #lock-screen .panel .header {
   justify-content: center;
 }
+#lock-screen #passcode-reset {
+  margin-top: 18px;
+  text-align: center;
+  width: 100%;
+  font-size: 13px;
+}
 
 .panel {
   color: black;

@@ -34629,18 +34629,9 @@ if (!Array.prototype.includes) {
   });
 
   componentManager.registerHandler({ identifier: "roomBar", areas: ["rooms", "modal"], activationHandler: function activationHandler(component) {
-      if (component.active) {
-        // Show room, if it was not activated manually (in the event of event from componentManager)
-        if (component.area == "rooms" && !component.showRoom) {
-          component.showRoom = true;
-        }
-        $timeout(function () {
-          var lastSize = component.getLastSize();
-          if (lastSize) {
-            componentManager.handleSetSizeEvent(component, lastSize);
-          }
-        });
-      }
+      // RIP: There used to be code here that checked if component.active was true, and if so, displayed the component.
+      // However, we no longer want to persist active state for footer extensions. If you open Extensions on one computer,
+      // it shouldn't open on another computer. Active state should only be persisted for persistent extensions, like Folders.
     }, actionHandler: function actionHandler(component, action, data) {
       if (action == "set-size") {
         component.setLastSize(data);
@@ -35077,7 +35068,7 @@ var LockScreen = function () {
 
   _createClass(LockScreen, [{
     key: 'controller',
-    value: ['$scope', 'passcodeManager', function controller($scope, passcodeManager) {
+    value: ['$scope', 'passcodeManager', 'authManager', 'syncManager', function controller($scope, passcodeManager, authManager, syncManager) {
       'ngInject';
 
       $scope.formData = {};
@@ -35090,6 +35081,21 @@ var LockScreen = function () {
           }
 
           $scope.onSuccess()();
+        });
+      };
+
+      $scope.forgotPasscode = function () {
+        $scope.formData.showRecovery = true;
+      };
+
+      $scope.beginDeleteData = function () {
+        if (!confirm("Are you sure you want to clear all local data?")) {
+          return;
+        }
+
+        authManager.signOut();
+        syncManager.destroyLocalData(function () {
+          window.location.reload();
         });
       };
     }]
@@ -40454,10 +40460,16 @@ angular.module('app').service('nativeExtManager', NativeExtManager);
 ; /*
    The SingletonManager allows controllers to register an item as a singleton, which means only one instance of that model
    should exist, both on the server and on the client. When the SingletonManager detects multiple items matching the singleton predicate,
-   the oldest ones will be deleted, leaving the newest ones.
-    We will treat the model most recently arrived from the server as the most recent one. The reason for this is, if you're offline,
-   a singleton can be created, as in the case of UserPreferneces. Then when you sign in, you'll retrieve your actual user preferences.
+   the oldest ones will be deleted, leaving the newest ones. (See 4/28/18 update. We now choose the earliest created one as the winner.).
+    (This no longer fully applies, See 4/28/18 update.) We will treat the model most recently arrived from the server as the most recent one. The reason for this is,
+   if you're offline, a singleton can be created, as in the case of UserPreferneces. Then when you sign in, you'll retrieve your actual user preferences.
    In that case, even though the offline singleton has a more recent updated_at, the server retreived value is the one we care more about.
+    4/28/18: I'm seeing this issue: if you have the app open in one window, then in another window sign in, and during sign in,
+   click Refresh (or autorefresh occurs) in the original signed in window, then you will happen to receive from the server the newly created
+   Extensions singleton, and it will be mistaken (it just looks like a regular retrieved item, since nothing is in saved) for a fresh, latest copy, and replace the current instance.
+   This has happened to me and many users.
+   A puzzling issue, but what if instead of resolving singletons by choosing the one most recently modified, we choose the one with the earliest create date?
+   This way, we don't care when it was modified, but we always, always choose the item that was created first. This way, we always deal with the same item.
   */
 
 var SingletonManager = function () {
@@ -40523,93 +40535,48 @@ var SingletonManager = function () {
 
         if (retrievedSingletonItems.length > 0 || savedSingletonItemsCount > 0) {
           /*
-            Check local inventory and make sure only 1 similar item exists. If more than 1, delete oldest
+            Check local inventory and make sure only 1 similar item exists. If more than 1, delete newest
             Note that this local inventory will also contain whatever is in retrievedItems.
-            However, as stated in the header comment, retrievedItems take precendence over existing items,
-            even if they have a lower updated_at value
           */
           allExtantItemsMatchingPredicate = _this45.filterItemsWithPredicate(_this45.modelManager.allItems, predicate);
 
           /*
-            If there are more than 1 matches, delete everything not in `retrievedSingletonItems`,
-            then delete all but the latest in `retrievedSingletonItems`
+            Delete all but the earliest created
           */
 
           if (allExtantItemsMatchingPredicate.length >= 2) {
+            var sorted = allExtantItemsMatchingPredicate.sort(function (a, b) {
+              return a.created_at > b.created_at;
+            });
+
+            // The item that will be chosen to be kept
+            var winningItem = sorted[0];
 
             // Items that will be deleted
-            toDelete = [];
-            // The item that will be chosen to be kept
-
-            if (retrievedSingletonItems.length > 0) {
-              var _iteratorNormalCompletion53 = true;
-              var _didIteratorError53 = false;
-              var _iteratorError53 = undefined;
-
-              try {
-                for (var _iterator53 = allExtantItemsMatchingPredicate[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
-                  var extantItem = _step53.value;
-
-                  if (!retrievedSingletonItems.includes(extantItem)) {
-                    // Delete it
-                    toDelete.push(extantItem);
-                  }
-                }
-
-                // Sort incoming singleton items by most recently updated first, then delete all the rest
-              } catch (err) {
-                _didIteratorError53 = true;
-                _iteratorError53 = err;
-              } finally {
-                try {
-                  if (!_iteratorNormalCompletion53 && _iterator53.return) {
-                    _iterator53.return();
-                  }
-                } finally {
-                  if (_didIteratorError53) {
-                    throw _iteratorError53;
-                  }
-                }
-              }
-
-              sorted = retrievedSingletonItems.sort(function (a, b) {
-                return a.updated_at < b.updated_at;
-              });
-            } else {
-              // We're in here because of savedItems
-              // This can be the case if retrievedSingletonItems/retrievedItems length is 0, but savedSingletonItemsCount is non zero.
-              // In this case, we want to sort by date and delete all but the most recent one
-              sorted = allExtantItemsMatchingPredicate.sort(function (a, b) {
-                return a.updated_at < b.updated_at;
-              });
-            }
-
-            winningItem = sorted[0];
-
             // Delete everything but the first one
-            toDelete = toDelete.concat(sorted.slice(1, sorted.length));
+            var toDelete = sorted.slice(1, sorted.length);
 
-            var _iteratorNormalCompletion54 = true;
-            var _didIteratorError54 = false;
-            var _iteratorError54 = undefined;
+            var _iteratorNormalCompletion53 = true;
+            var _didIteratorError53 = false;
+            var _iteratorError53 = undefined;
 
             try {
-              for (var _iterator54 = toDelete[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
-                d = _step54.value;
+              for (var _iterator53 = toDelete[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
+                d = _step53.value;
 
                 _this45.modelManager.setItemToBeDeleted(d);
               }
             } catch (err) {
-              _didIteratorError54 = true;
-              _iteratorError54 = err;
+              _didIteratorError53 = true;
+              _iteratorError53 = err;
             } finally {
               try {
-                if (!_iteratorNormalCompletion54 && _iterator54.return) {
-                  _iterator54.return();
+                if (!_iteratorNormalCompletion53 && _iterator53.return) {
+                  _iterator53.return();
                 }
               } finally {
-                if (_didIteratorError54) {
-                  throw _iteratorError54;
+                if (_didIteratorError53) {
+                  throw _iteratorError53;
                 }
               }
             }
@@ -40652,8 +40619,6 @@ var SingletonManager = function () {
           var singletonHandler = _step52.value;
           var predicate;
           var allExtantItemsMatchingPredicate;
-          var toDelete;
-          var winningItem, sorted;
           var d;
           var singleton;
 
@@ -40798,7 +40763,10 @@ var StorageManager = function () {
         }
 
         this.itemsStorageMode = mode;
-        this.storage.clear();
+        if (newStorage !== this.storage) {
+          // Only clear if this.storage isn't the same reference as newStorage
+          this.storage.clear();
+        }
         this.storage = newStorage;
 
         if (mode == StorageManager.FixedEncrypted) {
@@ -40894,27 +40862,27 @@ var StorageManager = function () {
       EncryptionHelper.decryptItem(stored, this.encryptedStorageKeys);
       var encryptedStorage = new EncryptedStorage(stored);
 
-      var _iteratorNormalCompletion55 = true;
-      var _didIteratorError55 = false;
-      var _iteratorError55 = undefined;
+      var _iteratorNormalCompletion54 = true;
+      var _didIteratorError54 = false;
+      var _iteratorError54 = undefined;
 
       try {
-        for (var _iterator55 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step55; !(_iteratorNormalCompletion55 = (_step55 = _iterator55.next()).done); _iteratorNormalCompletion55 = true) {
-          var key = _step55.value;
+        for (var _iterator54 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
+          var key = _step54.value;
 
           this.setItem(key, encryptedStorage.storage[key]);
         }
       } catch (err) {
-        _didIteratorError55 = true;
-        _iteratorError55 = err;
+        _didIteratorError54 = true;
+        _iteratorError54 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion55 && _iterator55.return) {
-            _iterator55.return();
+          if (!_iteratorNormalCompletion54 && _iterator54.return) {
+            _iterator54.return();
           }
         } finally {
-          if (_didIteratorError55) {
-            throw _iteratorError55;
+          if (_didIteratorError54) {
+            throw _iteratorError54;
           }
         }
       }
@@ -41055,29 +41023,29 @@ var SyncManager = function () {
     value: function syncOffline(items, callback) {
       this.writeItemsToLocalStorage(items, true, function (responseItems) {
         // delete anything needing to be deleted
-        var _iteratorNormalCompletion56 = true;
-        var _didIteratorError56 = false;
-        var _iteratorError56 = undefined;
+        var _iteratorNormalCompletion55 = true;
+        var _didIteratorError55 = false;
+        var _iteratorError55 = undefined;
 
         try {
-          for (var _iterator56 = items[Symbol.iterator](), _step56; !(_iteratorNormalCompletion56 = (_step56 = _iterator56.next()).done); _iteratorNormalCompletion56 = true) {
-            var item = _step56.value;
+          for (var _iterator55 = items[Symbol.iterator](), _step55; !(_iteratorNormalCompletion55 = (_step55 = _iterator55.next()).done); _iteratorNormalCompletion55 = true) {
+            var item = _step55.value;
 
             if (item.deleted) {
               this.modelManager.removeItemLocally(item);
             }
           }
         } catch (err) {
-          _didIteratorError56 = true;
-          _iteratorError56 = err;
+          _didIteratorError55 = true;
+          _iteratorError55 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion56 && _iterator56.return) {
-              _iterator56.return();
+            if (!_iteratorNormalCompletion55 && _iterator55.return) {
+              _iterator55.return();
             }
           } finally {
-            if (_didIteratorError56) {
-              throw _iteratorError56;
+            if (_didIteratorError55) {
+              throw _iteratorError55;
             }
           }
         }
@@ -41111,27 +41079,27 @@ var SyncManager = function () {
 
       var block = function block() {
         var allItems = _this47.modelManager.allItems;
-        var _iteratorNormalCompletion57 = true;
-        var _didIteratorError57 = false;
-        var _iteratorError57 = undefined;
+        var _iteratorNormalCompletion56 = true;
+        var _didIteratorError56 = false;
+        var _iteratorError56 = undefined;
 
         try {
-          for (var _iterator57 = allItems[Symbol.iterator](), _step57; !(_iteratorNormalCompletion57 = (_step57 = _iterator57.next()).done); _iteratorNormalCompletion57 = true) {
-            var item = _step57.value;
+          for (var _iterator56 = allItems[Symbol.iterator](), _step56; !(_iteratorNormalCompletion56 = (_step56 = _iterator56.next()).done); _iteratorNormalCompletion56 = true) {
+            var item = _step56.value;
 
             item.setDirty(true);
           }
         } catch (err) {
-          _didIteratorError57 = true;
-          _iteratorError57 = err;
+          _didIteratorError56 = true;
+          _iteratorError56 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion57 && _iterator57.return) {
-              _iterator57.return();
+            if (!_iteratorNormalCompletion56 && _iterator56.return) {
+              _iterator56.return();
             }
           } finally {
-            if (_didIteratorError57) {
-              throw _iteratorError57;
+            if (_didIteratorError56) {
+              throw _iteratorError56;
             }
           }
         }
@@ -41180,27 +41148,27 @@ var SyncManager = function () {
         allCallbacks.push(currentCallback);
       }
       if (allCallbacks.length) {
-        var _iteratorNormalCompletion58 = true;
-        var _didIteratorError58 = false;
-        var _iteratorError58 = undefined;
+        var _iteratorNormalCompletion57 = true;
+        var _didIteratorError57 = false;
+        var _iteratorError57 = undefined;
 
         try {
-          for (var _iterator58 = allCallbacks[Symbol.iterator](), _step58; !(_iteratorNormalCompletion58 = (_step58 = _iterator58.next()).done); _iteratorNormalCompletion58 = true) {
-            var eachCallback = _step58.value;
+          for (var _iterator57 = allCallbacks[Symbol.iterator](), _step57; !(_iteratorNormalCompletion57 = (_step57 = _iterator57.next()).done); _iteratorNormalCompletion57 = true) {
+            var eachCallback = _step57.value;
 
             eachCallback(response);
           }
         } catch (err) {
-          _didIteratorError58 = true;
-          _iteratorError58 = err;
+          _didIteratorError57 = true;
+          _iteratorError57 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion58 && _iterator58.return) {
-              _iterator58.return();
+            if (!_iteratorNormalCompletion57 && _iterator57.return) {
+              _iterator57.return();
             }
           } finally {
-            if (_didIteratorError58) {
-              throw _iteratorError58;
+            if (_didIteratorError57) {
+              throw _iteratorError57;
             }
           }
         }
@@ -41312,29 +41280,29 @@ var SyncManager = function () {
         return itemParams.paramsForSync();
       }.bind(this));
 
-      var _iteratorNormalCompletion59 = true;
-      var _didIteratorError59 = false;
-      var _iteratorError59 = undefined;
+      var _iteratorNormalCompletion58 = true;
+      var _didIteratorError58 = false;
+      var _iteratorError58 = undefined;
 
       try {
-        for (var _iterator59 = subItems[Symbol.iterator](), _step59; !(_iteratorNormalCompletion59 = (_step59 = _iterator59.next()).done); _iteratorNormalCompletion59 = true) {
-          var item = _step59.value;
+        for (var _iterator58 = subItems[Symbol.iterator](), _step58; !(_iteratorNormalCompletion58 = (_step58 = _iterator58.next()).done); _iteratorNormalCompletion58 = true) {
+          var item = _step58.value;
 
           // Reset dirty counter to 0, since we're about to sync it.
           // This means anyone marking the item as dirty after this will cause it so sync again and not be cleared on sync completion.
           item.dirtyCount = 0;
         }
       } catch (err) {
-        _didIteratorError59 = true;
-        _iteratorError59 = err;
+        _didIteratorError58 = true;
+        _iteratorError58 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion59 && _iterator59.return) {
-            _iterator59.return();
+          if (!_iteratorNormalCompletion58 && _iterator58.return) {
+            _iterator58.return();
           }
         } finally {
-          if (_didIteratorError59) {
-            throw _iteratorError59;
+          if (_didIteratorError58) {
+            throw _iteratorError58;
           }
         }
       }
@@ -41349,13 +41317,13 @@ var SyncManager = function () {
       var onSyncSuccess = function (response) {
         // Check to make sure any subItem hasn't been marked as dirty again while a sync was ongoing
         var itemsToClearAsDirty = [];
-        var _iteratorNormalCompletion60 = true;
-        var _didIteratorError60 = false;
-        var _iteratorError60 = undefined;
+        var _iteratorNormalCompletion59 = true;
+        var _didIteratorError59 = false;
+        var _iteratorError59 = undefined;
 
         try {
-          for (var _iterator60 = subItems[Symbol.iterator](), _step60; !(_iteratorNormalCompletion60 = (_step60 = _iterator60.next()).done); _iteratorNormalCompletion60 = true) {
-            var item = _step60.value;
+          for (var _iterator59 = subItems[Symbol.iterator](), _step59; !(_iteratorNormalCompletion59 = (_step59 = _iterator59.next()).done); _iteratorNormalCompletion59 = true) {
+            var item = _step59.value;
 
             if (item.dirtyCount == 0) {
               // Safe to clear as dirty
@@ -41363,16 +41331,16 @@ var SyncManager = function () {
             }
           }
         } catch (err) {
-          _didIteratorError60 = true;
-          _iteratorError60 = err;
+          _didIteratorError59 = true;
+          _iteratorError59 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion60 && _iterator60.return) {
-              _iterator60.return();
+            if (!_iteratorNormalCompletion59 && _iterator59.return) {
+              _iterator59.return();
             }
           } finally {
-            if (_didIteratorError60) {
-              throw _iteratorError60;
+            if (_didIteratorError59) {
+              throw _iteratorError59;
             }
           }
         }
@@ -41947,6 +41915,8 @@ var AccountMenu = function () {
       $scope.encryptedBackupsAvailable = function () {
         return authManager.user || passcodeManager.hasPasscode();
       };
+
+      $scope.canAddPasscode = !authManager.isEphemeralSession();
 
       $scope.syncStatus = syncManager.syncStatus;
       $scope.newPasswordData = {};
@@ -42543,27 +42513,27 @@ var ActionsMenu = function () {
         });
       };
 
-      var _iteratorNormalCompletion61 = true;
-      var _didIteratorError61 = false;
-      var _iteratorError61 = undefined;
+      var _iteratorNormalCompletion60 = true;
+      var _didIteratorError60 = false;
+      var _iteratorError60 = undefined;
 
       try {
-        for (var _iterator61 = $scope.extensions[Symbol.iterator](), _step61; !(_iteratorNormalCompletion61 = (_step61 = _iterator61.next()).done); _iteratorNormalCompletion61 = true) {
-          var ext = _step61.value;
+        for (var _iterator60 = $scope.extensions[Symbol.iterator](), _step60; !(_iteratorNormalCompletion60 = (_step60 = _iterator60.next()).done); _iteratorNormalCompletion60 = true) {
+          var ext = _step60.value;
 
           _loop5(ext);
         }
       } catch (err) {
-        _didIteratorError61 = true;
-        _iteratorError61 = err;
+        _didIteratorError60 = true;
+        _iteratorError60 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion61 && _iterator61.return) {
-            _iterator61.return();
+          if (!_iteratorNormalCompletion60 && _iterator60.return) {
+            _iterator60.return();
           }
         } finally {
-          if (_didIteratorError61) {
-            throw _iteratorError61;
+          if (_didIteratorError60) {
+            throw _iteratorError60;
           }
         }
       }
@@ -43505,12 +43475,17 @@ angular.module('app').directive('permissionsModal', function () {
     "<div class='panel-section'>\n" +
     "<h3 class='title panel-row'>Passcode Lock</h3>\n" +
     "<div ng-if='!hasPasscode()'>\n" +
+    "<div ng-if='canAddPasscode'>\n" +
     "<div class='panel-row' ng-if='!formData.showPasscodeForm'>\n" +
     "<div class='button info' ng-click='addPasscodeClicked(); $event.stopPropagation();'>\n" +
     "<div class='label'>Add Passcode</div>\n" +
     "</div>\n" +
     "</div>\n" +
     "<p>Add an app passcode to lock the app and encrypt on-device key storage.</p>\n" +
+    "</div>\n" +
+    "<div ng-if='!canAddPasscode'>\n" +
+    "<p>Adding a passcode is not supported in temporary sessions. Please sign out, then sign back in with the \"Stay signed in\" option checked.</p>\n" +
+    "</div>\n" +
     "</div>\n" +
     "<form ng-if='formData.showPasscodeForm' ng-submit='submitPasscodeForm()'>\n" +
     "<input class='form-control' ng-model='formData.passcode' placeholder='Passcode' should-focus='true' sn-autofocus='true' type='password'>\n" +
@@ -45123,6 +45098,16 @@ angular.module('app').directive('permissionsModal', function () {
     "</div>\n" +
     "</div>\n" +
     "</form>\n" +
+    "<div id='passcode-reset'>\n" +
+    "<a class='default' ng-click='forgotPasscode()' ng-if='!formData.showRecovery'>Forgot Passcode?</a>\n" +
+    "<div ng-if='formData.showRecovery'>\n" +
+    "<p>\n" +
+    "If you forgot your local passcode, your only option is to clear all your local data from this device\n" +
+    "and sign back in to your account.\n" +
+    "</p>\n" +
+    "<a class='danger' ng-click='beginDeleteData()'>Delete Local Data</a>\n" +
+    "</div>\n" +
+    "</div>\n" +
     "</div>\n" +
     "</div>\n" +
     "</div>\n" +
