@@ -4,11 +4,16 @@ const path = require('path')
 
 class MenuManager {
 
-  loadMenu(window, archiveManager) {
+  reload() {
+    this.loadMenu(this.window, this.archiveManager, this.updateManager);
+  }
 
-    const reload = () => {
-      this.loadMenu(window, archiveManager);
-    }
+  loadMenu(window, archiveManager, updateManager) {
+    this.window = window;
+    this.archiveManager = archiveManager;
+    this.updateManager = updateManager;
+
+    let updateData = updateManager.getMetadata();
 
     const template = [
       {
@@ -96,9 +101,9 @@ class MenuManager {
       {
         label: 'Backups',
         submenu: [
-          {label: (archiveManager.isBackupsEnabled() ? 'Disable' : 'Enable') + ' Automatic Backups', click() {
+          {label: (archiveManager.isBackupsEnabled() ? 'Disable' : 'Enable') + ' Automatic Backups', click: () => {
             archiveManager.toggleBackupsStatus();
-            reload();
+            this.reload();
           }},
           {
             type: 'separator'
@@ -113,6 +118,9 @@ class MenuManager {
           }}
         ]
       },
+
+      this.buildUpdateMenu(updateData),
+
       {
         role: 'help',
         submenu: [
@@ -238,8 +246,78 @@ class MenuManager {
       ]
     }
 
-    var menu = Menu.buildFromTemplate(template)
-    Menu.setApplicationMenu(menu)
+    this.menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(this.menu);
+  }
+
+  buildUpdateMenu(updateData) {
+    let updateNeeded = this.updateManager.updateNeeded();
+    var label = updateData.checkingForUpdate ? "Checking for update..." : (updateNeeded ? "(1) Update Available" : 'Updates');
+    var structure = { label: label };
+
+    var submenu = [];
+
+    if(this.updateManager.autoupdateDownloaded()) {
+      submenu.push({
+        label: `Install Pending Update (${this.updateManager.autoupdateDownloadedVersion()})`,
+        click: () => {
+          this.updateManager.installAutoupdateNow();
+        }
+      })
+    }
+
+    submenu.push({
+      label: this.updateManager.autoupdateEnabled() ? "Automatic Updates Enabled (Beta)" : "Automatic Updates Disabled",
+      click: () => {
+        this.updateManager.toggleAutoupdateStatus();
+      }
+    })
+
+    submenu.push({type: 'separator'});
+
+    if(updateData.lastCheck && !updateData.checkinForUpdate) {
+      submenu.push({
+        label: `Last checked ${updateData.lastCheck.toLocaleString()}`,
+        click() {}
+      })
+    }
+
+    if(!updateData.checkinForUpdate) {
+      submenu.push({
+        label: `Check for Update`,
+        click: () => { this.updateManager.checkForUpdate({userTriggered: true}); }
+      })
+    }
+
+    submenu.push({type: 'separator'});
+
+    submenu.push({label: `Your Version: ${updateData.currentVersion}`, click() {
+
+    }})
+
+    let latestVersion = this.updateManager.latestVersion();
+    submenu.push({label: `Latest Version: ${latestVersion ? latestVersion : 'Error Retrieving'}`, click: () => {
+      this.updateManager.openChangelog();
+    }})
+
+    if(updateData.latestDownloaded) {
+      submenu.push({
+        label: "Open Download Location",
+        click: () => {
+          this.updateManager.openDownloadLocation();
+        }
+      })
+    } else if(updateNeeded || updateData.downloadingUpdate) {
+      submenu.push({
+        label: updateData.downloadingUpdate ? "Downloading update..." : "Manually Download Update",
+        click: () => {
+          updateData.downloadingUpdate ? this.updateManager.openDownloadLocation() :  this.updateManager.downloadUpdateFile();
+        }
+      })
+    }
+
+    structure.submenu = submenu;
+    return structure;
   }
 }
 

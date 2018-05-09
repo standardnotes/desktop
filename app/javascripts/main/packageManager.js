@@ -8,8 +8,9 @@ var appPath = app.getPath('userData');
 var AdmZip = require('adm-zip');
 var compareVersions = require('compare-versions');
 
-let ExtensionsFolderName = "Extensions";
+import fileUtils from "./fileUtils";
 
+let ExtensionsFolderName = "Extensions";
 let MappingFileLocation = appPath + `/${ExtensionsFolderName}/mapping.json`;
 
 class PackageManager {
@@ -52,17 +53,17 @@ class PackageManager {
 
     let paths = this.pathsForComponent(component);
 
-    this.downloadFile(downloadUrl, paths.downloadPath, (error) => {
+    fileUtils.downloadFile(downloadUrl, paths.downloadPath, (error) => {
       if(!error) {
         // Delete any existing content, especially in the case of performing an update
-        this.deleteAppRelativeDirectory(paths.relativePath);
+        fileUtils.deleteAppRelativeDirectory(paths.relativePath);
 
         // Extract contents
         this.unzipFile(paths.downloadPath, paths.absolutePath, (err) => {
           if(!err) {
             this.unnestPackageContents(paths.absolutePath, () => {
               // Find out main file
-              this.readJsonFile(paths.absolutePath + "/package.json", (response, error) => {
+              fileUtils.readJSONFile(paths.absolutePath + "/package.json", (response, error) => {
                 var main;
                 if(response) {
                   if(response.sn) { main = response["sn"]["main"]; }
@@ -95,7 +96,7 @@ class PackageManager {
     when they are deleted and do not have any `content`. We only have their uuid to go by.
    */
   updateMappingFile(componentId, componentPath) {
-    this.readJsonFile(MappingFileLocation, (response, error) => {
+    fileUtils.readJSONFile(MappingFileLocation, (response, error) => {
       if(!response) response = {};
 
       var obj = response[componentId] || {};
@@ -166,7 +167,7 @@ class PackageManager {
 
   uninstallComponent(component) {
     console.log("UNINSTALLING COMPONENT", component.uuid);
-    this.readJsonFile(MappingFileLocation, (response, error) => {
+    fileUtils.readJSONFile(MappingFileLocation, (response, error) => {
       if(!response) {
         // No mapping.json means nothing is installed
         return;
@@ -180,7 +181,7 @@ class PackageManager {
 
       let location = mapping["location"];
 
-      this.deleteAppRelativeDirectory(location);
+      fileUtils.deleteAppRelativeDirectory(location);
 
       delete response[component.uuid];
 
@@ -194,72 +195,6 @@ class PackageManager {
   /*
     File/Network Operations
   */
-
-  readJsonFile(path, callback) {
-    fs.readFile(path, 'utf8', function (err, data) {
-      if(err) {
-        console.log("ERROR READING JSON FILE", path);
-        callback(null, err);
-        return;
-      }
-      var obj = JSON.parse(data);
-      callback(obj);
-    });
-  }
-
-  deleteAppRelativeDirectory(relativePath) {
-    console.log("Delete App Relative Directory", relativePath);
-    let deleteDirectory = (dir_path) => {
-      if (fs.existsSync(dir_path)) {
-        fs.readdirSync(dir_path).forEach((entry) => {
-          var entry_path = path.join(dir_path, entry);
-          if (fs.lstatSync(entry_path).isDirectory()) {
-            deleteDirectory(entry_path);
-          } else {
-            fs.unlinkSync(entry_path);
-          }
-        });
-        fs.rmdirSync(dir_path);
-      }
-    }
-
-    deleteDirectory(path.join(appPath, relativePath));
-  }
-
-  ensureDirectoryExists(filePath) {
-    var dirname = path.dirname(filePath);
-    if (fs.existsSync(dirname)) {
-      return true;
-    }
-    this.ensureDirectoryExists(dirname);
-    fs.mkdirSync(dirname);
-  }
-
-  downloadFile(url, filePath, callback) {
-    this.ensureDirectoryExists(filePath);
-
-    // null callback after calliing because multiple '.on' could be called
-
-    request(url)
-      .on('error', function (err) {
-        console.log('File download error', url,  err);
-        callback && callback()
-        callback = null;
-      })
-      .on('response', function(response) {
-        if(response.statusCode !== 200) {
-          console.log("File download not 200", url);
-          callback && callback(response);
-          callback = null;
-        }
-      })
-      .pipe(fs.createWriteStream(filePath))
-      .on('close', function() {
-        console.log('File download success', url);
-        callback && callback(null)
-        callback = null;
-      });
-  }
 
   unzipFile(filePath, dest, callback) {
     console.log("Unzipping file at", filePath, "to", dest);
@@ -296,7 +231,7 @@ class PackageManager {
         var location = path.join(directory, file);
         if(fs.statSync(location).isDirectory()) {
           // Unnest
-          this.copyFolderRecursiveSync(location, directory, false);
+          fileUtils.copyFolderRecursiveSync(location, directory, false);
           callback();
           return;
         }
@@ -304,43 +239,6 @@ class PackageManager {
 
       callback();
     });
-  }
-
-  copyFileSync(source, target) {
-    var targetFile = target;
-
-    //if target is a directory a new file with the same name will be created
-    if(fs.existsSync(target)) {
-      if(fs.lstatSync(target).isDirectory()) {
-        targetFile = path.join(target, path.basename(source));
-      }
-    }
-
-    fs.writeFileSync(targetFile, fs.readFileSync(source));
-  }
-
-  copyFolderRecursiveSync(source, target, addBase) {
-    // console.log("copyFolderRecursiveSync", source, target);
-    var files = [];
-
-    // Check if folder needs to be created or integrated
-    var targetFolder = addBase ? path.join(target, path.basename(source)) : target;
-    if(!fs.existsSync(targetFolder)) {
-      fs.mkdirSync(targetFolder);
-    }
-
-    // Copy
-    if (fs.lstatSync(source).isDirectory()) {
-      files = fs.readdirSync(source);
-      files.forEach((file) => {
-        var curSource = path.join(source, file);
-        if(fs.lstatSync(curSource).isDirectory()) {
-          this.copyFolderRecursiveSync(curSource, targetFolder, true);
-        } else {
-          this.copyFileSync(curSource, targetFolder);
-        }
-      });
-    }
   }
 
 }

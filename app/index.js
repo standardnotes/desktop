@@ -5,11 +5,13 @@ const path = require('path')
 const url = require('url')
 const windowStateKeeper = require('electron-window-state')
 const shell = require('electron').shell;
+const log = require('electron-log');
 
 import menuManager from './javascripts/main/menuManager.js'
 import archiveManager from './javascripts/main/archiveManager.js';
 import packageManager from './javascripts/main/packageManager.js';
 import searchManager from './javascripts/main/searchManager.js';
+import updateManager from './javascripts/main/updateManager.js';
 
 ipcMain.on('initial-data-loaded', () => {
   archiveManager.beginBackups();
@@ -19,24 +21,14 @@ ipcMain.on('major-data-change', () => {
   archiveManager.performBackup();
 })
 
-const isDev = require('electron-is-dev');
-
-const log = require('electron-log')
-log.transports.file.level = 'info';
-
-let win;
-let willQuitApp = false;
-
-const {autoUpdater} = require("electron-updater")
-autoUpdater.on("update-downloaded", function() {
-  win.webContents.send("update-available", null);
-})
-
 process.on('uncaughtException', function (err) {
   console.log(err);
 })
 
+log.transports.file.level = 'info';
+
 let darwin = process.platform === 'darwin'
+let win, willQuitApp = false;
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
@@ -73,6 +65,7 @@ function createWindow () {
   searchManager.setWindow(win);
   archiveManager.setWindow(win);
   packageManager.setWindow(win);
+  updateManager.setWindow(win);
 
   // Register listeners on the window, so we can update the state
   // automatically (the listeners will be removed when the window
@@ -105,9 +98,6 @@ function createWindow () {
   }
   win.loadURL(url);
 
-  // win.webContents.session.clearCache(function(){
-  // });
-
   // handle link clicks
   win.webContents.on('new-window', function(e, url) {
     if(!url.includes("file://")) {
@@ -124,20 +114,6 @@ function createWindow () {
       shell.openExternal(url);
     }
   });
-
-  // auto updater
-  autoUpdater.logger = log
-  checkForUpdates();
-}
-
-function checkForUpdates() {
-  if(!isDev) {
-    try {
-      autoUpdater.checkForUpdates();
-    } catch (e) {
-      console.log("Exception caught while checking for updates:", e);
-    }
-  }
 }
 
 app.on('before-quit', () => willQuitApp = true);
@@ -149,18 +125,22 @@ app.on('activate', function() {
 	} else {
     win.show();
   }
-  checkForUpdates()
+  checkForUpdates();
+
+  this.updateManager.checkForUpdate();
 
   win.webContents.send("window-activated");
 });
 
 app.on('ready', function(){
-
   if(!win) {
     createWindow();
   } else {
     win.focus();
   }
 
-  menuManager.loadMenu(win, archiveManager);
+  menuManager.loadMenu(win, archiveManager, updateManager);
+  updateManager.onNeedMenuReload = () => {
+    menuManager.reload();
+  }
 })
