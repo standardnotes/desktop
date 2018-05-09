@@ -65,6 +65,7 @@ function createWindow () {
   searchManager.setWindow(win);
   archiveManager.setWindow(win);
   packageManager.setWindow(win);
+  updateManager.setWindow(win);
 
   // Register listeners on the window, so we can update the state
   // automatically (the listeners will be removed when the window

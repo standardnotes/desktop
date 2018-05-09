@@ -31,8 +31,41 @@ class UpdateManager {
 
     autoUpdater.logger = log
 
-    autoUpdater.on("update-downloaded", function() {
-      win.webContents.send("update-available", null);
+    autoUpdater.on("update-downloaded", (info) => {
+      this.window.webContents.send("update-available", null);
+      this.__autoupdateDownloaded = true;
+      this.autoupdateInfo = info;
+      this.triggerMenuReload();
+    })
+  }
+
+  setWindow(window) {
+    this.window = window;
+  }
+
+  autoupdateDownloaded() {
+    return this.__autoupdateDownloaded;
+  }
+
+  autoupdateDownloadedVersion() {
+    return this.autoupdateInfo.version;
+  }
+
+  installAutoupdateNow() {
+    var info = this.autoupdateInfo;
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Update Ready',
+      message: `A new update (version ${info.version}) is ready to install.`,
+      buttons: ['Quit & Install', 'Install Later']
+    }, (buttonIndex) => {
+      if (buttonIndex === 0) {
+        autoUpdater.downloadUpdate()
+        setImmediate(() => autoUpdater.quitAndInstall())
+      }
+      else {
+        autoUpdater.enabled = true
+      }
     })
   }
 

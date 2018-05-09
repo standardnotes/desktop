@@ -34729,7 +34729,7 @@ if (!Array.prototype.includes) {
 
   this.clickedNewUpdateAnnouncement = function () {
     this.newUpdateAvailable = false;
-    alert("A new update is ready to install. Simply quit Standard Notes and reopen it after a brief delay to apply the update.");
+    alert("A new update is ready to install. Please use the top-level 'Updates' menu to manage installation.");
   };
 
   /* Rooms */
@@ -44321,7 +44321,7 @@ angular.module('app').directive('permissionsModal', function () {
     "</div>\n" +
     "<div class='right'>\n" +
     "<div class='item' ng-click='ctrl.clickedNewUpdateAnnouncement()' ng-if='ctrl.newUpdateAvailable'>\n" +
-    "<span class='info label'>New update downloaded. Installs on app restart.</span>\n" +
+    "<span class='info label'>New update available.</span>\n" +
     "</div>\n" +
     "<div class='item no-pointer' ng-if='ctrl.lastSyncDate &amp;&amp; !ctrl.isRefreshing'>\n" +
     "<div class='label subtle'>\n" +

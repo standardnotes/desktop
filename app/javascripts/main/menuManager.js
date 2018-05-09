@@ -257,6 +257,15 @@ class MenuManager {
 
     var submenu = [];
 
+    if(this.updateManager.autoupdateDownloaded()) {
+      submenu.push({
+        label: `Install Pending Update (${this.updateManager.autoupdateDownloadedVersion()})`,
+        click: () => {
+          this.updateManager.installAutoupdateNow();
+        }
+      })
+    }
+
     submenu.push({
       label: this.updateManager.autoupdateEnabled() ? "Automatic Updates Enabled (Beta)" : "Automatic Updates Disabled",
       click: () => {
