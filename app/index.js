@@ -10,6 +10,7 @@ import menuManager from './javascripts/main/menuManager.js'
 import archiveManager from './javascripts/main/archiveManager.js';
 import packageManager from './javascripts/main/packageManager.js';
 import searchManager from './javascripts/main/searchManager.js';
+import updateManager from './javascripts/main/updateManager.js';
 
 ipcMain.on('initial-data-loaded', () => {
   archiveManager.beginBackups();
@@ -162,5 +163,8 @@ app.on('ready', function(){
     win.focus();
   }
 
-  menuManager.loadMenu(win, archiveManager);
+  menuManager.loadMenu(win, archiveManager, updateManager);
+  updateManager.onNeedMenuReload = () => {
+    menuManager.reload();
+  }
 })

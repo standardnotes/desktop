@@ -4,11 +4,16 @@ const path = require('path')
 
 class MenuManager {
 
-  loadMenu(window, archiveManager) {
+  reload() {
+    this.loadMenu(this.window, this.archiveManager, this.updateManager);
+  }
 
-    const reload = () => {
-      this.loadMenu(window, archiveManager);
-    }
+  loadMenu(window, archiveManager, updateManager) {
+    this.window = window;
+    this.archiveManager = archiveManager;
+    this.updateManager = updateManager;
+
+    let updateData = updateManager.getMetadata();
 
     const template = [
       {
@@ -96,9 +101,9 @@ class MenuManager {
       {
         label: 'Backups',
         submenu: [
-          {label: (archiveManager.isBackupsEnabled() ? 'Disable' : 'Enable') + ' Automatic Backups', click() {
+          {label: (archiveManager.isBackupsEnabled() ? 'Disable' : 'Enable') + ' Automatic Backups', click: () => {
             archiveManager.toggleBackupsStatus();
-            reload();
+            this.reload();
           }},
           {
             type: 'separator'
@@ -113,6 +118,9 @@ class MenuManager {
           }}
         ]
       },
+
+      this.buildUpdateMenu(updateData),
+
       {
         role: 'help',
         submenu: [
@@ -238,8 +246,57 @@ class MenuManager {
       ]
     }
 
-    var menu = Menu.buildFromTemplate(template)
-    Menu.setApplicationMenu(menu)
+    this.menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(this.menu);
+  }
+
+  buildUpdateMenu(updateData) {
+    var label = updateData.checkingForUpdate ? "Checking for update..." : (updateData.updateNeeded ? "(1) Update Available" : 'Updates');
+    var structure = { label: label };
+
+    var submenu = [];
+    if(updateData.lastCheck && !updateData.checkinForUpdate) {
+      submenu.push({
+        label: `Last checked ${updateData.lastCheck.toLocaleString()}`,
+        click() {}
+      })
+    }
+
+    if(!updateData.checkinForUpdate) {
+      submenu.push({
+        label: `Check for Update`,
+        click: () => { this.updateManager.checkForUpdate({userTriggered: true}); }
+      })
+    }
+
+    submenu.push({type: 'separator'})
+
+    submenu.push({label: `Your Version: ${updateData.currentVersion}`, click() {
+
+    }})
+
+    submenu.push({label: `Latest Version: ${updateData.latestVersion}`, click: () => {
+      this.updateManager.openChangelog();
+    }})
+
+    if(updateData.latestDownloaded) {
+      submenu.push({
+        label: "Open Download Location",
+        click: () => {
+          this.updateManager.openDownloadLocation();
+        }
+      })
+    } else if(updateData.updateNeeded || updateData.downloadingUpdate) {
+      submenu.push({
+        label: updateData.downloadingUpdate ? "Downloading update..." : "Manually Download Update",
+        click: () => {
+          updateData.downloadingUpdate ? this.updateManager.openDownloadLocation() :  this.updateManager.downloadUpdateFile();
+        }
+      })
+    }
+
+    structure.submenu = submenu;
+    return structure;
   }
 }
 
