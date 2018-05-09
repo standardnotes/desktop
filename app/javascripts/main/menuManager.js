@@ -256,6 +256,16 @@ class MenuManager {
     var structure = { label: label };
 
     var submenu = [];
+
+    submenu.push({
+      label: this.updateManager.autoupdateEnabled() ? "Automatic Updates Enabled (Beta)" : "Automatic Updates Disabled",
+      click: () => {
+        this.updateManager.toggleAutoupdateStatus();
+      }
+    })
+
+    submenu.push({type: 'separator'});
+
     if(updateData.lastCheck && !updateData.checkinForUpdate) {
       submenu.push({
         label: `Last checked ${updateData.lastCheck.toLocaleString()}`,
@@ -270,7 +280,7 @@ class MenuManager {
       })
     }
 
-    submenu.push({type: 'separator'})
+    submenu.push({type: 'separator'});
 
     submenu.push({label: `Your Version: ${updateData.currentVersion}`, click() {
 

@@ -5,9 +5,7 @@ const path = require('path')
 const url = require('url')
 const windowStateKeeper = require('electron-window-state')
 const shell = require('electron').shell;
-const isDev = require('electron-is-dev');
-const log = require('electron-log')
-const {autoUpdater} = require("electron-updater")
+const log = require('electron-log');
 
 import menuManager from './javascripts/main/menuManager.js'
 import archiveManager from './javascripts/main/archiveManager.js';
@@ -21,10 +19,6 @@ ipcMain.on('initial-data-loaded', () => {
 
 ipcMain.on('major-data-change', () => {
   archiveManager.performBackup();
-})
-
-autoUpdater.on("update-downloaded", function() {
-  win.webContents.send("update-available", null);
 })
 
 process.on('uncaughtException', function (err) {
@@ -119,10 +113,6 @@ function createWindow () {
       shell.openExternal(url);
     }
   });
-
-  // auto updater
-  autoUpdater.logger = log
-  checkForUpdates();
 }
 
 app.on('before-quit', () => willQuitApp = true);
@@ -134,7 +124,9 @@ app.on('activate', function() {
 	} else {
     win.show();
   }
-  checkForUpdates()
+  checkForUpdates();
+
+  this.updateManager.checkForUpdate();
 
   win.webContents.send("window-activated");
 });
@@ -151,13 +143,3 @@ app.on('ready', function(){
     menuManager.reload();
   }
 })
-
-function checkForUpdates() {
-  if(!isDev) {
-    try {
-      autoUpdater.checkForUpdates();
-    } catch (e) {
-      console.log("Exception caught while checking for updates:", e);
-    }
-  }
-}

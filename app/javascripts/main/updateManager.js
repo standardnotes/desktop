@@ -8,6 +8,9 @@ var os = require('os');
 var request = require("request");
 var appPath = app.getPath('userData');
 var compareVersions = require('compare-versions');
+const {autoUpdater} = require("electron-updater");
+const log = require('electron-log');
+const isDev = require('electron-is-dev');
 
 import fileUtils from "./fileUtils";
 
@@ -20,10 +23,16 @@ class UpdateManager {
     this.metadata = {};
     this.getUpdateInfoFile((data) => {
       if(!data) {
-        data = {endpoint: DefaultUpdateEndpoint};
+        data = {endpoint: DefaultUpdateEndpoint, autoupdateEnabled: true};
       }
       this.metadata = data;
       this.checkForUpdate();
+    })
+
+    autoUpdater.logger = log
+
+    autoUpdater.on("update-downloaded", function() {
+      win.webContents.send("update-available", null);
     })
   }
 
@@ -32,14 +41,39 @@ class UpdateManager {
   }
 
   updateNeeded() {
-    return this.metadata && this.metadata.latest && compareVersions(this.metadata.latest.version, app.getVersion()) == 1;
+    return this.metadata.latest && compareVersions(this.metadata.latest.version, app.getVersion()) == 1;
+  }
+
+  autoupdateEnabled() {
+    return this.metadata.autoupdateEnabled;
+  }
+
+  toggleAutoupdateStatus() {
+    this.metadata.autoupdateEnabled = !this.metadata.autoupdateEnabled;
+    this.saveInfoFile();
+    this.triggerMenuReload();
+
+    if(this.metadata.autoupdateEnabled) {
+      dialog.showMessageBox({title: "Automatic Updates Enabled.", message: "Automatic updates have been enabled. Please note that this functionality is currently in beta, and that you are advised to periodically check in and ensure you are running the latest version."});
+    }
   }
 
   latestVersion() {
-    return this.metadata && this.metadata.latest && this.metadata.latest.version;
+    return this.metadata.latest && this.metadata.latest.version;
+  }
+
+  __checkAutoupdate() {
+    if(isDev || !this.metadata.autoupdateEnabled) { return; }
+    try {
+      autoUpdater.checkForUpdates();
+    } catch (e) {
+      console.log("Exception caught while checking for autoupdates:", e);
+    }
   }
 
   checkForUpdate(options = {}) {
+
+    this.__checkAutoupdate();
 
     this.metadata.checkingForUpdate = true;
     this.triggerMenuReload();
