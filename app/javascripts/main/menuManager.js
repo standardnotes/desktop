@@ -275,7 +275,7 @@ class MenuManager {
 
     }})
 
-    submenu.push({label: `Latest Version: ${updateData.latestVersion}`, click: () => {
+    submenu.push({label: `Latest Version: ${updateData.latestVersion ? updateData.latestVersion : 'Error Retrieving'}`, click: () => {
       this.updateManager.openChangelog();
     }})
 

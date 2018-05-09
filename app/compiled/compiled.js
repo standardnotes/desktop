@@ -34378,7 +34378,7 @@ if (!Array.prototype.includes) {
     }
 
     if (this.monospaceFont) {
-      if (isMacApplication()) {
+      if (isDesktopApplication()) {
         editable.style.fontFamily = "Menlo, Consolas, 'DejaVu Sans Mono', monospace";
       } else {
         editable.style.fontFamily = "monospace";

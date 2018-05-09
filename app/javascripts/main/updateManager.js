@@ -43,9 +43,9 @@ class UpdateManager {
         if(compareVersions(latest.version, currentVersion) == 1) {
           // Latest version is greater than installed version
           this.metadata.updateNeeded = true;
-          this.metadata.latest = latest;
         }
 
+        this.metadata.latest = latest;
         this.metadata.latestVersion = latest.version;
       }
 
@@ -157,7 +157,7 @@ class UpdateManager {
   __getLatest(callback) {
     let url = this.metadata.endpoint;
     request.get(url, (error, response, body) => {
-      if(response.statusCode == 200) {
+      if(response && response.statusCode == 200) {
         callback(JSON.parse(body));
       } else {
         callback(null, error || {});
