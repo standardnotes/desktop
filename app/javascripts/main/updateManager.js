@@ -31,6 +31,14 @@ class UpdateManager {
     return this.metadata;
   }
 
+  updateNeeded() {
+    return this.metadata && this.metadata.latest && compareVersions(this.metadata.latest.version, app.getVersion()) == 1;
+  }
+
+  latestVersion() {
+    return this.metadata && this.metadata.latest && this.metadata.latest.version;
+  }
+
   checkForUpdate(options = {}) {
 
     this.metadata.checkingForUpdate = true;
@@ -40,13 +48,7 @@ class UpdateManager {
     this.__getLatest((latest, error) => {
       if(!latest) { latest = {}; }
       if(latest.version) {
-        if(compareVersions(latest.version, currentVersion) == 1) {
-          // Latest version is greater than installed version
-          this.metadata.updateNeeded = true;
-        }
-
         this.metadata.latest = latest;
-        this.metadata.latestVersion = latest.version;
       }
 
       this.metadata.currentVersion = currentVersion;
@@ -56,8 +58,8 @@ class UpdateManager {
       this.metadata.lastCheck = new Date();
 
       if(options.userTriggered) {
-        var message = this.metadata.updateNeeded
-        ? `A new update is available (version ${this.metadata.latestVersion}). You can attempt upgrading through auto-update (beta), or manually download and install this update.`
+        var message = this.updateNeeded()
+        ? `A new update is available (version ${this.metadata.latest.version}). You can attempt upgrading through auto-update (beta), or manually download and install this update.`
         : `Your version (${this.metadata.currentVersion}) is the latest available version.`;
 
         if(error) {
@@ -93,9 +95,11 @@ class UpdateManager {
       if(!error) {
         this.metadata.latestDownloaded = true;
         this.saveInfoFile();
-        this.triggerMenuReload();
         this.openDownloadLocation();
+      } else {
+        dialog.showMessageBox({title: "Error Downloading", message: "An error occurred while trying to download your update file. Please try again."});
       }
+      this.triggerMenuReload();
     })
   }
 

@@ -251,7 +251,8 @@ class MenuManager {
   }
 
   buildUpdateMenu(updateData) {
-    var label = updateData.checkingForUpdate ? "Checking for update..." : (updateData.updateNeeded ? "(1) Update Available" : 'Updates');
+    let updateNeeded = this.updateManager.updateNeeded();
+    var label = updateData.checkingForUpdate ? "Checking for update..." : (updateNeeded ? "(1) Update Available" : 'Updates');
     var structure = { label: label };
 
     var submenu = [];
@@ -275,7 +276,8 @@ class MenuManager {
 
     }})
 
-    submenu.push({label: `Latest Version: ${updateData.latestVersion ? updateData.latestVersion : 'Error Retrieving'}`, click: () => {
+    let latestVersion = this.updateManager.latestVersion();
+    submenu.push({label: `Latest Version: ${latestVersion ? latestVersion : 'Error Retrieving'}`, click: () => {
       this.updateManager.openChangelog();
     }})
 
@@ -286,7 +288,7 @@ class MenuManager {
           this.updateManager.openDownloadLocation();
         }
       })
-    } else if(updateData.updateNeeded || updateData.downloadingUpdate) {
+    } else if(updateNeeded || updateData.downloadingUpdate) {
       submenu.push({
         label: updateData.downloadingUpdate ? "Downloading update..." : "Manually Download Update",
         click: () => {
