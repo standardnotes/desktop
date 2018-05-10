@@ -106,6 +106,8 @@ class UpdateManager {
 
   checkForUpdate(options = {}) {
 
+    console.log("Checking for updates...");
+
     this.__checkAutoupdate();
 
     this.metadata.checkingForUpdate = true;
@@ -117,6 +119,8 @@ class UpdateManager {
       if(latest.version) {
         this.metadata.latest = latest;
       }
+
+      console.log(`Finished checking for updates. Latest version: ${latest.version} Current version: ${currentVersion}`);
 
       this.metadata.currentVersion = currentVersion;
       this.metadata.checkingForUpdate = false;

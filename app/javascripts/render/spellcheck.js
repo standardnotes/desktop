@@ -134,7 +134,7 @@
     // visible selection has changed. Try to wait to show the menu until after that, otherwise the
     // visible selection will update after the menu dismisses and look weird.
     setTimeout(function() {
-      menu.popup(remote.getCurrentWindow());
+      menu.popup({window: remote.getCurrentWindow()});
     }, 30);
   });
 })();

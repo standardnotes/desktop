@@ -125,9 +125,8 @@ app.on('activate', function() {
 	} else {
     win.show();
   }
-  checkForUpdates();
 
-  this.updateManager.checkForUpdate();
+  updateManager.checkForUpdate();
 
   win.webContents.send("window-activated");
 });
