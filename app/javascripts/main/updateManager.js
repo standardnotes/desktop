@@ -60,8 +60,12 @@ class UpdateManager {
       buttons: ['Quit & Install', 'Install Later']
     }, (buttonIndex) => {
       if (buttonIndex === 0) {
-        autoUpdater.downloadUpdate()
-        setImmediate(() => autoUpdater.quitAndInstall())
+        setImmediate(() => {
+          // index.js prevents close event on some platforms
+          this.window.removeAllListeners("close");
+          this.window.close();
+          autoUpdater.quitAndInstall(false)
+        })
       }
       else {
         autoUpdater.enabled = true
