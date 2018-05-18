@@ -33953,7 +33953,7 @@ if (!Array.prototype.includes) {
     }
   };
 }]).controller('EditorCtrl', ['$sce', '$timeout', 'authManager', '$rootScope', 'actionsManager', 'syncManager', 'modelManager', 'themeManager', 'componentManager', 'storageManager', function ($sce, $timeout, authManager, $rootScope, actionsManager, syncManager, modelManager, themeManager, componentManager, storageManager) {
-  var _this4 = this;
+  var _this3 = this;
 
   this.spellcheck = true;
   this.componentManager = componentManager;
@@ -33970,22 +33970,51 @@ if (!Array.prototype.includes) {
     this.loadTagsString();
   }.bind(this));
 
+  modelManager.addItemSyncObserver("component-manager", "Note", function (allItems, validItems, deletedItems, source) {
+    if (!_this3.note) {
+      return;
+    }
+
+    // Before checking if isMappingSourceRetrieved, we check if this item was deleted via a local source,
+    // such as alternating uuids during sign in. Otherwise, we only want to make interface updates if it's a
+    // remote retrieved source.
+    if (_this3.note.deleted) {
+      $rootScope.notifyDelete();
+      return;
+    }
+
+    if (!ModelManager.isMappingSourceRetrieved(source)) {
+      return;
+    }
+
+    var matchingNote = allItems.find(function (item) {
+      return item.uuid == _this3.note.uuid;
+    });
+
+    if (!matchingNote) {
+      return;
+    }
+
+    // Update tags
+    _this3.loadTagsString();
+  });
+
   this.noteDidChange = function (note, oldNote) {
     this.setNote(note, oldNote);
     this.reloadComponentContext();
   };
 
   this.setNote = function (note, oldNote) {
-    var _this3 = this;
+    var _this4 = this;
 
     this.showExtensions = false;
     this.showMenu = false;
     this.loadTagsString();
 
     var onReady = function onReady() {
-      _this3.noteReady = true;
+      _this4.noteReady = true;
       $timeout(function () {
-        _this3.loadPreferences();
+        _this4.loadPreferences();
       });
     };
 
@@ -33996,7 +34025,7 @@ if (!Array.prototype.includes) {
       this.noteReady = false;
       // switch after timeout, so that note data isnt posted to current editor
       $timeout(function () {
-        _this3.selectedEditor = associatedEditor;
+        _this4.selectedEditor = associatedEditor;
         onReady();
       });
     } else if (associatedEditor) {
@@ -34024,7 +34053,7 @@ if (!Array.prototype.includes) {
   // Observe editor changes to see if the current note should update its editor
 
   modelManager.addItemSyncObserver("component-manager", "SN|Component", function (allItems, validItems, deletedItems, source) {
-    if (!_this4.note) {
+    if (!_this3.note) {
       return;
     }
 
@@ -34038,8 +34067,8 @@ if (!Array.prototype.includes) {
     }
 
     // Look through editors again and find the most proper one
-    var editor = _this4.editorForNote(_this4.note);
-    _this4.selectedEditor = editor;
+    var editor = _this3.editorForNote(_this3.note);
+    _this3.selectedEditor = editor;
   });
 
   this.editorForNote = function (note) {
@@ -34345,7 +34374,7 @@ if (!Array.prototype.includes) {
   };
 
   $rootScope.$on("user-preferences-changed", function () {
-    _this4.loadPreferences();
+    _this3.loadPreferences();
   });
 
   this.loadPreferences = function () {
@@ -34414,30 +34443,30 @@ if (!Array.prototype.includes) {
   componentManager.registerHandler({ identifier: "editor", areas: ["note-tags", "editor-stack", "editor-editor"], activationHandler: function activationHandler(component) {
       if (component.area === "note-tags") {
         // Autocomplete Tags
-        _this4.tagsComponent = component.active ? component : null;
+        _this3.tagsComponent = component.active ? component : null;
       } else if (component.area == "editor-editor") {
         // An editor is already active, ensure the potential replacement is explicitely enabled for this item
-        if (_this4.selectedEditor) {
-          if (component.isExplicitlyEnabledForItem(_this4.note)) {
-            _this4.selectedEditor = component;
+        if (_this3.selectedEditor) {
+          if (component.isExplicitlyEnabledForItem(_this3.note)) {
+            _this3.selectedEditor = component;
           }
         } else {
           // If no selected editor, let's see if the incoming one is a candidate
-          if (component.active && _this4.note && (component.isExplicitlyEnabledForItem(_this4.note) || component.isDefaultEditor())) {
-            _this4.selectedEditor = component;
+          if (component.active && _this3.note && (component.isExplicitlyEnabledForItem(_this3.note) || component.isDefaultEditor())) {
+            _this3.selectedEditor = component;
           } else {
             // Not a candidate, and no selected editor. Disable the current editor by setting selectedEditor to null
-            _this4.selectedEditor = null;
+            _this3.selectedEditor = null;
           }
         }
       } else if (component.area == "editor-stack") {
-        _this4.reloadComponentContext();
+        _this3.reloadComponentContext();
       }
     }, contextRequestHandler: function contextRequestHandler(component) {
-      return _this4.note;
+      return _this3.note;
     }, focusHandler: function focusHandler(component, focused) {
       if (component.isEditor() && focused) {
-        _this4.closeAllMenus();
+        _this3.closeAllMenus();
       }
     }, actionHandler: function actionHandler(component, action, data) {
       if (action === "set-size") {
@@ -34456,25 +34485,25 @@ if (!Array.prototype.includes) {
       } else if (action === "associate-item") {
         if (data.item.content_type == "Tag") {
           var tag = modelManager.findItem(data.item.uuid);
-          _this4.addTag(tag);
+          _this3.addTag(tag);
         }
       } else if (action === "deassociate-item") {
         var tag = modelManager.findItem(data.item.uuid);
-        _this4.removeTag(tag);
+        _this3.removeTag(tag);
       } else if (action === "save-items" || action === "save-success" || action == "save-error") {
         if (data.items.map(function (item) {
           return item.uuid;
-        }).includes(_this4.note.uuid)) {
+        }).includes(_this3.note.uuid)) {
 
           if (action == "save-items") {
-            if (_this4.componentSaveTimeout) $timeout.cancel(_this4.componentSaveTimeout);
-            _this4.componentSaveTimeout = $timeout(_this4.showSavingStatus.bind(_this4), 10);
+            if (_this3.componentSaveTimeout) $timeout.cancel(_this3.componentSaveTimeout);
+            _this3.componentSaveTimeout = $timeout(_this3.showSavingStatus.bind(_this3), 10);
           } else {
-            if (_this4.componentStatusTimeout) $timeout.cancel(_this4.componentStatusTimeout);
+            if (_this3.componentStatusTimeout) $timeout.cancel(_this3.componentStatusTimeout);
             if (action == "save-success") {
-              _this4.componentStatusTimeout = $timeout(_this4.showAllChangesSavedStatus.bind(_this4), 400);
+              _this3.componentStatusTimeout = $timeout(_this3.showAllChangesSavedStatus.bind(_this3), 400);
             } else {
-              _this4.componentStatusTimeout = $timeout(_this4.showErrorStatus.bind(_this4), 400);
+              _this3.componentStatusTimeout = $timeout(_this3.showErrorStatus.bind(_this3), 400);
             }
           }
         }
@@ -35026,11 +35055,11 @@ if (!Array.prototype.includes) {
   $scope.tagsWillMakeSelection = function (tag) {};
 
   $scope.tagsSelectionMade = function (tag) {
-    $scope.selectedTag = tag;
-
     if ($scope.selectedNote && $scope.selectedNote.dummy) {
       modelManager.removeItemLocally($scope.selectedNote);
     }
+
+    $scope.selectedTag = tag;
   };
 
   $scope.tagsAddNew = function (tag) {
@@ -35105,7 +35134,7 @@ if (!Array.prototype.includes) {
     if (phase == '$apply' || phase == '$digest') this.$eval(fn);else this.$apply(fn);
   };
 
-  $scope.notifyDelete = function () {
+  $rootScope.notifyDelete = function () {
     $timeout(function () {
       $rootScope.$broadcast("noteDeleted");
     }.bind(this), 0);
@@ -35121,7 +35150,7 @@ if (!Array.prototype.includes) {
 
     if (note.dummy) {
       modelManager.removeItemLocally(note);
-      $scope.notifyDelete();
+      $rootScope.notifyDelete();
       return;
     }
 
@@ -35129,11 +35158,11 @@ if (!Array.prototype.includes) {
       if (authManager.offline()) {
         // when deleting items while ofline, we need to explictly tell angular to refresh UI
         setTimeout(function () {
-          $scope.notifyDelete();
+          $rootScope.notifyDelete();
           $scope.safeApply();
         }, 50);
       } else {
-        $scope.notifyDelete();
+        $rootScope.notifyDelete();
       }
     }, null, "deleteNote");
   };
@@ -35316,7 +35345,7 @@ angular.module('app').directive('lockScreen', function () {
   this.onNoteRemoval = function () {
     var visibleNotes = this.visibleNotes();
     if (this.selectedIndex < visibleNotes.length) {
-      this.selectNote(visibleNotes[this.selectedIndex]);
+      this.selectNote(visibleNotes[Math.max(this.selectedIndex, 0)]);
     } else {
       this.selectNote(visibleNotes[visibleNotes.length - 1]);
     }
@@ -35422,12 +35451,13 @@ angular.module('app').directive('lockScreen', function () {
     var viaClick = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
     if (!note) {
+      this.createNewNote();
       return;
     }
     this.selectedNote = note;
     note.conflict_of = null; // clear conflict
     this.selectionMade()(note);
-    this.selectedIndex = this.visibleNotes().indexOf(note);
+    this.selectedIndex = Math.max(this.visibleNotes().indexOf(note), 0);
 
     if (viaClick && this.isFiltering()) {
       desktopManager.searchText(this.noteFilter.text);
@@ -35650,6 +35680,8 @@ angular.module('app').directive('lockScreen', function () {
   };
 
   this.saveTag = function ($event, tag) {
+    var _this14 = this;
+
     this.editingTag = null;
     $event.target.blur();
 
@@ -35665,9 +35697,11 @@ angular.module('app').directive('lockScreen', function () {
     }
 
     this.save()(tag, function (savedTag) {
-      this.selectTag(tag);
-      this.newTag = null;
-    }.bind(this));
+      $timeout(function () {
+        _this14.selectTag(tag);
+        _this14.newTag = null;
+      });
+    });
   };
 
   function inputElementForTag(tag) {
@@ -35730,6 +35764,15 @@ var Item = function () {
       } else if (json.deleted == true) {
         this.handleDeletedContent();
       }
+    }
+  }, {
+    key: 'refreshContentObject',
+    value: function refreshContentObject() {
+      // Before an item can be duplicated or cloned, we must update this.content (if it is an object) with the object's
+      // current physical properties, because updateFromJSON, which is what all new items must go through,
+      // will call this.mapContentToLocalProperties(this.contentObject), which may have stale values if not explicitly updated.
+
+      this.content = this.structureParams();
     }
 
     /* Allows the item to handle the case where the item is deleted and the content is null */
@@ -36154,20 +36197,20 @@ var Component = function (_Item3) {
     // which may have window set, you may get a cross-origin exception since you'll be trying to copy the window. So we clear it here.
     json_obj.window = null;
 
-    var _this16 = _possibleConstructorReturn(this, (Component.__proto__ || Object.getPrototypeOf(Component)).call(this, json_obj));
+    var _this17 = _possibleConstructorReturn(this, (Component.__proto__ || Object.getPrototypeOf(Component)).call(this, json_obj));
 
-    if (!_this16.componentData) {
-      _this16.componentData = {};
+    if (!_this17.componentData) {
+      _this17.componentData = {};
     }
 
-    if (!_this16.disassociatedItemIds) {
-      _this16.disassociatedItemIds = [];
+    if (!_this17.disassociatedItemIds) {
+      _this17.disassociatedItemIds = [];
     }
 
-    if (!_this16.associatedItemIds) {
-      _this16.associatedItemIds = [];
+    if (!_this17.associatedItemIds) {
+      _this17.associatedItemIds = [];
     }
-    return _this16;
+    return _this17;
   }
 
   _createClass(Component, [{
@@ -36322,15 +36365,15 @@ var Editor = function (_Item4) {
   function Editor(json_obj) {
     _classCallCheck(this, Editor);
 
-    var _this17 = _possibleConstructorReturn(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, json_obj));
+    var _this18 = _possibleConstructorReturn(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, json_obj));
 
-    if (!_this17.notes) {
-      _this17.notes = [];
+    if (!_this18.notes) {
+      _this18.notes = [];
     }
-    if (!_this17.data) {
-      _this17.data = {};
+    if (!_this18.data) {
+      _this18.data = {};
     }
-    return _this17;
+    return _this18;
   }
 
   _createClass(Editor, [{
@@ -36466,18 +36509,18 @@ var Extension = function (_Component) {
   function Extension(json) {
     _classCallCheck(this, Extension);
 
-    var _this18 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
+    var _this19 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
 
     if (json.actions) {
-      _this18.actions = json.actions.map(function (action) {
+      _this19.actions = json.actions.map(function (action) {
         return new Action(action);
       });
     }
 
-    if (!_this18.actions) {
-      _this18.actions = [];
+    if (!_this19.actions) {
+      _this19.actions = [];
     }
-    return _this18;
+    return _this19;
   }
 
   _createClass(Extension, [{
@@ -36531,19 +36574,19 @@ var Note = function (_Item5) {
   function Note(json_obj) {
     _classCallCheck(this, Note);
 
-    var _this19 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
+    var _this20 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
 
-    if (!_this19.text) {
+    if (!_this20.text) {
       // Some external editors can't handle a null value for text.
       // Notes created on mobile with no text have a null value for it,
       // so we'll just set a default here.
-      _this19.text = "";
+      _this20.text = "";
     }
 
-    if (!_this19.tags) {
-      _this19.tags = [];
+    if (!_this20.tags) {
+      _this20.tags = [];
     }
-    return _this19;
+    return _this20;
   }
 
   _createClass(Note, [{
@@ -36711,12 +36754,12 @@ var Tag = function (_Item6) {
   function Tag(json_obj) {
     _classCallCheck(this, Tag);
 
-    var _this20 = _possibleConstructorReturn(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
+    var _this21 = _possibleConstructorReturn(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
 
-    if (!_this20.notes) {
-      _this20.notes = [];
+    if (!_this21.notes) {
+      _this21.notes = [];
     }
-    return _this20;
+    return _this21;
   }
 
   _createClass(Tag, [{
@@ -36853,10 +36896,10 @@ var Theme = function (_Component2) {
   function Theme(json_obj) {
     _classCallCheck(this, Theme);
 
-    var _this21 = _possibleConstructorReturn(this, (Theme.__proto__ || Object.getPrototypeOf(Theme)).call(this, json_obj));
+    var _this22 = _possibleConstructorReturn(this, (Theme.__proto__ || Object.getPrototypeOf(Theme)).call(this, json_obj));
 
-    _this21.area = "themes";
-    return _this21;
+    _this22.area = "themes";
+    return _this22;
   }
 
   _createClass(Theme, [{
@@ -37206,7 +37249,7 @@ angular.module('app').service('actionsManager', ActionsManager);
   }];
 
   function AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager, singletonManager) {
-    var _this23 = this;
+    var _this24 = this;
 
     this.loadInitialData = function () {
       var userData = storageManager.getItem("user");
@@ -37481,8 +37524,8 @@ angular.module('app').service('actionsManager', ActionsManager);
     var prefsContentType = "SN|UserPreferences";
 
     singletonManager.registerSingleton({ content_type: prefsContentType }, function (resolvedSingleton) {
-      _this23.userPreferences = resolvedSingleton;
-      _this23.userPreferencesDidChange();
+      _this24.userPreferences = resolvedSingleton;
+      _this24.userPreferencesDidChange();
     }, function (valueCallback) {
       // Safe to create. Create and return object.
       var prefs = new Item({ content_type: prefsContentType });
@@ -37526,7 +37569,7 @@ var ClientDataDomain = "org.standardnotes.sn.components";
 var ComponentManager = function () {
   ComponentManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'desktopManager', 'nativeExtManager', '$timeout', '$compile'];
   function ComponentManager($rootScope, modelManager, syncManager, desktopManager, nativeExtManager, $timeout, $compile) {
-    var _this24 = this;
+    var _this25 = this;
 
     _classCallCheck(this, ComponentManager);
 
@@ -37547,12 +37590,12 @@ var ComponentManager = function () {
       var _iteratorError13 = undefined;
 
       try {
-        for (var _iterator13 = _this24.activeComponents[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+        for (var _iterator13 = _this25.activeComponents[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
           var component = _step13.value;
 
-          if (document.activeElement == _this24.iframeForComponent(component)) {
-            _this24.timeout(function () {
-              _this24.focusChangedForComponent(component);
+          if (document.activeElement == _this25.iframeForComponent(component)) {
+            _this25.timeout(function () {
+              _this25.focusChangedForComponent(component);
             });
             break;
           }
@@ -37579,7 +37622,7 @@ var ComponentManager = function () {
     desktopManager.registerUpdateObserver(function (component) {
       // Reload theme if active
       if (component.active && component.isTheme()) {
-        _this24.postActiveThemeToAllComponents();
+        _this25.postActiveThemeToAllComponents();
       }
     });
 
@@ -37615,7 +37658,7 @@ var ComponentManager = function () {
       */
       if (syncedComponents.length > 0 && source != ModelManager.MappingSourceRemoteSaved) {
         // Ensure any component in our data is installed by the system
-        _this24.desktopManager.syncComponentsInstallation(syncedComponents);
+        _this25.desktopManager.syncComponentsInstallation(syncedComponents);
       }
 
       var _iteratorNormalCompletion14 = true;
@@ -37626,11 +37669,11 @@ var ComponentManager = function () {
         for (var _iterator14 = syncedComponents[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
           var component = _step14.value;
 
-          var activeComponent = _.find(_this24.activeComponents, { uuid: component.uuid });
+          var activeComponent = _.find(_this25.activeComponents, { uuid: component.uuid });
           if (component.active && !component.deleted && !activeComponent) {
-            _this24.activateComponent(component);
+            _this25.activateComponent(component);
           } else if (!component.active && activeComponent) {
-            _this24.deactivateComponent(component);
+            _this25.deactivateComponent(component);
           }
         }
       } catch (err) {
@@ -37664,8 +37707,8 @@ var ComponentManager = function () {
         }];
 
 
-        _this24.runWithPermissions(observer.component, requiredPermissions, function () {
-          _this24.sendItemsInReply(observer.component, relevantItems, observer.originalMessage);
+        _this25.runWithPermissions(observer.component, requiredPermissions, function () {
+          _this25.sendItemsInReply(observer.component, relevantItems, observer.originalMessage);
         });
       };
 
@@ -37674,7 +37717,7 @@ var ComponentManager = function () {
       var _iteratorError15 = undefined;
 
       try {
-        for (var _iterator15 = _this24.streamObservers[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+        for (var _iterator15 = _this25.streamObservers[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
           var observer = _step15.value;
           var relevantItems;
           var requiredPermissions;
@@ -37708,7 +37751,7 @@ var ComponentManager = function () {
         var _iteratorError17 = undefined;
 
         try {
-          for (var _iterator17 = _this24.handlers[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+          for (var _iterator17 = _this25.handlers[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
             var handler = _step17.value;
 
             if (!handler.areas.includes(observer.component.area) && !handler.areas.includes("*")) {
@@ -37721,8 +37764,8 @@ var ComponentManager = function () {
                 matchingItem = _.find(allItems, { uuid: itemInContext.uuid });
 
                 if (matchingItem) {
-                  _this24.runWithPermissions(observer.component, requiredContextPermissions, function () {
-                    _this24.sendContextItemInReply(observer.component, matchingItem, observer.originalMessage, source);
+                  _this25.runWithPermissions(observer.component, requiredContextPermissions, function () {
+                    _this25.sendContextItemInReply(observer.component, matchingItem, observer.originalMessage, source);
                   });
                 }
               }
@@ -37749,7 +37792,7 @@ var ComponentManager = function () {
       var _iteratorError16 = undefined;
 
       try {
-        for (var _iterator16 = _this24.contextStreamObservers[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+        for (var _iterator16 = _this25.contextStreamObservers[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
           var observer = _step16.value;
           var itemInContext;
           var matchingItem;
@@ -37993,7 +38036,7 @@ var ComponentManager = function () {
   }, {
     key: 'handleMessage',
     value: function handleMessage(component, message) {
-      var _this25 = this;
+      var _this26 = this;
 
       if (!component) {
         if (this.loggingEnabled) {
@@ -38046,7 +38089,7 @@ var ComponentManager = function () {
 
       var _loop3 = function _loop3(handler) {
         if (handler.areas.includes(component.area) || handler.areas.includes("*")) {
-          _this25.timeout(function () {
+          _this26.timeout(function () {
             handler.actionHandler(component, message.action, message.data);
           });
         }
@@ -38151,7 +38194,7 @@ var ComponentManager = function () {
   }, {
     key: 'handleStreamItemsMessage',
     value: function handleStreamItemsMessage(component, message) {
-      var _this26 = this;
+      var _this27 = this;
 
       var requiredPermissions = [{
         name: "stream-items",
@@ -38159,9 +38202,9 @@ var ComponentManager = function () {
       }];
 
       this.runWithPermissions(component, requiredPermissions, function () {
-        if (!_.find(_this26.streamObservers, { identifier: component.uuid })) {
+        if (!_.find(_this27.streamObservers, { identifier: component.uuid })) {
           // for pushing laster as changes come in
-          _this26.streamObservers.push({
+          _this27.streamObservers.push({
             identifier: component.uuid,
             component: component,
             originalMessage: message,
@@ -38179,7 +38222,7 @@ var ComponentManager = function () {
           for (var _iterator24 = message.data.content_types[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
             var contentType = _step24.value;
 
-            items = items.concat(_this26.modelManager.itemsForContentType(contentType));
+            items = items.concat(_this27.modelManager.itemsForContentType(contentType));
           }
         } catch (err) {
           _didIteratorError24 = true;
@@ -38196,7 +38239,7 @@ var ComponentManager = function () {
           }
         }
 
-        _this26.sendItemsInReply(component, items, message);
+        _this27.sendItemsInReply(component, items, message);
       });
     }
   }, {
@@ -38292,7 +38335,7 @@ var ComponentManager = function () {
   }, {
     key: 'handleSaveItemsMessage',
     value: function handleSaveItemsMessage(component, message) {
-      var _this27 = this;
+      var _this28 = this;
 
       var responseItems = message.data.items;
       var requiredPermissions;
@@ -38314,13 +38357,13 @@ var ComponentManager = function () {
 
       this.runWithPermissions(component, requiredPermissions, function () {
 
-        _this27.removePrivatePropertiesFromResponseItems(responseItems, component, { includeUrls: true });
+        _this28.removePrivatePropertiesFromResponseItems(responseItems, component, { includeUrls: true });
 
         /*
         We map the items here because modelManager is what updates the UI. If you were to instead get the items directly,
         this would update them server side via sync, but would never make its way back to the UI.
         */
-        var localItems = _this27.modelManager.mapResponseItemsToLocalModels(responseItems, ModelManager.MappingSourceComponentRetrieved);
+        var localItems = _this28.modelManager.mapResponseItemsToLocalModels(responseItems, ModelManager.MappingSourceComponentRetrieved);
 
         var _iteratorNormalCompletion27 = true;
         var _didIteratorError27 = false;
@@ -38352,19 +38395,19 @@ var ComponentManager = function () {
           }
         }
 
-        _this27.syncManager.sync(function (response) {
+        _this28.syncManager.sync(function (response) {
           // Allow handlers to be notified when a save begins and ends, to update the UI
           var saveMessage = Object.assign({}, message);
           saveMessage.action = response && response.error ? "save-error" : "save-success";
-          _this27.replyToMessage(component, message, { error: response.error });
-          _this27.handleMessage(component, saveMessage);
+          _this28.replyToMessage(component, message, { error: response.error });
+          _this28.handleMessage(component, saveMessage);
         }, null, "handleSaveItemsMessage");
       });
     }
   }, {
     key: 'handleCreateItemsMessage',
     value: function handleCreateItemsMessage(component, message) {
-      var _this28 = this;
+      var _this29 = this;
 
       var responseItems = message.data.item ? [message.data.item] : message.data.items;
       var uniqueContentTypes = _.uniq(responseItems.map(function (item) {
@@ -38376,7 +38419,7 @@ var ComponentManager = function () {
       }];
 
       this.runWithPermissions(component, requiredPermissions, function () {
-        _this28.removePrivatePropertiesFromResponseItems(responseItems, component);
+        _this29.removePrivatePropertiesFromResponseItems(responseItems, component);
         var processedItems = [];
         var _iteratorNormalCompletion28 = true;
         var _didIteratorError28 = false;
@@ -38386,12 +38429,12 @@ var ComponentManager = function () {
           for (var _iterator28 = responseItems[Symbol.iterator](), _step28; !(_iteratorNormalCompletion28 = (_step28 = _iterator28.next()).done); _iteratorNormalCompletion28 = true) {
             var responseItem = _step28.value;
 
-            var item = _this28.modelManager.createItem(responseItem);
+            var item = _this29.modelManager.createItem(responseItem);
             if (responseItem.clientData) {
               item.setDomainDataItem(component.url || component.uuid, responseItem.clientData, ClientDataDomain);
             }
-            _this28.modelManager.addItem(item);
-            _this28.modelManager.resolveReferencesForItem(item, true);
+            _this29.modelManager.addItem(item);
+            _this29.modelManager.resolveReferencesForItem(item, true);
             item.setDirty(true);
             processedItems.push(item);
           }
@@ -38410,19 +38453,19 @@ var ComponentManager = function () {
           }
         }
 
-        _this28.syncManager.sync("handleCreateItemMessage");
+        _this29.syncManager.sync("handleCreateItemMessage");
 
-        var reply = message.action == "save-item" ? { item: _this28.jsonForItem(processedItems[0], component) } : { items: processedItems.map(function (item) {
-            return _this28.jsonForItem(item, component);
+        var reply = message.action == "save-item" ? { item: _this29.jsonForItem(processedItems[0], component) } : { items: processedItems.map(function (item) {
+            return _this29.jsonForItem(item, component);
           }) };
 
-        _this28.replyToMessage(component, message, reply);
+        _this29.replyToMessage(component, message, reply);
       });
     }
   }, {
     key: 'handleDeleteItemsMessage',
     value: function handleDeleteItemsMessage(component, message) {
-      var _this29 = this;
+      var _this30 = this;
 
       var requiredContentTypes = _.uniq(message.data.items.map(function (i) {
         return i.content_type;
@@ -38445,11 +38488,11 @@ var ComponentManager = function () {
             for (var _iterator29 = itemsData[Symbol.iterator](), _step29; !(_iteratorNormalCompletion29 = (_step29 = _iterator29.next()).done); _iteratorNormalCompletion29 = true) {
               var itemData = _step29.value;
 
-              var model = _this29.modelManager.findItem(itemData.uuid);
+              var model = _this30.modelManager.findItem(itemData.uuid);
               if (["SN|Component", "SN|Theme"].includes(model.content_type)) {
-                _this29.deactivateComponent(model, true);
+                _this30.deactivateComponent(model, true);
               }
-              _this29.modelManager.setItemToBeDeleted(model);
+              _this30.modelManager.setItemToBeDeleted(model);
             }
           } catch (err) {
             _didIteratorError29 = true;
@@ -38466,29 +38509,29 @@ var ComponentManager = function () {
             }
           }
 
-          _this29.syncManager.sync("handleDeleteItemsMessage");
+          _this30.syncManager.sync("handleDeleteItemsMessage");
         }
       });
     }
   }, {
     key: 'handleRequestPermissionsMessage',
     value: function handleRequestPermissionsMessage(component, message) {
-      var _this30 = this;
+      var _this31 = this;
 
       this.runWithPermissions(component, message.data.permissions, function () {
-        _this30.replyToMessage(component, message, { approved: true });
+        _this31.replyToMessage(component, message, { approved: true });
       });
     }
   }, {
     key: 'handleSetComponentDataMessage',
     value: function handleSetComponentDataMessage(component, message) {
-      var _this31 = this;
+      var _this32 = this;
 
       // A component setting its own data does not require special permissions
       this.runWithPermissions(component, [], function () {
         component.componentData = message.data.componentData;
         component.setDirty(true);
-        _this31.syncManager.sync("handleSetComponentDataMessage");
+        _this32.syncManager.sync("handleSetComponentDataMessage");
       });
     }
   }, {
@@ -38828,7 +38871,7 @@ var ComponentManager = function () {
   }, {
     key: 'reloadComponent',
     value: function reloadComponent(component) {
-      var _this32 = this;
+      var _this33 = this;
 
       //
       // Do soft deactivate
@@ -38877,7 +38920,7 @@ var ComponentManager = function () {
         var _iteratorError35 = undefined;
 
         try {
-          for (var _iterator35 = _this32.handlers[Symbol.iterator](), _step35; !(_iteratorNormalCompletion35 = (_step35 = _iterator35.next()).done); _iteratorNormalCompletion35 = true) {
+          for (var _iterator35 = _this33.handlers[Symbol.iterator](), _step35; !(_iteratorNormalCompletion35 = (_step35 = _iterator35.next()).done); _iteratorNormalCompletion35 = true) {
             var handler = _step35.value;
 
             if (handler.areas.includes(component.area) || handler.areas.includes("*")) {
@@ -38899,12 +38942,12 @@ var ComponentManager = function () {
           }
         }
 
-        if (!_this32.activeComponents.includes(component)) {
-          _this32.activeComponents.push(component);
+        if (!_this33.activeComponents.includes(component)) {
+          _this33.activeComponents.push(component);
         }
 
         if (component.area == "themes") {
-          _this32.postActiveThemeToAllComponents();
+          _this33.postActiveThemeToAllComponents();
         }
       });
     }
@@ -39196,7 +39239,7 @@ angular.module('app').service('dbManager', DBManager);
 var DesktopManager = function () {
   DesktopManager.$inject = ['$rootScope', '$timeout', 'modelManager', 'syncManager', 'authManager', 'passcodeManager'];
   function DesktopManager($rootScope, $timeout, modelManager, syncManager, authManager, passcodeManager) {
-    var _this33 = this;
+    var _this34 = this;
 
     _classCallCheck(this, DesktopManager);
 
@@ -39211,15 +39254,15 @@ var DesktopManager = function () {
     this.isDesktop = isDesktopApplication();
 
     $rootScope.$on("initial-data-loaded", function () {
-      _this33.dataLoaded = true;
-      if (_this33.dataLoadHandler) {
-        _this33.dataLoadHandler();
+      _this34.dataLoaded = true;
+      if (_this34.dataLoadHandler) {
+        _this34.dataLoadHandler();
       }
     });
 
     $rootScope.$on("major-data-change", function () {
-      if (_this33.majorDataChangeHandler) {
-        _this33.majorDataChangeHandler();
+      if (_this34.majorDataChangeHandler) {
+        _this34.majorDataChangeHandler();
       }
     });
   }
@@ -39244,12 +39287,12 @@ var DesktopManager = function () {
   }, {
     key: 'syncComponentsInstallation',
     value: function syncComponentsInstallation(components) {
-      var _this34 = this;
+      var _this35 = this;
 
       if (!this.isDesktop) return;
 
       var data = components.map(function (component) {
-        return _this34.convertComponentForTransmission(component);
+        return _this35.convertComponentForTransmission(component);
       });
       this.installationSyncHandler(data);
     }
@@ -39289,7 +39332,7 @@ var DesktopManager = function () {
   }, {
     key: 'desktop_onComponentInstallationComplete',
     value: function desktop_onComponentInstallationComplete(componentData, error) {
-      var _this35 = this;
+      var _this36 = this;
 
       console.log("Web|Component Installation/Update Complete", componentData, error);
 
@@ -39342,7 +39385,7 @@ var DesktopManager = function () {
         var _iteratorError39 = undefined;
 
         try {
-          for (var _iterator39 = _this35.updateObservers[Symbol.iterator](), _step39; !(_iteratorNormalCompletion39 = (_step39 = _iterator39.next()).done); _iteratorNormalCompletion39 = true) {
+          for (var _iterator39 = _this36.updateObservers[Symbol.iterator](), _step39; !(_iteratorNormalCompletion39 = (_step39 = _iterator39.next()).done); _iteratorNormalCompletion39 = true) {
             var observer = _step39.value;
 
             observer.callback(component);
@@ -39511,7 +39554,7 @@ angular.module('app').service('httpManager', HttpManager);
 var MigrationManager = function () {
   MigrationManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'componentManager'];
   function MigrationManager($rootScope, modelManager, syncManager, componentManager) {
-    var _this36 = this;
+    var _this37 = this;
 
     _classCallCheck(this, MigrationManager);
 
@@ -39530,7 +39573,7 @@ var MigrationManager = function () {
       var _iteratorError40 = undefined;
 
       try {
-        for (var _iterator40 = _this36.migrators[Symbol.iterator](), _step40; !(_iteratorNormalCompletion40 = (_step40 = _iterator40.next()).done); _iteratorNormalCompletion40 = true) {
+        for (var _iterator40 = _this37.migrators[Symbol.iterator](), _step40; !(_iteratorNormalCompletion40 = (_step40 = _iterator40.next()).done); _iteratorNormalCompletion40 = true) {
           var migrator = _step40.value;
 
           var items = allItems.filter(function (item) {
@@ -39565,7 +39608,7 @@ var MigrationManager = function () {
   _createClass(MigrationManager, [{
     key: 'addEditorToComponentMigrator',
     value: function addEditorToComponentMigrator() {
-      var _this37 = this;
+      var _this38 = this;
 
       this.migrators.push({
         content_type: "SN|Editor",
@@ -39581,8 +39624,8 @@ var MigrationManager = function () {
               var editor = _step41.value;
 
               // If there's already a component for this url, then skip this editor
-              if (editor.url && !_this37.componentManager.componentForUrl(editor.url)) {
-                var component = _this37.modelManager.createItem({
+              if (editor.url && !_this38.componentManager.componentForUrl(editor.url)) {
+                var component = _this38.modelManager.createItem({
                   content_type: "SN|Component",
                   url: editor.url,
                   name: editor.name,
@@ -39590,7 +39633,7 @@ var MigrationManager = function () {
                 });
                 component.setAppDataItem("data", editor.data);
                 component.setDirty(true);
-                _this37.modelManager.addItem(component);
+                _this38.modelManager.addItem(component);
               }
             }
           } catch (err) {
@@ -39616,7 +39659,7 @@ var MigrationManager = function () {
             for (var _iterator42 = editors[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
               var _editor = _step42.value;
 
-              _this37.modelManager.setItemToBeDeleted(_editor);
+              _this38.modelManager.setItemToBeDeleted(_editor);
             }
           } catch (err) {
             _didIteratorError42 = true;
@@ -39633,7 +39676,7 @@ var MigrationManager = function () {
             }
           }
 
-          _this37.syncManager.sync("addEditorToComponentMigrator");
+          _this38.syncManager.sync("addEditorToComponentMigrator");
         }
       });
     }
@@ -39658,6 +39701,10 @@ var ModelManager = function () {
     ModelManager.MappingSourceRemoteActionRetrieved = "MappingSourceRemoteActionRetrieved"; /* aciton-based Extensions like note history */
     ModelManager.MappingSourceFileImport = "MappingSourceFileImport";
 
+    ModelManager.isMappingSourceRetrieved = function (source) {
+      return [ModelManager.MappingSourceRemoteRetrieved, ModelManager.MappingSourceComponentRetrieved, ModelManager.MappingSourceRemoteActionRetrieved].includes(source);
+    };
+
     this.storageManager = storageManager;
     this.notes = [];
     this.tags = [];
@@ -39680,9 +39727,13 @@ var ModelManager = function () {
   }, {
     key: 'alternateUUIDForItem',
     value: function alternateUUIDForItem(item, callback, removeOriginal) {
-      var _this38 = this;
+      var _this39 = this;
 
-      // we need to clone this item and give it a new uuid, then delete item with old uuid from db (you can't mofidy uuid's in our indexeddb setup)
+      // We need to clone this item and give it a new uuid, then delete item with old uuid from db (you can't modify uuid's in our indexeddb setup)
+
+      // Collapse in memory properties to item's content object, as the new item will be created based on the content object, and not the physical properties. (like note.text or note.title)
+      item.refreshContentObject();
+
       var newItem = this.createItem(item);
 
       newItem.uuid = SFJS.crypto.generateUUID();
@@ -39695,7 +39746,7 @@ var ModelManager = function () {
       console.log(item.uuid, "-->", newItem.uuid);
 
       var block = function block() {
-        _this38.addItem(newItem);
+        _this39.addItem(newItem);
         newItem.setDirty(true);
         newItem.markAllReferencesDirty();
         callback();
@@ -40041,9 +40092,18 @@ var ModelManager = function () {
 
       return item;
     }
+
+    /*
+      Be sure itemResponse is a generic Javascript object, and not an Item.
+      An Item needs to collapse its properties into its content object before it can be duplicated.
+      Note: the reason we need this function is specificallty for the call to resolveReferencesForItem.
+      This method creates but does not add the item to the global inventory. It's used by syncManager
+      to check if this prospective duplicate item is identical to another item, including the references.
+     */
+
   }, {
     key: 'createDuplicateItem',
-    value: function createDuplicateItem(itemResponse, sourceItem) {
+    value: function createDuplicateItem(itemResponse) {
       var dup = this.createItem(itemResponse, true);
       this.resolveReferencesForItem(dup);
       return dup;
@@ -40391,11 +40451,11 @@ var NativeExtManager = function () {
   }, {
     key: 'resolveExtensionsManager',
     value: function resolveExtensionsManager() {
-      var _this39 = this;
+      var _this40 = this;
 
       this.singletonManager.registerSingleton({ content_type: "SN|Component", package_info: { identifier: this.extensionsManagerIdentifier } }, function (resolvedSingleton) {
         // Resolved Singleton
-        _this39.systemExtensions.push(resolvedSingleton.uuid);
+        _this40.systemExtensions.push(resolvedSingleton.uuid);
 
         var needsSync = false;
         if (isDesktopApplication()) {
@@ -40412,7 +40472,7 @@ var NativeExtManager = function () {
 
         if (needsSync) {
           resolvedSingleton.setDirty(true);
-          _this39.syncManager.sync("resolveExtensionsManager");
+          _this40.syncManager.sync("resolveExtensionsManager");
         }
       }, function (valueCallback) {
         // Safe to create. Create and return object.
@@ -40425,7 +40485,7 @@ var NativeExtManager = function () {
 
         var packageInfo = {
           name: "Extensions",
-          identifier: _this39.extensionsManagerIdentifier
+          identifier: _this40.extensionsManagerIdentifier
         };
 
         var item = {
@@ -40447,13 +40507,13 @@ var NativeExtManager = function () {
           item.content.hosted_url = window._extensions_manager_location;
         }
 
-        var component = _this39.modelManager.createItem(item);
-        _this39.modelManager.addItem(component);
+        var component = _this40.modelManager.createItem(item);
+        _this40.modelManager.addItem(component);
 
         component.setDirty(true);
-        _this39.syncManager.sync("resolveExtensionsManager createNew");
+        _this40.syncManager.sync("resolveExtensionsManager createNew");
 
-        _this39.systemExtensions.push(component.uuid);
+        _this40.systemExtensions.push(component.uuid);
 
         valueCallback(component);
       });
@@ -40461,11 +40521,11 @@ var NativeExtManager = function () {
   }, {
     key: 'resolveBatchManager',
     value: function resolveBatchManager() {
-      var _this40 = this;
+      var _this41 = this;
 
       this.singletonManager.registerSingleton({ content_type: "SN|Component", package_info: { identifier: this.batchManagerIdentifier } }, function (resolvedSingleton) {
         // Resolved Singleton
-        _this40.systemExtensions.push(resolvedSingleton.uuid);
+        _this41.systemExtensions.push(resolvedSingleton.uuid);
 
         var needsSync = false;
         if (isDesktopApplication()) {
@@ -40482,7 +40542,7 @@ var NativeExtManager = function () {
 
         if (needsSync) {
           resolvedSingleton.setDirty(true);
-          _this40.syncManager.sync("resolveExtensionsManager");
+          _this41.syncManager.sync("resolveExtensionsManager");
         }
       }, function (valueCallback) {
         // Safe to create. Create and return object.
@@ -40495,7 +40555,7 @@ var NativeExtManager = function () {
 
         var packageInfo = {
           name: "Batch Manager",
-          identifier: _this40.batchManagerIdentifier
+          identifier: _this41.batchManagerIdentifier
         };
 
         var item = {
@@ -40517,13 +40577,13 @@ var NativeExtManager = function () {
           item.content.hosted_url = window._batch_manager_location;
         }
 
-        var component = _this40.modelManager.createItem(item);
-        _this40.modelManager.addItem(component);
+        var component = _this41.modelManager.createItem(item);
+        _this41.modelManager.addItem(component);
 
         component.setDirty(true);
-        _this40.syncManager.sync("resolveBatchManager createNew");
+        _this41.syncManager.sync("resolveBatchManager createNew");
 
-        _this40.systemExtensions.push(component.uuid);
+        _this41.systemExtensions.push(component.uuid);
 
         valueCallback(component);
       });
@@ -40541,7 +40601,7 @@ angular.module('app').service('nativeExtManager', NativeExtManager);
   }];
 
   function PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
-    var _this41 = this;
+    var _this42 = this;
 
     this._hasPasscode = storageManager.getItem("offlineParams", StorageManager.Fixed) != null;
     this._locked = this._hasPasscode;
@@ -40593,11 +40653,11 @@ angular.module('app').service('nativeExtManager', NativeExtManager);
         // After it's cleared, it's safe to write to it
         storageManager.setItem("offlineParams", JSON.stringify(defaultParams), StorageManager.Fixed);
         callback(true);
-      }.bind(_this41));
+      }.bind(_this42));
     };
 
     this.changePasscode = function (newPasscode, callback) {
-      _this41.setPasscode(newPasscode, callback);
+      _this42.setPasscode(newPasscode, callback);
     };
 
     this.clearPasscode = function () {
@@ -40638,7 +40698,7 @@ angular.module('app').service('nativeExtManager', NativeExtManager);
 var SingletonManager = function () {
   SingletonManager.$inject = ['$rootScope', 'modelManager'];
   function SingletonManager($rootScope, modelManager) {
-    var _this42 = this;
+    var _this43 = this;
 
     _classCallCheck(this, SingletonManager);
 
@@ -40647,7 +40707,7 @@ var SingletonManager = function () {
     this.singletonHandlers = [];
 
     $rootScope.$on("initial-data-loaded", function (event, data) {
-      _this42.resolveSingletons(modelManager.allItems, null, true);
+      _this43.resolveSingletons(modelManager.allItems, null, true);
     });
 
     $rootScope.$on("sync:completed", function (event, data) {
@@ -40660,7 +40720,7 @@ var SingletonManager = function () {
       // the whole purpose of this thing.
 
       // Updated solution: resolveSingletons will now evaluate both of these arrays separately.
-      _this42.resolveSingletons(data.retrievedItems, data.savedItems);
+      _this43.resolveSingletons(data.retrievedItems, data.savedItems);
     });
   }
 
@@ -40681,7 +40741,7 @@ var SingletonManager = function () {
   }, {
     key: 'resolveSingletons',
     value: function resolveSingletons(retrievedItems, savedItems, initialLoad) {
-      var _this43 = this;
+      var _this44 = this;
 
       retrievedItems = retrievedItems || [];
       savedItems = savedItems || [];
@@ -40689,19 +40749,19 @@ var SingletonManager = function () {
       var _loop4 = function _loop4(singletonHandler) {
         predicate = singletonHandler.predicate;
 
-        var retrievedSingletonItems = _this43.filterItemsWithPredicate(retrievedItems, predicate);
+        var retrievedSingletonItems = _this44.filterItemsWithPredicate(retrievedItems, predicate);
 
         // We only want to consider saved items count to see if it's more than 0, and do nothing else with it.
         // This way we know there was some action and things need to be resolved. The saved items will come up
         // in filterItemsWithPredicate(this.modelManager.allItems) and be deleted anyway
-        var savedSingletonItemsCount = _this43.filterItemsWithPredicate(savedItems, predicate).length;
+        var savedSingletonItemsCount = _this44.filterItemsWithPredicate(savedItems, predicate).length;
 
         if (retrievedSingletonItems.length > 0 || savedSingletonItemsCount > 0) {
           /*
             Check local inventory and make sure only 1 similar item exists. If more than 1, delete newest
             Note that this local inventory will also contain whatever is in retrievedItems.
           */
-          allExtantItemsMatchingPredicate = _this43.filterItemsWithPredicate(_this43.modelManager.allItems, predicate);
+          allExtantItemsMatchingPredicate = _this44.filterItemsWithPredicate(_this44.modelManager.allItems, predicate);
 
           /*
             Delete all but the earliest created
@@ -40727,7 +40787,7 @@ var SingletonManager = function () {
               for (var _iterator53 = toDelete[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
                 d = _step53.value;
 
-                _this43.modelManager.setItemToBeDeleted(d);
+                _this44.modelManager.setItemToBeDeleted(d);
               }
             } catch (err) {
               _didIteratorError53 = true;
@@ -40744,7 +40804,7 @@ var SingletonManager = function () {
               }
             }
 
-            _this43.$rootScope.sync("resolveSingletons");
+            _this44.$rootScope.sync("resolveSingletons");
 
             // Send remaining item to callback
             singletonHandler.singleton = winningItem;
@@ -40805,10 +40865,10 @@ var SingletonManager = function () {
   }, {
     key: 'filterItemsWithPredicate',
     value: function filterItemsWithPredicate(items, predicate) {
-      var _this44 = this;
+      var _this45 = this;
 
       return items.filter(function (candidate) {
-        return _this44.itemSatisfiesPredicate(candidate, predicate);
+        return _this45.itemSatisfiesPredicate(candidate, predicate);
       });
     }
   }, {
@@ -41259,7 +41319,7 @@ var SyncManager = function () {
   }, {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback, alternateUUIDs) {
-      var _this45 = this;
+      var _this46 = this;
 
       // use a copy, as alternating uuid will affect array
       var originalItems = this.modelManager.allItems.filter(function (item) {
@@ -41267,7 +41327,7 @@ var SyncManager = function () {
       }).slice();
 
       var block = function block() {
-        var allItems = _this45.modelManager.allItems;
+        var allItems = _this46.modelManager.allItems;
         var _iteratorNormalCompletion57 = true;
         var _didIteratorError57 = false;
         var _iteratorError57 = undefined;
@@ -41293,7 +41353,7 @@ var SyncManager = function () {
           }
         }
 
-        _this45.writeItemsToLocalStorage(allItems, false, callback);
+        _this46.writeItemsToLocalStorage(allItems, false, callback);
       };
 
       if (alternateUUIDs) {
@@ -41316,7 +41376,7 @@ var SyncManager = function () {
           // but for some reason retained their data (This happens in Firefox when using private mode).
           // In this case, we should pass false so that both copies are kept. However, it's difficult to
           // detect when the app has entered this state. We will just use true to remove original items for now.
-          _this45.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
+          _this46.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
         };
 
         alternateNextItem();
@@ -41384,11 +41444,26 @@ var SyncManager = function () {
       this.$interval.cancel(this.syncStatus.checker);
     }
   }, {
+    key: 'lockSyncing',
+    value: function lockSyncing() {
+      this.syncLocked = true;
+    }
+  }, {
+    key: 'unlockSyncing',
+    value: function unlockSyncing() {
+      this.syncLocked = false;
+    }
+  }, {
     key: 'sync',
     value: function sync(callback) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
       var source = arguments[2];
 
+
+      if (this.syncLocked) {
+        console.log("Sync Locked, Returning;");
+        return;
+      }
 
       if (!options) options = {};
 
@@ -41673,7 +41748,7 @@ var SyncManager = function () {
   }, {
     key: 'handleUnsavedItemsResponse',
     value: function handleUnsavedItemsResponse(unsaved) {
-      var _this46 = this;
+      var _this47 = this;
 
       if (unsaved.length == 0) {
         return;
@@ -41685,14 +41760,14 @@ var SyncManager = function () {
       var handleNext = function handleNext() {
         if (i >= unsaved.length) {
           // Handled all items
-          _this46.sync(null, { additionalFields: ["created_at", "updated_at"] });
+          _this47.sync(null, { additionalFields: ["created_at", "updated_at"] });
           return;
         }
 
         var mapping = unsaved[i];
         var itemResponse = mapping.item;
-        SFItemTransformer.decryptMultipleItems([itemResponse], _this46.authManager.keys());
-        var item = _this46.modelManager.findItem(itemResponse.uuid);
+        SFItemTransformer.decryptMultipleItems([itemResponse], _this47.authManager.keys());
+        var item = _this47.modelManager.findItem(itemResponse.uuid);
 
         if (!item) {
           // Could be deleted
@@ -41704,7 +41779,7 @@ var SyncManager = function () {
         if (error.tag === "uuid_conflict") {
           // UUID conflicts can occur if a user attempts to
           // import an old data archive with uuids from the old account into a new account
-          _this46.modelManager.alternateUUIDForItem(item, function () {
+          _this47.modelManager.alternateUUIDForItem(item, function () {
             i++;
             handleNext();
           }, true);
@@ -41714,9 +41789,9 @@ var SyncManager = function () {
           // We want a new uuid for the new item. Note that this won't neccessarily adjust references.
           itemResponse.uuid = null;
 
-          var dup = _this46.modelManager.createDuplicateItem(itemResponse, item);
+          var dup = _this47.modelManager.createDuplicateItem(itemResponse);
           if (!itemResponse.deleted && !item.isItemContentEqualWith(dup)) {
-            _this46.modelManager.addItem(dup);
+            _this47.modelManager.addItem(dup);
             dup.conflict_of = item.uuid;
             dup.setDirty(true);
           }
@@ -41806,7 +41881,7 @@ angular.module('app').service('syncManager', SyncManager);
 var ThemeManager = function () {
   ThemeManager.$inject = ['componentManager', 'desktopManager'];
   function ThemeManager(componentManager, desktopManager) {
-    var _this47 = this;
+    var _this48 = this;
 
     _classCallCheck(this, ThemeManager);
 
@@ -41815,18 +41890,18 @@ var ThemeManager = function () {
     desktopManager.registerUpdateObserver(function (component) {
       // Reload theme if active
       if (component.active && component.isTheme()) {
-        _this47.deactivateTheme(component);
+        _this48.deactivateTheme(component);
         setTimeout(function () {
-          _this47.activateTheme(component);
+          _this48.activateTheme(component);
         }, 10);
       }
     });
 
     componentManager.registerHandler({ identifier: "themeManager", areas: ["themes"], activationHandler: function activationHandler(component) {
         if (component.active) {
-          _this47.activateTheme(component);
+          _this48.activateTheme(component);
         } else {
-          _this47.deactivateTheme(component);
+          _this48.deactivateTheme(component);
         }
       } });
   }
@@ -42184,10 +42259,17 @@ var AccountMenu = function () {
       };
 
       $scope.login = function (extraParams) {
+        // Prevent a timed sync from occuring while signing in. There may be a race condition where when
+        // calling `markAllItemsDirtyAndSaveOffline` during sign in, if an authenticated sync happens to occur
+        // right before that's called, items retreived from that sync will be marked as dirty, then resynced, causing mass duplication.
+        // Unlock sync after all sign in processes are complete.
+        syncManager.lockSyncing();
+
         $scope.formData.status = "Generating Login Keys...";
         $timeout(function () {
           authManager.login($scope.formData.url, $scope.formData.email, $scope.formData.user_password, $scope.formData.ephemeral, extraParams, function (response) {
             if (!response || response.error) {
+              syncManager.unlockSyncing();
               $scope.formData.status = null;
               var error = response ? response.error : { message: "An unknown error occured."
 
@@ -42211,7 +42293,10 @@ var AccountMenu = function () {
 
             // Success
             else {
-                $scope.onAuthSuccess();
+                $scope.onAuthSuccess(function () {
+                  syncManager.unlockSyncing();
+                  syncManager.sync("onLogin");
+                });
               }
           });
         });
@@ -42234,7 +42319,9 @@ var AccountMenu = function () {
               var error = response ? response.error : { message: "An unknown error occured." };
               alert(error.message);
             } else {
-              $scope.onAuthSuccess();
+              $scope.onAuthSuccess(function () {
+                syncManager.sync("onRegister");
+              });
             }
           });
         });
@@ -42248,12 +42335,12 @@ var AccountMenu = function () {
         }
       };
 
-      $scope.onAuthSuccess = function () {
+      $scope.onAuthSuccess = function (callback) {
         var block = function block() {
           $timeout(function () {
             $scope.onSuccessfulAuth()();
             syncManager.refreshErroredItems();
-            syncManager.sync("onAuthSuccess");
+            callback && callback();
           });
         };
 
@@ -42767,7 +42854,7 @@ var ActionsMenu = function () {
       };
 
       $scope.subRowsForAction = function (parentAction, extension) {
-        var _this48 = this;
+        var _this49 = this;
 
         if (!parentAction.subactions) {
           return null;
@@ -42775,7 +42862,7 @@ var ActionsMenu = function () {
         return parentAction.subactions.map(function (subaction) {
           return {
             onClick: function onClick($event) {
-              _this48.executeAction(subaction, extension, parentAction);
+              _this49.executeAction(subaction, extension, parentAction);
               $event.stopPropagation();
             },
             title: subaction.label,
@@ -42854,7 +42941,7 @@ var ComponentView = function () {
   _createClass(ComponentView, [{
     key: 'link',
     value: function link($scope, el, attrs, ctrl) {
-      var _this49 = this;
+      var _this50 = this;
 
       $scope.el = el;
 
@@ -42864,19 +42951,19 @@ var ComponentView = function () {
 
       this.componentManager.registerHandler({ identifier: $scope.identifier, areas: [$scope.component.area], activationHandler: function activationHandler(component) {
           if (component.active) {
-            _this49.timeout(function () {
-              var iframe = _this49.componentManager.iframeForComponent(component);
+            _this50.timeout(function () {
+              var iframe = _this50.componentManager.iframeForComponent(component);
               if (iframe) {
                 iframe.onload = function () {
                   this.componentManager.registerComponentWindow(component, iframe.contentWindow);
-                }.bind(_this49);
+                }.bind(_this50);
               }
             });
           }
         },
         actionHandler: function actionHandler(component, action, data) {
           if (action == "set-size") {
-            _this49.componentManager.handleSetSizeEvent(component, data);
+            _this50.componentManager.handleSetSizeEvent(component, data);
           }
         } });
 
@@ -43956,191 +44043,6 @@ angular.module('app').directive('permissionsModal', function () {
   );
 
 
-  $templateCache.put('directives/global-extensions-menu.html',
-    "<div class='panel' id='global-ext-menu'>\n" +
-    "  <div class='panel-body'>\n" +
-    "    <div class='container'>\n" +
-    "      <div class='float-group h20'>\n" +
-    "        <h1 class='tinted pull-left'>Extensions</h1>\n" +
-    "        <a class='block pull-right dashboard-link' href='https://dashboard.standardnotes.org' target='_blank'>Open Dashboard</a>\n" +
-    "      </div>\n" +
-    "      <div class='clear' ng-if='!actionsManager.extensions.length &amp;&amp; !themeManager.themes.length &amp;&amp; !componentManager.components.length'>\n" +
-    "        <p>Customize your experience with editors, themes, and actions.</p>\n" +
-    "        <div class='tinted-box mt-10'>\n" +
-    "          <h3>Available as part of the Extended subscription.</h3>\n" +
-    "          <p class='mt-5'>Note history</p>\n" +
-    "          <p class='mt-5'>Automated backups</p>\n" +
-    "          <p class='mt-5'>Editors, themes, and actions</p>\n" +
-    "          <a href='https://standardnotes.org/extensions' target='_blank'>\n" +
-    "            <button class='mt-10'>\n" +
-    "              <h3>Learn More</h3>\n" +
-    "            </button>\n" +
-    "          </a>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
-    "    <div ng-if='themeManager.themes.length &gt; 0'>\n" +
-    "      <div class='header container section-margin'>\n" +
-    "        <h2>Themes</h2>\n" +
-    "      </div>\n" +
-    "      <ul>\n" +
-    "        <li ng-click='clickedExtension(theme)' ng-repeat=\"theme in themeManager.themes | orderBy: 'name'\">\n" +
-    "          <div class='container'>\n" +
-    "            <h3>\n" +
-    "              <input class='bold' ng-if='theme.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(theme);' ng-model='theme.tempName' should-focus='true' sn-autofocus='true'>\n" +
-    "              <span ng-if='!theme.rename'>{{theme.name}}</span>\n" +
-    "            </h3>\n" +
-    "            <div class='mt-3' ng-if='theme.showDetails'>\n" +
-    "              <div class='link-group'>\n" +
-    "                <a ng-click='renameExtension(theme); $event.stopPropagation();'>Rename</a>\n" +
-    "                <a ng-click='theme.showLink = !theme.showLink; $event.stopPropagation();'>Show Link</a>\n" +
-    "                <a class='red' ng-click='deleteTheme(theme); $event.stopPropagation();'>Delete</a>\n" +
-    "                <p class='small selectable wrap' ng-if='theme.showLink'>\n" +
-    "                  {{theme.url}}\n" +
-    "                </p>\n" +
-    "              </div>\n" +
-    "            </div>\n" +
-    "          </div>\n" +
-    "        </li>\n" +
-    "      </ul>\n" +
-    "    </div>\n" +
-    "    <div ng-if='actionsManager.extensions.length'>\n" +
-    "      <div class='header container section-margin'>\n" +
-    "        <h2>Actions</h2>\n" +
-    "        <p style='margin-top: 3px;'>Choose \"Actions\" in the note editor to use installed actions.</p>\n" +
-    "      </div>\n" +
-    "      <ul>\n" +
-    "        <li ng-click='clickedExtension(extension)' ng-init='extension.formData = {}' ng-repeat=\"extension in actionsManager.extensions | orderBy: 'name'\">\n" +
-    "          <div class='container'>\n" +
-    "            <h3>\n" +
-    "              <input class='bold' ng-if='extension.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(extension);' ng-model='extension.tempName' should-focus='true' sn-autofocus='true'>\n" +
-    "              <span ng-if='!extension.rename'>{{extension.name}}</span>\n" +
-    "            </h3>\n" +
-    "            <p class='small' ng-if='extension.description'>{{extension.description}}</p>\n" +
-    "            <div ng-if='extension.showDetails'>\n" +
-    "              <div class='mt-10'>\n" +
-    "                <label class='block'>Access Type</label>\n" +
-    "                <label class='normal block' ng-click=' $event.stopPropagation();'>\n" +
-    "                  <input ng-change='changeExtensionEncryptionFormat(true, extension);' ng-model='extension.encrypted' ng-value='true' type='radio'>\n" +
-    "                  Encrypted\n" +
-    "                </label>\n" +
-    "                <label class='normal block' ng-click=' $event.stopPropagation();'>\n" +
-    "                  <input ng-change='changeExtensionEncryptionFormat(false, extension);' ng-model='extension.encrypted' ng-value='false' type='radio'>\n" +
-    "                  Decrypted\n" +
-    "                </label>\n" +
-    "              </div>\n" +
-    "              <div class='small-v-space'></div>\n" +
-    "              <ul ng-repeat='action in extension.actionsInGlobalContext()'>\n" +
-    "                <li>\n" +
-    "                  <label class='block'>{{action.label}}</label>\n" +
-    "                  <em style='font-style: italic;'>{{action.desc}}</em>\n" +
-    "                  <em ng-if=\"action.repeat_mode == 'watch'\">\n" +
-    "                    Repeats when a change is made to your items.\n" +
-    "                  </em>\n" +
-    "                  <em ng-if=\"action.repeat_mode == 'loop'\">\n" +
-    "                    Repeats at most once every {{action.repeat_timeout}} seconds\n" +
-    "                  </em>\n" +
-    "                  <div>\n" +
-    "                    <a ng-click='action.showPermissions = !action.showPermissions'>{{action.showPermissions ? \"Hide permissions\" : \"Show permissions\"}}</a>\n" +
-    "                    <div ng-if='action.showPermissions'>\n" +
-    "                      {{action.permissionsString()}}\n" +
-    "                      <label class='block normal'>{{action.encryptionModeString()}}</label>\n" +
-    "                    </div>\n" +
-    "                  </div>\n" +
-    "                  <div>\n" +
-    "                    <div class='mt-5' ng-if='action.repeat_mode'>\n" +
-    "                      <button class='light tinted' ng-click='actionsManager.disableRepeatAction(action, extension); $event.stopPropagation();' ng-if='actionsManager.isRepeatActionEnabled(action)'>Disable</button>\n" +
-    "                      <button class='light tinted' ng-click='actionsManager.enableRepeatAction(action, extension); $event.stopPropagation();' ng-if='!actionsManager.isRepeatActionEnabled(action)'>Enable</button>\n" +
-    "                    </div>\n" +
-    "                    <button class='light mt-10' ng-click='selectedAction(action, extension); $event.stopPropagation();' ng-if='!action.running &amp;&amp; !action.repeat_mode'>\n" +
-    "                      Perform Action\n" +
-    "                    </button>\n" +
-    "                    <div class='spinner mb-5 block' ng-if='action.running'></div>\n" +
-    "                  </div>\n" +
-    "                  <p class='mb-5 mt-5 small' ng-if='!action.error &amp;&amp; action.lastExecuted &amp;&amp; !action.running'>\n" +
-    "                    Last run {{action.lastExecuted | appDateTime}}\n" +
-    "                  </p>\n" +
-    "                  <label class='red' ng-if='action.error'>\n" +
-    "                    Error performing action.\n" +
-    "                  </label>\n" +
-    "                </li>\n" +
-    "              </ul>\n" +
-    "              <a class='block mt-5' ng-click='renameExtension(extension); $event.stopPropagation();'>Rename</a>\n" +
-    "              <a class='block mt-5' ng-click='extension.showURL = !extension.showURL; $event.stopPropagation();'>Show Link</a>\n" +
-    "              <p class='wrap selectable small' ng-if='extension.showURL'>{{extension.url}}</p>\n" +
-    "              <a class='block mt-5' ng-click='deleteActionExtension(extension); $event.stopPropagation();'>Delete</a>\n" +
-    "            </div>\n" +
-    "          </div>\n" +
-    "        </li>\n" +
-    "      </ul>\n" +
-    "    </div>\n" +
-    "    <div ng-if='componentManager.components.length &gt; 0'>\n" +
-    "      <div class='header container section-margin'>\n" +
-    "        <h2>Components</h2>\n" +
-    "      </div>\n" +
-    "      <ul>\n" +
-    "        <li ng-click='clickedExtension(component)' ng-repeat=\"component in componentManager.components | orderBy: 'name'\">\n" +
-    "          <div class='container'>\n" +
-    "            <h3>\n" +
-    "              <input class='bold' ng-if='component.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(component);' ng-model='component.tempName' should-focus='true' sn-autofocus='true'>\n" +
-    "              <span ng-if='!component.rename'>{{component.name}}</span>\n" +
-    "            </h3>\n" +
-    "            <div ng-if='component.isEditor()'>\n" +
-    "              <a ng-click='makeEditorDefault(component); $event.stopPropagation();' ng-if='!component.isDefaultEditor()'>Make Default</a>\n" +
-    "              <a ng-click='removeEditorDefault(component); $event.stopPropagation();' ng-if='component.isDefaultEditor()'>Remove Default</a>\n" +
-    "            </div>\n" +
-    "            <div ng-if='!component.isEditor()'>\n" +
-    "              <a ng-click='componentManager.activateComponent(component); $event.stopPropagation();' ng-if='!componentManager.isComponentActive(component)'>Activate</a>\n" +
-    "              <a ng-click='componentManager.deactivateComponent(component); $event.stopPropagation();' ng-if='componentManager.isComponentActive(component)'>Deactivate</a>\n" +
-    "            </div>\n" +
-    "            <div class='mt-3' ng-if='component.showDetails'>\n" +
-    "              <div class='link-group'>\n" +
-    "                <a ng-click='renameExtension(component); $event.stopPropagation();'>Rename</a>\n" +
-    "                <a ng-click='component.showLink = !component.showLink; $event.stopPropagation();'>Show Link</a>\n" +
-    "                <a ng-click='revokePermissions(component); $event.stopPropagation();' ng-if='component.permissions.length'>Revoke Permissions</a>\n" +
-    "                <a class='red' ng-click='deleteComponent(component); $event.stopPropagation();'>Delete</a>\n" +
-    "                <p class='small selectable wrap' ng-if='component.showLink'>\n" +
-    "                  {{component.url}}\n" +
-    "                </p>\n" +
-    "              </div>\n" +
-    "            </div>\n" +
-    "          </div>\n" +
-    "        </li>\n" +
-    "      </ul>\n" +
-    "    </div>\n" +
-    "    <div ng-if='serverExtensions.length &gt; 0'>\n" +
-    "      <div class='header container section-margin'>\n" +
-    "        <h2>Server Extensions</h2>\n" +
-    "      </div>\n" +
-    "      <ul>\n" +
-    "        <li ng-click='ext.showDetails = !ext.showDetails' ng-repeat='ext in serverExtensions'>\n" +
-    "          <div class='container'>\n" +
-    "            <strong class='red medium' ng-if='ext.conflict_of'>Conflicted copy</strong>\n" +
-    "            <h3>{{nameForServerExtension(ext)}}</h3>\n" +
-    "            <div class='mt-3' ng-if='ext.showDetails'>\n" +
-    "              <div class='link-group'>\n" +
-    "                <a ng-click='ext.showUrl = !ext.showUrl; $event.stopPropagation();'>Show Link</a>\n" +
-    "                <a class='red' ng-click='deleteServerExt(ext); $event.stopPropagation();'>Delete</a>\n" +
-    "              </div>\n" +
-    "              <div class='wrap mt-5 selectable' ng-if='ext.showUrl'>{{ext.url}}</div>\n" +
-    "            </div>\n" +
-    "          </div>\n" +
-    "        </li>\n" +
-    "      </ul>\n" +
-    "    </div>\n" +
-    "    <div class='container section-margin'>\n" +
-    "      <h2 class='tinted'>Install</h2>\n" +
-    "      <p class='faded'>Enter an install link</p>\n" +
-    "      <form class='mt-10 mb-10'>\n" +
-    "        <input autocomplete='off' autofocus='autofocus' class='form-control' name='url' ng-keyup='$event.keyCode == 13 &amp;&amp; submitInstallLink();' ng-model='formData.installLink' required type='url'>\n" +
-    "      </form>\n" +
-    "      <p class='tinted' ng-if='formData.successfullyInstalled'>Successfully installed extension.</p>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
   $templateCache.put('directives/menu-row.html',
     "<div class='row'>\n" +
     "<div class='column'>\n" +
@@ -44348,914 +44250,6 @@ angular.module('app').directive('permissionsModal', function () {
   );
 
 
-  $templateCache.put('frontend/directives/account-menu.html',
-    "<div class='panel panel-default panel-right account-data-menu'>\n" +
-    "<div class='panel-body large-padding'>\n" +
-    "<div ng-if='!user'>\n" +
-    "<div class='mb-10'>\n" +
-    "<div class='step-one' ng-if='!formData.showLogin &amp;&amp; !formData.showRegister'>\n" +
-    "<h3>Sign in or register to enable sync and end-to-end encryption.</h3>\n" +
-    "<div class='small-v-space'></div>\n" +
-    "<div class='button-group mt-5'>\n" +
-    "<button class='ui-button half-button' ng-click='formData.showLogin = true'>\n" +
-    "<span>Sign In</span>\n" +
-    "</button>\n" +
-    "<button class='ui-button half-button' ng-click='formData.showRegister = true'>\n" +
-    "<span>Register</span>\n" +
-    "</button>\n" +
-    "</div>\n" +
-    "</div>\n" +
-    "<div class='step-two' ng-if='formData.showLogin || formData.showRegister'>\n" +
-    "<div class='float-group h20'>\n" +
-    "<h3 class='pull-left'>{{formData.showLogin ? \"Sign In\" : \"Register (free)\"}}</h3>\n" +
-    "<a class='pull-right pt-5' ng-click='formData.showLogin = false; formData.showRegister = false;'>Cancel</a>\n" +
-    "</div>\n" +
-    "<form class='mt-5'>\n" +
-    "<input autofocus='autofocus' class='form-control mt-10' name='email' ng-model='formData.email' placeholder='Email' required type='email'>\n" +
-    "<input class='form-control' name='password' ng-model='formData.user_password' placeholder='Password' required type='password'>\n" +
-    "<input class='form-control' name='password' ng-if='formData.showRegister' ng-model='formData.password_conf' placeholder='Confirm Password' required type='password'>\n" +
-    "<a class='block' ng-click='formData.showAdvanced = !formData.showAdvanced'>Advanced Options</a>\n" +
-    "<div class='advanced-options mt-10' ng-if='formData.showAdvanced'>\n" +
-    "<div class='float-group'>\n" +
-    "<label class='pull-left'>Sync Server Domain</label>\n" +
-    "</div>\n" +
-    "<input class='form-control mt-5' name='server' ng-model='formData.url' placeholder='Server URL' required type='text'>\n" +
-    "</div>\n" +
-    "<div class='checkbox mt-10'>\n" +
-    "<p>\n" +
-    "<input ng-false-value='true' ng-model='formData.ephemeral' ng-true-value='false' type='checkbox'>\n" +
-    "Stay signed in\n" +
-    "</input>\n" +
-    "</p>\n" +
-    "</div>\n" +
-    "<div class='checkbox mt-10' ng-if='notesAndTagsCount() &gt; 0'>\n" +
-    "<p>\n" +
-    "<input ng-bind='true' ng-change='mergeLocalChanged()' ng-model='formData.mergeLocal' type='checkbox'>\n" +
-    "Merge local data ({{notesAndTagsCount()}} notes and tags)\n" +
-    "</input>\n" +
-    "</p>\n" +
-    "</div>\n" +
-    "<button class='ui-button block mt-10' ng-click='submitAuthForm()'>{{formData.showLogin ? \"Sign In\" : \"Register\"}}</button>\n" +
-    "</form>\n" +
-    "</div>\n" +
-    "<div class='mt-15' ng-if='formData.showRegister'>\n" +
-    "<h3>No Password Reset.</h3>\n" +
-    "<p class='mt-5'>Because your notes are encrypted using your password, Standard Notes does not have a password reset option. You cannot forget your password.</p>\n" +
-    "</div>\n" +
-    "<em class='block center-align mt-10' ng-if='formData.status' style='font-size: 14px;'>{{formData.status}}</em>\n" +
-    "</div>\n" +
-    "</div>\n" +
-    "<div ng-if='user'>\n" +
-    "<h2>{{user.email}}</h2>\n" +
-    "<p>{{server}}</p>\n" +
-    "<div class='bold mt-10 tinted' delay-hide='true' delay='1000' show='syncStatus.syncOpInProgress || syncStatus.needsMoreSync'>\n" +
-    "<div class='spinner inline mr-5 tinted'></div>\n" +
-    "{{\"Syncing\" + (syncStatus.total > 0 ? \":\" : \"\")}}\n" +
-    "<span ng-if='syncStatus.total &gt; 0'>{{syncStatus.current}}/{{syncStatus.total}}</span>\n" +
-    "</div>\n" +
-    "<p class='bold mt-10 red block' ng-if='syncStatus.error'>Error syncing: {{syncStatus.error.message}}</p>\n" +
-    "<a class='block mt-5' ng-click='newPasswordData.changePassword = !newPasswordData.changePassword'>Change Password</a>\n" +
-    "<section class='gray-bg mt-10 medium-padding' ng-if='newPasswordData.changePassword'>\n" +
-    "<p class='bold'>Change Password (Beta)</p>\n" +
-    "<p class='mt-10'>Since your encryption key is based on your password, changing your password requires all your notes and tags to be re-encrypted using your new key.</p>\n" +
-    "<p class='mt-5'>If you have thousands of items, this can take several minutes — you must keep the application window open during this process.</p>\n" +
-    "<p class='mt-5'>After changing your password, you must log out of all other applications currently signed in to your account.</p>\n" +
-    "<p class='bold mt-5'>It is highly recommended you download a backup of your data before proceeding.</p>\n" +
-    "<div class='mt-10' ng-if='!newPasswordData.status'>\n" +
-    "<a class='red mr-5' ng-click='showPasswordChangeForm()' ng-if='!newPasswordData.showForm'>Continue</a>\n" +
-    "<a ng-click='newPasswordData.changePassword = false; newPasswordData.showForm = false'>Cancel</a>\n" +
-    "<div class='mt-10' ng-if='newPasswordData.showForm'>\n" +
-    "<form>\n" +
-    "<input class='form-control' ng-model='newPasswordData.newPassword' placeholder='Enter new password' type='password'>\n" +
-    "<input class='form-control' ng-model='newPasswordData.newPasswordConfirmation' placeholder='Confirm new password' type='password'>\n" +
-    "<button class='ui-button block' ng-click='submitPasswordChange()'>Submit</button>\n" +
-    "</form>\n" +
-    "</div>\n" +
-    "</div>\n" +
-    "<p class='italic mt-10' ng-if='newPasswordData.status'>{{newPasswordData.status}}</p>\n" +
-    "</section>\n" +
-    "<a class='block mt-5' ng-click='showAdvanced = !showAdvanced'>Advanced</a>\n" +
-    "<div ng-if='showAdvanced'>\n" +
-    "<a class='block mt-15' href='{{dashboardURL()}}' target='_blank'>Data Dashboard</a>\n" +
-    "<a class='block mt-5' ng-click='reencryptPressed()'>Re-encrypt All Items</a>\n" +
-    "<a class='block mt-5' ng-click='showCredentials = !showCredentials'>Show Credentials</a>\n" +
-    "<section class='gray-bg mt-10 medium-padding' ng-if='showCredentials'>\n" +
-    "<label class='block'>\n" +
-    "Encryption key:\n" +
-    "<div class='wrap normal mt-1 selectable'>{{encryptionKey()}}</div>\n" +
-    "</label>\n" +
-    "<label class='block mt-5 mb-0'>\n" +
-    "Authentication key:\n" +
-    "<div class='wrap normal mt-1 selectable'>{{authKey() ? authKey() : 'Not available. Sign out then sign back in to compute.'}}</div>\n" +
-    "</label>\n" +
-    "</section>\n" +
-    "</div>\n" +
-    "<div ng-if='securityUpdateAvailable()'>\n" +
-    "<a class='block mt-5' ng-click='clickedSecurityUpdate()'>Security Update Available</a>\n" +
-    "<section class='gray-bg mt-10 medium-padding' ng-if='securityUpdateData.showForm'>\n" +
-    "<p>\n" +
-    "<a href='https://standardnotes.org/help/security-update' target='_blank'>Learn more.</a>\n" +
-    "</p>\n" +
-    "<div class='mt-10' ng-if='!securityUpdateData.processing'>\n" +
-    "<p class='bold'>Enter your password to update:</p>\n" +
-    "<form class='mt-5'>\n" +
-    "<input class='form-control' ng-model='securityUpdateData.password' placeholder='Enter password' type='password'>\n" +
-    "<button class='ui-button block' ng-click='submitSecurityUpdateForm()'>Update</button>\n" +
-    "</form>\n" +
-    "</div>\n" +
-    "<div class='mt-5' ng-if='securityUpdateData.processing'>\n" +
-    "<p class='tinted'>Processing...</p>\n" +
-    "</div>\n" +
-    "</section>\n" +
-    "</div>\n" +
-    "</div>\n" +
-    "<div class='mt-25'>\n" +
-    "<h4>Encryption Status</h4>\n" +
-    "<p>\n" +
-    "{{encryptionStatusString()}}\n" +
-    "</p>\n" +
-    "<div class='mt-5' ng-if='encryptionEnabled()'>\n" +
-    "<i>{{encryptionStatusForNotes()}}</i>\n" +
-    "</div>\n" +
-    "</div>\n" +
-    "<div class='mt-25'>\n" +
-    "<h4>Passcode Lock</h4>\n" +
-    "<div ng-if='!hasPasscode() &amp;&amp; passcodeOptionAvailable()'>\n" +
-    "<p>Add an app passcode to lock the app and encrypt on-device key storage.</p>\n" +
-    "<a class='block mt-5' ng-click='addPasscodeClicked()' ng-if='!formData.showPasscodeForm'>Add Passcode</a>\n" +
-    "<form class='mt-5' ng-if='formData.showPasscodeForm' ng-submit='submitPasscodeForm()'>\n" +
-    "<p class='bold'>Choose a passcode:</p>\n" +
-    "<input autofocus='true' class='form-control mt-10' ng-model='formData.passcode' placeholder='Passcode' type='password'>\n" +
-    "<input class='form-control mt-10' ng-model='formData.confirmPasscode' placeholder='Confirm Passcode' type='password'>\n" +
-    "<button class='standard ui-button block tinted mt-5' type='submit'>Set Passcode</button>\n" +
-    "</form>\n" +
-    "</div>\n" +
-    "<div ng-if='hasPasscode()'>\n" +
-    "<p>\n" +
-    "Passcode lock is enabled.\n" +
-    "<span ng-if='isDesktopApplication()'>Your passcode will be required on new sessions after app quit.</span>\n" +
-    "</p>\n" +
-    "<a class='block mt-5' ng-click='removePasscodePressed()'>Remove Passcode</a>\n" +
-    "</div>\n" +
-    "<div ng-if='!passcodeOptionAvailable()'>\n" +
-    "<p>Passcode lock is only available to permanent sessions. (You chose not to stay signed in.)</p>\n" +
-    "</div>\n" +
-    "</div>\n" +
-    "<div class='mt-25' ng-if='!importData.loading'>\n" +
-    "<h4>Data Archives</h4>\n" +
-    "<div class='mt-5' ng-if='encryptedBackupsAvailable()'>\n" +
-    "<label class='normal inline'>\n" +
-    "<input ng-change='archiveFormData.encrypted = true' ng-model='archiveFormData.encrypted' ng-value='true' type='radio'>\n" +
-    "Encrypted\n" +
-    "</label>\n" +
-    "<label class='normal inline'>\n" +
-    "<input ng-change='archiveFormData.encrypted = false' ng-model='archiveFormData.encrypted' ng-value='false' type='radio'>\n" +
-    "Decrypted\n" +
-    "</label>\n" +
-    "</div>\n" +
-    "<a class='block mt-5' ng-class='{&#39;mt-5&#39; : !user}' ng-click='downloadDataArchive()'>Download Data Archive</a>\n" +
-    "<label class='block mt-5'>\n" +
-    "<input file-change='-&gt;' handler='importFileSelected(files)' style='display: none;' type='file'>\n" +
-    "<div class='fake-link tinted'>Import Data from Archive</div>\n" +
-    "</label>\n" +
-    "<div ng-if='importData.requestPassword'>\n" +
-    "<form ng-submit='submitImportPassword()'>\n" +
-    "<p>Enter the account password associated with the import file.</p>\n" +
-    "<input autofocus='true' class='form-control mt-5' ng-model='importData.password' type='password'>\n" +
-    "<button class='standard ui-button block tinted mt-5' type='submit'>Decrypt & Import</button>\n" +
-    "</form>\n" +
-    "</div>\n" +
-    "<p class='mt-5' ng-if='user'>Notes are downloaded in the Standard File format, which allows you to re-import back into this app easily. To download as plain text files, choose \"Decrypted\".</p>\n" +
-    "</div>\n" +
-    "<div class='spinner mt-10' ng-if='importData.loading'></div>\n" +
-    "<a class='block mt-25 red' ng-click='destroyLocalData()'>{{ user ? \"Sign out and clear local data\" : \"Clear all local data\" }}</a>\n" +
-    "</div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/actions-menu.html',
-    "<div class='sn-component'>\n" +
-    "  <div class='menu-panel dropdown-menu'>\n" +
-    "    <a class='no-decoration' href='https://standardnotes.org/extensions' ng-if='extensions.length == 0' target='blank'>\n" +
-    "      <menu-row title=\"'Download Actions'\"></menu-row>\n" +
-    "    </a>\n" +
-    "    <div ng-repeat='extension in extensions'>\n" +
-    "      <div class='header' ng-click='extension.hide = !extension.hide; $event.stopPropagation();'>\n" +
-    "        <div class='column'>\n" +
-    "          <h4 class='title'>{{extension.name}}</h4>\n" +
-    "          <div class='spinner small loading' ng-if='extension.loading'></div>\n" +
-    "          <div ng-if='extension.hide'>…</div>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "      <menu-row ng-click='executeAction(action, extension); $event.stopPropagation();' ng-if='!extension.hide' ng-repeat='action in extension.actionsWithContextForItem(item)' spinner-class=\"action.running ? 'info' : null\" sub-rows='action.subrows' subtitle='action.desc' title='action.label'>\n" +
-    "        <div class='sublabel' ng-if='action.access_type'>\n" +
-    "          Uses\n" +
-    "          <strong>{{action.access_type}}</strong>\n" +
-    "          access to this note.\n" +
-    "        </div>\n" +
-    "      </menu-row>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "</div>\n" +
-    "<div class='modal medium' ng-click='$event.stopPropagation();' ng-if='renderData.showRenderModal'>\n" +
-    "  <div class='content'>\n" +
-    "    <div class='sn-component'>\n" +
-    "      <div class='panel'>\n" +
-    "        <div class='header'>\n" +
-    "          <h1 class='title'>Preview</h1>\n" +
-    "          <a class='close-button info' ng-click='renderData.showRenderModal = false; $event.stopPropagation();'>Close</a>\n" +
-    "        </div>\n" +
-    "        <div class='content selectable'>\n" +
-    "          <h2>{{renderData.title}}</h2>\n" +
-    "          <p class='normal' style='white-space: pre-wrap; font-family: monospace; font-size: 16px;'>{{renderData.text}}</p>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/column-resizer.html',
-    "<div style='width: 10px; height: 100%, background-color: red'></div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/component-modal.html',
-    "<div class='background' ng-click='dismiss()'></div>\n" +
-    "<div class='content'>\n" +
-    "  <div class='sn-component'>\n" +
-    "    <div class='panel' ng-attr-id='component-{{component.uuid}}'>\n" +
-    "      <div class='header'>\n" +
-    "        <h1 class='title'>\n" +
-    "          {{component.name}}\n" +
-    "          <span class='subtle subtitle' ng-if='component.runningLocally'>| Desktop Mode</span>\n" +
-    "        </h1>\n" +
-    "        <a class='close-button info' ng-click='dismiss()'>Close</a>\n" +
-    "      </div>\n" +
-    "      <component-view class='component-view' component='component'></component-view>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/component-view.html',
-    "<iframe data-component-id='{{component.uuid}}' frameBorder='0' ng-attr-id='component-{{component.uuid}}' ng-if='component' ng-src='{{getUrl() | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-modals allow-forms'>\n" +
-    "  Loading\n" +
-    "</iframe>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/component.html',
-    "<div class='modal-iframe-container' ng-attr-id='component-{{component.uuid}}'>\n" +
-    "  <iframe class='modal-iframe' data-component-id='{{component.uuid}}' frameBorder='0' ng-src='{{url() | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-modals'></iframe>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/contextual-menu.html',
-    "<ul class='dropdown-menu sectioned-menu'>\n" +
-    "  <div class='extension' ng-repeat='extension in extensions'>\n" +
-    "    <div class='header' ng-click='extension.hide = !extension.hide'>\n" +
-    "      <div class='title'>{{extension.name}}</div>\n" +
-    "      <div class='subtitle'>\n" +
-    "        Will submit your note\n" +
-    "        <strong>{{accessTypeForExtension(extension)}}</strong>\n" +
-    "      </div>\n" +
-    "      <div class='spinner loading' ng-if='extension.loading'></div>\n" +
-    "      <div ng-if='extension.hide'>…</div>\n" +
-    "    </div>\n" +
-    "    <ul ng-if='!extension.hide'>\n" +
-    "      <li class='menu-item' ng-class=\"{'faded' : !isActionEnabled(action, extension)}\" ng-click='executeAction(action, extension);' ng-repeat='action in extension.actionsWithContextForItem(item)'>\n" +
-    "        <label class='menu-item-title'>{{action.label}}</label>\n" +
-    "        <div class='menu-item-subtitle'>{{action.desc}}</div>\n" +
-    "        <div class='small normal' ng-if='!isActionEnabled(action, extension)'>\n" +
-    "          Requires {{action.access_type}} access to this note.\n" +
-    "        </div>\n" +
-    "        <div ng-if='action.showNestedActions'>\n" +
-    "          <ul class='mt-10'>\n" +
-    "            <li class='menu-item white-bg nested-hover' ng-click='executeAction(subaction, extension, action); $event.stopPropagation();' ng-repeat='subaction in action.subactions' style='margin-top: -1px;'>\n" +
-    "              <label class='menu-item-title'>{{subaction.label}}</label>\n" +
-    "              <div class='menu-item-subtitle'>{{subaction.desc}}</div>\n" +
-    "              <span ng-if='subaction.running'>\n" +
-    "                <div class='spinner' style='margin-top: 3px;'></div>\n" +
-    "              </span>\n" +
-    "            </li>\n" +
-    "          </ul>\n" +
-    "        </div>\n" +
-    "        <span ng-if='action.running'>\n" +
-    "          <div class='spinner' style='margin-top: 3px;'></div>\n" +
-    "        </span>\n" +
-    "      </li>\n" +
-    "    </ul>\n" +
-    "  </div>\n" +
-    "</ul>\n" +
-    "<div class='extension-render-modal' ng-click='renderData.showRenderModal = false' ng-if='renderData.showRenderModal'>\n" +
-    "  <div class='content'>\n" +
-    "    <h2>{{renderData.title}}</h2>\n" +
-    "    <p class='normal' style='white-space: pre-wrap; font-family: monospace; font-size: 16px;'>{{renderData.text}}</p>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/editor-menu.html',
-    "<ul class='dropdown-menu sectioned-menu'>\n" +
-    "  <div class='header'>\n" +
-    "    <div class='title'>System Editor</div>\n" +
-    "  </div>\n" +
-    "  <ul>\n" +
-    "    <li class='menu-item' ng-click='selectEditor($event, null)'>\n" +
-    "      <span class='pull-left mr-10' ng-if='selectedEditor == null'>✓</span>\n" +
-    "      <label class='menu-item-title pull-left'>Plain</label>\n" +
-    "    </li>\n" +
-    "  </ul>\n" +
-    "  <div ng-if='editors.length &gt; 0'>\n" +
-    "    <div class='header'>\n" +
-    "      <div class='title'>External Editors</div>\n" +
-    "      <div class='subtitle'>Can access your current note decrypted.</div>\n" +
-    "    </div>\n" +
-    "    <ul>\n" +
-    "      <li class='menu-item' ng-click='selectEditor($event, editor)' ng-repeat='editor in editors'>\n" +
-    "        <strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
-    "        <label class='menu-item-title'>\n" +
-    "          <span class='inline tinted mr-10' ng-if='selectedEditor === editor'>✓</span>\n" +
-    "          {{editor.name}}\n" +
-    "        </label>\n" +
-    "      </li>\n" +
-    "    </ul>\n" +
-    "  </div>\n" +
-    "</ul>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/global-extensions-menu.html',
-    "<div class='panel panel-default account-panel panel-right' id='global-ext-menu'>\n" +
-    "  <div class='panel-body'>\n" +
-    "    <div class='container'>\n" +
-    "      <div class='float-group h20'>\n" +
-    "        <h1 class='tinted pull-left'>Extensions</h1>\n" +
-    "        <a class='block pull-right dashboard-link' href='https://dashboard.standardnotes.org' target='_blank'>Open Dashboard</a>\n" +
-    "      </div>\n" +
-    "      <div class='clear' ng-if='!extensionManager.extensions.length &amp;&amp; !themeManager.themes.length &amp;&amp; !componentManager.components.length'>\n" +
-    "        <p>Customize your experience with editors, themes, and actions.</p>\n" +
-    "        <div class='tinted-box mt-10'>\n" +
-    "          <h3>Available as part of the Extended subscription.</h3>\n" +
-    "          <p class='mt-5'>Note history</p>\n" +
-    "          <p class='mt-5'>Automated backups</p>\n" +
-    "          <p class='mt-5'>Editors, themes, and actions</p>\n" +
-    "          <a href='https://standardnotes.org/extensions' target='_blank'>\n" +
-    "            <button class='mt-10'>\n" +
-    "              <h3>Learn More</h3>\n" +
-    "            </button>\n" +
-    "          </a>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
-    "    <div ng-if='themeManager.themes.length &gt; 0'>\n" +
-    "      <div class='header container section-margin'>\n" +
-    "        <h2>Themes</h2>\n" +
-    "      </div>\n" +
-    "      <ul>\n" +
-    "        <li ng-click='clickedExtension(theme)' ng-repeat=\"theme in themeManager.themes | orderBy: 'name'\">\n" +
-    "          <div class='container'>\n" +
-    "            <h3>\n" +
-    "              <input class='bold' mb-autofocus='true' ng-if='theme.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(theme);' ng-model='theme.tempName' should-focus='true'>\n" +
-    "              <span ng-if='!theme.rename'>{{theme.name}}</span>\n" +
-    "            </h3>\n" +
-    "            <a ng-click='themeManager.activateTheme(theme); $event.stopPropagation();' ng-if='!themeManager.isThemeActive(theme)'>Activate</a>\n" +
-    "            <a ng-click='themeManager.deactivateTheme(theme); $event.stopPropagation();' ng-if='themeManager.isThemeActive(theme)'>Deactivate</a>\n" +
-    "            <div class='mt-3' ng-if='theme.showDetails'>\n" +
-    "              <div class='link-group'>\n" +
-    "                <a ng-click='renameExtension(theme); $event.stopPropagation();'>Rename</a>\n" +
-    "                <a ng-click='theme.showLink = !theme.showLink; $event.stopPropagation();'>Show Link</a>\n" +
-    "                <a class='red' ng-click='deleteTheme(theme); $event.stopPropagation();'>Delete</a>\n" +
-    "                <p class='small selectable wrap' ng-if='theme.showLink'>\n" +
-    "                  {{theme.url}}\n" +
-    "                </p>\n" +
-    "              </div>\n" +
-    "            </div>\n" +
-    "          </div>\n" +
-    "        </li>\n" +
-    "      </ul>\n" +
-    "    </div>\n" +
-    "    <div ng-if='extensionManager.extensions.length'>\n" +
-    "      <div class='header container section-margin'>\n" +
-    "        <h2>Actions</h2>\n" +
-    "        <p style='margin-top: 3px;'>Choose \"Actions\" in the note editor to use installed actions.</p>\n" +
-    "      </div>\n" +
-    "      <ul>\n" +
-    "        <li ng-click='clickedExtension(extension)' ng-init='extension.formData = {}' ng-repeat=\"extension in extensionManager.extensions | orderBy: 'name'\">\n" +
-    "          <div class='container'>\n" +
-    "            <h3>\n" +
-    "              <input class='bold' mb-autofocus='true' ng-if='extension.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(extension);' ng-model='extension.tempName' should-focus='true'>\n" +
-    "              <span ng-if='!extension.rename'>{{extension.name}}</span>\n" +
-    "            </h3>\n" +
-    "            <p class='small' ng-if='extension.description'>{{extension.description}}</p>\n" +
-    "            <div ng-if='extension.showDetails'>\n" +
-    "              <div class='mt-10'>\n" +
-    "                <label class='block'>Access Type</label>\n" +
-    "                <label class='normal block' ng-click=' $event.stopPropagation();'>\n" +
-    "                  <input ng-change='changeExtensionEncryptionFormat(true, extension);' ng-model='extension.encrypted' ng-value='true' type='radio'>\n" +
-    "                  Encrypted\n" +
-    "                </label>\n" +
-    "                <label class='normal block' ng-click=' $event.stopPropagation();'>\n" +
-    "                  <input ng-change='changeExtensionEncryptionFormat(false, extension);' ng-model='extension.encrypted' ng-value='false' type='radio'>\n" +
-    "                  Decrypted\n" +
-    "                </label>\n" +
-    "              </div>\n" +
-    "              <div class='small-v-space'></div>\n" +
-    "              <ul ng-repeat='action in extension.actionsInGlobalContext()'>\n" +
-    "                <li>\n" +
-    "                  <label class='block'>{{action.label}}</label>\n" +
-    "                  <em style='font-style: italic;'>{{action.desc}}</em>\n" +
-    "                  <em ng-if=\"action.repeat_mode == 'watch'\">\n" +
-    "                    Repeats when a change is made to your items.\n" +
-    "                  </em>\n" +
-    "                  <em ng-if=\"action.repeat_mode == 'loop'\">\n" +
-    "                    Repeats at most once every {{action.repeat_timeout}} seconds\n" +
-    "                  </em>\n" +
-    "                  <div>\n" +
-    "                    <a ng-click='action.showPermissions = !action.showPermissions'>{{action.showPermissions ? \"Hide permissions\" : \"Show permissions\"}}</a>\n" +
-    "                    <div ng-if='action.showPermissions'>\n" +
-    "                      {{action.permissionsString()}}\n" +
-    "                      <label class='block normal'>{{action.encryptionModeString()}}</label>\n" +
-    "                    </div>\n" +
-    "                  </div>\n" +
-    "                  <div>\n" +
-    "                    <div class='mt-5' ng-if='action.repeat_mode'>\n" +
-    "                      <button class='light tinted' ng-click='extensionManager.disableRepeatAction(action, extension); $event.stopPropagation();' ng-if='extensionManager.isRepeatActionEnabled(action)'>Disable</button>\n" +
-    "                      <button class='light tinted' ng-click='extensionManager.enableRepeatAction(action, extension); $event.stopPropagation();' ng-if='!extensionManager.isRepeatActionEnabled(action)'>Enable</button>\n" +
-    "                    </div>\n" +
-    "                    <button class='light mt-10' ng-click='selectedAction(action, extension); $event.stopPropagation();' ng-if='!action.running &amp;&amp; !action.repeat_mode'>\n" +
-    "                      Perform Action\n" +
-    "                    </button>\n" +
-    "                    <div class='spinner mb-5 block' ng-if='action.running'></div>\n" +
-    "                  </div>\n" +
-    "                  <p class='mb-5 mt-5 small' ng-if='!action.error &amp;&amp; action.lastExecuted &amp;&amp; !action.running'>\n" +
-    "                    Last run {{action.lastExecuted | appDateTime}}\n" +
-    "                  </p>\n" +
-    "                  <label class='red' ng-if='action.error'>\n" +
-    "                    Error performing action.\n" +
-    "                  </label>\n" +
-    "                </li>\n" +
-    "              </ul>\n" +
-    "              <a class='block mt-5' ng-click='renameExtension(extension); $event.stopPropagation();'>Rename</a>\n" +
-    "              <a class='block mt-5' ng-click='extension.showURL = !extension.showURL; $event.stopPropagation();'>Show Link</a>\n" +
-    "              <p class='wrap selectable small' ng-if='extension.showURL'>{{extension.url}}</p>\n" +
-    "              <a class='block mt-5' ng-click='deleteActionExtension(extension); $event.stopPropagation();'>Delete</a>\n" +
-    "            </div>\n" +
-    "          </div>\n" +
-    "        </li>\n" +
-    "      </ul>\n" +
-    "    </div>\n" +
-    "    <div ng-if='componentManager.components.length &gt; 0'>\n" +
-    "      <div class='header container section-margin'>\n" +
-    "        <h2>Components</h2>\n" +
-    "      </div>\n" +
-    "      <ul>\n" +
-    "        <li ng-click='clickedExtension(component)' ng-repeat=\"component in componentManager.components | orderBy: 'name'\">\n" +
-    "          <div class='container'>\n" +
-    "            <h3>\n" +
-    "              <input class='bold' mb-autofocus='true' ng-if='component.rename' ng-keyup='$event.keyCode == 13 &amp;&amp; submitExtensionRename(component);' ng-model='component.tempName' should-focus='true'>\n" +
-    "              <span ng-if='!component.rename'>{{component.name}}</span>\n" +
-    "            </h3>\n" +
-    "            <div ng-if='component.isEditor()'>\n" +
-    "              <a ng-click='makeEditorDefault(component); $event.stopPropagation();' ng-if='!component.isDefaultEditor()'>Make Default</a>\n" +
-    "              <a ng-click='removeEditorDefault(component); $event.stopPropagation();' ng-if='component.isDefaultEditor()'>Remove Default</a>\n" +
-    "            </div>\n" +
-    "            <div ng-if='!component.isEditor()'>\n" +
-    "              <a ng-click='componentManager.activateComponent(component); $event.stopPropagation();' ng-if='!componentManager.isComponentActive(component)'>Activate</a>\n" +
-    "              <a ng-click='componentManager.deactivateComponent(component); $event.stopPropagation();' ng-if='componentManager.isComponentActive(component)'>Deactivate</a>\n" +
-    "            </div>\n" +
-    "            <div class='mt-3' ng-if='component.showDetails'>\n" +
-    "              <div class='link-group'>\n" +
-    "                <a ng-click='renameExtension(component); $event.stopPropagation();'>Rename</a>\n" +
-    "                <a ng-click='component.showLink = !component.showLink; $event.stopPropagation();'>Show Link</a>\n" +
-    "                <a ng-click='revokePermissions(component); $event.stopPropagation();' ng-if='component.permissions.length'>Revoke Permissions</a>\n" +
-    "                <a class='red' ng-click='deleteComponent(component); $event.stopPropagation();'>Delete</a>\n" +
-    "                <p class='small selectable wrap' ng-if='component.showLink'>\n" +
-    "                  {{component.url}}\n" +
-    "                </p>\n" +
-    "              </div>\n" +
-    "            </div>\n" +
-    "          </div>\n" +
-    "        </li>\n" +
-    "      </ul>\n" +
-    "    </div>\n" +
-    "    <div ng-if='serverExtensions.length &gt; 0'>\n" +
-    "      <div class='header container section-margin'>\n" +
-    "        <h2>Server Extensions</h2>\n" +
-    "      </div>\n" +
-    "      <ul>\n" +
-    "        <li ng-click='ext.showDetails = !ext.showDetails' ng-repeat='ext in serverExtensions'>\n" +
-    "          <div class='container'>\n" +
-    "            <strong class='red medium' ng-if='ext.conflict_of'>Conflicted copy</strong>\n" +
-    "            <h3>{{nameForServerExtension(ext)}}</h3>\n" +
-    "            <div class='mt-3' ng-if='ext.showDetails'>\n" +
-    "              <div class='link-group'>\n" +
-    "                <a ng-click='ext.showUrl = !ext.showUrl; $event.stopPropagation();'>Show Link</a>\n" +
-    "                <a class='red' ng-click='deleteServerExt(ext); $event.stopPropagation();'>Delete</a>\n" +
-    "              </div>\n" +
-    "              <div class='wrap mt-5 selectable' ng-if='ext.showUrl'>{{ext.url}}</div>\n" +
-    "            </div>\n" +
-    "          </div>\n" +
-    "        </li>\n" +
-    "      </ul>\n" +
-    "    </div>\n" +
-    "    <div class='container section-margin'>\n" +
-    "      <h2 class='tinted'>Install</h2>\n" +
-    "      <p class='faded'>Enter an install link</p>\n" +
-    "      <form class='mt-10 mb-10'>\n" +
-    "        <input autocomplete='off' autofocus='autofocus' class='form-control' name='url' ng-keyup='$event.keyCode == 13 &amp;&amp; submitInstallLink();' ng-model='formData.installLink' required type='url'>\n" +
-    "      </form>\n" +
-    "      <p class='tinted' ng-if='formData.successfullyInstalled'>Successfully installed extension.</p>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/menu-row.html',
-    "<div class='row'>\n" +
-    "  <div class='column'>\n" +
-    "    <div class='left'>\n" +
-    "      <div class='column' ng-if='circle'>\n" +
-    "        <div class='circle small' ng-class='circle'></div>\n" +
-    "      </div>\n" +
-    "      <div class='column'>\n" +
-    "        <div class='label'>\n" +
-    "          {{title}}\n" +
-    "        </div>\n" +
-    "        <div class='sublabel' ng-if='subtitle'>\n" +
-    "          {{subtitle}}\n" +
-    "        </div>\n" +
-    "        <ng-transclude></ng-transclude>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
-    "    <div class='subrows' ng-if='subRows &amp;&amp; subRows.length &gt; 0'>\n" +
-    "      <menu-row ng-click='row.onClick($event); $event.stopPropagation();' ng-repeat='row in subRows' spinner-class='row.spinnerClass' subtitle='row.subtitle' title='row.title'></menu-row>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "  <div class='column' ng-if='hasButton'>\n" +
-    "    <div class='button info' ng-class='buttonClass' ng-click='clickButton($event)'>\n" +
-    "      {{buttonText}}\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "  <div class='column' ng-if='spinnerClass'>\n" +
-    "    <div class='spinner small' ng-class='spinnerClass'></div>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/panel-resizer.html',
-    "<div class='panel-resizer-column'></div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/permissions-modal.html',
-    "<div class='background' ng-click='dismiss()'></div>\n" +
-    "<div class='content'>\n" +
-    "  <h3>The following extension has requested these permissions:</h3>\n" +
-    "  <h4>Extension</h4>\n" +
-    "  <p>Name: {{component.name}}</p>\n" +
-    "  <p class='wrap'>URL: {{component.url}}</p>\n" +
-    "  <h4>Permissions</h4>\n" +
-    "  <div class='permission' ng-repeat='permission in formattedPermissions'>\n" +
-    "    <p>{{permission}}</p>\n" +
-    "  </div>\n" +
-    "  <h4>Status</h4>\n" +
-    "  <p class='status' ng-class=\"{'trusted tinted' : component.trusted}\">{{component.trusted ? 'Trusted' : 'Untrusted'}}</p>\n" +
-    "  <div class='learn-more'>\n" +
-    "    <h4>Details</h4>\n" +
-    "    <p>\n" +
-    "      Extensions use an offline messaging system to communicate. With <i>Trusted</i> extensions, data is never sent remotely without your consent. Learn more about extension permissions at\n" +
-    "      <a href='https://standardnotes.org/permissions' target='_blank'>https://standardnotes.org/permissions.</a>\n" +
-    "    </p>\n" +
-    "  </div>\n" +
-    "  <div class='buttons'>\n" +
-    "    <button class='standard white' ng-click='deny()'>Deny</button>\n" +
-    "    <button class='standard tinted' ng-click='accept()'>Accept</button>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/room-bar.html',
-    "<div class='item' click-outside='hideRoom(room)' is-open='room.show &amp;&amp; room.active' ng-click='selectRoom(room)' ng-repeat='room in rooms'>\n" +
-    "  <div class='label'>{{room.name}}</div>\n" +
-    "  <div class='sn-component'>\n" +
-    "    <div class='room-container panel-right panel' ng-attr-id='component-{{room.uuid}}' ng-if='room.show &amp;&amp; room.active'>\n" +
-    "      <iframe class='room-iframe' data-component-id='{{room.uuid}}' frameBorder='0' ng-src='{{componentManager.urlForComponent(room) | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-modals'></iframe>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/directives/security-update-modal.html',
-    "<div class='background' ng-click='dismiss()'></div>\n" +
-    "<div class='content'>\n" +
-    "  <h3>The following extension has requested these permissions:</h3>\n" +
-    "  <h4>Extension</h4>\n" +
-    "  <p>Name: {{component.name}}</p>\n" +
-    "  <p class='wrap'>URL: {{component.url}}</p>\n" +
-    "  <h4>Permissions</h4>\n" +
-    "  <div class='permission' ng-repeat='permission in formattedPermissions'>\n" +
-    "    <p>{{permission}}</p>\n" +
-    "  </div>\n" +
-    "  <h4>Status</h4>\n" +
-    "  <p class='status' ng-class=\"{'trusted' : component.trusted}\">{{component.trusted ? 'Trusted' : 'Untrusted'}}</p>\n" +
-    "  <div class='learn-more'>\n" +
-    "    <h4>Details</h4>\n" +
-    "    <p>\n" +
-    "      Extensions use an offline messaging system to communicate. With <i>Trusted</i> extensions, data is never sent remotely without your consent. Learn more about extension permissions at\n" +
-    "      <a href='https://standardnotes.org/permissions' target='_blank'>https://standardnotes.org/permissions.</a>\n" +
-    "    </p>\n" +
-    "  </div>\n" +
-    "  <div class='buttons'>\n" +
-    "    <button class='standard white' ng-click='deny()'>Deny</button>\n" +
-    "    <button class='standard blue' ng-click='accept()'>Accept</button>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/editor.html',
-    "<div class='section editor' ng-class=\"{'fullscreen' : ctrl.fullscreen}\">\n" +
-    "  <div class='section-title-bar' id='editor-title-bar' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-show='ctrl.note &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
-    "    <div class='title'>\n" +
-    "      <input class='input' id='note-title-editor' ng-change='ctrl.nameChanged()' ng-focus='ctrl.onNameFocus()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTitle($event)' ng-model='ctrl.note.title' select-on-click='true'>\n" +
-    "    </div>\n" +
-    "    <div id='save-status' ng-bind-html='ctrl.noteStatus' ng-class=\"{'red bold': ctrl.saveError, 'orange bold': ctrl.syncTakingTooLong}\"></div>\n" +
-    "    <div class='editor-tags'>\n" +
-    "      <div id='note-tags-component-container' ng-if='ctrl.tagsComponent &amp;&amp; ctrl.tagsComponent.active'>\n" +
-    "        <iframe data-component-id='{{ctrl.tagsComponent.uuid}}' frameBorder='0' id='note-tags-iframe' ng-src='{{ctrl.tagsComponent.url | trusted}}' sandbox='allow-scripts'></iframe>\n" +
-    "      </div>\n" +
-    "      <input class='tags-input' ng-blur='ctrl.updateTagsFromTagsString($event, ctrl.tagsString)' ng-if='!(ctrl.tagsComponent &amp;&amp; ctrl.tagsComponent.active)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur();' ng-model='ctrl.tagsString' placeholder='#tags' type='text'>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "  <ul class='section-menu-bar' ng-if='ctrl.note'>\n" +
-    "    <li click-outside='ctrl.showMenu = false;' is-open='ctrl.showMenu' ng-class=\"{'selected' : ctrl.showMenu}\">\n" +
-    "      <label ng-click='ctrl.showMenu = !ctrl.showMenu; ctrl.showExtensions = false; ctrl.showEditorMenu = false;'>Menu</label>\n" +
-    "      <ul class='dropdown-menu sectioned-menu' ng-if='ctrl.showMenu'>\n" +
-    "        <li>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.togglePin()'>\n" +
-    "            <i class='icon ion-ios-flag'></i>\n" +
-    "            {{ctrl.note.pinned ? \"Unpin\" : \"Pin\"}}\n" +
-    "          </label>\n" +
-    "        </li>\n" +
-    "        <li>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.toggleArchiveNote()'>\n" +
-    "            <i class='icon ion-ios-box'></i>\n" +
-    "            {{ctrl.note.archived ? \"Unarchive\" : \"Archive\"}}\n" +
-    "          </label>\n" +
-    "        </li>\n" +
-    "        <li>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.deleteNote()'>\n" +
-    "            <i class='icon ion-trash-b'></i>\n" +
-    "            Delete\n" +
-    "          </label>\n" +
-    "        </li>\n" +
-    "        <li>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.toggleFullScreen()'>\n" +
-    "            <i class='icon ion-arrow-expand'></i>\n" +
-    "            Toggle Fullscreen\n" +
-    "          </label>\n" +
-    "        </li>\n" +
-    "        <li ng-if='ctrl.hasDisabledStackComponents()'>\n" +
-    "          <label ng-click='ctrl.selectedMenuItem($event); ctrl.restoreDisabledStackComponents()'>Restore Disabled Components</label>\n" +
-    "        </li>\n" +
-    "      </ul>\n" +
-    "    </li>\n" +
-    "    <li click-outside='ctrl.showEditorMenu = false;' is-open='ctrl.showEditorMenu' ng-class=\"{'selected' : ctrl.showEditorMenu}\">\n" +
-    "      <label ng-click='ctrl.showEditorMenu = !ctrl.showEditorMenu; ctrl.showMenu = false; ctrl.showExtensions = false;'>Editor</label>\n" +
-    "      <editor-menu callback='ctrl.selectedEditor' ng-if='ctrl.showEditorMenu' selected-editor='ctrl.editorComponent'></editor-menu>\n" +
-    "    </li>\n" +
-    "    <li click-outside='ctrl.showExtensions = false;' is-open='ctrl.showExtensions' ng-class=\"{'selected' : ctrl.showExtensions}\" ng-if='ctrl.hasAvailableExtensions()'>\n" +
-    "      <label ng-click='ctrl.showExtensions = !ctrl.showExtensions; ctrl.showMenu = false; ctrl.showEditorMenu = false;'>Actions</label>\n" +
-    "      <contextual-extensions-menu item='ctrl.note' ng-if='ctrl.showExtensions'></contextual-extensions-menu>\n" +
-    "    </li>\n" +
-    "  </ul>\n" +
-    "  <div class='editor-content' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-if='ctrl.noteReady &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
-    "    <iframe data-component-id='{{ctrl.editorComponent.uuid}}' frameBorder='0' id='editor-iframe' ng-if='ctrl.editorComponent &amp;&amp; ctrl.editorComponent.active' ng-src='{{ctrl.editorComponent.url | trusted}}' style='width: 100%;'>\n" +
-    "      Loading\n" +
-    "    </iframe>\n" +
-    "    <textarea class='editable' dir='auto' id='note-text-editor' ng-change='ctrl.contentChanged()' ng-class=\"{'fullscreen' : ctrl.fullscreen }\" ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.editorComponent' ng-model='ctrl.note.text'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
-    "  </div>\n" +
-    "  <section class='section' ng-if='ctrl.note.errorDecrypting'>\n" +
-    "    <p class='medium-padding' style='padding-top: 0 !important;'>There was an error decrypting this item. Ensure you are running the latest version of this app, then sign out and sign back in to try again.</p>\n" +
-    "  </section>\n" +
-    "  <div id='editor-pane-component-stack'>\n" +
-    "    <div class='component component-stack-border' id=\"{{'component-' + component.uuid}}\" ng-if='component.active' ng-mouseleave='component.showExit = false' ng-mouseover='component.showExit = true' ng-repeat='component in ctrl.componentStack' ng-show='!component.ignoreEvents'>\n" +
-    "      <div class='exit-button body-text-color' ng-click='ctrl.disableComponentForCurrentItem(component, true)' ng-if='component.showExit'>×</div>\n" +
-    "      <iframe data-component-id='{{component.uuid}}' frameBorder='0' ng-src='{{component.url | trusted}}' sandbox='allow-scripts allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-modals'></iframe>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/footer.html',
-    "<div id='footer-bar'>\n" +
-    "  <div class='pull-left'>\n" +
-    "    <div class='footer-bar-link' click-outside='ctrl.showAccountMenu = false;' is-open='ctrl.showAccountMenu'>\n" +
-    "      <a ng-class='{red: ctrl.error}' ng-click='ctrl.accountMenuPressed()'>Account</a>\n" +
-    "      <account-menu ng-if='ctrl.showAccountMenu' on-successful-auth='ctrl.onAuthSuccess'></account-menu>\n" +
-    "    </div>\n" +
-    "    <div class='footer-bar-link' click-outside='ctrl.showExtensionsMenu = false;' is-open='ctrl.showExtensionsMenu'>\n" +
-    "      <a ng-click='ctrl.toggleExtensions()'>Extensions</a>\n" +
-    "      <global-extensions-menu ng-if='ctrl.showExtensionsMenu'></global-extensions-menu>\n" +
-    "    </div>\n" +
-    "    <div class='footer-bar-link'>\n" +
-    "      <a href='https://standardnotes.org/help' target='_blank'>\n" +
-    "        Help\n" +
-    "      </a>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "  <div class='pull-right'>\n" +
-    "    <div class='footer-bar-link' ng-click='ctrl.clickedNewUpdateAnnouncement()' ng-if='ctrl.newUpdateAvailable'>\n" +
-    "      <span class='tinted normal'>New update downloaded. Installs on app restart.</span>\n" +
-    "    </div>\n" +
-    "    <div class='footer-bar-link' style='margin-right: 5px;'>\n" +
-    "      <span ng-if='ctrl.lastSyncDate' style='float: left; font-weight: normal; margin-right: 8px;'>\n" +
-    "        <span ng-if='!ctrl.isRefreshing'>\n" +
-    "          Last refreshed {{ctrl.lastSyncDate | appDateTime}}\n" +
-    "        </span>\n" +
-    "        <span ng-if='ctrl.isRefreshing'>\n" +
-    "          <div class='spinner' style='margin-top: 2px;'></div>\n" +
-    "        </span>\n" +
-    "      </span>\n" +
-    "      <strong ng-if='ctrl.offline'>Offline</strong>\n" +
-    "      <a ng-click='ctrl.refreshData()' ng-if='!ctrl.offline'>Refresh</a>\n" +
-    "      <span ng-if='ctrl.hasPasscode()'>\n" +
-    "        <i class='icon ion-locked' ng-click='ctrl.lockApp()' ng-if='ctrl.hasPasscode()'></i>\n" +
-    "      </span>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/home.html',
-    "<div class='main-ui-view'>\n" +
-    "  <lock-screen ng-if='needsUnlock' on-success='onSuccessfulUnlock'></lock-screen>\n" +
-    "  <div class='app' ng-if='!needsUnlock'>\n" +
-    "    <tags-section add-new='tagsAddNew' all-tag='allTag' archive-tag='archiveTag' remove-tag='removeTag' save='tagsSave' selection-made='tagsSelectionMade' tags='tags' will-select='tagsWillMakeSelection'></tags-section>\n" +
-    "    <notes-section add-new='notesAddNew' selection-made='notesSelectionMade' tag='selectedTag'></notes-section>\n" +
-    "    <editor-section note='selectedNote' remove='deleteNote' save='saveNote' update-tags='updateTagsForNote'></editor-section>\n" +
-    "  </div>\n" +
-    "  <footer ng-if='!needsUnlock'></footer>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/lock-screen.html',
-    "<div id='lock-screen'>\n" +
-    "  <div class='content'>\n" +
-    "    <h3 class='center-align'>Passcode Required</h3>\n" +
-    "    <form class='mt-20' ng-submit='submitPasscodeForm()'>\n" +
-    "      <input autocomplete='new-password' autofocus='true' class='form-control mt-10' ng-model='formData.passcode' placeholder='Enter Passcode' type='password'>\n" +
-    "      <button class='standard ui-button block tinted mt-5' type='submit'>Unlock</button>\n" +
-    "    </form>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/notes.html',
-    "<div class='section notes'>\n" +
-    "  <div class='content'>\n" +
-    "    <div class='section-title-bar' id='notes-title-bar'>\n" +
-    "      <div class='title'>{{ctrl.tag.title}} notes</div>\n" +
-    "      <div class='add-button' id='notes-add-button' ng-click='ctrl.createNewNote()'>+</div>\n" +
-    "      <br>\n" +
-    "      <div class='filter-section'>\n" +
-    "        <input class='filter-bar' lowercase='true' ng-change='ctrl.filterTextChanged()' ng-model='ctrl.noteFilter.text' placeholder='Search' select-on-click='true'>\n" +
-    "          <div id='search-clear-button' ng-click=\"ctrl.noteFilter.text = ''; ctrl.filterTextChanged()\" ng-if='ctrl.noteFilter.text'>✕</div>\n" +
-    "        </input>\n" +
-    "      </div>\n" +
-    "      <ul class='section-menu-bar' id='notes-menu-bar'>\n" +
-    "        <li class='item-with-subtitle' ng-class=\"{'selected' : ctrl.showMenu}\">\n" +
-    "          <div class='wrapper' ng-click='ctrl.showMenu = !ctrl.showMenu'>\n" +
-    "            <label>Options</label>\n" +
-    "            <div class='subtitle'>{{ctrl.optionsSubtitle()}}</div>\n" +
-    "          </div>\n" +
-    "          <div class='sectioned-menu dropdown-menu' ng-if='ctrl.showMenu'>\n" +
-    "            <ul>\n" +
-    "              <div class='header'>\n" +
-    "                <div class='title'>Sort by</div>\n" +
-    "              </div>\n" +
-    "              <li ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByCreated()'>\n" +
-    "                <label>\n" +
-    "                  <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'created_at'\">✓</span>\n" +
-    "                  By date added\n" +
-    "                </label>\n" +
-    "              </li>\n" +
-    "              <li ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByUpdated()'>\n" +
-    "                <label>\n" +
-    "                  <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'updated_at'\">✓</span>\n" +
-    "                  By date modified\n" +
-    "                </label>\n" +
-    "              </li>\n" +
-    "              <li ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByTitle()'>\n" +
-    "                <label>\n" +
-    "                  <span class='top mt-5 mr-5' ng-if=\"ctrl.sortBy == 'title'\">✓</span>\n" +
-    "                  By title\n" +
-    "                </label>\n" +
-    "              </li>\n" +
-    "            </ul>\n" +
-    "            <ul ng-if='!ctrl.tag.archiveTag'>\n" +
-    "              <div class='header'>\n" +
-    "                <div class='title'>Archives</div>\n" +
-    "              </div>\n" +
-    "              <li ng-click='ctrl.selectedMenuItem($event); ctrl.toggleShowArchived()'>\n" +
-    "                <label>\n" +
-    "                  <span class='top mt-5 mr-5' ng-if='ctrl.showArchived == true'>✓</span>\n" +
-    "                  Show archived notes\n" +
-    "                </label>\n" +
-    "              </li>\n" +
-    "            </ul>\n" +
-    "          </div>\n" +
-    "        </li>\n" +
-    "      </ul>\n" +
-    "    </div>\n" +
-    "    <div class='scrollable'>\n" +
-    "      <div can-load='true' class='infinite-scroll' id='notes-scrollable' infinite-scroll='ctrl.paginate()' threshold='200'>\n" +
-    "        <div class='note' ng-class=\"{'selected' : ctrl.selectedNote == note}\" ng-click='ctrl.selectNote(note)' ng-repeat='note in (ctrl.sortedNotes = (ctrl.tag.notes | filter: ctrl.filterNotes | sortBy: ctrl.sortBy| limitTo:ctrl.notesToDisplay)) track by note.uuid'>\n" +
-    "          <strong class='red medium' ng-if='note.conflict_of'>Conflicted copy</strong>\n" +
-    "          <strong class='red medium' ng-if='note.errorDecrypting'>Error decrypting</strong>\n" +
-    "          <div class='pinned tinted' ng-class=\"{'tinted-selected' : ctrl.selectedNote == note}\" ng-if='note.pinned'>\n" +
-    "            <i class='icon ion-ios-flag'></i>\n" +
-    "            <strong class='medium'>Pinned</strong>\n" +
-    "          </div>\n" +
-    "          <div class='archived tinted' ng-class=\"{'tinted-selected' : ctrl.selectedNote == note}\" ng-if='note.archived &amp;&amp; !ctrl.tag.archiveTag'>\n" +
-    "            <i class='icon ion-ios-box'></i>\n" +
-    "            <strong class='medium'>Archived</strong>\n" +
-    "          </div>\n" +
-    "          <div class='tags-string' ng-if='ctrl.tag.all'>\n" +
-    "            <div class='faded'>{{note.tagsString()}}</div>\n" +
-    "          </div>\n" +
-    "          <div class='name' ng-if='note.title'>\n" +
-    "            {{note.title}}\n" +
-    "          </div>\n" +
-    "          <div class='note-preview'>\n" +
-    "            {{note.text}}\n" +
-    "          </div>\n" +
-    "          <div class='date faded'>\n" +
-    "            <span ng-if=\"ctrl.sortBy == 'updated_at'\">Modified {{note.updatedAtString() || 'Now'}}</span>\n" +
-    "            <span ng-if=\"ctrl.sortBy != 'updated_at'\">{{note.createdAtString() || 'Now'}}</span>\n" +
-    "          </div>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('frontend/tags.html',
-    "<div class='section tags' id='tags-column'>\n" +
-    "  <iframe frameBorder='0' id='tags-list-iframe' ng-if='ctrl.component &amp;&amp; ctrl.component.active' ng-src='{{ctrl.component.url | trusted}}' sandbox='allow-scripts' style='width: 100%; height: 100%;'></iframe>\n" +
-    "  <div class='content' id='tags-content' ng-if='!(ctrl.component &amp;&amp; ctrl.component.active)'>\n" +
-    "    <div class='section-title-bar' id='tags-title-bar'>\n" +
-    "      <div class='title'>Tags</div>\n" +
-    "      <div class='add-button' id='tag-add-button' ng-click='ctrl.clickedAddNewTag()'>+</div>\n" +
-    "    </div>\n" +
-    "    <div class='scrollable'>\n" +
-    "      <div class='tag' ng-class=\"{'selected' : ctrl.selectedTag == ctrl.allTag}\" ng-click='ctrl.selectTag(ctrl.allTag)' ng-if='ctrl.allTag'>\n" +
-    "        <div class='info'>\n" +
-    "          <input class='title' ng-disabled='true' ng-model='ctrl.allTag.title'>\n" +
-    "          <div class='count'>{{ctrl.noteCount(ctrl.allTag)}}</div>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "      <div class='tag' ng-class=\"{'selected' : ctrl.selectedTag == tag}\" ng-click='ctrl.selectTag(tag)' ng-repeat='tag in ctrl.tags track by tag.uuid'>\n" +
-    "        <div class='info'>\n" +
-    "          <input class='title' mb-autofocus='true' ng-attr-id='tag-{{tag.uuid}}' ng-blur='ctrl.saveTag($event, tag)' ng-change='ctrl.tagTitleDidChange(tag)' ng-click='ctrl.selectTag(tag)' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTag($event, tag)' ng-model='tag.title' should-focus='ctrl.newTag || ctrl.editingTag == tag' spellcheck='false'>\n" +
-    "          <div class='count'>{{ctrl.noteCount(tag)}}</div>\n" +
-    "        </div>\n" +
-    "        <div class='red small bold' ng-if='tag.conflict_of'>Conflicted copy</div>\n" +
-    "        <div class='red small bold' ng-if='tag.errorDecrypting'>Error decrypting</div>\n" +
-    "        <div class='menu' ng-if='ctrl.selectedTag == tag'>\n" +
-    "          <a class='item' ng-click='ctrl.selectedRenameTag($event, tag)' ng-if='!ctrl.editingTag'>Rename</a>\n" +
-    "          <a class='item' ng-click='ctrl.saveTag($event, tag)' ng-if='ctrl.editingTag'>Save</a>\n" +
-    "          <a class='item' ng-click='ctrl.selectedDeleteTag(tag)'>Delete</a>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "      <div class='tag faded' ng-class=\"{'selected' : ctrl.selectedTag == ctrl.archiveTag}\" ng-click='ctrl.selectTag(ctrl.archiveTag)' ng-if='ctrl.archiveTag'>\n" +
-    "        <div class='info'>\n" +
-    "          <input class='title' ng-disabled='true' ng-model='ctrl.archiveTag.title'>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
   $templateCache.put('home.html',
     "<div class='main-ui-view' ng-class='platform'>\n" +
     "<lock-screen ng-if='needsUnlock' on-success='onSuccessfulUnlock'></lock-screen>\n" +
@@ -45415,7 +44409,7 @@ angular.module('app').directive('permissionsModal', function () {
     "</div>\n" +
     "<div class='tag' ng-class='{&#39;selected&#39; : ctrl.selectedTag == tag}' ng-click='ctrl.selectTag(tag)' ng-repeat='tag in ctrl.tags track by tag.uuid'>\n" +
     "<div class='info'>\n" +
-    "<input class='title' ng-attr-id='tag-{{tag.uuid}}' ng-blur='ctrl.saveTag($event, tag)' ng-change='ctrl.tagTitleDidChange(tag)' ng-click='ctrl.selectTag(tag)' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTag($event, tag)' ng-model='tag.title' should-focus='ctrl.newTag || ctrl.editingTag == tag' sn-autofocus='true' spellcheck='false'>\n" +
+    "<input class='title' ng-attr-id='tag-{{tag.uuid}}' ng-blur='ctrl.saveTag($event, tag)' ng-change='ctrl.tagTitleDidChange(tag)' ng-click='ctrl.selectTag(tag)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur()' ng-model='tag.title' should-focus='ctrl.newTag || ctrl.editingTag == tag' sn-autofocus='true' spellcheck='false'>\n" +
     "<div class='count'>{{ctrl.noteCount(tag)}}</div>\n" +
     "</div>\n" +
     "<div class='red small bold' ng-if='tag.conflict_of'>Conflicted copy</div>\n" +
