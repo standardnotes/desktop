@@ -36,8 +36,9 @@
         // Download data archive
         ipcRenderer.on('download-backup', function (event, message) {
           var desktopManager = angular.element(document).injector().get('desktopManager');
-          let data = desktopManager.desktop_requestBackupFile();
-          event.sender.send('data-archive', data);
+          let data = desktopManager.desktop_requestBackupFile((data) => {
+            event.sender.send('data-archive', data);
+          });
         });
       }
       catch (e) {

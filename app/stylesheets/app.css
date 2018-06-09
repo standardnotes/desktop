@@ -74,12 +74,15 @@ p {
   top: 0;
   right: 0;
   z-index: 1;
-  width: 8px;
+  width: 6px;
   height: 100%;
   position: absolute;
   cursor: col-resize;
-  background-color: #e0e0e0;
+  background-color: rgba(0, 0, 0, 0.05);
   opacity: 0;
+  border: 1px dashed rgba(8, 109, 214, 0.15);
+  border-top: none;
+  border-bottom: none;
 }
 .app panel-resizer.left {
   left: 0;
@@ -167,6 +170,14 @@ p {
   margin-top: 10px !important;
 }
 
+.mr-5 {
+  margin-right: 5px !important;
+}
+
+.mr-8 {
+  margin-right: 8px !important;
+}
+
 .faded {
   opacity: 0.5;
 }
@@ -177,6 +188,10 @@ p {
 
 .block {
   display: block !important;
+}
+
+.inline {
+  display: inline-block;
 }
 
 .wrap {
@@ -200,11 +215,11 @@ p {
   font-weight: normal !important;
 }
 
-.small {
+.small-text {
   font-size: 10px;
 }
 
-.medium {
+.medium-text {
   font-size: 14px !important;
 }
 
@@ -562,6 +577,9 @@ a.disabled {
   text-align: right;
   color: rgba(0, 0, 0, 0.23);
 }
+#editor-title-bar #save-status .error {
+  color: #f6a200;
+}
 #editor-title-bar .editor-tags {
   clear: left;
   width: 100%;
@@ -652,6 +670,10 @@ a.disabled {
   padding-bottom: 1.4rem;
 }
 
+#password-wizard {
+  font-size: 16px;
+}
+
 .panel {
   background-color: white;
 }
@@ -683,9 +705,16 @@ a.disabled {
 .modal .sn-component .panel {
   height: 100%;
 }
+.modal.auto-height > .content {
+  height: auto !important;
+}
 .modal.medium > .content {
   width: 700px;
   height: 500px;
+}
+.modal.small > .content {
+  width: 700px;
+  height: 344px;
 }
 .modal .background {
   position: absolute;
@@ -699,6 +728,9 @@ a.disabled {
   padding: 0;
   padding-bottom: 0;
   min-width: 300px;
+  -webkit-box-shadow: 0px 2px 35px 0px rgba(0, 0, 0, 0.19);
+  -moz-box-shadow: 0px 2px 35px 0px rgba(0, 0, 0, 0.19);
+  box-shadow: 0px 2px 35px 0px rgba(0, 0, 0, 0.19);
 }
 
 .component-view-container {
@@ -756,6 +788,19 @@ a.disabled {
   text-align: center;
   width: 100%;
   font-size: 13px;
+}
+
+.sn-component .notification.unpadded {
+  padding: 0;
+  padding-bottom: 0 !important;
+  padding-top: 0;
+}
+.sn-component .notification .padded-row {
+  padding: 10px 12px;
+}
+.sn-component .notification .bordered-row {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .panel {
@@ -1046,6 +1091,9 @@ a.disabled {
 }
 .sn-component .selectable {
   user-select: text !important;
+  -ms-user-select: text !important;
+  -moz-user-select: text !important;
+  -webkit-user-select: text !important;
 }
 .sn-component h1, .sn-component h2, .sn-component h3, .sn-component h4, .sn-component h5 {
   margin: 0;
@@ -1077,6 +1125,9 @@ a.disabled {
 .sn-component a {
   cursor: pointer;
 }
+.sn-component a.disabled {
+  color: #DDDDDD;
+}
 .sn-component .wrap {
   word-wrap: break-word;
 }
@@ -1091,6 +1142,18 @@ a.disabled {
 }
 .sn-component *.success {
   color: #2B9612;
+}
+.sn-component *.info-i {
+  color: #086DD6 !important;
+}
+.sn-component *.warning-i {
+  color: #f6a200 !important;
+}
+.sn-component *.danger-i {
+  color: #F80324 !important;
+}
+.sn-component *.success-i {
+  color: #2B9612 !important;
 }
 .sn-component *.clear {
   background-color: transparent;
@@ -1170,6 +1233,7 @@ a.disabled {
 }
 .sn-component .button-group .button, .sn-component .button-group .box, .sn-component .button-group .circle {
   display: inline-block;
+  vertical-align: middle;
 }
 .sn-component .button-group .button:not(:last-child), .sn-component .button-group .box:not(:last-child), .sn-component .button-group .circle:not(:last-child) {
   margin-right: 5px;

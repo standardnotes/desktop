@@ -1,53 +1,732 @@
 /**
- * @license
- * Lodash (Custom Build) lodash.com/license | Underscore.js 1.8.3 underscorejs.org/LICENSE
- * Build: `lodash include="includes,merge,filter,map,remove,find,omit,pull,cloneDeep,pick,uniq,sortedIndexBy"`
+ * Copyright (c) 2014-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
-;(function(){function t(t,n){return t.set(n[0],n[1]),t}function n(t,n){return t.add(n),t}function r(t,n,r){switch(r.length){case 0:return t.call(n);case 1:return t.call(n,r[0]);case 2:return t.call(n,r[0],r[1]);case 3:return t.call(n,r[0],r[1],r[2])}return t.apply(n,r)}function e(t,n){for(var r=-1,e=null==t?0:t.length;++r<e&&n(t[r],r,t)!==false;);return t}function u(t,n){for(var r=-1,e=null==t?0:t.length,u=0,o=[];++r<e;){var i=t[r];n(i,r,t)&&(o[u++]=i)}return o}function o(t,n){return!!(null==t?0:t.length)&&h(t,n,0)>-1;
-}function i(t,n,r){for(var e=-1,u=null==t?0:t.length;++e<u;)if(r(n,t[e]))return true;return false}function c(t,n){for(var r=-1,e=null==t?0:t.length,u=Array(e);++r<e;)u[r]=n(t[r],r,t);return u}function f(t,n){for(var r=-1,e=n.length,u=t.length;++r<e;)t[u+r]=n[r];return t}function a(t,n,r,e){var u=-1,o=null==t?0:t.length;for(e&&o&&(r=t[++u]);++u<o;)r=n(r,t[u],u,t);return r}function l(t,n){for(var r=-1,e=null==t?0:t.length;++r<e;)if(n(t[r],r,t))return true;return false}function s(t,n,r,e){for(var u=t.length,o=r+(e?1:-1);e?o--:++o<u;)if(n(t[o],o,t))return o;
-return-1}function h(t,n,r){return n===n?A(t,n,r):s(t,p,r)}function v(t,n,r,e){for(var u=r-1,o=t.length;++u<o;)if(e(t[u],n))return u;return-1}function p(t){return t!==t}function y(t){return function(n){return null==n?Or:n[t]}}function g(t,n){for(var r=-1,e=Array(t);++r<t;)e[r]=n(r);return e}function b(t){return function(n){return t(n)}}function _(t,n){return c(n,function(n){return t[n]})}function d(t,n){return t.has(n)}function j(t,n){return null==t?Or:t[n]}function w(t){var n=-1,r=Array(t.size);return t.forEach(function(t,e){
-r[++n]=[e,t]}),r}function O(t,n){return function(r){return t(n(r))}}function m(t){var n=-1,r=Array(t.size);return t.forEach(function(t){r[++n]=t}),r}function A(t,n,r){for(var e=r-1,u=t.length;++e<u;)if(t[e]===n)return e;return-1}function z(){}function x(t){var n=-1,r=null==t?0:t.length;for(this.clear();++n<r;){var e=t[n];this.set(e[0],e[1])}}function S(){this.__data__=Ou?Ou(null):{},this.size=0}function k(t){var n=this.has(t)&&delete this.__data__[t];return this.size-=n?1:0,n}function $(t){var n=this.__data__;
-if(Ou){var r=n[t];return r===xr?Or:r}return Je.call(n,t)?n[t]:Or}function I(t){var n=this.__data__;return Ou?n[t]!==Or:Je.call(n,t)}function L(t,n){var r=this.__data__;return this.size+=this.has(t)?0:1,r[t]=Ou&&n===Or?xr:n,this}function P(t){var n=-1,r=null==t?0:t.length;for(this.clear();++n<r;){var e=t[n];this.set(e[0],e[1])}}function E(){this.__data__=[],this.size=0}function F(t){var n=this.__data__,r=rt(n,t);return!(r<0)&&(r==n.length-1?n.pop():iu.call(n,r,1),--this.size,true)}function B(t){var n=this.__data__,r=rt(n,t);
-return r<0?Or:n[r][1]}function M(t){return rt(this.__data__,t)>-1}function T(t,n){var r=this.__data__,e=rt(r,t);return e<0?(++this.size,r.push([t,n])):r[e][1]=n,this}function U(t){var n=-1,r=null==t?0:t.length;for(this.clear();++n<r;){var e=t[n];this.set(e[0],e[1])}}function N(){this.size=0,this.__data__={hash:new x,map:new(_u||P),string:new x}}function C(t){var n=hn(this,t).delete(t);return this.size-=n?1:0,n}function D(t){return hn(this,t).get(t)}function R(t){return hn(this,t).has(t)}function V(t,n){
-var r=hn(this,t),e=r.size;return r.set(t,n),this.size+=r.size==e?0:1,this}function q(t){var n=-1,r=null==t?0:t.length;for(this.__data__=new U;++n<r;)this.add(t[n])}function W(t){return this.__data__.set(t,xr),this}function G(t){return this.__data__.has(t)}function H(t){this.size=(this.__data__=new P(t)).size}function J(){this.__data__=new P,this.size=0}function K(t){var n=this.__data__,r=n.delete(t);return this.size=n.size,r}function Q(t){return this.__data__.get(t)}function X(t){return this.__data__.has(t);
-}function Y(t,n){var r=this.__data__;if(r instanceof P){var e=r.__data__;if(!_u||e.length<Ar-1)return e.push([t,n]),this.size=++r.size,this;r=this.__data__=new U(e)}return r.set(t,n),this.size=r.size,this}function Z(t,n){var r=qu(t),e=!r&&Vu(t),u=!r&&!e&&Wu(t),o=!r&&!e&&!u&&Gu(t),i=r||e||u||o,c=i?g(t.length,String):[],f=c.length;for(var a in t)!n&&!Je.call(t,a)||i&&("length"==a||u&&("offset"==a||"parent"==a)||o&&("buffer"==a||"byteLength"==a||"byteOffset"==a)||wn(a,f))||c.push(a);return c}function tt(t,n,r){
-(r===Or||Kn(t[n],r))&&(r!==Or||n in t)||ot(t,n,r)}function nt(t,n,r){var e=t[n];Je.call(t,n)&&Kn(e,r)&&(r!==Or||n in t)||ot(t,n,r)}function rt(t,n){for(var r=t.length;r--;)if(Kn(t[r][0],n))return r;return-1}function et(t,n){return t&&Qt(n,hr(n),t)}function ut(t,n){return t&&Qt(n,vr(n),t)}function ot(t,n,r){"__proto__"==n&&au?au(t,n,{configurable:true,enumerable:true,value:r,writable:true}):t[n]=r}function it(t,n,r,u,o,i){var c,f=n&kr,a=n&$r,l=n&Ir;if(r&&(c=o?r(t,u,o,i):r(t)),c!==Or)return c;if(!tr(t))return t;
-var s=qu(t);if(s){if(c=bn(t),!f)return Kt(t,c)}else{var h=Uu(t),v=h==Hr||h==Jr;if(Wu(t))return Dt(t,f);if(h==Yr||h==Dr||v&&!o){if(c=a||v?{}:_n(t),!f)return a?Yt(t,ut(c,t)):Xt(t,et(c,t))}else{if(!Pe[h])return o?t:{};c=dn(t,h,it,f)}}i||(i=new H);var p=i.get(t);if(p)return p;i.set(t,c);var y=l?a?ln:an:a?vr:hr,g=s?Or:y(t);return e(g||t,function(e,u){g&&(u=e,e=t[u]),nt(c,u,it(e,n,r,u,t,i))}),c}function ct(t,n){var r=[];return Pu(t,function(t,e,u){n(t,e,u)&&r.push(t)}),r}function ft(t,n,r,e,u){var o=-1,i=t.length;
-for(r||(r=jn),u||(u=[]);++o<i;){var c=t[o];n>0&&r(c)?n>1?ft(c,n-1,r,e,u):f(u,c):e||(u[u.length]=c)}return u}function at(t,n){return t&&Eu(t,n,hr)}function lt(t,n){n=Ct(n,t);for(var r=0,e=n.length;null!=t&&r<e;)t=t[Bn(n[r++])];return r&&r==e?t:Or}function st(t,n,r){var e=n(t);return qu(t)?e:f(e,r(t))}function ht(t){return null==t?t===Or?oe:Xr:fu&&fu in Object(t)?yn(t):Ln(t)}function vt(t,n){return null!=t&&n in Object(t)}function pt(t){return nr(t)&&ht(t)==Dr}function yt(t,n,r,e,u){return t===n||(null==t||null==n||!nr(t)&&!nr(n)?t!==t&&n!==n:gt(t,n,r,e,yt,u));
-}function gt(t,n,r,e,u,o){var i=qu(t),c=qu(n),f=i?Rr:Uu(t),a=c?Rr:Uu(n);f=f==Dr?Yr:f,a=a==Dr?Yr:a;var l=f==Yr,s=a==Yr,h=f==a;if(h&&Wu(t)){if(!Wu(n))return false;i=true,l=false}if(h&&!l)return o||(o=new H),i||Gu(t)?un(t,n,r,e,u,o):on(t,n,f,r,e,u,o);if(!(r&Lr)){var v=l&&Je.call(t,"__wrapped__"),p=s&&Je.call(n,"__wrapped__");if(v||p){var y=v?t.value():t,g=p?n.value():n;return o||(o=new H),u(y,g,r,e,o)}}return!!h&&(o||(o=new H),cn(t,n,r,e,u,o))}function bt(t,n,r,e){var u=r.length,o=u,i=!e;if(null==t)return!o;for(t=Object(t);u--;){
-var c=r[u];if(i&&c[2]?c[1]!==t[c[0]]:!(c[0]in t))return false}for(;++u<o;){c=r[u];var f=c[0],a=t[f],l=c[1];if(i&&c[2]){if(a===Or&&!(f in t))return false}else{var s=new H;if(e)var h=e(a,l,f,t,n,s);if(!(h===Or?yt(l,a,Lr|Pr,e,s):h))return false}}return true}function _t(t){return!(!tr(t)||zn(t))&&(Yn(t)?Ye:ke).test(Mn(t))}function dt(t){return nr(t)&&Zn(t.length)&&!!Le[ht(t)]}function jt(t){return typeof t=="function"?t:null==t?gr:typeof t=="object"?qu(t)?zt(t[0],t[1]):At(t):dr(t)}function wt(t){if(!xn(t))return vu(t);
-var n=[];for(var r in Object(t))Je.call(t,r)&&"constructor"!=r&&n.push(r);return n}function Ot(t){if(!tr(t))return In(t);var n=xn(t),r=[];for(var e in t)("constructor"!=e||!n&&Je.call(t,e))&&r.push(e);return r}function mt(t,n){var r=-1,e=Qn(t)?Array(t.length):[];return Pu(t,function(t,u,o){e[++r]=n(t,u,o)}),e}function At(t){var n=vn(t);return 1==n.length&&n[0][2]?kn(n[0][0],n[0][1]):function(r){return r===t||bt(r,t,n)}}function zt(t,n){return mn(t)&&Sn(n)?kn(Bn(t),n):function(r){var e=lr(r,t);return e===Or&&e===n?sr(r,t):yt(n,e,Lr|Pr);
-}}function xt(t,n,r,e,u){t!==n&&Eu(n,function(o,i){if(tr(o))u||(u=new H),St(t,n,i,r,xt,e,u);else{var c=e?e(t[i],o,i+"",t,n,u):Or;c===Or&&(c=o),tt(t,i,c)}},vr)}function St(t,n,r,e,u,o,i){var c=t[r],f=n[r],a=i.get(f);if(a)return tt(t,r,a),Or;var l=o?o(c,f,r+"",t,n,i):Or,s=l===Or;if(s){var h=qu(f),v=!h&&Wu(f),p=!h&&!v&&Gu(f);l=f,h||v||p?qu(c)?l=c:Xn(c)?l=Kt(c):v?(s=false,l=Dt(f,true)):p?(s=false,l=Jt(f,true)):l=[]:rr(f)||Vu(f)?(l=c,Vu(c)?l=fr(c):(!tr(c)||e&&Yn(c))&&(l=_n(f))):s=false}s&&(i.set(f,l),u(l,f,e,o,i),
-i.delete(f)),tt(t,r,l)}function kt(t,n){return $t(t,n,function(n,r){return sr(t,r)})}function $t(t,n,r){for(var e=-1,u=n.length,o={};++e<u;){var i=n[e],c=lt(t,i);r(c,i)&&Ft(o,Ct(i,t),c)}return o}function It(t){return function(n){return lt(n,t)}}function Lt(t,n,r,e){var u=e?v:h,o=-1,i=n.length,f=t;for(t===n&&(n=Kt(n)),r&&(f=c(t,b(r)));++o<i;)for(var a=0,l=n[o],s=r?r(l):l;(a=u(f,s,a,e))>-1;)f!==t&&iu.call(f,a,1),iu.call(t,a,1);return t}function Pt(t,n){for(var r=t?n.length:0,e=r-1;r--;){var u=n[r];if(r==e||u!==o){
-var o=u;wn(u)?iu.call(t,u,1):Nt(t,u)}}return t}function Et(t,n){return Nu(Pn(t,n,gr),t+"")}function Ft(t,n,r,e){if(!tr(t))return t;n=Ct(n,t);for(var u=-1,o=n.length,i=o-1,c=t;null!=c&&++u<o;){var f=Bn(n[u]),a=r;if(u!=i){var l=c[f];a=e?e(l,f,c):Or,a===Or&&(a=tr(l)?l:wn(n[u+1])?[]:{})}nt(c,f,a),c=c[f]}return t}function Bt(t,n,r){var e=-1,u=t.length;n<0&&(n=-n>u?0:u+n),r=r>u?u:r,r<0&&(r+=u),u=n>r?0:r-n>>>0,n>>>=0;for(var o=Array(u);++e<u;)o[e]=t[e+n];return o}function Mt(t,n,r,e){n=r(n);for(var u=0,o=null==t?0:t.length,i=n!==n,c=null===n,f=ur(n),a=n===Or;u<o;){
-var l=lu((u+o)/2),s=r(t[l]),h=s!==Or,v=null===s,p=s===s,y=ur(s);if(i)var g=e||p;else g=a?p&&(e||h):c?p&&h&&(e||!v):f?p&&h&&!v&&(e||!y):!v&&!y&&(e?s<=n:s<n);g?u=l+1:o=l}return yu(o,Cr)}function Tt(t){if(typeof t=="string")return t;if(qu(t))return c(t,Tt)+"";if(ur(t))return Iu?Iu.call(t):"";var n=t+"";return"0"==n&&1/t==-Br?"-0":n}function Ut(t,n,r){var e=-1,u=o,c=t.length,f=true,a=[],l=a;if(r)f=false,u=i;else if(c>=Ar){var s=n?null:Bu(t);if(s)return m(s);f=false,u=d,l=new q}else l=n?[]:a;t:for(;++e<c;){var h=t[e],v=n?n(h):h;
-if(h=r||0!==h?h:0,f&&v===v){for(var p=l.length;p--;)if(l[p]===v)continue t;n&&l.push(v),a.push(h)}else u(l,v,r)||(l!==a&&l.push(v),a.push(h))}return a}function Nt(t,n){return n=Ct(n,t),t=En(t,n),null==t||delete t[Bn(Nn(n))]}function Ct(t,n){return qu(t)?t:mn(t,n)?[t]:Cu(ar(t))}function Dt(t,n){if(n)return t.slice();var r=t.length,e=ru?ru(r):new t.constructor(r);return t.copy(e),e}function Rt(t){var n=new t.constructor(t.byteLength);return new nu(n).set(new nu(t)),n}function Vt(t,n){return new t.constructor(n?Rt(t.buffer):t.buffer,t.byteOffset,t.byteLength);
-}function qt(n,r,e){return a(r?e(w(n),kr):w(n),t,new n.constructor)}function Wt(t){var n=new t.constructor(t.source,ze.exec(t));return n.lastIndex=t.lastIndex,n}function Gt(t,r,e){return a(r?e(m(t),kr):m(t),n,new t.constructor)}function Ht(t){return $u?Object($u.call(t)):{}}function Jt(t,n){return new t.constructor(n?Rt(t.buffer):t.buffer,t.byteOffset,t.length)}function Kt(t,n){var r=-1,e=t.length;for(n||(n=Array(e));++r<e;)n[r]=t[r];return n}function Qt(t,n,r,e){var u=!r;r||(r={});for(var o=-1,i=n.length;++o<i;){
-var c=n[o],f=e?e(r[c],t[c],c,r,t):Or;f===Or&&(f=t[c]),u?ot(r,c,f):nt(r,c,f)}return r}function Xt(t,n){return Qt(t,Mu(t),n)}function Yt(t,n){return Qt(t,Tu(t),n)}function Zt(t){return Et(function(n,r){var e=-1,u=r.length,o=u>1?r[u-1]:Or,i=u>2?r[2]:Or;for(o=t.length>3&&typeof o=="function"?(u--,o):Or,i&&On(r[0],r[1],i)&&(o=u<3?Or:o,u=1),n=Object(n);++e<u;){var c=r[e];c&&t(n,c,e,o)}return n})}function tn(t,n){return function(r,e){if(null==r)return r;if(!Qn(r))return t(r,e);for(var u=r.length,o=n?u:-1,i=Object(r);(n?o--:++o<u)&&e(i[o],o,i)!==false;);
-return r}}function nn(t){return function(n,r,e){for(var u=-1,o=Object(n),i=e(n),c=i.length;c--;){var f=i[t?c:++u];if(r(o[f],f,o)===false)break}return n}}function rn(t){return function(n,r,e){var u=Object(n);if(!Qn(n)){var o=sn(r,3);n=hr(n),r=function(t){return o(u[t],t,u)}}var i=t(n,r,e);return i>-1?u[o?n[i]:i]:Or}}function en(t){return rr(t)?Or:t}function un(t,n,r,e,u,o){var i=r&Lr,c=t.length,f=n.length;if(c!=f&&!(i&&f>c))return false;var a=o.get(t);if(a&&o.get(n))return a==n;var s=-1,h=true,v=r&Pr?new q:Or;
-for(o.set(t,n),o.set(n,t);++s<c;){var p=t[s],y=n[s];if(e)var g=i?e(y,p,s,n,t,o):e(p,y,s,t,n,o);if(g!==Or){if(g)continue;h=false;break}if(v){if(!l(n,function(t,n){if(!d(v,n)&&(p===t||u(p,t,r,e,o)))return v.push(n)})){h=false;break}}else if(p!==y&&!u(p,y,r,e,o)){h=false;break}}return o.delete(t),o.delete(n),h}function on(t,n,r,e,u,o,i){switch(r){case fe:if(t.byteLength!=n.byteLength||t.byteOffset!=n.byteOffset)return false;t=t.buffer,n=n.buffer;case ce:return!(t.byteLength!=n.byteLength||!o(new nu(t),new nu(n)));
-case qr:case Wr:case Qr:return Kn(+t,+n);case Gr:return t.name==n.name&&t.message==n.message;case ne:case ee:return t==n+"";case Kr:var c=w;case re:var f=e&Lr;if(c||(c=m),t.size!=n.size&&!f)return false;var a=i.get(t);if(a)return a==n;e|=Pr,i.set(t,n);var l=un(c(t),c(n),e,u,o,i);return i.delete(t),l;case ue:if($u)return $u.call(t)==$u.call(n)}return false}function cn(t,n,r,e,u,o){var i=r&Lr,c=an(t),f=c.length;if(f!=an(n).length&&!i)return false;for(var a=f;a--;){var l=c[a];if(!(i?l in n:Je.call(n,l)))return false;
-}var s=o.get(t);if(s&&o.get(n))return s==n;var h=true;o.set(t,n),o.set(n,t);for(var v=i;++a<f;){l=c[a];var p=t[l],y=n[l];if(e)var g=i?e(y,p,l,n,t,o):e(p,y,l,t,n,o);if(!(g===Or?p===y||u(p,y,r,e,o):g)){h=false;break}v||(v="constructor"==l)}if(h&&!v){var b=t.constructor,_=n.constructor;b!=_&&"constructor"in t&&"constructor"in n&&!(typeof b=="function"&&b instanceof b&&typeof _=="function"&&_ instanceof _)&&(h=false)}return o.delete(t),o.delete(n),h}function fn(t){return Nu(Pn(t,Or,Un),t+"")}function an(t){return st(t,hr,Mu);
-}function ln(t){return st(t,vr,Tu)}function sn(){var t=z.iteratee||br;return t=t===br?jt:t,arguments.length?t(arguments[0],arguments[1]):t}function hn(t,n){var r=t.__data__;return An(n)?r[typeof n=="string"?"string":"hash"]:r.map}function vn(t){for(var n=hr(t),r=n.length;r--;){var e=n[r],u=t[e];n[r]=[e,u,Sn(u)]}return n}function pn(t,n){var r=j(t,n);return _t(r)?r:Or}function yn(t){var n=Je.call(t,fu),r=t[fu];try{t[fu]=Or;var e=true}catch(t){}var u=Qe.call(t);return e&&(n?t[fu]=r:delete t[fu]),u}function gn(t,n,r){
-n=Ct(n,t);for(var e=-1,u=n.length,o=false;++e<u;){var i=Bn(n[e]);if(!(o=null!=t&&r(t,i)))break;t=t[i]}return o||++e!=u?o:(u=null==t?0:t.length,!!u&&Zn(u)&&wn(i,u)&&(qu(t)||Vu(t)))}function bn(t){var n=t.length,r=t.constructor(n);return n&&"string"==typeof t[0]&&Je.call(t,"index")&&(r.index=t.index,r.input=t.input),r}function _n(t){return typeof t.constructor!="function"||xn(t)?{}:Lu(eu(t))}function dn(t,n,r,e){var u=t.constructor;switch(n){case ce:return Rt(t);case qr:case Wr:return new u(+t);case fe:
-return Vt(t,e);case ae:case le:case se:case he:case ve:case pe:case ye:case ge:case be:return Jt(t,e);case Kr:return qt(t,e,r);case Qr:case ee:return new u(t);case ne:return Wt(t);case re:return Gt(t,e,r);case ue:return Ht(t)}}function jn(t){return qu(t)||Vu(t)||!!(cu&&t&&t[cu])}function wn(t,n){return n=null==n?Mr:n,!!n&&(typeof t=="number"||Ie.test(t))&&t>-1&&t%1==0&&t<n}function On(t,n,r){if(!tr(r))return false;var e=typeof n;return!!("number"==e?Qn(r)&&wn(n,r.length):"string"==e&&n in r)&&Kn(r[n],t);
-}function mn(t,n){if(qu(t))return false;var r=typeof t;return!("number"!=r&&"symbol"!=r&&"boolean"!=r&&null!=t&&!ur(t))||(de.test(t)||!_e.test(t)||null!=n&&t in Object(n))}function An(t){var n=typeof t;return"string"==n||"number"==n||"symbol"==n||"boolean"==n?"__proto__"!==t:null===t}function zn(t){return!!Ke&&Ke in t}function xn(t){var n=t&&t.constructor;return t===(typeof n=="function"&&n.prototype||We)}function Sn(t){return t===t&&!tr(t)}function kn(t,n){return function(r){return null!=r&&(r[t]===n&&(n!==Or||t in Object(r)));
-}}function $n(t){var n=Hn(t,function(t){return r.size===Sr&&r.clear(),t}),r=n.cache;return n}function In(t){var n=[];if(null!=t)for(var r in Object(t))n.push(r);return n}function Ln(t){return Qe.call(t)}function Pn(t,n,e){return n=pu(n===Or?t.length-1:n,0),function(){for(var u=arguments,o=-1,i=pu(u.length-n,0),c=Array(i);++o<i;)c[o]=u[n+o];o=-1;for(var f=Array(n+1);++o<n;)f[o]=u[o];return f[n]=e(c),r(t,this,f)}}function En(t,n){return n.length<2?t:lt(t,Bt(n,0,-1))}function Fn(t){var n=0,r=0;return function(){
-var e=gu(),u=Fr-(e-r);if(r=e,u>0){if(++n>=Er)return arguments[0]}else n=0;return t.apply(Or,arguments)}}function Bn(t){if(typeof t=="string"||ur(t))return t;var n=t+"";return"0"==n&&1/t==-Br?"-0":n}function Mn(t){if(null!=t){try{return He.call(t)}catch(t){}try{return t+""}catch(t){}}return""}function Tn(t,n,r){var e=null==t?0:t.length;if(!e)return-1;var u=null==r?0:ir(r);return u<0&&(u=pu(e+u,0)),s(t,sn(n,3),u)}function Un(t){return(null==t?0:t.length)?ft(t,1):[]}function Nn(t){var n=null==t?0:t.length;
-return n?t[n-1]:Or}function Cn(t,n){return t&&t.length&&n&&n.length?Lt(t,n):t}function Dn(t,n){var r=[];if(!t||!t.length)return r;var e=-1,u=[],o=t.length;for(n=sn(n,3);++e<o;){var i=t[e];n(i,e,t)&&(r.push(i),u.push(e))}return Pt(t,u),r}function Rn(t,n,r){return Mt(t,n,sn(r,2))}function Vn(t){return t&&t.length?Ut(t):[]}function qn(t,n){return(qu(t)?u:ct)(t,sn(n,3))}function Wn(t,n,r,e){t=Qn(t)?t:pr(t),r=r&&!e?ir(r):0;var u=t.length;return r<0&&(r=pu(u+r,0)),er(t)?r<=u&&t.indexOf(n,r)>-1:!!u&&h(t,n,r)>-1;
-}function Gn(t,n){return(qu(t)?c:mt)(t,sn(n,3))}function Hn(t,n){if(typeof t!="function"||null!=n&&typeof n!="function")throw new TypeError(zr);var r=function(){var e=arguments,u=n?n.apply(this,e):e[0],o=r.cache;if(o.has(u))return o.get(u);var i=t.apply(this,e);return r.cache=o.set(u,i)||o,i};return r.cache=new(Hn.Cache||U),r}function Jn(t){return it(t,kr|Ir)}function Kn(t,n){return t===n||t!==t&&n!==n}function Qn(t){return null!=t&&Zn(t.length)&&!Yn(t)}function Xn(t){return nr(t)&&Qn(t)}function Yn(t){
-if(!tr(t))return false;var n=ht(t);return n==Hr||n==Jr||n==Vr||n==te}function Zn(t){return typeof t=="number"&&t>-1&&t%1==0&&t<=Mr}function tr(t){var n=typeof t;return null!=t&&("object"==n||"function"==n)}function nr(t){return null!=t&&typeof t=="object"}function rr(t){if(!nr(t)||ht(t)!=Yr)return false;var n=eu(t);if(null===n)return true;var r=Je.call(n,"constructor")&&n.constructor;return typeof r=="function"&&r instanceof r&&He.call(r)==Xe}function er(t){return typeof t=="string"||!qu(t)&&nr(t)&&ht(t)==ee}function ur(t){
-return typeof t=="symbol"||nr(t)&&ht(t)==ue}function or(t){if(!t)return 0===t?t:0;if(t=cr(t),t===Br||t===-Br){return(t<0?-1:1)*Tr}return t===t?t:0}function ir(t){var n=or(t),r=n%1;return n===n?r?n-r:n:0}function cr(t){if(typeof t=="number")return t;if(ur(t))return Ur;if(tr(t)){var n=typeof t.valueOf=="function"?t.valueOf():t;t=tr(n)?n+"":n}if(typeof t!="string")return 0===t?t:+t;t=t.replace(me,"");var r=Se.test(t);return r||$e.test(t)?Ee(t.slice(2),r?2:8):xe.test(t)?Ur:+t}function fr(t){return Qt(t,vr(t));
-}function ar(t){return null==t?"":Tt(t)}function lr(t,n,r){var e=null==t?Or:lt(t,n);return e===Or?r:e}function sr(t,n){return null!=t&&gn(t,n,vt)}function hr(t){return Qn(t)?Z(t):wt(t)}function vr(t){return Qn(t)?Z(t,true):Ot(t)}function pr(t){return null==t?[]:_(t,hr(t))}function yr(t){return function(){return t}}function gr(t){return t}function br(t){return jt(typeof t=="function"?t:it(t,kr))}function _r(){}function dr(t){return mn(t)?y(Bn(t)):It(t)}function jr(){return[]}function wr(){return false}var Or,mr="4.17.4",Ar=200,zr="Expected a function",xr="__lodash_hash_undefined__",Sr=500,kr=1,$r=2,Ir=4,Lr=1,Pr=2,Er=800,Fr=16,Br=1/0,Mr=9007199254740991,Tr=1.7976931348623157e308,Ur=NaN,Nr=4294967295,Cr=Nr-1,Dr="[object Arguments]",Rr="[object Array]",Vr="[object AsyncFunction]",qr="[object Boolean]",Wr="[object Date]",Gr="[object Error]",Hr="[object Function]",Jr="[object GeneratorFunction]",Kr="[object Map]",Qr="[object Number]",Xr="[object Null]",Yr="[object Object]",Zr="[object Promise]",te="[object Proxy]",ne="[object RegExp]",re="[object Set]",ee="[object String]",ue="[object Symbol]",oe="[object Undefined]",ie="[object WeakMap]",ce="[object ArrayBuffer]",fe="[object DataView]",ae="[object Float32Array]",le="[object Float64Array]",se="[object Int8Array]",he="[object Int16Array]",ve="[object Int32Array]",pe="[object Uint8Array]",ye="[object Uint8ClampedArray]",ge="[object Uint16Array]",be="[object Uint32Array]",_e=/\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,de=/^\w*$/,je=/^\./,we=/[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g,Oe=/[\\^$.*+?()[\]{}|]/g,me=/^\s+|\s+$/g,Ae=/\\(\\)?/g,ze=/\w*$/,xe=/^[-+]0x[0-9a-f]+$/i,Se=/^0b[01]+$/i,ke=/^\[object .+?Constructor\]$/,$e=/^0o[0-7]+$/i,Ie=/^(?:0|[1-9]\d*)$/,Le={};
-Le[ae]=Le[le]=Le[se]=Le[he]=Le[ve]=Le[pe]=Le[ye]=Le[ge]=Le[be]=true,Le[Dr]=Le[Rr]=Le[ce]=Le[qr]=Le[fe]=Le[Wr]=Le[Gr]=Le[Hr]=Le[Kr]=Le[Qr]=Le[Yr]=Le[ne]=Le[re]=Le[ee]=Le[ie]=false;var Pe={};Pe[Dr]=Pe[Rr]=Pe[ce]=Pe[fe]=Pe[qr]=Pe[Wr]=Pe[ae]=Pe[le]=Pe[se]=Pe[he]=Pe[ve]=Pe[Kr]=Pe[Qr]=Pe[Yr]=Pe[ne]=Pe[re]=Pe[ee]=Pe[ue]=Pe[pe]=Pe[ye]=Pe[ge]=Pe[be]=true,Pe[Gr]=Pe[Hr]=Pe[ie]=false;var Ee=parseInt,Fe=typeof global=="object"&&global&&global.Object===Object&&global,Be=typeof self=="object"&&self&&self.Object===Object&&self,Me=Fe||Be||Function("return this")(),Te=typeof exports=="object"&&exports&&!exports.nodeType&&exports,Ue=Te&&typeof module=="object"&&module&&!module.nodeType&&module,Ne=Ue&&Ue.exports===Te,Ce=Ne&&Fe.process,De=function(){
-try{return Ce&&Ce.binding&&Ce.binding("util")}catch(t){}}(),Re=De&&De.isTypedArray,Ve=Array.prototype,qe=Function.prototype,We=Object.prototype,Ge=Me["__core-js_shared__"],He=qe.toString,Je=We.hasOwnProperty,Ke=function(){var t=/[^.]+$/.exec(Ge&&Ge.keys&&Ge.keys.IE_PROTO||"");return t?"Symbol(src)_1."+t:""}(),Qe=We.toString,Xe=He.call(Object),Ye=RegExp("^"+He.call(Je).replace(Oe,"\\$&").replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g,"$1.*?")+"$"),Ze=Ne?Me.Buffer:Or,tu=Me.Symbol,nu=Me.Uint8Array,ru=Ze?Ze.allocUnsafe:Or,eu=O(Object.getPrototypeOf,Object),uu=Object.create,ou=We.propertyIsEnumerable,iu=Ve.splice,cu=tu?tu.isConcatSpreadable:Or,fu=tu?tu.toStringTag:Or,au=function(){
-try{var t=pn(Object,"defineProperty");return t({},"",{}),t}catch(t){}}(),lu=Math.floor,su=Object.getOwnPropertySymbols,hu=Ze?Ze.isBuffer:Or,vu=O(Object.keys,Object),pu=Math.max,yu=Math.min,gu=Date.now,bu=pn(Me,"DataView"),_u=pn(Me,"Map"),du=pn(Me,"Promise"),ju=pn(Me,"Set"),wu=pn(Me,"WeakMap"),Ou=pn(Object,"create"),mu=Mn(bu),Au=Mn(_u),zu=Mn(du),xu=Mn(ju),Su=Mn(wu),ku=tu?tu.prototype:Or,$u=ku?ku.valueOf:Or,Iu=ku?ku.toString:Or,Lu=function(){function t(){}return function(n){if(!tr(n))return{};if(uu)return uu(n);
-t.prototype=n;var r=new t;return t.prototype=Or,r}}();x.prototype.clear=S,x.prototype.delete=k,x.prototype.get=$,x.prototype.has=I,x.prototype.set=L,P.prototype.clear=E,P.prototype.delete=F,P.prototype.get=B,P.prototype.has=M,P.prototype.set=T,U.prototype.clear=N,U.prototype.delete=C,U.prototype.get=D,U.prototype.has=R,U.prototype.set=V,q.prototype.add=q.prototype.push=W,q.prototype.has=G,H.prototype.clear=J,H.prototype.delete=K,H.prototype.get=Q,H.prototype.has=X,H.prototype.set=Y;var Pu=tn(at),Eu=nn(),Fu=au?function(t,n){
-return au(t,"toString",{configurable:true,enumerable:false,value:yr(n),writable:true})}:gr,Bu=ju&&1/m(new ju([,-0]))[1]==Br?function(t){return new ju(t)}:_r,Mu=su?function(t){return null==t?[]:(t=Object(t),u(su(t),function(n){return ou.call(t,n)}))}:jr,Tu=su?function(t){for(var n=[];t;)f(n,Mu(t)),t=eu(t);return n}:jr,Uu=ht;(bu&&Uu(new bu(new ArrayBuffer(1)))!=fe||_u&&Uu(new _u)!=Kr||du&&Uu(du.resolve())!=Zr||ju&&Uu(new ju)!=re||wu&&Uu(new wu)!=ie)&&(Uu=function(t){var n=ht(t),r=n==Yr?t.constructor:Or,e=r?Mn(r):"";
-if(e)switch(e){case mu:return fe;case Au:return Kr;case zu:return Zr;case xu:return re;case Su:return ie}return n});var Nu=Fn(Fu),Cu=$n(function(t){var n=[];return je.test(t)&&n.push(""),t.replace(we,function(t,r,e,u){n.push(e?u.replace(Ae,"$1"):r||t)}),n}),Du=Et(Cn),Ru=rn(Tn);Hn.Cache=U;var Vu=pt(function(){return arguments}())?pt:function(t){return nr(t)&&Je.call(t,"callee")&&!ou.call(t,"callee")},qu=Array.isArray,Wu=hu||wr,Gu=Re?b(Re):dt,Hu=Zt(function(t,n,r){xt(t,n,r)}),Ju=fn(function(t,n){var r={};
-if(null==t)return r;var e=false;n=c(n,function(n){return n=Ct(n,t),e||(e=n.length>1),n}),Qt(t,ln(t),r),e&&(r=it(r,kr|$r|Ir,en));for(var u=n.length;u--;)Nt(r,n[u]);return r}),Ku=fn(function(t,n){return null==t?{}:kt(t,n)});z.constant=yr,z.filter=qn,z.flatten=Un,z.iteratee=br,z.keys=hr,z.keysIn=vr,z.map=Gn,z.memoize=Hn,z.merge=Hu,z.omit=Ju,z.pick=Ku,z.property=dr,z.pull=Du,z.pullAll=Cn,z.remove=Dn,z.toPlainObject=fr,z.uniq=Vn,z.values=pr,z.cloneDeep=Jn,z.eq=Kn,z.find=Ru,z.findIndex=Tn,z.get=lr,z.hasIn=sr,
-z.identity=gr,z.includes=Wn,z.isArguments=Vu,z.isArray=qu,z.isArrayLike=Qn,z.isArrayLikeObject=Xn,z.isBuffer=Wu,z.isFunction=Yn,z.isLength=Zn,z.isObject=tr,z.isObjectLike=nr,z.isPlainObject=rr,z.isString=er,z.isSymbol=ur,z.isTypedArray=Gu,z.last=Nn,z.stubArray=jr,z.stubFalse=wr,z.noop=_r,z.sortedIndexBy=Rn,z.toFinite=or,z.toInteger=ir,z.toNumber=cr,z.toString=ar,z.VERSION=mr,typeof define=="function"&&typeof define.amd=="object"&&define.amd?(Me._=z, define(function(){return z})):Ue?((Ue.exports=z)._=z,
-Te._=z):Me._=z}).call(this);;/*
+
+!(function(global) {
+  "use strict";
+
+  var Op = Object.prototype;
+  var hasOwn = Op.hasOwnProperty;
+  var undefined; // More compressible than void 0.
+  var $Symbol = typeof Symbol === "function" ? Symbol : {};
+  var iteratorSymbol = $Symbol.iterator || "@@iterator";
+  var asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator";
+  var toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
+
+  var inModule = typeof module === "object";
+  var runtime = global.regeneratorRuntime;
+  if (runtime) {
+    if (inModule) {
+      // If regeneratorRuntime is defined globally and we're in a module,
+      // make the exports object identical to regeneratorRuntime.
+      module.exports = runtime;
+    }
+    // Don't bother evaluating the rest of this file if the runtime was
+    // already defined globally.
+    return;
+  }
+
+  // Define the runtime globally (as expected by generated code) as either
+  // module.exports (if we're in a module) or a new, empty object.
+  runtime = global.regeneratorRuntime = inModule ? module.exports : {};
+
+  function wrap(innerFn, outerFn, self, tryLocsList) {
+    // If outerFn provided and outerFn.prototype is a Generator, then outerFn.prototype instanceof Generator.
+    var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator;
+    var generator = Object.create(protoGenerator.prototype);
+    var context = new Context(tryLocsList || []);
+
+    // The ._invoke method unifies the implementations of the .next,
+    // .throw, and .return methods.
+    generator._invoke = makeInvokeMethod(innerFn, self, context);
+
+    return generator;
+  }
+  runtime.wrap = wrap;
+
+  // Try/catch helper to minimize deoptimizations. Returns a completion
+  // record like context.tryEntries[i].completion. This interface could
+  // have been (and was previously) designed to take a closure to be
+  // invoked without arguments, but in all the cases we care about we
+  // already have an existing method we want to call, so there's no need
+  // to create a new function object. We can even get away with assuming
+  // the method takes exactly one argument, since that happens to be true
+  // in every case, so we don't have to touch the arguments object. The
+  // only additional allocation required is the completion record, which
+  // has a stable shape and so hopefully should be cheap to allocate.
+  function tryCatch(fn, obj, arg) {
+    try {
+      return { type: "normal", arg: fn.call(obj, arg) };
+    } catch (err) {
+      return { type: "throw", arg: err };
+    }
+  }
+
+  var GenStateSuspendedStart = "suspendedStart";
+  var GenStateSuspendedYield = "suspendedYield";
+  var GenStateExecuting = "executing";
+  var GenStateCompleted = "completed";
+
+  // Returning this object from the innerFn has the same effect as
+  // breaking out of the dispatch switch statement.
+  var ContinueSentinel = {};
+
+  // Dummy constructor functions that we use as the .constructor and
+  // .constructor.prototype properties for functions that return Generator
+  // objects. For full spec compliance, you may wish to configure your
+  // minifier not to mangle the names of these two functions.
+  function Generator() {}
+  function GeneratorFunction() {}
+  function GeneratorFunctionPrototype() {}
+
+  // This is a polyfill for %IteratorPrototype% for environments that
+  // don't natively support it.
+  var IteratorPrototype = {};
+  IteratorPrototype[iteratorSymbol] = function () {
+    return this;
+  };
+
+  var getProto = Object.getPrototypeOf;
+  var NativeIteratorPrototype = getProto && getProto(getProto(values([])));
+  if (NativeIteratorPrototype &&
+      NativeIteratorPrototype !== Op &&
+      hasOwn.call(NativeIteratorPrototype, iteratorSymbol)) {
+    // This environment has a native %IteratorPrototype%; use it instead
+    // of the polyfill.
+    IteratorPrototype = NativeIteratorPrototype;
+  }
+
+  var Gp = GeneratorFunctionPrototype.prototype =
+    Generator.prototype = Object.create(IteratorPrototype);
+  GeneratorFunction.prototype = Gp.constructor = GeneratorFunctionPrototype;
+  GeneratorFunctionPrototype.constructor = GeneratorFunction;
+  GeneratorFunctionPrototype[toStringTagSymbol] =
+    GeneratorFunction.displayName = "GeneratorFunction";
+
+  // Helper for defining the .next, .throw, and .return methods of the
+  // Iterator interface in terms of a single ._invoke method.
+  function defineIteratorMethods(prototype) {
+    ["next", "throw", "return"].forEach(function(method) {
+      prototype[method] = function(arg) {
+        return this._invoke(method, arg);
+      };
+    });
+  }
+
+  runtime.isGeneratorFunction = function(genFun) {
+    var ctor = typeof genFun === "function" && genFun.constructor;
+    return ctor
+      ? ctor === GeneratorFunction ||
+        // For the native GeneratorFunction constructor, the best we can
+        // do is to check its .name property.
+        (ctor.displayName || ctor.name) === "GeneratorFunction"
+      : false;
+  };
+
+  runtime.mark = function(genFun) {
+    if (Object.setPrototypeOf) {
+      Object.setPrototypeOf(genFun, GeneratorFunctionPrototype);
+    } else {
+      genFun.__proto__ = GeneratorFunctionPrototype;
+      if (!(toStringTagSymbol in genFun)) {
+        genFun[toStringTagSymbol] = "GeneratorFunction";
+      }
+    }
+    genFun.prototype = Object.create(Gp);
+    return genFun;
+  };
+
+  // Within the body of any async function, `await x` is transformed to
+  // `yield regeneratorRuntime.awrap(x)`, so that the runtime can test
+  // `hasOwn.call(value, "__await")` to determine if the yielded value is
+  // meant to be awaited.
+  runtime.awrap = function(arg) {
+    return { __await: arg };
+  };
+
+  function AsyncIterator(generator) {
+    function invoke(method, arg, resolve, reject) {
+      var record = tryCatch(generator[method], generator, arg);
+      if (record.type === "throw") {
+        reject(record.arg);
+      } else {
+        var result = record.arg;
+        var value = result.value;
+        if (value &&
+            typeof value === "object" &&
+            hasOwn.call(value, "__await")) {
+          return Promise.resolve(value.__await).then(function(value) {
+            invoke("next", value, resolve, reject);
+          }, function(err) {
+            invoke("throw", err, resolve, reject);
+          });
+        }
+
+        return Promise.resolve(value).then(function(unwrapped) {
+          // When a yielded Promise is resolved, its final value becomes
+          // the .value of the Promise<{value,done}> result for the
+          // current iteration. If the Promise is rejected, however, the
+          // result for this iteration will be rejected with the same
+          // reason. Note that rejections of yielded Promises are not
+          // thrown back into the generator function, as is the case
+          // when an awaited Promise is rejected. This difference in
+          // behavior between yield and await is important, because it
+          // allows the consumer to decide what to do with the yielded
+          // rejection (swallow it and continue, manually .throw it back
+          // into the generator, abandon iteration, whatever). With
+          // await, by contrast, there is no opportunity to examine the
+          // rejection reason outside the generator function, so the
+          // only option is to throw it from the await expression, and
+          // let the generator function handle the exception.
+          result.value = unwrapped;
+          resolve(result);
+        }, reject);
+      }
+    }
+
+    var previousPromise;
+
+    function enqueue(method, arg) {
+      function callInvokeWithMethodAndArg() {
+        return new Promise(function(resolve, reject) {
+          invoke(method, arg, resolve, reject);
+        });
+      }
+
+      return previousPromise =
+        // If enqueue has been called before, then we want to wait until
+        // all previous Promises have been resolved before calling invoke,
+        // so that results are always delivered in the correct order. If
+        // enqueue has not been called before, then it is important to
+        // call invoke immediately, without waiting on a callback to fire,
+        // so that the async generator function has the opportunity to do
+        // any necessary setup in a predictable way. This predictability
+        // is why the Promise constructor synchronously invokes its
+        // executor callback, and why async functions synchronously
+        // execute code before the first await. Since we implement simple
+        // async functions in terms of async generators, it is especially
+        // important to get this right, even though it requires care.
+        previousPromise ? previousPromise.then(
+          callInvokeWithMethodAndArg,
+          // Avoid propagating failures to Promises returned by later
+          // invocations of the iterator.
+          callInvokeWithMethodAndArg
+        ) : callInvokeWithMethodAndArg();
+    }
+
+    // Define the unified helper method that is used to implement .next,
+    // .throw, and .return (see defineIteratorMethods).
+    this._invoke = enqueue;
+  }
+
+  defineIteratorMethods(AsyncIterator.prototype);
+  AsyncIterator.prototype[asyncIteratorSymbol] = function () {
+    return this;
+  };
+  runtime.AsyncIterator = AsyncIterator;
+
+  // Note that simple async functions are implemented on top of
+  // AsyncIterator objects; they just return a Promise for the value of
+  // the final result produced by the iterator.
+  runtime.async = function(innerFn, outerFn, self, tryLocsList) {
+    var iter = new AsyncIterator(
+      wrap(innerFn, outerFn, self, tryLocsList)
+    );
+
+    return runtime.isGeneratorFunction(outerFn)
+      ? iter // If outerFn is a generator, return the full iterator.
+      : iter.next().then(function(result) {
+          return result.done ? result.value : iter.next();
+        });
+  };
+
+  function makeInvokeMethod(innerFn, self, context) {
+    var state = GenStateSuspendedStart;
+
+    return function invoke(method, arg) {
+      if (state === GenStateExecuting) {
+        throw new Error("Generator is already running");
+      }
+
+      if (state === GenStateCompleted) {
+        if (method === "throw") {
+          throw arg;
+        }
+
+        // Be forgiving, per 25.3.3.3.3 of the spec:
+        // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-generatorresume
+        return doneResult();
+      }
+
+      context.method = method;
+      context.arg = arg;
+
+      while (true) {
+        var delegate = context.delegate;
+        if (delegate) {
+          var delegateResult = maybeInvokeDelegate(delegate, context);
+          if (delegateResult) {
+            if (delegateResult === ContinueSentinel) continue;
+            return delegateResult;
+          }
+        }
+
+        if (context.method === "next") {
+          // Setting context._sent for legacy support of Babel's
+          // function.sent implementation.
+          context.sent = context._sent = context.arg;
+
+        } else if (context.method === "throw") {
+          if (state === GenStateSuspendedStart) {
+            state = GenStateCompleted;
+            throw context.arg;
+          }
+
+          context.dispatchException(context.arg);
+
+        } else if (context.method === "return") {
+          context.abrupt("return", context.arg);
+        }
+
+        state = GenStateExecuting;
+
+        var record = tryCatch(innerFn, self, context);
+        if (record.type === "normal") {
+          // If an exception is thrown from innerFn, we leave state ===
+          // GenStateExecuting and loop back for another invocation.
+          state = context.done
+            ? GenStateCompleted
+            : GenStateSuspendedYield;
+
+          if (record.arg === ContinueSentinel) {
+            continue;
+          }
+
+          return {
+            value: record.arg,
+            done: context.done
+          };
+
+        } else if (record.type === "throw") {
+          state = GenStateCompleted;
+          // Dispatch the exception by looping back around to the
+          // context.dispatchException(context.arg) call above.
+          context.method = "throw";
+          context.arg = record.arg;
+        }
+      }
+    };
+  }
+
+  // Call delegate.iterator[context.method](context.arg) and handle the
+  // result, either by returning a { value, done } result from the
+  // delegate iterator, or by modifying context.method and context.arg,
+  // setting context.delegate to null, and returning the ContinueSentinel.
+  function maybeInvokeDelegate(delegate, context) {
+    var method = delegate.iterator[context.method];
+    if (method === undefined) {
+      // A .throw or .return when the delegate iterator has no .throw
+      // method always terminates the yield* loop.
+      context.delegate = null;
+
+      if (context.method === "throw") {
+        if (delegate.iterator.return) {
+          // If the delegate iterator has a return method, give it a
+          // chance to clean up.
+          context.method = "return";
+          context.arg = undefined;
+          maybeInvokeDelegate(delegate, context);
+
+          if (context.method === "throw") {
+            // If maybeInvokeDelegate(context) changed context.method from
+            // "return" to "throw", let that override the TypeError below.
+            return ContinueSentinel;
+          }
+        }
+
+        context.method = "throw";
+        context.arg = new TypeError(
+          "The iterator does not provide a 'throw' method");
+      }
+
+      return ContinueSentinel;
+    }
+
+    var record = tryCatch(method, delegate.iterator, context.arg);
+
+    if (record.type === "throw") {
+      context.method = "throw";
+      context.arg = record.arg;
+      context.delegate = null;
+      return ContinueSentinel;
+    }
+
+    var info = record.arg;
+
+    if (! info) {
+      context.method = "throw";
+      context.arg = new TypeError("iterator result is not an object");
+      context.delegate = null;
+      return ContinueSentinel;
+    }
+
+    if (info.done) {
+      // Assign the result of the finished delegate to the temporary
+      // variable specified by delegate.resultName (see delegateYield).
+      context[delegate.resultName] = info.value;
+
+      // Resume execution at the desired location (see delegateYield).
+      context.next = delegate.nextLoc;
+
+      // If context.method was "throw" but the delegate handled the
+      // exception, let the outer generator proceed normally. If
+      // context.method was "next", forget context.arg since it has been
+      // "consumed" by the delegate iterator. If context.method was
+      // "return", allow the original .return call to continue in the
+      // outer generator.
+      if (context.method !== "return") {
+        context.method = "next";
+        context.arg = undefined;
+      }
+
+    } else {
+      // Re-yield the result returned by the delegate method.
+      return info;
+    }
+
+    // The delegate iterator is finished, so forget it and continue with
+    // the outer generator.
+    context.delegate = null;
+    return ContinueSentinel;
+  }
+
+  // Define Generator.prototype.{next,throw,return} in terms of the
+  // unified ._invoke helper method.
+  defineIteratorMethods(Gp);
+
+  Gp[toStringTagSymbol] = "Generator";
+
+  // A Generator should always return itself as the iterator object when the
+  // @@iterator function is called on it. Some browsers' implementations of the
+  // iterator prototype chain incorrectly implement this, causing the Generator
+  // object to not be returned from this call. This ensures that doesn't happen.
+  // See https://github.com/facebook/regenerator/issues/274 for more details.
+  Gp[iteratorSymbol] = function() {
+    return this;
+  };
+
+  Gp.toString = function() {
+    return "[object Generator]";
+  };
+
+  function pushTryEntry(locs) {
+    var entry = { tryLoc: locs[0] };
+
+    if (1 in locs) {
+      entry.catchLoc = locs[1];
+    }
+
+    if (2 in locs) {
+      entry.finallyLoc = locs[2];
+      entry.afterLoc = locs[3];
+    }
+
+    this.tryEntries.push(entry);
+  }
+
+  function resetTryEntry(entry) {
+    var record = entry.completion || {};
+    record.type = "normal";
+    delete record.arg;
+    entry.completion = record;
+  }
+
+  function Context(tryLocsList) {
+    // The root entry object (effectively a try statement without a catch
+    // or a finally block) gives us a place to store values thrown from
+    // locations where there is no enclosing try statement.
+    this.tryEntries = [{ tryLoc: "root" }];
+    tryLocsList.forEach(pushTryEntry, this);
+    this.reset(true);
+  }
+
+  runtime.keys = function(object) {
+    var keys = [];
+    for (var key in object) {
+      keys.push(key);
+    }
+    keys.reverse();
+
+    // Rather than returning an object with a next method, we keep
+    // things simple and return the next function itself.
+    return function next() {
+      while (keys.length) {
+        var key = keys.pop();
+        if (key in object) {
+          next.value = key;
+          next.done = false;
+          return next;
+        }
+      }
+
+      // To avoid creating an additional object, we just hang the .value
+      // and .done properties off the next function object itself. This
+      // also ensures that the minifier will not anonymize the function.
+      next.done = true;
+      return next;
+    };
+  };
+
+  function values(iterable) {
+    if (iterable) {
+      var iteratorMethod = iterable[iteratorSymbol];
+      if (iteratorMethod) {
+        return iteratorMethod.call(iterable);
+      }
+
+      if (typeof iterable.next === "function") {
+        return iterable;
+      }
+
+      if (!isNaN(iterable.length)) {
+        var i = -1, next = function next() {
+          while (++i < iterable.length) {
+            if (hasOwn.call(iterable, i)) {
+              next.value = iterable[i];
+              next.done = false;
+              return next;
+            }
+          }
+
+          next.value = undefined;
+          next.done = true;
+
+          return next;
+        };
+
+        return next.next = next;
+      }
+    }
+
+    // Return an iterator with no values.
+    return { next: doneResult };
+  }
+  runtime.values = values;
+
+  function doneResult() {
+    return { value: undefined, done: true };
+  }
+
+  Context.prototype = {
+    constructor: Context,
+
+    reset: function(skipTempReset) {
+      this.prev = 0;
+      this.next = 0;
+      // Resetting context._sent for legacy support of Babel's
+      // function.sent implementation.
+      this.sent = this._sent = undefined;
+      this.done = false;
+      this.delegate = null;
+
+      this.method = "next";
+      this.arg = undefined;
+
+      this.tryEntries.forEach(resetTryEntry);
+
+      if (!skipTempReset) {
+        for (var name in this) {
+          // Not sure about the optimal order of these conditions:
+          if (name.charAt(0) === "t" &&
+              hasOwn.call(this, name) &&
+              !isNaN(+name.slice(1))) {
+            this[name] = undefined;
+          }
+        }
+      }
+    },
+
+    stop: function() {
+      this.done = true;
+
+      var rootEntry = this.tryEntries[0];
+      var rootRecord = rootEntry.completion;
+      if (rootRecord.type === "throw") {
+        throw rootRecord.arg;
+      }
+
+      return this.rval;
+    },
+
+    dispatchException: function(exception) {
+      if (this.done) {
+        throw exception;
+      }
+
+      var context = this;
+      function handle(loc, caught) {
+        record.type = "throw";
+        record.arg = exception;
+        context.next = loc;
+
+        if (caught) {
+          // If the dispatched exception was caught by a catch block,
+          // then let that catch block handle the exception normally.
+          context.method = "next";
+          context.arg = undefined;
+        }
+
+        return !! caught;
+      }
+
+      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+        var entry = this.tryEntries[i];
+        var record = entry.completion;
+
+        if (entry.tryLoc === "root") {
+          // Exception thrown outside of any try block that could handle
+          // it, so set the completion value of the entire function to
+          // throw the exception.
+          return handle("end");
+        }
+
+        if (entry.tryLoc <= this.prev) {
+          var hasCatch = hasOwn.call(entry, "catchLoc");
+          var hasFinally = hasOwn.call(entry, "finallyLoc");
+
+          if (hasCatch && hasFinally) {
+            if (this.prev < entry.catchLoc) {
+              return handle(entry.catchLoc, true);
+            } else if (this.prev < entry.finallyLoc) {
+              return handle(entry.finallyLoc);
+            }
+
+          } else if (hasCatch) {
+            if (this.prev < entry.catchLoc) {
+              return handle(entry.catchLoc, true);
+            }
+
+          } else if (hasFinally) {
+            if (this.prev < entry.finallyLoc) {
+              return handle(entry.finallyLoc);
+            }
+
+          } else {
+            throw new Error("try statement without catch or finally");
+          }
+        }
+      }
+    },
+
+    abrupt: function(type, arg) {
+      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+        var entry = this.tryEntries[i];
+        if (entry.tryLoc <= this.prev &&
+            hasOwn.call(entry, "finallyLoc") &&
+            this.prev < entry.finallyLoc) {
+          var finallyEntry = entry;
+          break;
+        }
+      }
+
+      if (finallyEntry &&
+          (type === "break" ||
+           type === "continue") &&
+          finallyEntry.tryLoc <= arg &&
+          arg <= finallyEntry.finallyLoc) {
+        // Ignore the finally entry if control is not jumping to a
+        // location outside the try/catch block.
+        finallyEntry = null;
+      }
+
+      var record = finallyEntry ? finallyEntry.completion : {};
+      record.type = type;
+      record.arg = arg;
+
+      if (finallyEntry) {
+        this.method = "next";
+        this.next = finallyEntry.finallyLoc;
+        return ContinueSentinel;
+      }
+
+      return this.complete(record);
+    },
+
+    complete: function(record, afterLoc) {
+      if (record.type === "throw") {
+        throw record.arg;
+      }
+
+      if (record.type === "break" ||
+          record.type === "continue") {
+        this.next = record.arg;
+      } else if (record.type === "return") {
+        this.rval = this.arg = record.arg;
+        this.method = "return";
+        this.next = "end";
+      } else if (record.type === "normal" && afterLoc) {
+        this.next = afterLoc;
+      }
+
+      return ContinueSentinel;
+    },
+
+    finish: function(finallyLoc) {
+      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+        var entry = this.tryEntries[i];
+        if (entry.finallyLoc === finallyLoc) {
+          this.complete(entry.completion, entry.afterLoc);
+          resetTryEntry(entry);
+          return ContinueSentinel;
+        }
+      }
+    },
+
+    "catch": function(tryLoc) {
+      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+        var entry = this.tryEntries[i];
+        if (entry.tryLoc === tryLoc) {
+          var record = entry.completion;
+          if (record.type === "throw") {
+            var thrown = record.arg;
+            resetTryEntry(entry);
+          }
+          return thrown;
+        }
+      }
+
+      // The context.catch method must only be called with a location
+      // argument that corresponds to a known catch block.
+      throw new Error("illegal catch attempt");
+    },
+
+    delegateYield: function(iterable, resultName, nextLoc) {
+      this.delegate = {
+        iterator: values(iterable),
+        resultName: resultName,
+        nextLoc: nextLoc
+      };
+
+      if (this.method === "next") {
+        // Deliberately forget the last sent value so that we don't
+        // accidentally pass it on to the delegate.
+        this.arg = undefined;
+      }
+
+      return ContinueSentinel;
+    }
+  };
+})(
+  // In sloppy mode, unbound `this` refers to the global object, fallback to
+  // Function constructor if we're in global strict mode. That is sadly a form
+  // of indirect eval which violates Content Security Policy.
+  (function() { return this })() || Function("return this")()
+);
+;(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.SF = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+/*
 CryptoJS v3.1.2
 code.google.com/p/crypto-js
 (c) 2009-2013 by Jeff Mott. All rights reserved.
@@ -159,8 +838,7 @@ a._data=this._data.clone();return a},_minBufferSize:0});j.Hasher=k.extend({cfg:f
 f)).finalize(b)}}});var s=p.algo={};return p}(Math);
 (function(){var e=CryptoJS,m=e.lib,p=m.WordArray,j=m.Hasher,l=[],m=e.algo.SHA1=j.extend({_doReset:function(){this._hash=new p.init([1732584193,4023233417,2562383102,271733878,3285377520])},_doProcessBlock:function(f,n){for(var b=this._hash.words,h=b[0],g=b[1],e=b[2],k=b[3],j=b[4],a=0;80>a;a++){if(16>a)l[a]=f[n+a]|0;else{var c=l[a-3]^l[a-8]^l[a-14]^l[a-16];l[a]=c<<1|c>>>31}c=(h<<5|h>>>27)+j+l[a];c=20>a?c+((g&e|~g&k)+1518500249):40>a?c+((g^e^k)+1859775393):60>a?c+((g&e|g&k|e&k)-1894007588):c+((g^e^
 k)-899497514);j=k;k=e;e=g<<30|g>>>2;g=h;h=c}b[0]=b[0]+h|0;b[1]=b[1]+g|0;b[2]=b[2]+e|0;b[3]=b[3]+k|0;b[4]=b[4]+j|0},_doFinalize:function(){var f=this._data,e=f.words,b=8*this._nDataBytes,h=8*f.sigBytes;e[h>>>5]|=128<<24-h%32;e[(h+64>>>9<<4)+14]=Math.floor(b/4294967296);e[(h+64>>>9<<4)+15]=b;f.sigBytes=4*e.length;this._process();return this._hash},clone:function(){var e=j.clone.call(this);e._hash=this._hash.clone();return e}});e.SHA1=j._createHelper(m);e.HmacSHA1=j._createHmacHelper(m)})();
-;(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-'use strict';
+;'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -172,23 +850,27 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 /* Abstract class. Instantiate an instance of either SFCryptoJS (uses cryptojs) or SFCryptoWeb (uses web crypto) */
 
-var SFAbstractCrypto = function () {
+var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
   function SFAbstractCrypto() {
     _classCallCheck(this, SFAbstractCrypto);
+
+    this.DefaultPBKDF2Length = 768;
   }
 
+  /*
+  Our WebCrypto implementation only offers PBKDf2, so any other encryption
+  and key generation functions must use CryptoJS in this abstract implementation.
+  */
+
   _createClass(SFAbstractCrypto, [{
-    key: 'generateRandomKey',
-    value: function generateRandomKey(bits) {
-      return CryptoJS.lib.WordArray.random(bits / 8).toString();
-    }
-  }, {
-    key: 'generateUUID',
-    value: function generateUUID() {
+    key: 'generateUUIDSync',
+    value: function generateUUIDSync() {
       var crypto = window.crypto || window.msCrypto;
       if (crypto) {
         var buf = new Uint32Array(4);
@@ -215,133 +897,487 @@ var SFAbstractCrypto = function () {
     }
   }, {
     key: 'decryptText',
-    value: function decryptText() {
-      var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-          ciphertextToAuth = _ref.ciphertextToAuth,
-          contentCiphertext = _ref.contentCiphertext,
-          encryptionKey = _ref.encryptionKey,
-          iv = _ref.iv,
-          authHash = _ref.authHash,
-          authKey = _ref.authKey;
+    value: function () {
+      var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
+        var _ref2 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+            ciphertextToAuth = _ref2.ciphertextToAuth,
+            contentCiphertext = _ref2.contentCiphertext,
+            encryptionKey = _ref2.encryptionKey,
+            iv = _ref2.iv,
+            authHash = _ref2.authHash,
+            authKey = _ref2.authKey;
 
-      var requiresAuth = arguments[1];
+        var requiresAuth = arguments[1];
+        var localAuthHash, keyData, ivData, decrypted;
+        return regeneratorRuntime.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                if (!(requiresAuth && !authHash)) {
+                  _context.next = 3;
+                  break;
+                }
 
-      if (requiresAuth && !authHash) {
-        console.error("Auth hash is required.");
-        return;
+                console.error("Auth hash is required.");
+                return _context.abrupt('return');
+
+              case 3:
+                if (!authHash) {
+                  _context.next = 10;
+                  break;
+                }
+
+                _context.next = 6;
+                return this.hmac256(ciphertextToAuth, authKey);
+
+              case 6:
+                localAuthHash = _context.sent;
+
+                if (!(authHash !== localAuthHash)) {
+                  _context.next = 10;
+                  break;
+                }
+
+                console.error("Auth hash does not match, returning null.");
+                return _context.abrupt('return', null);
+
+              case 10:
+                keyData = CryptoJS.enc.Hex.parse(encryptionKey);
+                ivData = CryptoJS.enc.Hex.parse(iv || "");
+                decrypted = CryptoJS.AES.decrypt(contentCiphertext, keyData, { iv: ivData, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+                return _context.abrupt('return', decrypted.toString(CryptoJS.enc.Utf8));
+
+              case 14:
+              case 'end':
+                return _context.stop();
+            }
+          }
+        }, _callee, this);
+      }));
+
+      function decryptText() {
+        return _ref.apply(this, arguments);
       }
 
-      if (authHash) {
-        var localAuthHash = SFJS.crypto.hmac256(ciphertextToAuth, authKey);
-        if (authHash !== localAuthHash) {
-          console.error("Auth hash does not match, returning null.");
-          return null;
-        }
-      }
-      var keyData = CryptoJS.enc.Hex.parse(encryptionKey);
-      var ivData = CryptoJS.enc.Hex.parse(iv || "");
-      var decrypted = CryptoJS.AES.decrypt(contentCiphertext, keyData, { iv: ivData, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
-      return decrypted.toString(CryptoJS.enc.Utf8);
-    }
+      return decryptText;
+    }()
   }, {
     key: 'encryptText',
-    value: function encryptText(text, key, iv) {
-      var keyData = CryptoJS.enc.Hex.parse(key);
-      var ivData = CryptoJS.enc.Hex.parse(iv || "");
-      var encrypted = CryptoJS.AES.encrypt(text, keyData, { iv: ivData, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
-      return encrypted.toString();
-    }
+    value: function () {
+      var _ref3 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(text, key, iv) {
+        var keyData, ivData, encrypted;
+        return regeneratorRuntime.wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                keyData = CryptoJS.enc.Hex.parse(key);
+                ivData = CryptoJS.enc.Hex.parse(iv || "");
+                encrypted = CryptoJS.AES.encrypt(text, keyData, { iv: ivData, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+                return _context2.abrupt('return', encrypted.toString());
+
+              case 4:
+              case 'end':
+                return _context2.stop();
+            }
+          }
+        }, _callee2, this);
+      }));
+
+      function encryptText(_x2, _x3, _x4) {
+        return _ref3.apply(this, arguments);
+      }
+
+      return encryptText;
+    }()
+  }, {
+    key: 'generateRandomKey',
+    value: function () {
+      var _ref4 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee3(bits) {
+        return regeneratorRuntime.wrap(function _callee3$(_context3) {
+          while (1) {
+            switch (_context3.prev = _context3.next) {
+              case 0:
+                return _context3.abrupt('return', CryptoJS.lib.WordArray.random(bits / 8).toString());
+
+              case 1:
+              case 'end':
+                return _context3.stop();
+            }
+          }
+        }, _callee3, this);
+      }));
+
+      function generateRandomKey(_x5) {
+        return _ref4.apply(this, arguments);
+      }
+
+      return generateRandomKey;
+    }()
   }, {
     key: 'generateRandomEncryptionKey',
-    value: function generateRandomEncryptionKey() {
-      var salt = SFJS.crypto.generateRandomKey(512);
-      var passphrase = SFJS.crypto.generateRandomKey(512);
-      return CryptoJS.PBKDF2(passphrase, salt, { keySize: 512 / 32 }).toString();
-    }
+    value: function () {
+      var _ref5 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4() {
+        var length, cost, salt, passphrase;
+        return regeneratorRuntime.wrap(function _callee4$(_context4) {
+          while (1) {
+            switch (_context4.prev = _context4.next) {
+              case 0:
+                // Key length needs to be 512 in order to decrypt properly on mobile and web.
+                length = 512;
+                cost = 1;
+                _context4.next = 4;
+                return this.generateRandomKey(length);
+
+              case 4:
+                salt = _context4.sent;
+                _context4.next = 7;
+                return this.generateRandomKey(length);
+
+              case 7:
+                passphrase = _context4.sent;
+                return _context4.abrupt('return', this.pbkdf2(passphrase, salt, cost, length));
+
+              case 9:
+              case 'end':
+                return _context4.stop();
+            }
+          }
+        }, _callee4, this);
+      }));
+
+      function generateRandomEncryptionKey() {
+        return _ref5.apply(this, arguments);
+      }
+
+      return generateRandomEncryptionKey;
+    }()
   }, {
     key: 'firstHalfOfKey',
-    value: function firstHalfOfKey(key) {
-      return key.substring(0, key.length / 2);
-    }
+    value: function () {
+      var _ref6 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee5(key) {
+        return regeneratorRuntime.wrap(function _callee5$(_context5) {
+          while (1) {
+            switch (_context5.prev = _context5.next) {
+              case 0:
+                return _context5.abrupt('return', key.substring(0, key.length / 2));
+
+              case 1:
+              case 'end':
+                return _context5.stop();
+            }
+          }
+        }, _callee5, this);
+      }));
+
+      function firstHalfOfKey(_x6) {
+        return _ref6.apply(this, arguments);
+      }
+
+      return firstHalfOfKey;
+    }()
   }, {
     key: 'secondHalfOfKey',
-    value: function secondHalfOfKey(key) {
-      return key.substring(key.length / 2, key.length);
-    }
+    value: function () {
+      var _ref7 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee6(key) {
+        return regeneratorRuntime.wrap(function _callee6$(_context6) {
+          while (1) {
+            switch (_context6.prev = _context6.next) {
+              case 0:
+                return _context6.abrupt('return', key.substring(key.length / 2, key.length));
+
+              case 1:
+              case 'end':
+                return _context6.stop();
+            }
+          }
+        }, _callee6, this);
+      }));
+
+      function secondHalfOfKey(_x7) {
+        return _ref7.apply(this, arguments);
+      }
+
+      return secondHalfOfKey;
+    }()
   }, {
     key: 'base64',
-    value: function base64(text) {
-      return window.btoa(text);
-    }
+    value: function () {
+      var _ref8 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee7(text) {
+        return regeneratorRuntime.wrap(function _callee7$(_context7) {
+          while (1) {
+            switch (_context7.prev = _context7.next) {
+              case 0:
+                return _context7.abrupt('return', window.btoa(text));
+
+              case 1:
+              case 'end':
+                return _context7.stop();
+            }
+          }
+        }, _callee7, this);
+      }));
+
+      function base64(_x8) {
+        return _ref8.apply(this, arguments);
+      }
+
+      return base64;
+    }()
   }, {
     key: 'base64Decode',
-    value: function base64Decode(base64String) {
-      return window.atob(base64String);
-    }
+    value: function () {
+      var _ref9 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee8(base64String) {
+        return regeneratorRuntime.wrap(function _callee8$(_context8) {
+          while (1) {
+            switch (_context8.prev = _context8.next) {
+              case 0:
+                return _context8.abrupt('return', window.atob(base64String));
+
+              case 1:
+              case 'end':
+                return _context8.stop();
+            }
+          }
+        }, _callee8, this);
+      }));
+
+      function base64Decode(_x9) {
+        return _ref9.apply(this, arguments);
+      }
+
+      return base64Decode;
+    }()
   }, {
     key: 'sha256',
-    value: function sha256(text) {
-      return CryptoJS.SHA256(text).toString();
-    }
+    value: function () {
+      var _ref10 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee9(text) {
+        return regeneratorRuntime.wrap(function _callee9$(_context9) {
+          while (1) {
+            switch (_context9.prev = _context9.next) {
+              case 0:
+                return _context9.abrupt('return', CryptoJS.SHA256(text).toString());
+
+              case 1:
+              case 'end':
+                return _context9.stop();
+            }
+          }
+        }, _callee9, this);
+      }));
+
+      function sha256(_x10) {
+        return _ref10.apply(this, arguments);
+      }
+
+      return sha256;
+    }()
   }, {
     key: 'hmac256',
-    value: function hmac256(message, key) {
-      var keyData = CryptoJS.enc.Hex.parse(key);
-      var messageData = CryptoJS.enc.Utf8.parse(message);
-      var result = CryptoJS.HmacSHA256(messageData, keyData).toString();
-      return result;
-    }
-  }, {
-    key: 'supportsPasswordDerivationCost',
-    value: function supportsPasswordDerivationCost(cost) {
-      // some passwords are created on platforms with stronger pbkdf2 capabilities, like iOS,
-      // which CryptoJS can't handle here (WebCrypto can however).
-      // if user has high password cost and is using browser that doesn't support WebCrypto,
-      // we want to tell them that they can't login with this browser.
-      if (cost > 5000) {
-        return this instanceof SFCryptoWeb;
-      } else {
-        return true;
+    value: function () {
+      var _ref11 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee10(message, key) {
+        var keyData, messageData, result;
+        return regeneratorRuntime.wrap(function _callee10$(_context10) {
+          while (1) {
+            switch (_context10.prev = _context10.next) {
+              case 0:
+                keyData = CryptoJS.enc.Hex.parse(key);
+                messageData = CryptoJS.enc.Utf8.parse(message);
+                result = CryptoJS.HmacSHA256(messageData, keyData).toString();
+                return _context10.abrupt('return', result);
+
+              case 4:
+              case 'end':
+                return _context10.stop();
+            }
+          }
+        }, _callee10, this);
+      }));
+
+      function hmac256(_x11, _x12) {
+        return _ref11.apply(this, arguments);
       }
-    }
+
+      return hmac256;
+    }()
+  }, {
+    key: 'generateSalt',
+    value: function () {
+      var _ref12 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee11(identifier, version, cost, nonce) {
+        var result;
+        return regeneratorRuntime.wrap(function _callee11$(_context11) {
+          while (1) {
+            switch (_context11.prev = _context11.next) {
+              case 0:
+                _context11.next = 2;
+                return this.sha256([identifier, "SF", version, cost, nonce].join(":"));
+
+              case 2:
+                result = _context11.sent;
+                return _context11.abrupt('return', result);
+
+              case 4:
+              case 'end':
+                return _context11.stop();
+            }
+          }
+        }, _callee11, this);
+      }));
+
+      function generateSalt(_x13, _x14, _x15, _x16) {
+        return _ref12.apply(this, arguments);
+      }
+
+      return generateSalt;
+    }()
+
+    /** Generates two deterministic keys based on one input */
+
+  }, {
+    key: 'generateSymmetricKeyPair',
+    value: function () {
+      var _ref13 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee12() {
+        var _ref14 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+            password = _ref14.password,
+            pw_salt = _ref14.pw_salt,
+            pw_cost = _ref14.pw_cost;
+
+        var output, outputLength, splitLength, firstThird, secondThird, thirdThird;
+        return regeneratorRuntime.wrap(function _callee12$(_context12) {
+          while (1) {
+            switch (_context12.prev = _context12.next) {
+              case 0:
+                _context12.next = 2;
+                return this.pbkdf2(password, pw_salt, pw_cost, this.DefaultPBKDF2Length);
+
+              case 2:
+                output = _context12.sent;
+                outputLength = output.length;
+                splitLength = outputLength / 3;
+                firstThird = output.slice(0, splitLength);
+                secondThird = output.slice(splitLength, splitLength * 2);
+                thirdThird = output.slice(splitLength * 2, splitLength * 3);
+                return _context12.abrupt('return', [firstThird, secondThird, thirdThird]);
+
+              case 9:
+              case 'end':
+                return _context12.stop();
+            }
+          }
+        }, _callee12, this);
+      }));
+
+      function generateSymmetricKeyPair() {
+        return _ref13.apply(this, arguments);
+      }
+
+      return generateSymmetricKeyPair;
+    }()
   }, {
     key: 'computeEncryptionKeysForUser',
-    value: function computeEncryptionKeysForUser() {
-      var _ref2 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-          password = _ref2.password,
-          pw_salt = _ref2.pw_salt,
-          pw_cost = _ref2.pw_cost;
+    value: function () {
+      var _ref15 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee13(password, authParams) {
+        var pw_salt;
+        return regeneratorRuntime.wrap(function _callee13$(_context13) {
+          while (1) {
+            switch (_context13.prev = _context13.next) {
+              case 0:
+                if (!(authParams.version == "003")) {
+                  _context13.next = 9;
+                  break;
+                }
 
-      var callback = arguments[1];
+                if (authParams.identifier) {
+                  _context13.next = 4;
+                  break;
+                }
 
-      this.generateSymmetricKeyPair({ password: password, pw_salt: pw_salt, pw_cost: pw_cost }, function (keys) {
-        callback({ pw: keys[0], mk: keys[1], ak: keys[2] });
-      }.bind(this));
-    }
+                console.error("authParams is missing identifier.");
+                return _context13.abrupt('return');
+
+              case 4:
+                _context13.next = 6;
+                return this.generateSalt(authParams.identifier, authParams.version, authParams.pw_cost, authParams.pw_nonce);
+
+              case 6:
+                pw_salt = _context13.sent;
+                _context13.next = 10;
+                break;
+
+              case 9:
+                // Salt is returned from server
+                pw_salt = authParams.pw_salt;
+
+              case 10:
+                return _context13.abrupt('return', this.generateSymmetricKeyPair({ password: password, pw_salt: pw_salt, pw_cost: authParams.pw_cost }).then(function (keys) {
+                  var userKeys = { pw: keys[0], mk: keys[1], ak: keys[2] };
+                  return userKeys;
+                }));
+
+              case 11:
+              case 'end':
+                return _context13.stop();
+            }
+          }
+        }, _callee13, this);
+      }));
+
+      function computeEncryptionKeysForUser(_x18, _x19) {
+        return _ref15.apply(this, arguments);
+      }
+
+      return computeEncryptionKeysForUser;
+    }()
+
+    // Unlike computeEncryptionKeysForUser, this method always uses the latest SF Version
+
   }, {
-    key: 'generateInitialEncryptionKeysForUser',
-    value: function generateInitialEncryptionKeysForUser() {
-      var _ref3 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-          email = _ref3.email,
-          password = _ref3.password;
+    key: 'generateInitialKeysAndAuthParamsForUser',
+    value: function () {
+      var _ref16 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee14(identifier, password) {
+        var version, pw_cost, pw_nonce, pw_salt;
+        return regeneratorRuntime.wrap(function _callee14$(_context14) {
+          while (1) {
+            switch (_context14.prev = _context14.next) {
+              case 0:
+                version = this.SFJS.version;
+                pw_cost = this.SFJS.defaultPasswordGenerationCost;
+                _context14.next = 4;
+                return this.generateRandomKey(256);
 
-      var callback = arguments[1];
+              case 4:
+                pw_nonce = _context14.sent;
+                _context14.next = 7;
+                return this.generateSalt(identifier, version, pw_cost, pw_nonce);
 
-      var pw_cost = this.defaultPasswordGenerationCost();
-      var pw_nonce = this.generateRandomKey(512);
-      var pw_salt = this.sha256([email, pw_nonce].join(":"));
-      this.generateSymmetricKeyPair({ email: email, password: password, pw_salt: pw_salt, pw_cost: pw_cost }, function (keys) {
-        callback({ pw: keys[0], mk: keys[1], ak: keys[2] }, { pw_salt: pw_salt, pw_cost: pw_cost });
-      }.bind(this));
-    }
+              case 7:
+                pw_salt = _context14.sent;
+                return _context14.abrupt('return', this.generateSymmetricKeyPair({ password: password, pw_salt: pw_salt, pw_cost: pw_cost }).then(function (keys) {
+                  var authParams = { pw_nonce: pw_nonce, pw_cost: pw_cost, identifier: identifier, version: version };
+                  var userKeys = { pw: keys[0], mk: keys[1], ak: keys[2] };
+                  return { keys: userKeys, authParams: authParams };
+                }));
+
+              case 9:
+              case 'end':
+                return _context14.stop();
+            }
+          }
+        }, _callee14, this);
+      }));
+
+      function generateInitialKeysAndAuthParamsForUser(_x20, _x21) {
+        return _ref16.apply(this, arguments);
+      }
+
+      return generateInitialKeysAndAuthParamsForUser;
+    }()
   }]);
 
   return SFAbstractCrypto;
 }();
 
-exports.SFAbstractCrypto = SFAbstractCrypto;
-
-var SFCryptoJS = function (_SFAbstractCrypto) {
+;
+var SFCryptoJS = exports.SFCryptoJS = function (_SFAbstractCrypto) {
   _inherits(SFCryptoJS, _SFAbstractCrypto);
 
   function SFCryptoJS() {
@@ -351,41 +1387,43 @@ var SFCryptoJS = function (_SFAbstractCrypto) {
   }
 
   _createClass(SFCryptoJS, [{
-    key: 'generateSymmetricKeyPair',
+    key: 'pbkdf2',
+    value: function () {
+      var _ref17 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee15(password, pw_salt, pw_cost, length) {
+        var params;
+        return regeneratorRuntime.wrap(function _callee15$(_context15) {
+          while (1) {
+            switch (_context15.prev = _context15.next) {
+              case 0:
+                params = {
+                  keySize: length / 32,
+                  hasher: CryptoJS.algo.SHA512,
+                  iterations: pw_cost
+                };
+                return _context15.abrupt('return', CryptoJS.PBKDF2(password, pw_salt, params).toString());
 
+              case 2:
+              case 'end':
+                return _context15.stop();
+            }
+          }
+        }, _callee15, this);
+      }));
 
-    /** Generates two deterministic keys based on one input */
-    value: function generateSymmetricKeyPair() {
-      var _ref4 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-          password = _ref4.password,
-          pw_salt = _ref4.pw_salt,
-          pw_cost = _ref4.pw_cost;
+      function pbkdf2(_x22, _x23, _x24, _x25) {
+        return _ref17.apply(this, arguments);
+      }
 
-      var callback = arguments[1];
-
-      var output = CryptoJS.PBKDF2(password, pw_salt, { keySize: 768 / 32, hasher: CryptoJS.algo.SHA512, iterations: pw_cost }).toString();
-
-      var outputLength = output.length;
-      var splitLength = outputLength / 3;
-      var firstThird = output.slice(0, splitLength);
-      var secondThird = output.slice(splitLength, splitLength * 2);
-      var thirdThird = output.slice(splitLength * 2, splitLength * 3);
-      callback([firstThird, secondThird, thirdThird]);
-    }
-  }, {
-    key: 'defaultPasswordGenerationCost',
-    value: function defaultPasswordGenerationCost() {
-      return 3000;
-    }
+      return pbkdf2;
+    }()
   }]);
 
   return SFCryptoJS;
 }(SFAbstractCrypto);
 
-exports.SFCryptoJS = SFCryptoJS;
-var subtleCrypto = window.crypto ? window.crypto.subtle : null;
+;var subtleCrypto = window.crypto ? window.crypto.subtle : null;
 
-var SFCryptoWeb = function (_SFAbstractCrypto2) {
+var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
   _inherits(SFCryptoWeb, _SFAbstractCrypto2);
 
   function SFCryptoWeb() {
@@ -395,104 +1433,119 @@ var SFCryptoWeb = function (_SFAbstractCrypto2) {
   }
 
   _createClass(SFCryptoWeb, [{
-    key: 'defaultPasswordGenerationCost',
+    key: 'pbkdf2',
 
-
-    /**
-    Overrides
-    */
-    value: function defaultPasswordGenerationCost() {
-      return 101000;
-    }
-
-    /** Generates two deterministic keys based on one input */
-
-  }, {
-    key: 'generateSymmetricKeyPair',
-    value: function generateSymmetricKeyPair() {
-      var _ref5 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-          password = _ref5.password,
-          pw_salt = _ref5.pw_salt,
-          pw_cost = _ref5.pw_cost;
-
-      var callback = arguments[1];
-
-      this.stretchPassword({ password: password, pw_salt: pw_salt, pw_cost: pw_cost }, function (output) {
-        var outputLength = output.length;
-        var splitLength = outputLength / 3;
-        var firstThird = output.slice(0, splitLength);
-        var secondThird = output.slice(splitLength, splitLength * 2);
-        var thirdThird = output.slice(splitLength * 2, splitLength * 3);
-        callback([firstThird, secondThird, thirdThird]);
-      });
-    }
 
     /**
     Internal
     */
 
-  }, {
-    key: 'stretchPassword',
-    value: function stretchPassword() {
-      var _ref6 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-          password = _ref6.password,
-          pw_salt = _ref6.pw_salt,
-          pw_cost = _ref6.pw_cost;
+    value: function () {
+      var _ref18 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee16(password, pw_salt, pw_cost, length) {
+        var key;
+        return regeneratorRuntime.wrap(function _callee16$(_context16) {
+          while (1) {
+            switch (_context16.prev = _context16.next) {
+              case 0:
+                _context16.next = 2;
+                return this.webCryptoImportKey(password);
 
-      var callback = arguments[1];
+              case 2:
+                key = _context16.sent;
 
+                if (key) {
+                  _context16.next = 6;
+                  break;
+                }
 
-      this.webCryptoImportKey(password, function (key) {
+                console.log("Key is null, unable to continue");
+                return _context16.abrupt('return', null);
 
-        if (!key) {
-          console.log("Key is null, unable to continue");
-          callback(null);
-          return;
-        }
+              case 6:
+                return _context16.abrupt('return', this.webCryptoDeriveBits(key, pw_salt, pw_cost, length));
 
-        this.webCryptoDeriveBits({ key: key, pw_salt: pw_salt, pw_cost: pw_cost }, function (key) {
-          if (!key) {
-            callback(null);
-            return;
+              case 7:
+              case 'end':
+                return _context16.stop();
+            }
           }
+        }, _callee16, this);
+      }));
 
-          callback(key);
-        }.bind(this));
-      }.bind(this));
-    }
+      function pbkdf2(_x26, _x27, _x28, _x29) {
+        return _ref18.apply(this, arguments);
+      }
+
+      return pbkdf2;
+    }()
   }, {
     key: 'webCryptoImportKey',
-    value: function webCryptoImportKey(input, callback) {
-      subtleCrypto.importKey("raw", this.stringToArrayBuffer(input), { name: "PBKDF2" }, false, ["deriveBits"]).then(function (key) {
-        callback(key);
-      }).catch(function (err) {
-        console.error(err);
-        callback(null);
-      });
-    }
+    value: function () {
+      var _ref19 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee17(input) {
+        return regeneratorRuntime.wrap(function _callee17$(_context17) {
+          while (1) {
+            switch (_context17.prev = _context17.next) {
+              case 0:
+                return _context17.abrupt('return', subtleCrypto.importKey("raw", this.stringToArrayBuffer(input), { name: "PBKDF2" }, false, ["deriveBits"]).then(function (key) {
+                  return key;
+                }).catch(function (err) {
+                  console.error(err);
+                  return null;
+                }));
+
+              case 1:
+              case 'end':
+                return _context17.stop();
+            }
+          }
+        }, _callee17, this);
+      }));
+
+      function webCryptoImportKey(_x30) {
+        return _ref19.apply(this, arguments);
+      }
+
+      return webCryptoImportKey;
+    }()
   }, {
     key: 'webCryptoDeriveBits',
-    value: function webCryptoDeriveBits() {
-      var _ref7 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-          key = _ref7.key,
-          pw_salt = _ref7.pw_salt,
-          pw_cost = _ref7.pw_cost;
+    value: function () {
+      var _ref20 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee18(key, pw_salt, pw_cost, length) {
+        var _this3 = this;
 
-      var callback = arguments[1];
+        var params;
+        return regeneratorRuntime.wrap(function _callee18$(_context18) {
+          while (1) {
+            switch (_context18.prev = _context18.next) {
+              case 0:
+                params = {
+                  "name": "PBKDF2",
+                  salt: this.stringToArrayBuffer(pw_salt),
+                  iterations: pw_cost,
+                  hash: { name: "SHA-512" }
+                };
+                return _context18.abrupt('return', subtleCrypto.deriveBits(params, key, length).then(function (bits) {
+                  var key = _this3.arrayBufferToHexString(new Uint8Array(bits));
+                  return key;
+                }).catch(function (err) {
+                  console.error(err);
+                  return null;
+                }));
 
-      subtleCrypto.deriveBits({
-        "name": "PBKDF2",
-        salt: this.stringToArrayBuffer(pw_salt),
-        iterations: pw_cost,
-        hash: { name: "SHA-512" }
-      }, key, 768).then(function (bits) {
-        var key = this.arrayBufferToHexString(new Uint8Array(bits));
-        callback(key);
-      }.bind(this)).catch(function (err) {
-        console.error(err);
-        callback(null);
-      });
-    }
+              case 2:
+              case 'end':
+                return _context18.stop();
+            }
+          }
+        }, _callee18, this);
+      }));
+
+      function webCryptoDeriveBits(_x31, _x32, _x33, _x34) {
+        return _ref20.apply(this, arguments);
+      }
+
+      return webCryptoDeriveBits;
+    }()
   }, {
     key: 'stringToArrayBuffer',
     value: function stringToArrayBuffer(string) {
@@ -533,57 +1586,163 @@ var SFCryptoWeb = function (_SFAbstractCrypto2) {
   return SFCryptoWeb;
 }(SFAbstractCrypto);
 
-exports.SFCryptoWeb = SFCryptoWeb;
-
-var SFItemTransformer = function () {
-  function SFItemTransformer() {
+;
+var SFItemTransformer = exports.SFItemTransformer = function () {
+  function SFItemTransformer(crypto) {
     _classCallCheck(this, SFItemTransformer);
+
+    this.crypto = crypto;
   }
 
-  _createClass(SFItemTransformer, null, [{
+  _createClass(SFItemTransformer, [{
     key: '_private_encryptString',
-    value: function _private_encryptString(string, encryptionKey, authKey, uuid, version) {
-      var fullCiphertext, contentCiphertext;
-      if (version === "001") {
-        contentCiphertext = SFJS.crypto.encryptText(string, encryptionKey, null);
-        fullCiphertext = version + contentCiphertext;
-      } else {
-        var iv = SFJS.crypto.generateRandomKey(128);
-        contentCiphertext = SFJS.crypto.encryptText(string, encryptionKey, iv);
-        var ciphertextToAuth = [version, uuid, iv, contentCiphertext].join(":");
-        var authHash = SFJS.crypto.hmac256(ciphertextToAuth, authKey);
-        fullCiphertext = [version, authHash, uuid, iv, contentCiphertext].join(":");
+    value: function () {
+      var _ref21 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee19(string, encryptionKey, authKey, uuid, version) {
+        var fullCiphertext, contentCiphertext, iv, ciphertextToAuth, authHash;
+        return regeneratorRuntime.wrap(function _callee19$(_context19) {
+          while (1) {
+            switch (_context19.prev = _context19.next) {
+              case 0:
+                if (!(version === "001")) {
+                  _context19.next = 7;
+                  break;
+                }
+
+                _context19.next = 3;
+                return this.crypto.encryptText(string, encryptionKey, null);
+
+              case 3:
+                contentCiphertext = _context19.sent;
+
+                fullCiphertext = version + contentCiphertext;
+                _context19.next = 18;
+                break;
+
+              case 7:
+                _context19.next = 9;
+                return this.crypto.generateRandomKey(128);
+
+              case 9:
+                iv = _context19.sent;
+                _context19.next = 12;
+                return this.crypto.encryptText(string, encryptionKey, iv);
+
+              case 12:
+                contentCiphertext = _context19.sent;
+                ciphertextToAuth = [version, uuid, iv, contentCiphertext].join(":");
+                _context19.next = 16;
+                return this.crypto.hmac256(ciphertextToAuth, authKey);
+
+              case 16:
+                authHash = _context19.sent;
+
+                fullCiphertext = [version, authHash, uuid, iv, contentCiphertext].join(":");
+
+              case 18:
+                return _context19.abrupt('return', fullCiphertext);
+
+              case 19:
+              case 'end':
+                return _context19.stop();
+            }
+          }
+        }, _callee19, this);
+      }));
+
+      function _private_encryptString(_x35, _x36, _x37, _x38, _x39) {
+        return _ref21.apply(this, arguments);
       }
 
-      return fullCiphertext;
-    }
+      return _private_encryptString;
+    }()
   }, {
     key: 'encryptItem',
-    value: function encryptItem(item, keys) {
-      var version = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "002";
+    value: function () {
+      var _ref22 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee20(item, keys) {
+        var version = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "003";
+        var params, item_key, ek, ak, ciphertext, authHash;
+        return regeneratorRuntime.wrap(function _callee20$(_context20) {
+          while (1) {
+            switch (_context20.prev = _context20.next) {
+              case 0:
+                params = {};
+                // encrypt item key
 
-      var params = {};
-      // encrypt item key
-      var item_key = SFJS.crypto.generateRandomEncryptionKey();
-      if (version === "001") {
-        // legacy
-        params.enc_item_key = SFJS.crypto.encryptText(item_key, keys.mk, null);
-      } else {
-        params.enc_item_key = this._private_encryptString(item_key, keys.mk, keys.ak, item.uuid, version);
+                _context20.next = 3;
+                return this.crypto.generateRandomEncryptionKey();
+
+              case 3:
+                item_key = _context20.sent;
+
+                if (!(version === "001")) {
+                  _context20.next = 10;
+                  break;
+                }
+
+                _context20.next = 7;
+                return this.crypto.encryptText(item_key, keys.mk, null);
+
+              case 7:
+                params.enc_item_key = _context20.sent;
+                _context20.next = 13;
+                break;
+
+              case 10:
+                _context20.next = 12;
+                return this._private_encryptString(item_key, keys.mk, keys.ak, item.uuid, version);
+
+              case 12:
+                params.enc_item_key = _context20.sent;
+
+              case 13:
+                _context20.next = 15;
+                return this.crypto.firstHalfOfKey(item_key);
+
+              case 15:
+                ek = _context20.sent;
+                _context20.next = 18;
+                return this.crypto.secondHalfOfKey(item_key);
+
+              case 18:
+                ak = _context20.sent;
+                _context20.next = 21;
+                return this._private_encryptString(JSON.stringify(item.createContentJSONFromProperties()), ek, ak, item.uuid, version);
+
+              case 21:
+                ciphertext = _context20.sent;
+
+                if (!(version === "001")) {
+                  _context20.next = 27;
+                  break;
+                }
+
+                _context20.next = 25;
+                return this.crypto.hmac256(ciphertext, ak);
+
+              case 25:
+                authHash = _context20.sent;
+
+                params.auth_hash = authHash;
+
+              case 27:
+
+                params.content = ciphertext;
+                return _context20.abrupt('return', params);
+
+              case 29:
+              case 'end':
+                return _context20.stop();
+            }
+          }
+        }, _callee20, this);
+      }));
+
+      function encryptItem(_x41, _x42) {
+        return _ref22.apply(this, arguments);
       }
 
-      // encrypt content
-      var ek = SFJS.crypto.firstHalfOfKey(item_key);
-      var ak = SFJS.crypto.secondHalfOfKey(item_key);
-      var ciphertext = this._private_encryptString(JSON.stringify(item.createContentJSONFromProperties()), ek, ak, item.uuid, version);
-      if (version === "001") {
-        var authHash = SFJS.crypto.hmac256(ciphertext, ak);
-        params.auth_hash = authHash;
-      }
-
-      params.content = ciphertext;
-      return params;
-    }
+      return encryptItem;
+    }()
   }, {
     key: 'encryptionComponentsFromString',
     value: function encryptionComponentsFromString(string, encryptionKey, authKey) {
@@ -614,164 +1773,371 @@ var SFItemTransformer = function () {
     }
   }, {
     key: 'decryptItem',
-    value: function decryptItem(item, keys) {
+    value: function () {
+      var _ref23 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee21(item, keys) {
+        var encryptedItemKey, requiresAuth, keyParams, item_key, ek, ak, itemParams, content;
+        return regeneratorRuntime.wrap(function _callee21$(_context21) {
+          while (1) {
+            switch (_context21.prev = _context21.next) {
+              case 0:
+                if (!(typeof item.content != "string")) {
+                  _context21.next = 2;
+                  break;
+                }
 
-      if (typeof item.content != "string") {
-        // Content is already an object, can't do anything with it.
-        return;
-      }
+                return _context21.abrupt('return');
 
-      if ((item.content.startsWith("001") || item.content.startsWith("002")) && item.enc_item_key) {
-        // is encrypted, continue to below
-      } else {
-        // is base64 encoded
-        try {
-          item.content = JSON.parse(SFJS.crypto.base64Decode(item.content.substring(3, item.content.length)));
-        } catch (e) {}
+              case 2:
+                if (!item.content.startsWith("000")) {
+                  _context21.next = 14;
+                  break;
+                }
 
-        return;
-      }
+                _context21.prev = 3;
+                _context21.t0 = JSON;
+                _context21.next = 7;
+                return this.crypto.base64Decode(item.content.substring(3, item.content.length));
 
-      // decrypt encrypted key
-      var encryptedItemKey = item.enc_item_key;
-      var requiresAuth = true;
-      if (encryptedItemKey.startsWith("002") === false) {
-        // legacy encryption type, has no prefix
-        encryptedItemKey = "001" + encryptedItemKey;
-        requiresAuth = false;
-      }
-      var keyParams = this.encryptionComponentsFromString(encryptedItemKey, keys.mk, keys.ak);
+              case 7:
+                _context21.t1 = _context21.sent;
+                item.content = _context21.t0.parse.call(_context21.t0, _context21.t1);
+                _context21.next = 13;
+                break;
 
-      // return if uuid in auth hash does not match item uuid. Signs of tampering.
-      if (keyParams.uuid && keyParams.uuid !== item.uuid) {
-        if (!item.errorDecrypting) {
-          item.errorDecryptingValueChanged = true;
-        }
-        item.errorDecrypting = true;
-        return;
-      }
+              case 11:
+                _context21.prev = 11;
+                _context21.t2 = _context21['catch'](3);
 
-      var item_key = SFJS.crypto.decryptText(keyParams, requiresAuth);
+              case 13:
+                return _context21.abrupt('return');
 
-      if (!item_key) {
-        if (!item.errorDecrypting) {
-          item.errorDecryptingValueChanged = true;
-        }
-        item.errorDecrypting = true;
-        return;
-      }
+              case 14:
+                if (item.enc_item_key) {
+                  _context21.next = 17;
+                  break;
+                }
 
-      // decrypt content
-      var ek = SFJS.crypto.firstHalfOfKey(item_key);
-      var ak = SFJS.crypto.secondHalfOfKey(item_key);
-      var itemParams = this.encryptionComponentsFromString(item.content, ek, ak);
+                // This needs to be here to continue, return otherwise
+                console.log("Missing item encryption key, skipping decryption.");
+                return _context21.abrupt('return');
 
-      // return if uuid in auth hash does not match item uuid. Signs of tampering.
-      if (itemParams.uuid && itemParams.uuid !== item.uuid) {
-        if (!item.errorDecrypting) {
-          item.errorDecryptingValueChanged = true;
-        }
-        item.errorDecrypting = true;
-        return;
-      }
+              case 17:
 
-      if (!itemParams.authHash) {
-        // legacy 001
-        itemParams.authHash = item.auth_hash;
-      }
+                // decrypt encrypted key
+                encryptedItemKey = item.enc_item_key;
+                requiresAuth = true;
 
-      var content = SFJS.crypto.decryptText(itemParams, true);
-      if (!content) {
-        if (!item.errorDecrypting) {
-          item.errorDecryptingValueChanged = true;
-        }
-        item.errorDecrypting = true;
-      } else {
-        if (item.errorDecrypting == true) {
-          item.errorDecryptingValueChanged = true;
-        }
-        // Content should only be set if it was successfully decrypted, and should otherwise remain unchanged.
-        item.errorDecrypting = false;
-        item.content = content;
-      }
-    }
-  }, {
-    key: 'decryptMultipleItems',
-    value: function decryptMultipleItems(items, keys, throws) {
-      var _iteratorNormalCompletion = true;
-      var _didIteratorError = false;
-      var _iteratorError = undefined;
+                if (!encryptedItemKey.startsWith("002") && !encryptedItemKey.startsWith("003")) {
+                  // legacy encryption type, has no prefix
+                  encryptedItemKey = "001" + encryptedItemKey;
+                  requiresAuth = false;
+                }
+                keyParams = this.encryptionComponentsFromString(encryptedItemKey, keys.mk, keys.ak);
 
-      try {
-        for (var _iterator = items[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-          var item = _step.value;
+                // return if uuid in auth hash does not match item uuid. Signs of tampering.
 
+                if (!(keyParams.uuid && keyParams.uuid !== item.uuid)) {
+                  _context21.next = 25;
+                  break;
+                }
 
-          // 4/15/18: Adding item.content == null clause. We still want to decrypt deleted items incase
-          // they were marked as dirty but not yet synced. Not yet sure why we had this requirement.
-          if (item.deleted == true && item.content == null) {
-            continue;
-          }
+                if (!item.errorDecrypting) {
+                  item.errorDecryptingValueChanged = true;
+                }
+                item.errorDecrypting = true;
+                return _context21.abrupt('return');
 
-          var isString = typeof item.content === 'string' || item.content instanceof String;
-          if (isString) {
-            try {
-              this.decryptItem(item, keys);
-            } catch (e) {
-              if (!item.errorDecrypting) {
-                item.errorDecryptingValueChanged = true;
-              }
-              item.errorDecrypting = true;
-              if (throws) {
-                throw e;
-              }
-              console.error("Error decrypting item", item, e);
-              continue;
+              case 25:
+                _context21.next = 27;
+                return this.crypto.decryptText(keyParams, requiresAuth);
+
+              case 27:
+                item_key = _context21.sent;
+
+                if (item_key) {
+                  _context21.next = 32;
+                  break;
+                }
+
+                if (!item.errorDecrypting) {
+                  item.errorDecryptingValueChanged = true;
+                }
+                item.errorDecrypting = true;
+                return _context21.abrupt('return');
+
+              case 32:
+                _context21.next = 34;
+                return this.crypto.firstHalfOfKey(item_key);
+
+              case 34:
+                ek = _context21.sent;
+                _context21.next = 37;
+                return this.crypto.secondHalfOfKey(item_key);
+
+              case 37:
+                ak = _context21.sent;
+                itemParams = this.encryptionComponentsFromString(item.content, ek, ak);
+
+                // return if uuid in auth hash does not match item uuid. Signs of tampering.
+
+                if (!(itemParams.uuid && itemParams.uuid !== item.uuid)) {
+                  _context21.next = 43;
+                  break;
+                }
+
+                if (!item.errorDecrypting) {
+                  item.errorDecryptingValueChanged = true;
+                }
+                item.errorDecrypting = true;
+                return _context21.abrupt('return');
+
+              case 43:
+
+                if (!itemParams.authHash) {
+                  // legacy 001
+                  itemParams.authHash = item.auth_hash;
+                }
+
+                _context21.next = 46;
+                return this.crypto.decryptText(itemParams, true);
+
+              case 46:
+                content = _context21.sent;
+
+                if (!content) {
+                  if (!item.errorDecrypting) {
+                    item.errorDecryptingValueChanged = true;
+                  }
+                  item.errorDecrypting = true;
+                } else {
+                  if (item.errorDecrypting == true) {
+                    item.errorDecryptingValueChanged = true;
+                  }
+                  // Content should only be set if it was successfully decrypted, and should otherwise remain unchanged.
+                  item.errorDecrypting = false;
+                  item.content = content;
+                }
+
+              case 48:
+              case 'end':
+                return _context21.stop();
             }
           }
-        }
-      } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion && _iterator.return) {
-            _iterator.return();
-          }
-        } finally {
-          if (_didIteratorError) {
-            throw _iteratorError;
-          }
-        }
+        }, _callee21, this, [[3, 11]]);
+      }));
+
+      function decryptItem(_x43, _x44) {
+        return _ref23.apply(this, arguments);
       }
-    }
+
+      return decryptItem;
+    }()
+  }, {
+    key: 'decryptMultipleItems',
+    value: function () {
+      var _ref24 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee23(items, keys, throws) {
+        var _this4 = this;
+
+        var decrypt;
+        return regeneratorRuntime.wrap(function _callee23$(_context23) {
+          while (1) {
+            switch (_context23.prev = _context23.next) {
+              case 0:
+                decrypt = function () {
+                  var _ref25 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee22(item) {
+                    var isString;
+                    return regeneratorRuntime.wrap(function _callee22$(_context22) {
+                      while (1) {
+                        switch (_context22.prev = _context22.next) {
+                          case 0:
+                            if (!(item.deleted == true && item.content == null)) {
+                              _context22.next = 2;
+                              break;
+                            }
+
+                            return _context22.abrupt('return');
+
+                          case 2:
+                            isString = typeof item.content === 'string' || item.content instanceof String;
+
+                            if (!isString) {
+                              _context22.next = 17;
+                              break;
+                            }
+
+                            _context22.prev = 4;
+                            _context22.next = 7;
+                            return _this4.decryptItem(item, keys);
+
+                          case 7:
+                            _context22.next = 17;
+                            break;
+
+                          case 9:
+                            _context22.prev = 9;
+                            _context22.t0 = _context22['catch'](4);
+
+                            if (!item.errorDecrypting) {
+                              item.errorDecryptingValueChanged = true;
+                            }
+                            item.errorDecrypting = true;
+
+                            if (!throws) {
+                              _context22.next = 15;
+                              break;
+                            }
+
+                            throw _context22.t0;
+
+                          case 15:
+                            console.error("Error decrypting item", item, _context22.t0);
+                            return _context22.abrupt('return');
+
+                          case 17:
+                          case 'end':
+                            return _context22.stop();
+                        }
+                      }
+                    }, _callee22, _this4, [[4, 9]]);
+                  }));
+
+                  return function decrypt(_x48) {
+                    return _ref25.apply(this, arguments);
+                  };
+                }();
+
+                return _context23.abrupt('return', Promise.all(items.map(function (item) {
+                  return decrypt(item);
+                })));
+
+              case 2:
+              case 'end':
+                return _context23.stop();
+            }
+          }
+        }, _callee23, this);
+      }));
+
+      function decryptMultipleItems(_x45, _x46, _x47) {
+        return _ref24.apply(this, arguments);
+      }
+
+      return decryptMultipleItems;
+    }()
   }]);
 
   return SFItemTransformer;
 }();
 
-window.SFItemTransformer = SFItemTransformer;
-exports.SFItemTransformer = SFItemTransformer;
+;
+var StandardFile = exports.StandardFile = function () {
+  function StandardFile(cryptoInstance) {
+    _classCallCheck(this, StandardFile);
 
-var StandardFile = function StandardFile() {
-  _classCallCheck(this, StandardFile);
+    // This library runs in native environments as well (react native)
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      // detect IE8 and above, and edge.
+      // IE and Edge do not support pbkdf2 in WebCrypto, therefore we need to use CryptoJS
+      var IEOrEdge = document.documentMode || /Edge/.test(navigator.userAgent);
 
-  // detect IE8 and above, and edge.
-  // IE and Edge do not support pbkdf2 in WebCrypto, therefore we need to use CryptoJS
-  var IEOrEdge = document.documentMode || /Edge/.test(navigator.userAgent);
+      if (!IEOrEdge && window.crypto && window.crypto.subtle) {
+        this.crypto = new SFCryptoWeb();
+      } else {
+        this.crypto = new SFCryptoJS();
+      }
+    }
 
-  if (!IEOrEdge && window.crypto && window.crypto.subtle) {
-    this.crypto = new SFCryptoWeb();
-  } else {
-    this.crypto = new SFCryptoJS();
+    if (cryptoInstance) {
+      this.crypto = cryptoInstance;
+    }
+
+    this.itemTransformer = new SFItemTransformer(this.crypto);
+
+    this.crypto.SFJS = {
+      version: this.version(),
+      defaultPasswordGenerationCost: this.defaultPasswordGenerationCost()
+    };
   }
-};
 
-window.StandardFile = StandardFile;
-window.SFJS = new StandardFile();
+  _createClass(StandardFile, [{
+    key: 'version',
+    value: function version() {
+      return "003";
+    }
+  }, {
+    key: 'supportsPasswordDerivationCost',
+    value: function supportsPasswordDerivationCost(cost) {
+      // some passwords are created on platforms with stronger pbkdf2 capabilities, like iOS,
+      // which CryptoJS can't handle here (WebCrypto can however).
+      // if user has high password cost and is using browser that doesn't support WebCrypto,
+      // we want to tell them that they can't login with this browser.
+      if (cost > 5000) {
+        return this.crypto instanceof SFCryptoWeb;
+      } else {
+        return true;
+      }
+    }
+
+    // Returns the versions that this library supports technically.
+
+  }, {
+    key: 'supportedVersions',
+    value: function supportedVersions() {
+      return ["001", "002", "003"];
+    }
+  }, {
+    key: 'isVersionNewerThanLibraryVersion',
+    value: function isVersionNewerThanLibraryVersion(version) {
+      var libraryVersion = this.version();
+      return parseInt(version) > parseInt(libraryVersion);
+    }
+  }, {
+    key: 'isProtocolVersionOutdated',
+    value: function isProtocolVersionOutdated(version) {
+      // YYYY-MM-DD
+      var expirationDates = {
+        "001": Date.parse("2018-01-01"),
+        "002": Date.parse("2020-01-01")
+      };
+
+      var date = expirationDates[version];
+      if (!date) {
+        // No expiration date, is active version
+        return false;
+      }
+      var expired = new Date() > date;
+      return expired;
+    }
+  }, {
+    key: 'costMinimumForVersion',
+    value: function costMinimumForVersion(version) {
+      return {
+        "001": 3000,
+        "002": 3000,
+        "003": 110000
+      }[version];
+    }
+  }, {
+    key: 'defaultPasswordGenerationCost',
+    value: function defaultPasswordGenerationCost() {
+      return this.costMinimumForVersion(this.version());
+    }
+  }]);
+
+  return StandardFile;
+}();
+
+if (typeof window !== 'undefined' && window !== null) {
+  // window is for some reason defined in React Native, but throws an exception when you try to set to it
+  try {
+    window.StandardFile = StandardFile;
+    window.SFJS = new StandardFile();
+  } catch (e) {}
+}
 
 
-},{}]},{},[1]);
+},{}]},{},[1])(1)
+});
 ;/**
  * @license AngularJS v1.6.1
  * (c) 2010-2016 Google, Inc. http://angularjs.org
@@ -33802,20 +35168,2884 @@ return au(t,"toString",{configurable:true,enumerable:false,value:yr(n),writable:
 if(e)switch(e){case mu:return fe;case Au:return Kr;case zu:return Zr;case xu:return re;case Su:return ie}return n});var Nu=Fn(Fu),Cu=$n(function(t){var n=[];return je.test(t)&&n.push(""),t.replace(we,function(t,r,e,u){n.push(e?u.replace(Ae,"$1"):r||t)}),n}),Du=Et(Cn),Ru=rn(Tn);Hn.Cache=U;var Vu=pt(function(){return arguments}())?pt:function(t){return nr(t)&&Je.call(t,"callee")&&!ou.call(t,"callee")},qu=Array.isArray,Wu=hu||wr,Gu=Re?b(Re):dt,Hu=Zt(function(t,n,r){xt(t,n,r)}),Ju=fn(function(t,n){var r={};
 if(null==t)return r;var e=false;n=c(n,function(n){return n=Ct(n,t),e||(e=n.length>1),n}),Qt(t,ln(t),r),e&&(r=it(r,kr|$r|Ir,en));for(var u=n.length;u--;)Nt(r,n[u]);return r}),Ku=fn(function(t,n){return null==t?{}:kt(t,n)});z.constant=yr,z.filter=qn,z.flatten=Un,z.iteratee=br,z.keys=hr,z.keysIn=vr,z.map=Gn,z.memoize=Hn,z.merge=Hu,z.omit=Ju,z.pick=Ku,z.property=dr,z.pull=Du,z.pullAll=Cn,z.remove=Dn,z.toPlainObject=fr,z.uniq=Vn,z.values=pr,z.cloneDeep=Jn,z.eq=Kn,z.find=Ru,z.findIndex=Tn,z.get=lr,z.hasIn=sr,
 z.identity=gr,z.includes=Wn,z.isArguments=Vu,z.isArray=qu,z.isArrayLike=Qn,z.isArrayLikeObject=Xn,z.isBuffer=Wu,z.isFunction=Yn,z.isLength=Zn,z.isObject=tr,z.isObjectLike=nr,z.isPlainObject=rr,z.isString=er,z.isSymbol=ur,z.isTypedArray=Gu,z.last=Nn,z.stubArray=jr,z.stubFalse=wr,z.noop=_r,z.sortedIndexBy=Rn,z.toFinite=or,z.toInteger=ir,z.toNumber=cr,z.toString=ar,z.VERSION=mr,typeof define=="function"&&typeof define.amd=="object"&&define.amd?(Me._=z, define(function(){return z})):Ue?((Ue.exports=z)._=z,
-Te._=z):Me._=z}).call(this);;(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+Te._=z):Me._=z}).call(this);;(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+module.exports = { "default": require("core-js/library/fn/object/create"), __esModule: true };
+},{"core-js/library/fn/object/create":17}],2:[function(require,module,exports){
+module.exports = { "default": require("core-js/library/fn/object/define-property"), __esModule: true };
+},{"core-js/library/fn/object/define-property":18}],3:[function(require,module,exports){
+module.exports = { "default": require("core-js/library/fn/object/get-own-property-descriptor"), __esModule: true };
+},{"core-js/library/fn/object/get-own-property-descriptor":19}],4:[function(require,module,exports){
+module.exports = { "default": require("core-js/library/fn/object/get-prototype-of"), __esModule: true };
+},{"core-js/library/fn/object/get-prototype-of":20}],5:[function(require,module,exports){
+module.exports = { "default": require("core-js/library/fn/object/set-prototype-of"), __esModule: true };
+},{"core-js/library/fn/object/set-prototype-of":21}],6:[function(require,module,exports){
+module.exports = { "default": require("core-js/library/fn/promise"), __esModule: true };
+},{"core-js/library/fn/promise":22}],7:[function(require,module,exports){
+module.exports = { "default": require("core-js/library/fn/symbol"), __esModule: true };
+},{"core-js/library/fn/symbol":23}],8:[function(require,module,exports){
+module.exports = { "default": require("core-js/library/fn/symbol/iterator"), __esModule: true };
+},{"core-js/library/fn/symbol/iterator":24}],9:[function(require,module,exports){
+"use strict";
+
+exports.__esModule = true;
+
+var _promise = require("../core-js/promise");
+
+var _promise2 = _interopRequireDefault(_promise);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = function (fn) {
+  return function () {
+    var gen = fn.apply(this, arguments);
+    return new _promise2.default(function (resolve, reject) {
+      function step(key, arg) {
+        try {
+          var info = gen[key](arg);
+          var value = info.value;
+        } catch (error) {
+          reject(error);
+          return;
+        }
+
+        if (info.done) {
+          resolve(value);
+        } else {
+          return _promise2.default.resolve(value).then(function (value) {
+            step("next", value);
+          }, function (err) {
+            step("throw", err);
+          });
+        }
+      }
+
+      return step("next");
+    });
+  };
+};
+},{"../core-js/promise":6}],10:[function(require,module,exports){
+"use strict";
+
+exports.__esModule = true;
+
+exports.default = function (instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+};
+},{}],11:[function(require,module,exports){
+"use strict";
+
+exports.__esModule = true;
+
+var _defineProperty = require("../core-js/object/define-property");
+
+var _defineProperty2 = _interopRequireDefault(_defineProperty);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = function () {
+  function defineProperties(target, props) {
+    for (var i = 0; i < props.length; i++) {
+      var descriptor = props[i];
+      descriptor.enumerable = descriptor.enumerable || false;
+      descriptor.configurable = true;
+      if ("value" in descriptor) descriptor.writable = true;
+      (0, _defineProperty2.default)(target, descriptor.key, descriptor);
+    }
+  }
+
+  return function (Constructor, protoProps, staticProps) {
+    if (protoProps) defineProperties(Constructor.prototype, protoProps);
+    if (staticProps) defineProperties(Constructor, staticProps);
+    return Constructor;
+  };
+}();
+},{"../core-js/object/define-property":2}],12:[function(require,module,exports){
+"use strict";
+
+exports.__esModule = true;
+
+var _getPrototypeOf = require("../core-js/object/get-prototype-of");
+
+var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
+
+var _getOwnPropertyDescriptor = require("../core-js/object/get-own-property-descriptor");
+
+var _getOwnPropertyDescriptor2 = _interopRequireDefault(_getOwnPropertyDescriptor);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = function get(object, property, receiver) {
+  if (object === null) object = Function.prototype;
+  var desc = (0, _getOwnPropertyDescriptor2.default)(object, property);
+
+  if (desc === undefined) {
+    var parent = (0, _getPrototypeOf2.default)(object);
+
+    if (parent === null) {
+      return undefined;
+    } else {
+      return get(parent, property, receiver);
+    }
+  } else if ("value" in desc) {
+    return desc.value;
+  } else {
+    var getter = desc.get;
+
+    if (getter === undefined) {
+      return undefined;
+    }
+
+    return getter.call(receiver);
+  }
+};
+},{"../core-js/object/get-own-property-descriptor":3,"../core-js/object/get-prototype-of":4}],13:[function(require,module,exports){
+"use strict";
+
+exports.__esModule = true;
+
+var _setPrototypeOf = require("../core-js/object/set-prototype-of");
+
+var _setPrototypeOf2 = _interopRequireDefault(_setPrototypeOf);
+
+var _create = require("../core-js/object/create");
+
+var _create2 = _interopRequireDefault(_create);
+
+var _typeof2 = require("../helpers/typeof");
+
+var _typeof3 = _interopRequireDefault(_typeof2);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = function (subClass, superClass) {
+  if (typeof superClass !== "function" && superClass !== null) {
+    throw new TypeError("Super expression must either be null or a function, not " + (typeof superClass === "undefined" ? "undefined" : (0, _typeof3.default)(superClass)));
+  }
+
+  subClass.prototype = (0, _create2.default)(superClass && superClass.prototype, {
+    constructor: {
+      value: subClass,
+      enumerable: false,
+      writable: true,
+      configurable: true
+    }
+  });
+  if (superClass) _setPrototypeOf2.default ? (0, _setPrototypeOf2.default)(subClass, superClass) : subClass.__proto__ = superClass;
+};
+},{"../core-js/object/create":1,"../core-js/object/set-prototype-of":5,"../helpers/typeof":15}],14:[function(require,module,exports){
+"use strict";
+
+exports.__esModule = true;
+
+var _typeof2 = require("../helpers/typeof");
+
+var _typeof3 = _interopRequireDefault(_typeof2);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = function (self, call) {
+  if (!self) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
+
+  return call && ((typeof call === "undefined" ? "undefined" : (0, _typeof3.default)(call)) === "object" || typeof call === "function") ? call : self;
+};
+},{"../helpers/typeof":15}],15:[function(require,module,exports){
+"use strict";
+
+exports.__esModule = true;
+
+var _iterator = require("../core-js/symbol/iterator");
+
+var _iterator2 = _interopRequireDefault(_iterator);
+
+var _symbol = require("../core-js/symbol");
+
+var _symbol2 = _interopRequireDefault(_symbol);
+
+var _typeof = typeof _symbol2.default === "function" && typeof _iterator2.default === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof _symbol2.default === "function" && obj.constructor === _symbol2.default && obj !== _symbol2.default.prototype ? "symbol" : typeof obj; };
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = typeof _symbol2.default === "function" && _typeof(_iterator2.default) === "symbol" ? function (obj) {
+  return typeof obj === "undefined" ? "undefined" : _typeof(obj);
+} : function (obj) {
+  return obj && typeof _symbol2.default === "function" && obj.constructor === _symbol2.default && obj !== _symbol2.default.prototype ? "symbol" : typeof obj === "undefined" ? "undefined" : _typeof(obj);
+};
+},{"../core-js/symbol":7,"../core-js/symbol/iterator":8}],16:[function(require,module,exports){
+module.exports = require("regenerator-runtime");
+
+},{"regenerator-runtime":114}],17:[function(require,module,exports){
+require('../../modules/es6.object.create');
+var $Object = require('../../modules/_core').Object;
+module.exports = function create(P, D) {
+  return $Object.create(P, D);
+};
+
+},{"../../modules/_core":32,"../../modules/es6.object.create":100}],18:[function(require,module,exports){
+require('../../modules/es6.object.define-property');
+var $Object = require('../../modules/_core').Object;
+module.exports = function defineProperty(it, key, desc) {
+  return $Object.defineProperty(it, key, desc);
+};
+
+},{"../../modules/_core":32,"../../modules/es6.object.define-property":101}],19:[function(require,module,exports){
+require('../../modules/es6.object.get-own-property-descriptor');
+var $Object = require('../../modules/_core').Object;
+module.exports = function getOwnPropertyDescriptor(it, key) {
+  return $Object.getOwnPropertyDescriptor(it, key);
+};
+
+},{"../../modules/_core":32,"../../modules/es6.object.get-own-property-descriptor":102}],20:[function(require,module,exports){
+require('../../modules/es6.object.get-prototype-of');
+module.exports = require('../../modules/_core').Object.getPrototypeOf;
+
+},{"../../modules/_core":32,"../../modules/es6.object.get-prototype-of":103}],21:[function(require,module,exports){
+require('../../modules/es6.object.set-prototype-of');
+module.exports = require('../../modules/_core').Object.setPrototypeOf;
+
+},{"../../modules/_core":32,"../../modules/es6.object.set-prototype-of":104}],22:[function(require,module,exports){
+require('../modules/es6.object.to-string');
+require('../modules/es6.string.iterator');
+require('../modules/web.dom.iterable');
+require('../modules/es6.promise');
+require('../modules/es7.promise.finally');
+require('../modules/es7.promise.try');
+module.exports = require('../modules/_core').Promise;
+
+},{"../modules/_core":32,"../modules/es6.object.to-string":105,"../modules/es6.promise":106,"../modules/es6.string.iterator":107,"../modules/es7.promise.finally":109,"../modules/es7.promise.try":110,"../modules/web.dom.iterable":113}],23:[function(require,module,exports){
+require('../../modules/es6.symbol');
+require('../../modules/es6.object.to-string');
+require('../../modules/es7.symbol.async-iterator');
+require('../../modules/es7.symbol.observable');
+module.exports = require('../../modules/_core').Symbol;
+
+},{"../../modules/_core":32,"../../modules/es6.object.to-string":105,"../../modules/es6.symbol":108,"../../modules/es7.symbol.async-iterator":111,"../../modules/es7.symbol.observable":112}],24:[function(require,module,exports){
+require('../../modules/es6.string.iterator');
+require('../../modules/web.dom.iterable');
+module.exports = require('../../modules/_wks-ext').f('iterator');
+
+},{"../../modules/_wks-ext":96,"../../modules/es6.string.iterator":107,"../../modules/web.dom.iterable":113}],25:[function(require,module,exports){
+module.exports = function (it) {
+  if (typeof it != 'function') throw TypeError(it + ' is not a function!');
+  return it;
+};
+
+},{}],26:[function(require,module,exports){
+module.exports = function () { /* empty */ };
+
+},{}],27:[function(require,module,exports){
+module.exports = function (it, Constructor, name, forbiddenField) {
+  if (!(it instanceof Constructor) || (forbiddenField !== undefined && forbiddenField in it)) {
+    throw TypeError(name + ': incorrect invocation!');
+  } return it;
+};
+
+},{}],28:[function(require,module,exports){
+var isObject = require('./_is-object');
+module.exports = function (it) {
+  if (!isObject(it)) throw TypeError(it + ' is not an object!');
+  return it;
+};
+
+},{"./_is-object":51}],29:[function(require,module,exports){
+// false -> Array#indexOf
+// true  -> Array#includes
+var toIObject = require('./_to-iobject');
+var toLength = require('./_to-length');
+var toAbsoluteIndex = require('./_to-absolute-index');
+module.exports = function (IS_INCLUDES) {
+  return function ($this, el, fromIndex) {
+    var O = toIObject($this);
+    var length = toLength(O.length);
+    var index = toAbsoluteIndex(fromIndex, length);
+    var value;
+    // Array#includes uses SameValueZero equality algorithm
+    // eslint-disable-next-line no-self-compare
+    if (IS_INCLUDES && el != el) while (length > index) {
+      value = O[index++];
+      // eslint-disable-next-line no-self-compare
+      if (value != value) return true;
+    // Array#indexOf ignores holes, Array#includes - not
+    } else for (;length > index; index++) if (IS_INCLUDES || index in O) {
+      if (O[index] === el) return IS_INCLUDES || index || 0;
+    } return !IS_INCLUDES && -1;
+  };
+};
+
+},{"./_to-absolute-index":87,"./_to-iobject":89,"./_to-length":90}],30:[function(require,module,exports){
+// getting tag from 19.1.3.6 Object.prototype.toString()
+var cof = require('./_cof');
+var TAG = require('./_wks')('toStringTag');
+// ES3 wrong here
+var ARG = cof(function () { return arguments; }()) == 'Arguments';
+
+// fallback for IE11 Script Access Denied error
+var tryGet = function (it, key) {
+  try {
+    return it[key];
+  } catch (e) { /* empty */ }
+};
+
+module.exports = function (it) {
+  var O, T, B;
+  return it === undefined ? 'Undefined' : it === null ? 'Null'
+    // @@toStringTag case
+    : typeof (T = tryGet(O = Object(it), TAG)) == 'string' ? T
+    // builtinTag case
+    : ARG ? cof(O)
+    // ES3 arguments fallback
+    : (B = cof(O)) == 'Object' && typeof O.callee == 'function' ? 'Arguments' : B;
+};
+
+},{"./_cof":31,"./_wks":97}],31:[function(require,module,exports){
+var toString = {}.toString;
+
+module.exports = function (it) {
+  return toString.call(it).slice(8, -1);
+};
+
+},{}],32:[function(require,module,exports){
+var core = module.exports = { version: '2.5.7' };
+if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
+
+},{}],33:[function(require,module,exports){
+// optional / simple context binding
+var aFunction = require('./_a-function');
+module.exports = function (fn, that, length) {
+  aFunction(fn);
+  if (that === undefined) return fn;
+  switch (length) {
+    case 1: return function (a) {
+      return fn.call(that, a);
+    };
+    case 2: return function (a, b) {
+      return fn.call(that, a, b);
+    };
+    case 3: return function (a, b, c) {
+      return fn.call(that, a, b, c);
+    };
+  }
+  return function (/* ...args */) {
+    return fn.apply(that, arguments);
+  };
+};
+
+},{"./_a-function":25}],34:[function(require,module,exports){
+// 7.2.1 RequireObjectCoercible(argument)
+module.exports = function (it) {
+  if (it == undefined) throw TypeError("Can't call method on  " + it);
+  return it;
+};
+
+},{}],35:[function(require,module,exports){
+// Thank's IE8 for his funny defineProperty
+module.exports = !require('./_fails')(function () {
+  return Object.defineProperty({}, 'a', { get: function () { return 7; } }).a != 7;
+});
+
+},{"./_fails":40}],36:[function(require,module,exports){
+var isObject = require('./_is-object');
+var document = require('./_global').document;
+// typeof document.createElement is 'object' in old IE
+var is = isObject(document) && isObject(document.createElement);
+module.exports = function (it) {
+  return is ? document.createElement(it) : {};
+};
+
+},{"./_global":42,"./_is-object":51}],37:[function(require,module,exports){
+// IE 8- don't enum bug keys
+module.exports = (
+  'constructor,hasOwnProperty,isPrototypeOf,propertyIsEnumerable,toLocaleString,toString,valueOf'
+).split(',');
+
+},{}],38:[function(require,module,exports){
+// all enumerable object keys, includes symbols
+var getKeys = require('./_object-keys');
+var gOPS = require('./_object-gops');
+var pIE = require('./_object-pie');
+module.exports = function (it) {
+  var result = getKeys(it);
+  var getSymbols = gOPS.f;
+  if (getSymbols) {
+    var symbols = getSymbols(it);
+    var isEnum = pIE.f;
+    var i = 0;
+    var key;
+    while (symbols.length > i) if (isEnum.call(it, key = symbols[i++])) result.push(key);
+  } return result;
+};
+
+},{"./_object-gops":68,"./_object-keys":71,"./_object-pie":72}],39:[function(require,module,exports){
+var global = require('./_global');
+var core = require('./_core');
+var ctx = require('./_ctx');
+var hide = require('./_hide');
+var has = require('./_has');
+var PROTOTYPE = 'prototype';
+
+var $export = function (type, name, source) {
+  var IS_FORCED = type & $export.F;
+  var IS_GLOBAL = type & $export.G;
+  var IS_STATIC = type & $export.S;
+  var IS_PROTO = type & $export.P;
+  var IS_BIND = type & $export.B;
+  var IS_WRAP = type & $export.W;
+  var exports = IS_GLOBAL ? core : core[name] || (core[name] = {});
+  var expProto = exports[PROTOTYPE];
+  var target = IS_GLOBAL ? global : IS_STATIC ? global[name] : (global[name] || {})[PROTOTYPE];
+  var key, own, out;
+  if (IS_GLOBAL) source = name;
+  for (key in source) {
+    // contains in native
+    own = !IS_FORCED && target && target[key] !== undefined;
+    if (own && has(exports, key)) continue;
+    // export native or passed
+    out = own ? target[key] : source[key];
+    // prevent global pollution for namespaces
+    exports[key] = IS_GLOBAL && typeof target[key] != 'function' ? source[key]
+    // bind timers to global for call from export context
+    : IS_BIND && own ? ctx(out, global)
+    // wrap global constructors for prevent change them in library
+    : IS_WRAP && target[key] == out ? (function (C) {
+      var F = function (a, b, c) {
+        if (this instanceof C) {
+          switch (arguments.length) {
+            case 0: return new C();
+            case 1: return new C(a);
+            case 2: return new C(a, b);
+          } return new C(a, b, c);
+        } return C.apply(this, arguments);
+      };
+      F[PROTOTYPE] = C[PROTOTYPE];
+      return F;
+    // make static versions for prototype methods
+    })(out) : IS_PROTO && typeof out == 'function' ? ctx(Function.call, out) : out;
+    // export proto methods to core.%CONSTRUCTOR%.methods.%NAME%
+    if (IS_PROTO) {
+      (exports.virtual || (exports.virtual = {}))[key] = out;
+      // export proto methods to core.%CONSTRUCTOR%.prototype.%NAME%
+      if (type & $export.R && expProto && !expProto[key]) hide(expProto, key, out);
+    }
+  }
+};
+// type bitmap
+$export.F = 1;   // forced
+$export.G = 2;   // global
+$export.S = 4;   // static
+$export.P = 8;   // proto
+$export.B = 16;  // bind
+$export.W = 32;  // wrap
+$export.U = 64;  // safe
+$export.R = 128; // real proto method for `library`
+module.exports = $export;
+
+},{"./_core":32,"./_ctx":33,"./_global":42,"./_has":43,"./_hide":44}],40:[function(require,module,exports){
+module.exports = function (exec) {
+  try {
+    return !!exec();
+  } catch (e) {
+    return true;
+  }
+};
+
+},{}],41:[function(require,module,exports){
+var ctx = require('./_ctx');
+var call = require('./_iter-call');
+var isArrayIter = require('./_is-array-iter');
+var anObject = require('./_an-object');
+var toLength = require('./_to-length');
+var getIterFn = require('./core.get-iterator-method');
+var BREAK = {};
+var RETURN = {};
+var exports = module.exports = function (iterable, entries, fn, that, ITERATOR) {
+  var iterFn = ITERATOR ? function () { return iterable; } : getIterFn(iterable);
+  var f = ctx(fn, that, entries ? 2 : 1);
+  var index = 0;
+  var length, step, iterator, result;
+  if (typeof iterFn != 'function') throw TypeError(iterable + ' is not iterable!');
+  // fast case for arrays with default iterator
+  if (isArrayIter(iterFn)) for (length = toLength(iterable.length); length > index; index++) {
+    result = entries ? f(anObject(step = iterable[index])[0], step[1]) : f(iterable[index]);
+    if (result === BREAK || result === RETURN) return result;
+  } else for (iterator = iterFn.call(iterable); !(step = iterator.next()).done;) {
+    result = call(iterator, f, step.value, entries);
+    if (result === BREAK || result === RETURN) return result;
+  }
+};
+exports.BREAK = BREAK;
+exports.RETURN = RETURN;
+
+},{"./_an-object":28,"./_ctx":33,"./_is-array-iter":49,"./_iter-call":52,"./_to-length":90,"./core.get-iterator-method":98}],42:[function(require,module,exports){
+// https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
+var global = module.exports = typeof window != 'undefined' && window.Math == Math
+  ? window : typeof self != 'undefined' && self.Math == Math ? self
+  // eslint-disable-next-line no-new-func
+  : Function('return this')();
+if (typeof __g == 'number') __g = global; // eslint-disable-line no-undef
+
+},{}],43:[function(require,module,exports){
+var hasOwnProperty = {}.hasOwnProperty;
+module.exports = function (it, key) {
+  return hasOwnProperty.call(it, key);
+};
+
+},{}],44:[function(require,module,exports){
+var dP = require('./_object-dp');
+var createDesc = require('./_property-desc');
+module.exports = require('./_descriptors') ? function (object, key, value) {
+  return dP.f(object, key, createDesc(1, value));
+} : function (object, key, value) {
+  object[key] = value;
+  return object;
+};
+
+},{"./_descriptors":35,"./_object-dp":63,"./_property-desc":76}],45:[function(require,module,exports){
+var document = require('./_global').document;
+module.exports = document && document.documentElement;
+
+},{"./_global":42}],46:[function(require,module,exports){
+module.exports = !require('./_descriptors') && !require('./_fails')(function () {
+  return Object.defineProperty(require('./_dom-create')('div'), 'a', { get: function () { return 7; } }).a != 7;
+});
+
+},{"./_descriptors":35,"./_dom-create":36,"./_fails":40}],47:[function(require,module,exports){
+// fast apply, http://jsperf.lnkit.com/fast-apply/5
+module.exports = function (fn, args, that) {
+  var un = that === undefined;
+  switch (args.length) {
+    case 0: return un ? fn()
+                      : fn.call(that);
+    case 1: return un ? fn(args[0])
+                      : fn.call(that, args[0]);
+    case 2: return un ? fn(args[0], args[1])
+                      : fn.call(that, args[0], args[1]);
+    case 3: return un ? fn(args[0], args[1], args[2])
+                      : fn.call(that, args[0], args[1], args[2]);
+    case 4: return un ? fn(args[0], args[1], args[2], args[3])
+                      : fn.call(that, args[0], args[1], args[2], args[3]);
+  } return fn.apply(that, args);
+};
+
+},{}],48:[function(require,module,exports){
+// fallback for non-array-like ES3 and non-enumerable old V8 strings
+var cof = require('./_cof');
+// eslint-disable-next-line no-prototype-builtins
+module.exports = Object('z').propertyIsEnumerable(0) ? Object : function (it) {
+  return cof(it) == 'String' ? it.split('') : Object(it);
+};
+
+},{"./_cof":31}],49:[function(require,module,exports){
+// check on default Array iterator
+var Iterators = require('./_iterators');
+var ITERATOR = require('./_wks')('iterator');
+var ArrayProto = Array.prototype;
+
+module.exports = function (it) {
+  return it !== undefined && (Iterators.Array === it || ArrayProto[ITERATOR] === it);
+};
+
+},{"./_iterators":57,"./_wks":97}],50:[function(require,module,exports){
+// 7.2.2 IsArray(argument)
+var cof = require('./_cof');
+module.exports = Array.isArray || function isArray(arg) {
+  return cof(arg) == 'Array';
+};
+
+},{"./_cof":31}],51:[function(require,module,exports){
+module.exports = function (it) {
+  return typeof it === 'object' ? it !== null : typeof it === 'function';
+};
+
+},{}],52:[function(require,module,exports){
+// call something on iterator step with safe closing on error
+var anObject = require('./_an-object');
+module.exports = function (iterator, fn, value, entries) {
+  try {
+    return entries ? fn(anObject(value)[0], value[1]) : fn(value);
+  // 7.4.6 IteratorClose(iterator, completion)
+  } catch (e) {
+    var ret = iterator['return'];
+    if (ret !== undefined) anObject(ret.call(iterator));
+    throw e;
+  }
+};
+
+},{"./_an-object":28}],53:[function(require,module,exports){
+'use strict';
+var create = require('./_object-create');
+var descriptor = require('./_property-desc');
+var setToStringTag = require('./_set-to-string-tag');
+var IteratorPrototype = {};
+
+// 25.1.2.1.1 %IteratorPrototype%[@@iterator]()
+require('./_hide')(IteratorPrototype, require('./_wks')('iterator'), function () { return this; });
+
+module.exports = function (Constructor, NAME, next) {
+  Constructor.prototype = create(IteratorPrototype, { next: descriptor(1, next) });
+  setToStringTag(Constructor, NAME + ' Iterator');
+};
+
+},{"./_hide":44,"./_object-create":62,"./_property-desc":76,"./_set-to-string-tag":81,"./_wks":97}],54:[function(require,module,exports){
+'use strict';
+var LIBRARY = require('./_library');
+var $export = require('./_export');
+var redefine = require('./_redefine');
+var hide = require('./_hide');
+var Iterators = require('./_iterators');
+var $iterCreate = require('./_iter-create');
+var setToStringTag = require('./_set-to-string-tag');
+var getPrototypeOf = require('./_object-gpo');
+var ITERATOR = require('./_wks')('iterator');
+var BUGGY = !([].keys && 'next' in [].keys()); // Safari has buggy iterators w/o `next`
+var FF_ITERATOR = '@@iterator';
+var KEYS = 'keys';
+var VALUES = 'values';
+
+var returnThis = function () { return this; };
+
+module.exports = function (Base, NAME, Constructor, next, DEFAULT, IS_SET, FORCED) {
+  $iterCreate(Constructor, NAME, next);
+  var getMethod = function (kind) {
+    if (!BUGGY && kind in proto) return proto[kind];
+    switch (kind) {
+      case KEYS: return function keys() { return new Constructor(this, kind); };
+      case VALUES: return function values() { return new Constructor(this, kind); };
+    } return function entries() { return new Constructor(this, kind); };
+  };
+  var TAG = NAME + ' Iterator';
+  var DEF_VALUES = DEFAULT == VALUES;
+  var VALUES_BUG = false;
+  var proto = Base.prototype;
+  var $native = proto[ITERATOR] || proto[FF_ITERATOR] || DEFAULT && proto[DEFAULT];
+  var $default = $native || getMethod(DEFAULT);
+  var $entries = DEFAULT ? !DEF_VALUES ? $default : getMethod('entries') : undefined;
+  var $anyNative = NAME == 'Array' ? proto.entries || $native : $native;
+  var methods, key, IteratorPrototype;
+  // Fix native
+  if ($anyNative) {
+    IteratorPrototype = getPrototypeOf($anyNative.call(new Base()));
+    if (IteratorPrototype !== Object.prototype && IteratorPrototype.next) {
+      // Set @@toStringTag to native iterators
+      setToStringTag(IteratorPrototype, TAG, true);
+      // fix for some old engines
+      if (!LIBRARY && typeof IteratorPrototype[ITERATOR] != 'function') hide(IteratorPrototype, ITERATOR, returnThis);
+    }
+  }
+  // fix Array#{values, @@iterator}.name in V8 / FF
+  if (DEF_VALUES && $native && $native.name !== VALUES) {
+    VALUES_BUG = true;
+    $default = function values() { return $native.call(this); };
+  }
+  // Define iterator
+  if ((!LIBRARY || FORCED) && (BUGGY || VALUES_BUG || !proto[ITERATOR])) {
+    hide(proto, ITERATOR, $default);
+  }
+  // Plug for library
+  Iterators[NAME] = $default;
+  Iterators[TAG] = returnThis;
+  if (DEFAULT) {
+    methods = {
+      values: DEF_VALUES ? $default : getMethod(VALUES),
+      keys: IS_SET ? $default : getMethod(KEYS),
+      entries: $entries
+    };
+    if (FORCED) for (key in methods) {
+      if (!(key in proto)) redefine(proto, key, methods[key]);
+    } else $export($export.P + $export.F * (BUGGY || VALUES_BUG), NAME, methods);
+  }
+  return methods;
+};
+
+},{"./_export":39,"./_hide":44,"./_iter-create":53,"./_iterators":57,"./_library":58,"./_object-gpo":69,"./_redefine":78,"./_set-to-string-tag":81,"./_wks":97}],55:[function(require,module,exports){
+var ITERATOR = require('./_wks')('iterator');
+var SAFE_CLOSING = false;
+
+try {
+  var riter = [7][ITERATOR]();
+  riter['return'] = function () { SAFE_CLOSING = true; };
+  // eslint-disable-next-line no-throw-literal
+  Array.from(riter, function () { throw 2; });
+} catch (e) { /* empty */ }
+
+module.exports = function (exec, skipClosing) {
+  if (!skipClosing && !SAFE_CLOSING) return false;
+  var safe = false;
+  try {
+    var arr = [7];
+    var iter = arr[ITERATOR]();
+    iter.next = function () { return { done: safe = true }; };
+    arr[ITERATOR] = function () { return iter; };
+    exec(arr);
+  } catch (e) { /* empty */ }
+  return safe;
+};
+
+},{"./_wks":97}],56:[function(require,module,exports){
+module.exports = function (done, value) {
+  return { value: value, done: !!done };
+};
+
+},{}],57:[function(require,module,exports){
+module.exports = {};
+
+},{}],58:[function(require,module,exports){
+module.exports = true;
+
+},{}],59:[function(require,module,exports){
+var META = require('./_uid')('meta');
+var isObject = require('./_is-object');
+var has = require('./_has');
+var setDesc = require('./_object-dp').f;
+var id = 0;
+var isExtensible = Object.isExtensible || function () {
+  return true;
+};
+var FREEZE = !require('./_fails')(function () {
+  return isExtensible(Object.preventExtensions({}));
+});
+var setMeta = function (it) {
+  setDesc(it, META, { value: {
+    i: 'O' + ++id, // object ID
+    w: {}          // weak collections IDs
+  } });
+};
+var fastKey = function (it, create) {
+  // return primitive with prefix
+  if (!isObject(it)) return typeof it == 'symbol' ? it : (typeof it == 'string' ? 'S' : 'P') + it;
+  if (!has(it, META)) {
+    // can't set metadata to uncaught frozen object
+    if (!isExtensible(it)) return 'F';
+    // not necessary to add metadata
+    if (!create) return 'E';
+    // add missing metadata
+    setMeta(it);
+  // return object ID
+  } return it[META].i;
+};
+var getWeak = function (it, create) {
+  if (!has(it, META)) {
+    // can't set metadata to uncaught frozen object
+    if (!isExtensible(it)) return true;
+    // not necessary to add metadata
+    if (!create) return false;
+    // add missing metadata
+    setMeta(it);
+  // return hash weak collections IDs
+  } return it[META].w;
+};
+// add metadata on freeze-family methods calling
+var onFreeze = function (it) {
+  if (FREEZE && meta.NEED && isExtensible(it) && !has(it, META)) setMeta(it);
+  return it;
+};
+var meta = module.exports = {
+  KEY: META,
+  NEED: false,
+  fastKey: fastKey,
+  getWeak: getWeak,
+  onFreeze: onFreeze
+};
+
+},{"./_fails":40,"./_has":43,"./_is-object":51,"./_object-dp":63,"./_uid":93}],60:[function(require,module,exports){
+var global = require('./_global');
+var macrotask = require('./_task').set;
+var Observer = global.MutationObserver || global.WebKitMutationObserver;
+var process = global.process;
+var Promise = global.Promise;
+var isNode = require('./_cof')(process) == 'process';
+
+module.exports = function () {
+  var head, last, notify;
+
+  var flush = function () {
+    var parent, fn;
+    if (isNode && (parent = process.domain)) parent.exit();
+    while (head) {
+      fn = head.fn;
+      head = head.next;
+      try {
+        fn();
+      } catch (e) {
+        if (head) notify();
+        else last = undefined;
+        throw e;
+      }
+    } last = undefined;
+    if (parent) parent.enter();
+  };
+
+  // Node.js
+  if (isNode) {
+    notify = function () {
+      process.nextTick(flush);
+    };
+  // browsers with MutationObserver, except iOS Safari - https://github.com/zloirock/core-js/issues/339
+  } else if (Observer && !(global.navigator && global.navigator.standalone)) {
+    var toggle = true;
+    var node = document.createTextNode('');
+    new Observer(flush).observe(node, { characterData: true }); // eslint-disable-line no-new
+    notify = function () {
+      node.data = toggle = !toggle;
+    };
+  // environments with maybe non-completely correct, but existent Promise
+  } else if (Promise && Promise.resolve) {
+    // Promise.resolve without an argument throws an error in LG WebOS 2
+    var promise = Promise.resolve(undefined);
+    notify = function () {
+      promise.then(flush);
+    };
+  // for other environments - macrotask based on:
+  // - setImmediate
+  // - MessageChannel
+  // - window.postMessag
+  // - onreadystatechange
+  // - setTimeout
+  } else {
+    notify = function () {
+      // strange IE + webpack dev server bug - use .call(global)
+      macrotask.call(global, flush);
+    };
+  }
+
+  return function (fn) {
+    var task = { fn: fn, next: undefined };
+    if (last) last.next = task;
+    if (!head) {
+      head = task;
+      notify();
+    } last = task;
+  };
+};
+
+},{"./_cof":31,"./_global":42,"./_task":86}],61:[function(require,module,exports){
+'use strict';
+// 25.4.1.5 NewPromiseCapability(C)
+var aFunction = require('./_a-function');
+
+function PromiseCapability(C) {
+  var resolve, reject;
+  this.promise = new C(function ($$resolve, $$reject) {
+    if (resolve !== undefined || reject !== undefined) throw TypeError('Bad Promise constructor');
+    resolve = $$resolve;
+    reject = $$reject;
+  });
+  this.resolve = aFunction(resolve);
+  this.reject = aFunction(reject);
+}
+
+module.exports.f = function (C) {
+  return new PromiseCapability(C);
+};
+
+},{"./_a-function":25}],62:[function(require,module,exports){
+// 19.1.2.2 / 15.2.3.5 Object.create(O [, Properties])
+var anObject = require('./_an-object');
+var dPs = require('./_object-dps');
+var enumBugKeys = require('./_enum-bug-keys');
+var IE_PROTO = require('./_shared-key')('IE_PROTO');
+var Empty = function () { /* empty */ };
+var PROTOTYPE = 'prototype';
+
+// Create object with fake `null` prototype: use iframe Object with cleared prototype
+var createDict = function () {
+  // Thrash, waste and sodomy: IE GC bug
+  var iframe = require('./_dom-create')('iframe');
+  var i = enumBugKeys.length;
+  var lt = '<';
+  var gt = '>';
+  var iframeDocument;
+  iframe.style.display = 'none';
+  require('./_html').appendChild(iframe);
+  iframe.src = 'javascript:'; // eslint-disable-line no-script-url
+  // createDict = iframe.contentWindow.Object;
+  // html.removeChild(iframe);
+  iframeDocument = iframe.contentWindow.document;
+  iframeDocument.open();
+  iframeDocument.write(lt + 'script' + gt + 'document.F=Object' + lt + '/script' + gt);
+  iframeDocument.close();
+  createDict = iframeDocument.F;
+  while (i--) delete createDict[PROTOTYPE][enumBugKeys[i]];
+  return createDict();
+};
+
+module.exports = Object.create || function create(O, Properties) {
+  var result;
+  if (O !== null) {
+    Empty[PROTOTYPE] = anObject(O);
+    result = new Empty();
+    Empty[PROTOTYPE] = null;
+    // add "__proto__" for Object.getPrototypeOf polyfill
+    result[IE_PROTO] = O;
+  } else result = createDict();
+  return Properties === undefined ? result : dPs(result, Properties);
+};
+
+},{"./_an-object":28,"./_dom-create":36,"./_enum-bug-keys":37,"./_html":45,"./_object-dps":64,"./_shared-key":82}],63:[function(require,module,exports){
+var anObject = require('./_an-object');
+var IE8_DOM_DEFINE = require('./_ie8-dom-define');
+var toPrimitive = require('./_to-primitive');
+var dP = Object.defineProperty;
+
+exports.f = require('./_descriptors') ? Object.defineProperty : function defineProperty(O, P, Attributes) {
+  anObject(O);
+  P = toPrimitive(P, true);
+  anObject(Attributes);
+  if (IE8_DOM_DEFINE) try {
+    return dP(O, P, Attributes);
+  } catch (e) { /* empty */ }
+  if ('get' in Attributes || 'set' in Attributes) throw TypeError('Accessors not supported!');
+  if ('value' in Attributes) O[P] = Attributes.value;
+  return O;
+};
+
+},{"./_an-object":28,"./_descriptors":35,"./_ie8-dom-define":46,"./_to-primitive":92}],64:[function(require,module,exports){
+var dP = require('./_object-dp');
+var anObject = require('./_an-object');
+var getKeys = require('./_object-keys');
+
+module.exports = require('./_descriptors') ? Object.defineProperties : function defineProperties(O, Properties) {
+  anObject(O);
+  var keys = getKeys(Properties);
+  var length = keys.length;
+  var i = 0;
+  var P;
+  while (length > i) dP.f(O, P = keys[i++], Properties[P]);
+  return O;
+};
+
+},{"./_an-object":28,"./_descriptors":35,"./_object-dp":63,"./_object-keys":71}],65:[function(require,module,exports){
+var pIE = require('./_object-pie');
+var createDesc = require('./_property-desc');
+var toIObject = require('./_to-iobject');
+var toPrimitive = require('./_to-primitive');
+var has = require('./_has');
+var IE8_DOM_DEFINE = require('./_ie8-dom-define');
+var gOPD = Object.getOwnPropertyDescriptor;
+
+exports.f = require('./_descriptors') ? gOPD : function getOwnPropertyDescriptor(O, P) {
+  O = toIObject(O);
+  P = toPrimitive(P, true);
+  if (IE8_DOM_DEFINE) try {
+    return gOPD(O, P);
+  } catch (e) { /* empty */ }
+  if (has(O, P)) return createDesc(!pIE.f.call(O, P), O[P]);
+};
+
+},{"./_descriptors":35,"./_has":43,"./_ie8-dom-define":46,"./_object-pie":72,"./_property-desc":76,"./_to-iobject":89,"./_to-primitive":92}],66:[function(require,module,exports){
+// fallback for IE11 buggy Object.getOwnPropertyNames with iframe and window
+var toIObject = require('./_to-iobject');
+var gOPN = require('./_object-gopn').f;
+var toString = {}.toString;
+
+var windowNames = typeof window == 'object' && window && Object.getOwnPropertyNames
+  ? Object.getOwnPropertyNames(window) : [];
+
+var getWindowNames = function (it) {
+  try {
+    return gOPN(it);
+  } catch (e) {
+    return windowNames.slice();
+  }
+};
+
+module.exports.f = function getOwnPropertyNames(it) {
+  return windowNames && toString.call(it) == '[object Window]' ? getWindowNames(it) : gOPN(toIObject(it));
+};
+
+},{"./_object-gopn":67,"./_to-iobject":89}],67:[function(require,module,exports){
+// 19.1.2.7 / 15.2.3.4 Object.getOwnPropertyNames(O)
+var $keys = require('./_object-keys-internal');
+var hiddenKeys = require('./_enum-bug-keys').concat('length', 'prototype');
+
+exports.f = Object.getOwnPropertyNames || function getOwnPropertyNames(O) {
+  return $keys(O, hiddenKeys);
+};
+
+},{"./_enum-bug-keys":37,"./_object-keys-internal":70}],68:[function(require,module,exports){
+exports.f = Object.getOwnPropertySymbols;
+
+},{}],69:[function(require,module,exports){
+// 19.1.2.9 / 15.2.3.2 Object.getPrototypeOf(O)
+var has = require('./_has');
+var toObject = require('./_to-object');
+var IE_PROTO = require('./_shared-key')('IE_PROTO');
+var ObjectProto = Object.prototype;
+
+module.exports = Object.getPrototypeOf || function (O) {
+  O = toObject(O);
+  if (has(O, IE_PROTO)) return O[IE_PROTO];
+  if (typeof O.constructor == 'function' && O instanceof O.constructor) {
+    return O.constructor.prototype;
+  } return O instanceof Object ? ObjectProto : null;
+};
+
+},{"./_has":43,"./_shared-key":82,"./_to-object":91}],70:[function(require,module,exports){
+var has = require('./_has');
+var toIObject = require('./_to-iobject');
+var arrayIndexOf = require('./_array-includes')(false);
+var IE_PROTO = require('./_shared-key')('IE_PROTO');
+
+module.exports = function (object, names) {
+  var O = toIObject(object);
+  var i = 0;
+  var result = [];
+  var key;
+  for (key in O) if (key != IE_PROTO) has(O, key) && result.push(key);
+  // Don't enum bug & hidden keys
+  while (names.length > i) if (has(O, key = names[i++])) {
+    ~arrayIndexOf(result, key) || result.push(key);
+  }
+  return result;
+};
+
+},{"./_array-includes":29,"./_has":43,"./_shared-key":82,"./_to-iobject":89}],71:[function(require,module,exports){
+// 19.1.2.14 / 15.2.3.14 Object.keys(O)
+var $keys = require('./_object-keys-internal');
+var enumBugKeys = require('./_enum-bug-keys');
+
+module.exports = Object.keys || function keys(O) {
+  return $keys(O, enumBugKeys);
+};
+
+},{"./_enum-bug-keys":37,"./_object-keys-internal":70}],72:[function(require,module,exports){
+exports.f = {}.propertyIsEnumerable;
+
+},{}],73:[function(require,module,exports){
+// most Object methods by ES6 should accept primitives
+var $export = require('./_export');
+var core = require('./_core');
+var fails = require('./_fails');
+module.exports = function (KEY, exec) {
+  var fn = (core.Object || {})[KEY] || Object[KEY];
+  var exp = {};
+  exp[KEY] = exec(fn);
+  $export($export.S + $export.F * fails(function () { fn(1); }), 'Object', exp);
+};
+
+},{"./_core":32,"./_export":39,"./_fails":40}],74:[function(require,module,exports){
+module.exports = function (exec) {
+  try {
+    return { e: false, v: exec() };
+  } catch (e) {
+    return { e: true, v: e };
+  }
+};
+
+},{}],75:[function(require,module,exports){
+var anObject = require('./_an-object');
+var isObject = require('./_is-object');
+var newPromiseCapability = require('./_new-promise-capability');
+
+module.exports = function (C, x) {
+  anObject(C);
+  if (isObject(x) && x.constructor === C) return x;
+  var promiseCapability = newPromiseCapability.f(C);
+  var resolve = promiseCapability.resolve;
+  resolve(x);
+  return promiseCapability.promise;
+};
+
+},{"./_an-object":28,"./_is-object":51,"./_new-promise-capability":61}],76:[function(require,module,exports){
+module.exports = function (bitmap, value) {
+  return {
+    enumerable: !(bitmap & 1),
+    configurable: !(bitmap & 2),
+    writable: !(bitmap & 4),
+    value: value
+  };
+};
+
+},{}],77:[function(require,module,exports){
+var hide = require('./_hide');
+module.exports = function (target, src, safe) {
+  for (var key in src) {
+    if (safe && target[key]) target[key] = src[key];
+    else hide(target, key, src[key]);
+  } return target;
+};
+
+},{"./_hide":44}],78:[function(require,module,exports){
+module.exports = require('./_hide');
+
+},{"./_hide":44}],79:[function(require,module,exports){
+// Works with __proto__ only. Old v8 can't work with null proto objects.
+/* eslint-disable no-proto */
+var isObject = require('./_is-object');
+var anObject = require('./_an-object');
+var check = function (O, proto) {
+  anObject(O);
+  if (!isObject(proto) && proto !== null) throw TypeError(proto + ": can't set as prototype!");
+};
+module.exports = {
+  set: Object.setPrototypeOf || ('__proto__' in {} ? // eslint-disable-line
+    function (test, buggy, set) {
+      try {
+        set = require('./_ctx')(Function.call, require('./_object-gopd').f(Object.prototype, '__proto__').set, 2);
+        set(test, []);
+        buggy = !(test instanceof Array);
+      } catch (e) { buggy = true; }
+      return function setPrototypeOf(O, proto) {
+        check(O, proto);
+        if (buggy) O.__proto__ = proto;
+        else set(O, proto);
+        return O;
+      };
+    }({}, false) : undefined),
+  check: check
+};
+
+},{"./_an-object":28,"./_ctx":33,"./_is-object":51,"./_object-gopd":65}],80:[function(require,module,exports){
+'use strict';
+var global = require('./_global');
+var core = require('./_core');
+var dP = require('./_object-dp');
+var DESCRIPTORS = require('./_descriptors');
+var SPECIES = require('./_wks')('species');
+
+module.exports = function (KEY) {
+  var C = typeof core[KEY] == 'function' ? core[KEY] : global[KEY];
+  if (DESCRIPTORS && C && !C[SPECIES]) dP.f(C, SPECIES, {
+    configurable: true,
+    get: function () { return this; }
+  });
+};
+
+},{"./_core":32,"./_descriptors":35,"./_global":42,"./_object-dp":63,"./_wks":97}],81:[function(require,module,exports){
+var def = require('./_object-dp').f;
+var has = require('./_has');
+var TAG = require('./_wks')('toStringTag');
+
+module.exports = function (it, tag, stat) {
+  if (it && !has(it = stat ? it : it.prototype, TAG)) def(it, TAG, { configurable: true, value: tag });
+};
+
+},{"./_has":43,"./_object-dp":63,"./_wks":97}],82:[function(require,module,exports){
+var shared = require('./_shared')('keys');
+var uid = require('./_uid');
+module.exports = function (key) {
+  return shared[key] || (shared[key] = uid(key));
+};
+
+},{"./_shared":83,"./_uid":93}],83:[function(require,module,exports){
+var core = require('./_core');
+var global = require('./_global');
+var SHARED = '__core-js_shared__';
+var store = global[SHARED] || (global[SHARED] = {});
+
+(module.exports = function (key, value) {
+  return store[key] || (store[key] = value !== undefined ? value : {});
+})('versions', []).push({
+  version: core.version,
+  mode: require('./_library') ? 'pure' : 'global',
+  copyright: '© 2018 Denis Pushkarev (zloirock.ru)'
+});
+
+},{"./_core":32,"./_global":42,"./_library":58}],84:[function(require,module,exports){
+// 7.3.20 SpeciesConstructor(O, defaultConstructor)
+var anObject = require('./_an-object');
+var aFunction = require('./_a-function');
+var SPECIES = require('./_wks')('species');
+module.exports = function (O, D) {
+  var C = anObject(O).constructor;
+  var S;
+  return C === undefined || (S = anObject(C)[SPECIES]) == undefined ? D : aFunction(S);
+};
+
+},{"./_a-function":25,"./_an-object":28,"./_wks":97}],85:[function(require,module,exports){
+var toInteger = require('./_to-integer');
+var defined = require('./_defined');
+// true  -> String#at
+// false -> String#codePointAt
+module.exports = function (TO_STRING) {
+  return function (that, pos) {
+    var s = String(defined(that));
+    var i = toInteger(pos);
+    var l = s.length;
+    var a, b;
+    if (i < 0 || i >= l) return TO_STRING ? '' : undefined;
+    a = s.charCodeAt(i);
+    return a < 0xd800 || a > 0xdbff || i + 1 === l || (b = s.charCodeAt(i + 1)) < 0xdc00 || b > 0xdfff
+      ? TO_STRING ? s.charAt(i) : a
+      : TO_STRING ? s.slice(i, i + 2) : (a - 0xd800 << 10) + (b - 0xdc00) + 0x10000;
+  };
+};
+
+},{"./_defined":34,"./_to-integer":88}],86:[function(require,module,exports){
+var ctx = require('./_ctx');
+var invoke = require('./_invoke');
+var html = require('./_html');
+var cel = require('./_dom-create');
+var global = require('./_global');
+var process = global.process;
+var setTask = global.setImmediate;
+var clearTask = global.clearImmediate;
+var MessageChannel = global.MessageChannel;
+var Dispatch = global.Dispatch;
+var counter = 0;
+var queue = {};
+var ONREADYSTATECHANGE = 'onreadystatechange';
+var defer, channel, port;
+var run = function () {
+  var id = +this;
+  // eslint-disable-next-line no-prototype-builtins
+  if (queue.hasOwnProperty(id)) {
+    var fn = queue[id];
+    delete queue[id];
+    fn();
+  }
+};
+var listener = function (event) {
+  run.call(event.data);
+};
+// Node.js 0.9+ & IE10+ has setImmediate, otherwise:
+if (!setTask || !clearTask) {
+  setTask = function setImmediate(fn) {
+    var args = [];
+    var i = 1;
+    while (arguments.length > i) args.push(arguments[i++]);
+    queue[++counter] = function () {
+      // eslint-disable-next-line no-new-func
+      invoke(typeof fn == 'function' ? fn : Function(fn), args);
+    };
+    defer(counter);
+    return counter;
+  };
+  clearTask = function clearImmediate(id) {
+    delete queue[id];
+  };
+  // Node.js 0.8-
+  if (require('./_cof')(process) == 'process') {
+    defer = function (id) {
+      process.nextTick(ctx(run, id, 1));
+    };
+  // Sphere (JS game engine) Dispatch API
+  } else if (Dispatch && Dispatch.now) {
+    defer = function (id) {
+      Dispatch.now(ctx(run, id, 1));
+    };
+  // Browsers with MessageChannel, includes WebWorkers
+  } else if (MessageChannel) {
+    channel = new MessageChannel();
+    port = channel.port2;
+    channel.port1.onmessage = listener;
+    defer = ctx(port.postMessage, port, 1);
+  // Browsers with postMessage, skip WebWorkers
+  // IE8 has postMessage, but it's sync & typeof its postMessage is 'object'
+  } else if (global.addEventListener && typeof postMessage == 'function' && !global.importScripts) {
+    defer = function (id) {
+      global.postMessage(id + '', '*');
+    };
+    global.addEventListener('message', listener, false);
+  // IE8-
+  } else if (ONREADYSTATECHANGE in cel('script')) {
+    defer = function (id) {
+      html.appendChild(cel('script'))[ONREADYSTATECHANGE] = function () {
+        html.removeChild(this);
+        run.call(id);
+      };
+    };
+  // Rest old browsers
+  } else {
+    defer = function (id) {
+      setTimeout(ctx(run, id, 1), 0);
+    };
+  }
+}
+module.exports = {
+  set: setTask,
+  clear: clearTask
+};
+
+},{"./_cof":31,"./_ctx":33,"./_dom-create":36,"./_global":42,"./_html":45,"./_invoke":47}],87:[function(require,module,exports){
+var toInteger = require('./_to-integer');
+var max = Math.max;
+var min = Math.min;
+module.exports = function (index, length) {
+  index = toInteger(index);
+  return index < 0 ? max(index + length, 0) : min(index, length);
+};
+
+},{"./_to-integer":88}],88:[function(require,module,exports){
+// 7.1.4 ToInteger
+var ceil = Math.ceil;
+var floor = Math.floor;
+module.exports = function (it) {
+  return isNaN(it = +it) ? 0 : (it > 0 ? floor : ceil)(it);
+};
+
+},{}],89:[function(require,module,exports){
+// to indexed object, toObject with fallback for non-array-like ES3 strings
+var IObject = require('./_iobject');
+var defined = require('./_defined');
+module.exports = function (it) {
+  return IObject(defined(it));
+};
+
+},{"./_defined":34,"./_iobject":48}],90:[function(require,module,exports){
+// 7.1.15 ToLength
+var toInteger = require('./_to-integer');
+var min = Math.min;
+module.exports = function (it) {
+  return it > 0 ? min(toInteger(it), 0x1fffffffffffff) : 0; // pow(2, 53) - 1 == 9007199254740991
+};
+
+},{"./_to-integer":88}],91:[function(require,module,exports){
+// 7.1.13 ToObject(argument)
+var defined = require('./_defined');
+module.exports = function (it) {
+  return Object(defined(it));
+};
+
+},{"./_defined":34}],92:[function(require,module,exports){
+// 7.1.1 ToPrimitive(input [, PreferredType])
+var isObject = require('./_is-object');
+// instead of the ES6 spec version, we didn't implement @@toPrimitive case
+// and the second argument - flag - preferred type is a string
+module.exports = function (it, S) {
+  if (!isObject(it)) return it;
+  var fn, val;
+  if (S && typeof (fn = it.toString) == 'function' && !isObject(val = fn.call(it))) return val;
+  if (typeof (fn = it.valueOf) == 'function' && !isObject(val = fn.call(it))) return val;
+  if (!S && typeof (fn = it.toString) == 'function' && !isObject(val = fn.call(it))) return val;
+  throw TypeError("Can't convert object to primitive value");
+};
+
+},{"./_is-object":51}],93:[function(require,module,exports){
+var id = 0;
+var px = Math.random();
+module.exports = function (key) {
+  return 'Symbol('.concat(key === undefined ? '' : key, ')_', (++id + px).toString(36));
+};
+
+},{}],94:[function(require,module,exports){
+var global = require('./_global');
+var navigator = global.navigator;
+
+module.exports = navigator && navigator.userAgent || '';
+
+},{"./_global":42}],95:[function(require,module,exports){
+var global = require('./_global');
+var core = require('./_core');
+var LIBRARY = require('./_library');
+var wksExt = require('./_wks-ext');
+var defineProperty = require('./_object-dp').f;
+module.exports = function (name) {
+  var $Symbol = core.Symbol || (core.Symbol = LIBRARY ? {} : global.Symbol || {});
+  if (name.charAt(0) != '_' && !(name in $Symbol)) defineProperty($Symbol, name, { value: wksExt.f(name) });
+};
+
+},{"./_core":32,"./_global":42,"./_library":58,"./_object-dp":63,"./_wks-ext":96}],96:[function(require,module,exports){
+exports.f = require('./_wks');
+
+},{"./_wks":97}],97:[function(require,module,exports){
+var store = require('./_shared')('wks');
+var uid = require('./_uid');
+var Symbol = require('./_global').Symbol;
+var USE_SYMBOL = typeof Symbol == 'function';
+
+var $exports = module.exports = function (name) {
+  return store[name] || (store[name] =
+    USE_SYMBOL && Symbol[name] || (USE_SYMBOL ? Symbol : uid)('Symbol.' + name));
+};
+
+$exports.store = store;
+
+},{"./_global":42,"./_shared":83,"./_uid":93}],98:[function(require,module,exports){
+var classof = require('./_classof');
+var ITERATOR = require('./_wks')('iterator');
+var Iterators = require('./_iterators');
+module.exports = require('./_core').getIteratorMethod = function (it) {
+  if (it != undefined) return it[ITERATOR]
+    || it['@@iterator']
+    || Iterators[classof(it)];
+};
+
+},{"./_classof":30,"./_core":32,"./_iterators":57,"./_wks":97}],99:[function(require,module,exports){
+'use strict';
+var addToUnscopables = require('./_add-to-unscopables');
+var step = require('./_iter-step');
+var Iterators = require('./_iterators');
+var toIObject = require('./_to-iobject');
+
+// 22.1.3.4 Array.prototype.entries()
+// 22.1.3.13 Array.prototype.keys()
+// 22.1.3.29 Array.prototype.values()
+// 22.1.3.30 Array.prototype[@@iterator]()
+module.exports = require('./_iter-define')(Array, 'Array', function (iterated, kind) {
+  this._t = toIObject(iterated); // target
+  this._i = 0;                   // next index
+  this._k = kind;                // kind
+// 22.1.5.2.1 %ArrayIteratorPrototype%.next()
+}, function () {
+  var O = this._t;
+  var kind = this._k;
+  var index = this._i++;
+  if (!O || index >= O.length) {
+    this._t = undefined;
+    return step(1);
+  }
+  if (kind == 'keys') return step(0, index);
+  if (kind == 'values') return step(0, O[index]);
+  return step(0, [index, O[index]]);
+}, 'values');
+
+// argumentsList[@@iterator] is %ArrayProto_values% (9.4.4.6, 9.4.4.7)
+Iterators.Arguments = Iterators.Array;
+
+addToUnscopables('keys');
+addToUnscopables('values');
+addToUnscopables('entries');
+
+},{"./_add-to-unscopables":26,"./_iter-define":54,"./_iter-step":56,"./_iterators":57,"./_to-iobject":89}],100:[function(require,module,exports){
+var $export = require('./_export');
+// 19.1.2.2 / 15.2.3.5 Object.create(O [, Properties])
+$export($export.S, 'Object', { create: require('./_object-create') });
+
+},{"./_export":39,"./_object-create":62}],101:[function(require,module,exports){
+var $export = require('./_export');
+// 19.1.2.4 / 15.2.3.6 Object.defineProperty(O, P, Attributes)
+$export($export.S + $export.F * !require('./_descriptors'), 'Object', { defineProperty: require('./_object-dp').f });
+
+},{"./_descriptors":35,"./_export":39,"./_object-dp":63}],102:[function(require,module,exports){
+// 19.1.2.6 Object.getOwnPropertyDescriptor(O, P)
+var toIObject = require('./_to-iobject');
+var $getOwnPropertyDescriptor = require('./_object-gopd').f;
+
+require('./_object-sap')('getOwnPropertyDescriptor', function () {
+  return function getOwnPropertyDescriptor(it, key) {
+    return $getOwnPropertyDescriptor(toIObject(it), key);
+  };
+});
+
+},{"./_object-gopd":65,"./_object-sap":73,"./_to-iobject":89}],103:[function(require,module,exports){
+// 19.1.2.9 Object.getPrototypeOf(O)
+var toObject = require('./_to-object');
+var $getPrototypeOf = require('./_object-gpo');
+
+require('./_object-sap')('getPrototypeOf', function () {
+  return function getPrototypeOf(it) {
+    return $getPrototypeOf(toObject(it));
+  };
+});
+
+},{"./_object-gpo":69,"./_object-sap":73,"./_to-object":91}],104:[function(require,module,exports){
+// 19.1.3.19 Object.setPrototypeOf(O, proto)
+var $export = require('./_export');
+$export($export.S, 'Object', { setPrototypeOf: require('./_set-proto').set });
+
+},{"./_export":39,"./_set-proto":79}],105:[function(require,module,exports){
+
+},{}],106:[function(require,module,exports){
+'use strict';
+var LIBRARY = require('./_library');
+var global = require('./_global');
+var ctx = require('./_ctx');
+var classof = require('./_classof');
+var $export = require('./_export');
+var isObject = require('./_is-object');
+var aFunction = require('./_a-function');
+var anInstance = require('./_an-instance');
+var forOf = require('./_for-of');
+var speciesConstructor = require('./_species-constructor');
+var task = require('./_task').set;
+var microtask = require('./_microtask')();
+var newPromiseCapabilityModule = require('./_new-promise-capability');
+var perform = require('./_perform');
+var userAgent = require('./_user-agent');
+var promiseResolve = require('./_promise-resolve');
+var PROMISE = 'Promise';
+var TypeError = global.TypeError;
+var process = global.process;
+var versions = process && process.versions;
+var v8 = versions && versions.v8 || '';
+var $Promise = global[PROMISE];
+var isNode = classof(process) == 'process';
+var empty = function () { /* empty */ };
+var Internal, newGenericPromiseCapability, OwnPromiseCapability, Wrapper;
+var newPromiseCapability = newGenericPromiseCapability = newPromiseCapabilityModule.f;
+
+var USE_NATIVE = !!function () {
+  try {
+    // correct subclassing with @@species support
+    var promise = $Promise.resolve(1);
+    var FakePromise = (promise.constructor = {})[require('./_wks')('species')] = function (exec) {
+      exec(empty, empty);
+    };
+    // unhandled rejections tracking support, NodeJS Promise without it fails @@species test
+    return (isNode || typeof PromiseRejectionEvent == 'function')
+      && promise.then(empty) instanceof FakePromise
+      // v8 6.6 (Node 10 and Chrome 66) have a bug with resolving custom thenables
+      // https://bugs.chromium.org/p/chromium/issues/detail?id=830565
+      // we can't detect it synchronously, so just check versions
+      && v8.indexOf('6.6') !== 0
+      && userAgent.indexOf('Chrome/66') === -1;
+  } catch (e) { /* empty */ }
+}();
+
+// helpers
+var isThenable = function (it) {
+  var then;
+  return isObject(it) && typeof (then = it.then) == 'function' ? then : false;
+};
+var notify = function (promise, isReject) {
+  if (promise._n) return;
+  promise._n = true;
+  var chain = promise._c;
+  microtask(function () {
+    var value = promise._v;
+    var ok = promise._s == 1;
+    var i = 0;
+    var run = function (reaction) {
+      var handler = ok ? reaction.ok : reaction.fail;
+      var resolve = reaction.resolve;
+      var reject = reaction.reject;
+      var domain = reaction.domain;
+      var result, then, exited;
+      try {
+        if (handler) {
+          if (!ok) {
+            if (promise._h == 2) onHandleUnhandled(promise);
+            promise._h = 1;
+          }
+          if (handler === true) result = value;
+          else {
+            if (domain) domain.enter();
+            result = handler(value); // may throw
+            if (domain) {
+              domain.exit();
+              exited = true;
+            }
+          }
+          if (result === reaction.promise) {
+            reject(TypeError('Promise-chain cycle'));
+          } else if (then = isThenable(result)) {
+            then.call(result, resolve, reject);
+          } else resolve(result);
+        } else reject(value);
+      } catch (e) {
+        if (domain && !exited) domain.exit();
+        reject(e);
+      }
+    };
+    while (chain.length > i) run(chain[i++]); // variable length - can't use forEach
+    promise._c = [];
+    promise._n = false;
+    if (isReject && !promise._h) onUnhandled(promise);
+  });
+};
+var onUnhandled = function (promise) {
+  task.call(global, function () {
+    var value = promise._v;
+    var unhandled = isUnhandled(promise);
+    var result, handler, console;
+    if (unhandled) {
+      result = perform(function () {
+        if (isNode) {
+          process.emit('unhandledRejection', value, promise);
+        } else if (handler = global.onunhandledrejection) {
+          handler({ promise: promise, reason: value });
+        } else if ((console = global.console) && console.error) {
+          console.error('Unhandled promise rejection', value);
+        }
+      });
+      // Browsers should not trigger `rejectionHandled` event if it was handled here, NodeJS - should
+      promise._h = isNode || isUnhandled(promise) ? 2 : 1;
+    } promise._a = undefined;
+    if (unhandled && result.e) throw result.v;
+  });
+};
+var isUnhandled = function (promise) {
+  return promise._h !== 1 && (promise._a || promise._c).length === 0;
+};
+var onHandleUnhandled = function (promise) {
+  task.call(global, function () {
+    var handler;
+    if (isNode) {
+      process.emit('rejectionHandled', promise);
+    } else if (handler = global.onrejectionhandled) {
+      handler({ promise: promise, reason: promise._v });
+    }
+  });
+};
+var $reject = function (value) {
+  var promise = this;
+  if (promise._d) return;
+  promise._d = true;
+  promise = promise._w || promise; // unwrap
+  promise._v = value;
+  promise._s = 2;
+  if (!promise._a) promise._a = promise._c.slice();
+  notify(promise, true);
+};
+var $resolve = function (value) {
+  var promise = this;
+  var then;
+  if (promise._d) return;
+  promise._d = true;
+  promise = promise._w || promise; // unwrap
+  try {
+    if (promise === value) throw TypeError("Promise can't be resolved itself");
+    if (then = isThenable(value)) {
+      microtask(function () {
+        var wrapper = { _w: promise, _d: false }; // wrap
+        try {
+          then.call(value, ctx($resolve, wrapper, 1), ctx($reject, wrapper, 1));
+        } catch (e) {
+          $reject.call(wrapper, e);
+        }
+      });
+    } else {
+      promise._v = value;
+      promise._s = 1;
+      notify(promise, false);
+    }
+  } catch (e) {
+    $reject.call({ _w: promise, _d: false }, e); // wrap
+  }
+};
+
+// constructor polyfill
+if (!USE_NATIVE) {
+  // 25.4.3.1 Promise(executor)
+  $Promise = function Promise(executor) {
+    anInstance(this, $Promise, PROMISE, '_h');
+    aFunction(executor);
+    Internal.call(this);
+    try {
+      executor(ctx($resolve, this, 1), ctx($reject, this, 1));
+    } catch (err) {
+      $reject.call(this, err);
+    }
+  };
+  // eslint-disable-next-line no-unused-vars
+  Internal = function Promise(executor) {
+    this._c = [];             // <- awaiting reactions
+    this._a = undefined;      // <- checked in isUnhandled reactions
+    this._s = 0;              // <- state
+    this._d = false;          // <- done
+    this._v = undefined;      // <- value
+    this._h = 0;              // <- rejection state, 0 - default, 1 - handled, 2 - unhandled
+    this._n = false;          // <- notify
+  };
+  Internal.prototype = require('./_redefine-all')($Promise.prototype, {
+    // 25.4.5.3 Promise.prototype.then(onFulfilled, onRejected)
+    then: function then(onFulfilled, onRejected) {
+      var reaction = newPromiseCapability(speciesConstructor(this, $Promise));
+      reaction.ok = typeof onFulfilled == 'function' ? onFulfilled : true;
+      reaction.fail = typeof onRejected == 'function' && onRejected;
+      reaction.domain = isNode ? process.domain : undefined;
+      this._c.push(reaction);
+      if (this._a) this._a.push(reaction);
+      if (this._s) notify(this, false);
+      return reaction.promise;
+    },
+    // 25.4.5.1 Promise.prototype.catch(onRejected)
+    'catch': function (onRejected) {
+      return this.then(undefined, onRejected);
+    }
+  });
+  OwnPromiseCapability = function () {
+    var promise = new Internal();
+    this.promise = promise;
+    this.resolve = ctx($resolve, promise, 1);
+    this.reject = ctx($reject, promise, 1);
+  };
+  newPromiseCapabilityModule.f = newPromiseCapability = function (C) {
+    return C === $Promise || C === Wrapper
+      ? new OwnPromiseCapability(C)
+      : newGenericPromiseCapability(C);
+  };
+}
+
+$export($export.G + $export.W + $export.F * !USE_NATIVE, { Promise: $Promise });
+require('./_set-to-string-tag')($Promise, PROMISE);
+require('./_set-species')(PROMISE);
+Wrapper = require('./_core')[PROMISE];
+
+// statics
+$export($export.S + $export.F * !USE_NATIVE, PROMISE, {
+  // 25.4.4.5 Promise.reject(r)
+  reject: function reject(r) {
+    var capability = newPromiseCapability(this);
+    var $$reject = capability.reject;
+    $$reject(r);
+    return capability.promise;
+  }
+});
+$export($export.S + $export.F * (LIBRARY || !USE_NATIVE), PROMISE, {
+  // 25.4.4.6 Promise.resolve(x)
+  resolve: function resolve(x) {
+    return promiseResolve(LIBRARY && this === Wrapper ? $Promise : this, x);
+  }
+});
+$export($export.S + $export.F * !(USE_NATIVE && require('./_iter-detect')(function (iter) {
+  $Promise.all(iter)['catch'](empty);
+})), PROMISE, {
+  // 25.4.4.1 Promise.all(iterable)
+  all: function all(iterable) {
+    var C = this;
+    var capability = newPromiseCapability(C);
+    var resolve = capability.resolve;
+    var reject = capability.reject;
+    var result = perform(function () {
+      var values = [];
+      var index = 0;
+      var remaining = 1;
+      forOf(iterable, false, function (promise) {
+        var $index = index++;
+        var alreadyCalled = false;
+        values.push(undefined);
+        remaining++;
+        C.resolve(promise).then(function (value) {
+          if (alreadyCalled) return;
+          alreadyCalled = true;
+          values[$index] = value;
+          --remaining || resolve(values);
+        }, reject);
+      });
+      --remaining || resolve(values);
+    });
+    if (result.e) reject(result.v);
+    return capability.promise;
+  },
+  // 25.4.4.4 Promise.race(iterable)
+  race: function race(iterable) {
+    var C = this;
+    var capability = newPromiseCapability(C);
+    var reject = capability.reject;
+    var result = perform(function () {
+      forOf(iterable, false, function (promise) {
+        C.resolve(promise).then(capability.resolve, reject);
+      });
+    });
+    if (result.e) reject(result.v);
+    return capability.promise;
+  }
+});
+
+},{"./_a-function":25,"./_an-instance":27,"./_classof":30,"./_core":32,"./_ctx":33,"./_export":39,"./_for-of":41,"./_global":42,"./_is-object":51,"./_iter-detect":55,"./_library":58,"./_microtask":60,"./_new-promise-capability":61,"./_perform":74,"./_promise-resolve":75,"./_redefine-all":77,"./_set-species":80,"./_set-to-string-tag":81,"./_species-constructor":84,"./_task":86,"./_user-agent":94,"./_wks":97}],107:[function(require,module,exports){
+'use strict';
+var $at = require('./_string-at')(true);
+
+// 21.1.3.27 String.prototype[@@iterator]()
+require('./_iter-define')(String, 'String', function (iterated) {
+  this._t = String(iterated); // target
+  this._i = 0;                // next index
+// 21.1.5.2.1 %StringIteratorPrototype%.next()
+}, function () {
+  var O = this._t;
+  var index = this._i;
+  var point;
+  if (index >= O.length) return { value: undefined, done: true };
+  point = $at(O, index);
+  this._i += point.length;
+  return { value: point, done: false };
+});
+
+},{"./_iter-define":54,"./_string-at":85}],108:[function(require,module,exports){
+'use strict';
+// ECMAScript 6 symbols shim
+var global = require('./_global');
+var has = require('./_has');
+var DESCRIPTORS = require('./_descriptors');
+var $export = require('./_export');
+var redefine = require('./_redefine');
+var META = require('./_meta').KEY;
+var $fails = require('./_fails');
+var shared = require('./_shared');
+var setToStringTag = require('./_set-to-string-tag');
+var uid = require('./_uid');
+var wks = require('./_wks');
+var wksExt = require('./_wks-ext');
+var wksDefine = require('./_wks-define');
+var enumKeys = require('./_enum-keys');
+var isArray = require('./_is-array');
+var anObject = require('./_an-object');
+var isObject = require('./_is-object');
+var toIObject = require('./_to-iobject');
+var toPrimitive = require('./_to-primitive');
+var createDesc = require('./_property-desc');
+var _create = require('./_object-create');
+var gOPNExt = require('./_object-gopn-ext');
+var $GOPD = require('./_object-gopd');
+var $DP = require('./_object-dp');
+var $keys = require('./_object-keys');
+var gOPD = $GOPD.f;
+var dP = $DP.f;
+var gOPN = gOPNExt.f;
+var $Symbol = global.Symbol;
+var $JSON = global.JSON;
+var _stringify = $JSON && $JSON.stringify;
+var PROTOTYPE = 'prototype';
+var HIDDEN = wks('_hidden');
+var TO_PRIMITIVE = wks('toPrimitive');
+var isEnum = {}.propertyIsEnumerable;
+var SymbolRegistry = shared('symbol-registry');
+var AllSymbols = shared('symbols');
+var OPSymbols = shared('op-symbols');
+var ObjectProto = Object[PROTOTYPE];
+var USE_NATIVE = typeof $Symbol == 'function';
+var QObject = global.QObject;
+// Don't use setters in Qt Script, https://github.com/zloirock/core-js/issues/173
+var setter = !QObject || !QObject[PROTOTYPE] || !QObject[PROTOTYPE].findChild;
+
+// fallback for old Android, https://code.google.com/p/v8/issues/detail?id=687
+var setSymbolDesc = DESCRIPTORS && $fails(function () {
+  return _create(dP({}, 'a', {
+    get: function () { return dP(this, 'a', { value: 7 }).a; }
+  })).a != 7;
+}) ? function (it, key, D) {
+  var protoDesc = gOPD(ObjectProto, key);
+  if (protoDesc) delete ObjectProto[key];
+  dP(it, key, D);
+  if (protoDesc && it !== ObjectProto) dP(ObjectProto, key, protoDesc);
+} : dP;
+
+var wrap = function (tag) {
+  var sym = AllSymbols[tag] = _create($Symbol[PROTOTYPE]);
+  sym._k = tag;
+  return sym;
+};
+
+var isSymbol = USE_NATIVE && typeof $Symbol.iterator == 'symbol' ? function (it) {
+  return typeof it == 'symbol';
+} : function (it) {
+  return it instanceof $Symbol;
+};
+
+var $defineProperty = function defineProperty(it, key, D) {
+  if (it === ObjectProto) $defineProperty(OPSymbols, key, D);
+  anObject(it);
+  key = toPrimitive(key, true);
+  anObject(D);
+  if (has(AllSymbols, key)) {
+    if (!D.enumerable) {
+      if (!has(it, HIDDEN)) dP(it, HIDDEN, createDesc(1, {}));
+      it[HIDDEN][key] = true;
+    } else {
+      if (has(it, HIDDEN) && it[HIDDEN][key]) it[HIDDEN][key] = false;
+      D = _create(D, { enumerable: createDesc(0, false) });
+    } return setSymbolDesc(it, key, D);
+  } return dP(it, key, D);
+};
+var $defineProperties = function defineProperties(it, P) {
+  anObject(it);
+  var keys = enumKeys(P = toIObject(P));
+  var i = 0;
+  var l = keys.length;
+  var key;
+  while (l > i) $defineProperty(it, key = keys[i++], P[key]);
+  return it;
+};
+var $create = function create(it, P) {
+  return P === undefined ? _create(it) : $defineProperties(_create(it), P);
+};
+var $propertyIsEnumerable = function propertyIsEnumerable(key) {
+  var E = isEnum.call(this, key = toPrimitive(key, true));
+  if (this === ObjectProto && has(AllSymbols, key) && !has(OPSymbols, key)) return false;
+  return E || !has(this, key) || !has(AllSymbols, key) || has(this, HIDDEN) && this[HIDDEN][key] ? E : true;
+};
+var $getOwnPropertyDescriptor = function getOwnPropertyDescriptor(it, key) {
+  it = toIObject(it);
+  key = toPrimitive(key, true);
+  if (it === ObjectProto && has(AllSymbols, key) && !has(OPSymbols, key)) return;
+  var D = gOPD(it, key);
+  if (D && has(AllSymbols, key) && !(has(it, HIDDEN) && it[HIDDEN][key])) D.enumerable = true;
+  return D;
+};
+var $getOwnPropertyNames = function getOwnPropertyNames(it) {
+  var names = gOPN(toIObject(it));
+  var result = [];
+  var i = 0;
+  var key;
+  while (names.length > i) {
+    if (!has(AllSymbols, key = names[i++]) && key != HIDDEN && key != META) result.push(key);
+  } return result;
+};
+var $getOwnPropertySymbols = function getOwnPropertySymbols(it) {
+  var IS_OP = it === ObjectProto;
+  var names = gOPN(IS_OP ? OPSymbols : toIObject(it));
+  var result = [];
+  var i = 0;
+  var key;
+  while (names.length > i) {
+    if (has(AllSymbols, key = names[i++]) && (IS_OP ? has(ObjectProto, key) : true)) result.push(AllSymbols[key]);
+  } return result;
+};
+
+// 19.4.1.1 Symbol([description])
+if (!USE_NATIVE) {
+  $Symbol = function Symbol() {
+    if (this instanceof $Symbol) throw TypeError('Symbol is not a constructor!');
+    var tag = uid(arguments.length > 0 ? arguments[0] : undefined);
+    var $set = function (value) {
+      if (this === ObjectProto) $set.call(OPSymbols, value);
+      if (has(this, HIDDEN) && has(this[HIDDEN], tag)) this[HIDDEN][tag] = false;
+      setSymbolDesc(this, tag, createDesc(1, value));
+    };
+    if (DESCRIPTORS && setter) setSymbolDesc(ObjectProto, tag, { configurable: true, set: $set });
+    return wrap(tag);
+  };
+  redefine($Symbol[PROTOTYPE], 'toString', function toString() {
+    return this._k;
+  });
+
+  $GOPD.f = $getOwnPropertyDescriptor;
+  $DP.f = $defineProperty;
+  require('./_object-gopn').f = gOPNExt.f = $getOwnPropertyNames;
+  require('./_object-pie').f = $propertyIsEnumerable;
+  require('./_object-gops').f = $getOwnPropertySymbols;
+
+  if (DESCRIPTORS && !require('./_library')) {
+    redefine(ObjectProto, 'propertyIsEnumerable', $propertyIsEnumerable, true);
+  }
+
+  wksExt.f = function (name) {
+    return wrap(wks(name));
+  };
+}
+
+$export($export.G + $export.W + $export.F * !USE_NATIVE, { Symbol: $Symbol });
+
+for (var es6Symbols = (
+  // 19.4.2.2, 19.4.2.3, 19.4.2.4, 19.4.2.6, 19.4.2.8, 19.4.2.9, 19.4.2.10, 19.4.2.11, 19.4.2.12, 19.4.2.13, 19.4.2.14
+  'hasInstance,isConcatSpreadable,iterator,match,replace,search,species,split,toPrimitive,toStringTag,unscopables'
+).split(','), j = 0; es6Symbols.length > j;)wks(es6Symbols[j++]);
+
+for (var wellKnownSymbols = $keys(wks.store), k = 0; wellKnownSymbols.length > k;) wksDefine(wellKnownSymbols[k++]);
+
+$export($export.S + $export.F * !USE_NATIVE, 'Symbol', {
+  // 19.4.2.1 Symbol.for(key)
+  'for': function (key) {
+    return has(SymbolRegistry, key += '')
+      ? SymbolRegistry[key]
+      : SymbolRegistry[key] = $Symbol(key);
+  },
+  // 19.4.2.5 Symbol.keyFor(sym)
+  keyFor: function keyFor(sym) {
+    if (!isSymbol(sym)) throw TypeError(sym + ' is not a symbol!');
+    for (var key in SymbolRegistry) if (SymbolRegistry[key] === sym) return key;
+  },
+  useSetter: function () { setter = true; },
+  useSimple: function () { setter = false; }
+});
+
+$export($export.S + $export.F * !USE_NATIVE, 'Object', {
+  // 19.1.2.2 Object.create(O [, Properties])
+  create: $create,
+  // 19.1.2.4 Object.defineProperty(O, P, Attributes)
+  defineProperty: $defineProperty,
+  // 19.1.2.3 Object.defineProperties(O, Properties)
+  defineProperties: $defineProperties,
+  // 19.1.2.6 Object.getOwnPropertyDescriptor(O, P)
+  getOwnPropertyDescriptor: $getOwnPropertyDescriptor,
+  // 19.1.2.7 Object.getOwnPropertyNames(O)
+  getOwnPropertyNames: $getOwnPropertyNames,
+  // 19.1.2.8 Object.getOwnPropertySymbols(O)
+  getOwnPropertySymbols: $getOwnPropertySymbols
+});
+
+// 24.3.2 JSON.stringify(value [, replacer [, space]])
+$JSON && $export($export.S + $export.F * (!USE_NATIVE || $fails(function () {
+  var S = $Symbol();
+  // MS Edge converts symbol values to JSON as {}
+  // WebKit converts symbol values to JSON as null
+  // V8 throws on boxed symbols
+  return _stringify([S]) != '[null]' || _stringify({ a: S }) != '{}' || _stringify(Object(S)) != '{}';
+})), 'JSON', {
+  stringify: function stringify(it) {
+    var args = [it];
+    var i = 1;
+    var replacer, $replacer;
+    while (arguments.length > i) args.push(arguments[i++]);
+    $replacer = replacer = args[1];
+    if (!isObject(replacer) && it === undefined || isSymbol(it)) return; // IE8 returns string on undefined
+    if (!isArray(replacer)) replacer = function (key, value) {
+      if (typeof $replacer == 'function') value = $replacer.call(this, key, value);
+      if (!isSymbol(value)) return value;
+    };
+    args[1] = replacer;
+    return _stringify.apply($JSON, args);
+  }
+});
+
+// 19.4.3.4 Symbol.prototype[@@toPrimitive](hint)
+$Symbol[PROTOTYPE][TO_PRIMITIVE] || require('./_hide')($Symbol[PROTOTYPE], TO_PRIMITIVE, $Symbol[PROTOTYPE].valueOf);
+// 19.4.3.5 Symbol.prototype[@@toStringTag]
+setToStringTag($Symbol, 'Symbol');
+// 20.2.1.9 Math[@@toStringTag]
+setToStringTag(Math, 'Math', true);
+// 24.3.3 JSON[@@toStringTag]
+setToStringTag(global.JSON, 'JSON', true);
+
+},{"./_an-object":28,"./_descriptors":35,"./_enum-keys":38,"./_export":39,"./_fails":40,"./_global":42,"./_has":43,"./_hide":44,"./_is-array":50,"./_is-object":51,"./_library":58,"./_meta":59,"./_object-create":62,"./_object-dp":63,"./_object-gopd":65,"./_object-gopn":67,"./_object-gopn-ext":66,"./_object-gops":68,"./_object-keys":71,"./_object-pie":72,"./_property-desc":76,"./_redefine":78,"./_set-to-string-tag":81,"./_shared":83,"./_to-iobject":89,"./_to-primitive":92,"./_uid":93,"./_wks":97,"./_wks-define":95,"./_wks-ext":96}],109:[function(require,module,exports){
+// https://github.com/tc39/proposal-promise-finally
+'use strict';
+var $export = require('./_export');
+var core = require('./_core');
+var global = require('./_global');
+var speciesConstructor = require('./_species-constructor');
+var promiseResolve = require('./_promise-resolve');
+
+$export($export.P + $export.R, 'Promise', { 'finally': function (onFinally) {
+  var C = speciesConstructor(this, core.Promise || global.Promise);
+  var isFunction = typeof onFinally == 'function';
+  return this.then(
+    isFunction ? function (x) {
+      return promiseResolve(C, onFinally()).then(function () { return x; });
+    } : onFinally,
+    isFunction ? function (e) {
+      return promiseResolve(C, onFinally()).then(function () { throw e; });
+    } : onFinally
+  );
+} });
+
+},{"./_core":32,"./_export":39,"./_global":42,"./_promise-resolve":75,"./_species-constructor":84}],110:[function(require,module,exports){
+'use strict';
+// https://github.com/tc39/proposal-promise-try
+var $export = require('./_export');
+var newPromiseCapability = require('./_new-promise-capability');
+var perform = require('./_perform');
+
+$export($export.S, 'Promise', { 'try': function (callbackfn) {
+  var promiseCapability = newPromiseCapability.f(this);
+  var result = perform(callbackfn);
+  (result.e ? promiseCapability.reject : promiseCapability.resolve)(result.v);
+  return promiseCapability.promise;
+} });
+
+},{"./_export":39,"./_new-promise-capability":61,"./_perform":74}],111:[function(require,module,exports){
+require('./_wks-define')('asyncIterator');
+
+},{"./_wks-define":95}],112:[function(require,module,exports){
+require('./_wks-define')('observable');
+
+},{"./_wks-define":95}],113:[function(require,module,exports){
+require('./es6.array.iterator');
+var global = require('./_global');
+var hide = require('./_hide');
+var Iterators = require('./_iterators');
+var TO_STRING_TAG = require('./_wks')('toStringTag');
+
+var DOMIterables = ('CSSRuleList,CSSStyleDeclaration,CSSValueList,ClientRectList,DOMRectList,DOMStringList,' +
+  'DOMTokenList,DataTransferItemList,FileList,HTMLAllCollection,HTMLCollection,HTMLFormElement,HTMLSelectElement,' +
+  'MediaList,MimeTypeArray,NamedNodeMap,NodeList,PaintRequestList,Plugin,PluginArray,SVGLengthList,SVGNumberList,' +
+  'SVGPathSegList,SVGPointList,SVGStringList,SVGTransformList,SourceBufferList,StyleSheetList,TextTrackCueList,' +
+  'TextTrackList,TouchList').split(',');
+
+for (var i = 0; i < DOMIterables.length; i++) {
+  var NAME = DOMIterables[i];
+  var Collection = global[NAME];
+  var proto = Collection && Collection.prototype;
+  if (proto && !proto[TO_STRING_TAG]) hide(proto, TO_STRING_TAG, NAME);
+  Iterators[NAME] = Iterators.Array;
+}
+
+},{"./_global":42,"./_hide":44,"./_iterators":57,"./_wks":97,"./es6.array.iterator":99}],114:[function(require,module,exports){
+/**
+ * Copyright (c) 2014-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+// This method of obtaining a reference to the global object needs to be
+// kept identical to the way it is obtained in runtime.js
+var g = (function() { return this })() || Function("return this")();
+
+// Use `getOwnPropertyNames` because not all browsers support calling
+// `hasOwnProperty` on the global `self` object in a worker. See #183.
+var hadRuntime = g.regeneratorRuntime &&
+  Object.getOwnPropertyNames(g).indexOf("regeneratorRuntime") >= 0;
+
+// Save the old regeneratorRuntime in case it needs to be restored later.
+var oldRuntime = hadRuntime && g.regeneratorRuntime;
+
+// Force reevalutation of runtime.js.
+g.regeneratorRuntime = undefined;
+
+module.exports = require("./runtime");
+
+if (hadRuntime) {
+  // Restore the original runtime.
+  g.regeneratorRuntime = oldRuntime;
+} else {
+  // Remove the global property added by runtime.js.
+  try {
+    delete g.regeneratorRuntime;
+  } catch(e) {
+    g.regeneratorRuntime = undefined;
+  }
+}
+
+},{"./runtime":115}],115:[function(require,module,exports){
+/**
+ * Copyright (c) 2014-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+!(function(global) {
+  "use strict";
+
+  var Op = Object.prototype;
+  var hasOwn = Op.hasOwnProperty;
+  var undefined; // More compressible than void 0.
+  var $Symbol = typeof Symbol === "function" ? Symbol : {};
+  var iteratorSymbol = $Symbol.iterator || "@@iterator";
+  var asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator";
+  var toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
+
+  var inModule = typeof module === "object";
+  var runtime = global.regeneratorRuntime;
+  if (runtime) {
+    if (inModule) {
+      // If regeneratorRuntime is defined globally and we're in a module,
+      // make the exports object identical to regeneratorRuntime.
+      module.exports = runtime;
+    }
+    // Don't bother evaluating the rest of this file if the runtime was
+    // already defined globally.
+    return;
+  }
+
+  // Define the runtime globally (as expected by generated code) as either
+  // module.exports (if we're in a module) or a new, empty object.
+  runtime = global.regeneratorRuntime = inModule ? module.exports : {};
+
+  function wrap(innerFn, outerFn, self, tryLocsList) {
+    // If outerFn provided and outerFn.prototype is a Generator, then outerFn.prototype instanceof Generator.
+    var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator;
+    var generator = Object.create(protoGenerator.prototype);
+    var context = new Context(tryLocsList || []);
+
+    // The ._invoke method unifies the implementations of the .next,
+    // .throw, and .return methods.
+    generator._invoke = makeInvokeMethod(innerFn, self, context);
+
+    return generator;
+  }
+  runtime.wrap = wrap;
+
+  // Try/catch helper to minimize deoptimizations. Returns a completion
+  // record like context.tryEntries[i].completion. This interface could
+  // have been (and was previously) designed to take a closure to be
+  // invoked without arguments, but in all the cases we care about we
+  // already have an existing method we want to call, so there's no need
+  // to create a new function object. We can even get away with assuming
+  // the method takes exactly one argument, since that happens to be true
+  // in every case, so we don't have to touch the arguments object. The
+  // only additional allocation required is the completion record, which
+  // has a stable shape and so hopefully should be cheap to allocate.
+  function tryCatch(fn, obj, arg) {
+    try {
+      return { type: "normal", arg: fn.call(obj, arg) };
+    } catch (err) {
+      return { type: "throw", arg: err };
+    }
+  }
+
+  var GenStateSuspendedStart = "suspendedStart";
+  var GenStateSuspendedYield = "suspendedYield";
+  var GenStateExecuting = "executing";
+  var GenStateCompleted = "completed";
+
+  // Returning this object from the innerFn has the same effect as
+  // breaking out of the dispatch switch statement.
+  var ContinueSentinel = {};
+
+  // Dummy constructor functions that we use as the .constructor and
+  // .constructor.prototype properties for functions that return Generator
+  // objects. For full spec compliance, you may wish to configure your
+  // minifier not to mangle the names of these two functions.
+  function Generator() {}
+  function GeneratorFunction() {}
+  function GeneratorFunctionPrototype() {}
+
+  // This is a polyfill for %IteratorPrototype% for environments that
+  // don't natively support it.
+  var IteratorPrototype = {};
+  IteratorPrototype[iteratorSymbol] = function () {
+    return this;
+  };
+
+  var getProto = Object.getPrototypeOf;
+  var NativeIteratorPrototype = getProto && getProto(getProto(values([])));
+  if (NativeIteratorPrototype &&
+      NativeIteratorPrototype !== Op &&
+      hasOwn.call(NativeIteratorPrototype, iteratorSymbol)) {
+    // This environment has a native %IteratorPrototype%; use it instead
+    // of the polyfill.
+    IteratorPrototype = NativeIteratorPrototype;
+  }
+
+  var Gp = GeneratorFunctionPrototype.prototype =
+    Generator.prototype = Object.create(IteratorPrototype);
+  GeneratorFunction.prototype = Gp.constructor = GeneratorFunctionPrototype;
+  GeneratorFunctionPrototype.constructor = GeneratorFunction;
+  GeneratorFunctionPrototype[toStringTagSymbol] =
+    GeneratorFunction.displayName = "GeneratorFunction";
+
+  // Helper for defining the .next, .throw, and .return methods of the
+  // Iterator interface in terms of a single ._invoke method.
+  function defineIteratorMethods(prototype) {
+    ["next", "throw", "return"].forEach(function(method) {
+      prototype[method] = function(arg) {
+        return this._invoke(method, arg);
+      };
+    });
+  }
+
+  runtime.isGeneratorFunction = function(genFun) {
+    var ctor = typeof genFun === "function" && genFun.constructor;
+    return ctor
+      ? ctor === GeneratorFunction ||
+        // For the native GeneratorFunction constructor, the best we can
+        // do is to check its .name property.
+        (ctor.displayName || ctor.name) === "GeneratorFunction"
+      : false;
+  };
+
+  runtime.mark = function(genFun) {
+    if (Object.setPrototypeOf) {
+      Object.setPrototypeOf(genFun, GeneratorFunctionPrototype);
+    } else {
+      genFun.__proto__ = GeneratorFunctionPrototype;
+      if (!(toStringTagSymbol in genFun)) {
+        genFun[toStringTagSymbol] = "GeneratorFunction";
+      }
+    }
+    genFun.prototype = Object.create(Gp);
+    return genFun;
+  };
+
+  // Within the body of any async function, `await x` is transformed to
+  // `yield regeneratorRuntime.awrap(x)`, so that the runtime can test
+  // `hasOwn.call(value, "__await")` to determine if the yielded value is
+  // meant to be awaited.
+  runtime.awrap = function(arg) {
+    return { __await: arg };
+  };
+
+  function AsyncIterator(generator) {
+    function invoke(method, arg, resolve, reject) {
+      var record = tryCatch(generator[method], generator, arg);
+      if (record.type === "throw") {
+        reject(record.arg);
+      } else {
+        var result = record.arg;
+        var value = result.value;
+        if (value &&
+            typeof value === "object" &&
+            hasOwn.call(value, "__await")) {
+          return Promise.resolve(value.__await).then(function(value) {
+            invoke("next", value, resolve, reject);
+          }, function(err) {
+            invoke("throw", err, resolve, reject);
+          });
+        }
+
+        return Promise.resolve(value).then(function(unwrapped) {
+          // When a yielded Promise is resolved, its final value becomes
+          // the .value of the Promise<{value,done}> result for the
+          // current iteration. If the Promise is rejected, however, the
+          // result for this iteration will be rejected with the same
+          // reason. Note that rejections of yielded Promises are not
+          // thrown back into the generator function, as is the case
+          // when an awaited Promise is rejected. This difference in
+          // behavior between yield and await is important, because it
+          // allows the consumer to decide what to do with the yielded
+          // rejection (swallow it and continue, manually .throw it back
+          // into the generator, abandon iteration, whatever). With
+          // await, by contrast, there is no opportunity to examine the
+          // rejection reason outside the generator function, so the
+          // only option is to throw it from the await expression, and
+          // let the generator function handle the exception.
+          result.value = unwrapped;
+          resolve(result);
+        }, reject);
+      }
+    }
+
+    var previousPromise;
+
+    function enqueue(method, arg) {
+      function callInvokeWithMethodAndArg() {
+        return new Promise(function(resolve, reject) {
+          invoke(method, arg, resolve, reject);
+        });
+      }
+
+      return previousPromise =
+        // If enqueue has been called before, then we want to wait until
+        // all previous Promises have been resolved before calling invoke,
+        // so that results are always delivered in the correct order. If
+        // enqueue has not been called before, then it is important to
+        // call invoke immediately, without waiting on a callback to fire,
+        // so that the async generator function has the opportunity to do
+        // any necessary setup in a predictable way. This predictability
+        // is why the Promise constructor synchronously invokes its
+        // executor callback, and why async functions synchronously
+        // execute code before the first await. Since we implement simple
+        // async functions in terms of async generators, it is especially
+        // important to get this right, even though it requires care.
+        previousPromise ? previousPromise.then(
+          callInvokeWithMethodAndArg,
+          // Avoid propagating failures to Promises returned by later
+          // invocations of the iterator.
+          callInvokeWithMethodAndArg
+        ) : callInvokeWithMethodAndArg();
+    }
+
+    // Define the unified helper method that is used to implement .next,
+    // .throw, and .return (see defineIteratorMethods).
+    this._invoke = enqueue;
+  }
+
+  defineIteratorMethods(AsyncIterator.prototype);
+  AsyncIterator.prototype[asyncIteratorSymbol] = function () {
+    return this;
+  };
+  runtime.AsyncIterator = AsyncIterator;
+
+  // Note that simple async functions are implemented on top of
+  // AsyncIterator objects; they just return a Promise for the value of
+  // the final result produced by the iterator.
+  runtime.async = function(innerFn, outerFn, self, tryLocsList) {
+    var iter = new AsyncIterator(
+      wrap(innerFn, outerFn, self, tryLocsList)
+    );
+
+    return runtime.isGeneratorFunction(outerFn)
+      ? iter // If outerFn is a generator, return the full iterator.
+      : iter.next().then(function(result) {
+          return result.done ? result.value : iter.next();
+        });
+  };
+
+  function makeInvokeMethod(innerFn, self, context) {
+    var state = GenStateSuspendedStart;
+
+    return function invoke(method, arg) {
+      if (state === GenStateExecuting) {
+        throw new Error("Generator is already running");
+      }
+
+      if (state === GenStateCompleted) {
+        if (method === "throw") {
+          throw arg;
+        }
+
+        // Be forgiving, per 25.3.3.3.3 of the spec:
+        // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-generatorresume
+        return doneResult();
+      }
+
+      context.method = method;
+      context.arg = arg;
+
+      while (true) {
+        var delegate = context.delegate;
+        if (delegate) {
+          var delegateResult = maybeInvokeDelegate(delegate, context);
+          if (delegateResult) {
+            if (delegateResult === ContinueSentinel) continue;
+            return delegateResult;
+          }
+        }
+
+        if (context.method === "next") {
+          // Setting context._sent for legacy support of Babel's
+          // function.sent implementation.
+          context.sent = context._sent = context.arg;
+
+        } else if (context.method === "throw") {
+          if (state === GenStateSuspendedStart) {
+            state = GenStateCompleted;
+            throw context.arg;
+          }
+
+          context.dispatchException(context.arg);
+
+        } else if (context.method === "return") {
+          context.abrupt("return", context.arg);
+        }
+
+        state = GenStateExecuting;
+
+        var record = tryCatch(innerFn, self, context);
+        if (record.type === "normal") {
+          // If an exception is thrown from innerFn, we leave state ===
+          // GenStateExecuting and loop back for another invocation.
+          state = context.done
+            ? GenStateCompleted
+            : GenStateSuspendedYield;
+
+          if (record.arg === ContinueSentinel) {
+            continue;
+          }
+
+          return {
+            value: record.arg,
+            done: context.done
+          };
+
+        } else if (record.type === "throw") {
+          state = GenStateCompleted;
+          // Dispatch the exception by looping back around to the
+          // context.dispatchException(context.arg) call above.
+          context.method = "throw";
+          context.arg = record.arg;
+        }
+      }
+    };
+  }
+
+  // Call delegate.iterator[context.method](context.arg) and handle the
+  // result, either by returning a { value, done } result from the
+  // delegate iterator, or by modifying context.method and context.arg,
+  // setting context.delegate to null, and returning the ContinueSentinel.
+  function maybeInvokeDelegate(delegate, context) {
+    var method = delegate.iterator[context.method];
+    if (method === undefined) {
+      // A .throw or .return when the delegate iterator has no .throw
+      // method always terminates the yield* loop.
+      context.delegate = null;
+
+      if (context.method === "throw") {
+        if (delegate.iterator.return) {
+          // If the delegate iterator has a return method, give it a
+          // chance to clean up.
+          context.method = "return";
+          context.arg = undefined;
+          maybeInvokeDelegate(delegate, context);
+
+          if (context.method === "throw") {
+            // If maybeInvokeDelegate(context) changed context.method from
+            // "return" to "throw", let that override the TypeError below.
+            return ContinueSentinel;
+          }
+        }
+
+        context.method = "throw";
+        context.arg = new TypeError(
+          "The iterator does not provide a 'throw' method");
+      }
+
+      return ContinueSentinel;
+    }
+
+    var record = tryCatch(method, delegate.iterator, context.arg);
+
+    if (record.type === "throw") {
+      context.method = "throw";
+      context.arg = record.arg;
+      context.delegate = null;
+      return ContinueSentinel;
+    }
+
+    var info = record.arg;
+
+    if (! info) {
+      context.method = "throw";
+      context.arg = new TypeError("iterator result is not an object");
+      context.delegate = null;
+      return ContinueSentinel;
+    }
+
+    if (info.done) {
+      // Assign the result of the finished delegate to the temporary
+      // variable specified by delegate.resultName (see delegateYield).
+      context[delegate.resultName] = info.value;
+
+      // Resume execution at the desired location (see delegateYield).
+      context.next = delegate.nextLoc;
+
+      // If context.method was "throw" but the delegate handled the
+      // exception, let the outer generator proceed normally. If
+      // context.method was "next", forget context.arg since it has been
+      // "consumed" by the delegate iterator. If context.method was
+      // "return", allow the original .return call to continue in the
+      // outer generator.
+      if (context.method !== "return") {
+        context.method = "next";
+        context.arg = undefined;
+      }
+
+    } else {
+      // Re-yield the result returned by the delegate method.
+      return info;
+    }
+
+    // The delegate iterator is finished, so forget it and continue with
+    // the outer generator.
+    context.delegate = null;
+    return ContinueSentinel;
+  }
+
+  // Define Generator.prototype.{next,throw,return} in terms of the
+  // unified ._invoke helper method.
+  defineIteratorMethods(Gp);
+
+  Gp[toStringTagSymbol] = "Generator";
+
+  // A Generator should always return itself as the iterator object when the
+  // @@iterator function is called on it. Some browsers' implementations of the
+  // iterator prototype chain incorrectly implement this, causing the Generator
+  // object to not be returned from this call. This ensures that doesn't happen.
+  // See https://github.com/facebook/regenerator/issues/274 for more details.
+  Gp[iteratorSymbol] = function() {
+    return this;
+  };
+
+  Gp.toString = function() {
+    return "[object Generator]";
+  };
+
+  function pushTryEntry(locs) {
+    var entry = { tryLoc: locs[0] };
+
+    if (1 in locs) {
+      entry.catchLoc = locs[1];
+    }
+
+    if (2 in locs) {
+      entry.finallyLoc = locs[2];
+      entry.afterLoc = locs[3];
+    }
+
+    this.tryEntries.push(entry);
+  }
+
+  function resetTryEntry(entry) {
+    var record = entry.completion || {};
+    record.type = "normal";
+    delete record.arg;
+    entry.completion = record;
+  }
+
+  function Context(tryLocsList) {
+    // The root entry object (effectively a try statement without a catch
+    // or a finally block) gives us a place to store values thrown from
+    // locations where there is no enclosing try statement.
+    this.tryEntries = [{ tryLoc: "root" }];
+    tryLocsList.forEach(pushTryEntry, this);
+    this.reset(true);
+  }
+
+  runtime.keys = function(object) {
+    var keys = [];
+    for (var key in object) {
+      keys.push(key);
+    }
+    keys.reverse();
+
+    // Rather than returning an object with a next method, we keep
+    // things simple and return the next function itself.
+    return function next() {
+      while (keys.length) {
+        var key = keys.pop();
+        if (key in object) {
+          next.value = key;
+          next.done = false;
+          return next;
+        }
+      }
+
+      // To avoid creating an additional object, we just hang the .value
+      // and .done properties off the next function object itself. This
+      // also ensures that the minifier will not anonymize the function.
+      next.done = true;
+      return next;
+    };
+  };
+
+  function values(iterable) {
+    if (iterable) {
+      var iteratorMethod = iterable[iteratorSymbol];
+      if (iteratorMethod) {
+        return iteratorMethod.call(iterable);
+      }
+
+      if (typeof iterable.next === "function") {
+        return iterable;
+      }
+
+      if (!isNaN(iterable.length)) {
+        var i = -1, next = function next() {
+          while (++i < iterable.length) {
+            if (hasOwn.call(iterable, i)) {
+              next.value = iterable[i];
+              next.done = false;
+              return next;
+            }
+          }
+
+          next.value = undefined;
+          next.done = true;
+
+          return next;
+        };
+
+        return next.next = next;
+      }
+    }
+
+    // Return an iterator with no values.
+    return { next: doneResult };
+  }
+  runtime.values = values;
+
+  function doneResult() {
+    return { value: undefined, done: true };
+  }
+
+  Context.prototype = {
+    constructor: Context,
+
+    reset: function(skipTempReset) {
+      this.prev = 0;
+      this.next = 0;
+      // Resetting context._sent for legacy support of Babel's
+      // function.sent implementation.
+      this.sent = this._sent = undefined;
+      this.done = false;
+      this.delegate = null;
+
+      this.method = "next";
+      this.arg = undefined;
+
+      this.tryEntries.forEach(resetTryEntry);
+
+      if (!skipTempReset) {
+        for (var name in this) {
+          // Not sure about the optimal order of these conditions:
+          if (name.charAt(0) === "t" &&
+              hasOwn.call(this, name) &&
+              !isNaN(+name.slice(1))) {
+            this[name] = undefined;
+          }
+        }
+      }
+    },
+
+    stop: function() {
+      this.done = true;
+
+      var rootEntry = this.tryEntries[0];
+      var rootRecord = rootEntry.completion;
+      if (rootRecord.type === "throw") {
+        throw rootRecord.arg;
+      }
+
+      return this.rval;
+    },
+
+    dispatchException: function(exception) {
+      if (this.done) {
+        throw exception;
+      }
+
+      var context = this;
+      function handle(loc, caught) {
+        record.type = "throw";
+        record.arg = exception;
+        context.next = loc;
+
+        if (caught) {
+          // If the dispatched exception was caught by a catch block,
+          // then let that catch block handle the exception normally.
+          context.method = "next";
+          context.arg = undefined;
+        }
+
+        return !! caught;
+      }
+
+      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+        var entry = this.tryEntries[i];
+        var record = entry.completion;
+
+        if (entry.tryLoc === "root") {
+          // Exception thrown outside of any try block that could handle
+          // it, so set the completion value of the entire function to
+          // throw the exception.
+          return handle("end");
+        }
+
+        if (entry.tryLoc <= this.prev) {
+          var hasCatch = hasOwn.call(entry, "catchLoc");
+          var hasFinally = hasOwn.call(entry, "finallyLoc");
+
+          if (hasCatch && hasFinally) {
+            if (this.prev < entry.catchLoc) {
+              return handle(entry.catchLoc, true);
+            } else if (this.prev < entry.finallyLoc) {
+              return handle(entry.finallyLoc);
+            }
+
+          } else if (hasCatch) {
+            if (this.prev < entry.catchLoc) {
+              return handle(entry.catchLoc, true);
+            }
+
+          } else if (hasFinally) {
+            if (this.prev < entry.finallyLoc) {
+              return handle(entry.finallyLoc);
+            }
+
+          } else {
+            throw new Error("try statement without catch or finally");
+          }
+        }
+      }
+    },
+
+    abrupt: function(type, arg) {
+      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+        var entry = this.tryEntries[i];
+        if (entry.tryLoc <= this.prev &&
+            hasOwn.call(entry, "finallyLoc") &&
+            this.prev < entry.finallyLoc) {
+          var finallyEntry = entry;
+          break;
+        }
+      }
+
+      if (finallyEntry &&
+          (type === "break" ||
+           type === "continue") &&
+          finallyEntry.tryLoc <= arg &&
+          arg <= finallyEntry.finallyLoc) {
+        // Ignore the finally entry if control is not jumping to a
+        // location outside the try/catch block.
+        finallyEntry = null;
+      }
+
+      var record = finallyEntry ? finallyEntry.completion : {};
+      record.type = type;
+      record.arg = arg;
+
+      if (finallyEntry) {
+        this.method = "next";
+        this.next = finallyEntry.finallyLoc;
+        return ContinueSentinel;
+      }
+
+      return this.complete(record);
+    },
+
+    complete: function(record, afterLoc) {
+      if (record.type === "throw") {
+        throw record.arg;
+      }
+
+      if (record.type === "break" ||
+          record.type === "continue") {
+        this.next = record.arg;
+      } else if (record.type === "return") {
+        this.rval = this.arg = record.arg;
+        this.method = "return";
+        this.next = "end";
+      } else if (record.type === "normal" && afterLoc) {
+        this.next = afterLoc;
+      }
+
+      return ContinueSentinel;
+    },
+
+    finish: function(finallyLoc) {
+      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+        var entry = this.tryEntries[i];
+        if (entry.finallyLoc === finallyLoc) {
+          this.complete(entry.completion, entry.afterLoc);
+          resetTryEntry(entry);
+          return ContinueSentinel;
+        }
+      }
+    },
+
+    "catch": function(tryLoc) {
+      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+        var entry = this.tryEntries[i];
+        if (entry.tryLoc === tryLoc) {
+          var record = entry.completion;
+          if (record.type === "throw") {
+            var thrown = record.arg;
+            resetTryEntry(entry);
+          }
+          return thrown;
+        }
+      }
+
+      // The context.catch method must only be called with a location
+      // argument that corresponds to a known catch block.
+      throw new Error("illegal catch attempt");
+    },
+
+    delegateYield: function(iterable, resultName, nextLoc) {
+      this.delegate = {
+        iterator: values(iterable),
+        resultName: resultName,
+        nextLoc: nextLoc
+      };
+
+      if (this.method === "next") {
+        // Deliberately forget the last sent value so that we don't
+        // accidentally pass it on to the delegate.
+        this.arg = undefined;
+      }
+
+      return ContinueSentinel;
+    }
+  };
+})(
+  // In sloppy mode, unbound `this` refers to the global object, fallback to
+  // Function constructor if we're in global strict mode. That is sadly a form
+  // of indirect eval which violates Content Security Policy.
+  (function() { return this })() || Function("return this")()
+);
+
+},{}],116:[function(require,module,exports){
 'use strict';
 
-var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
+var _regenerator = require('babel-runtime/regenerator');
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+var _regenerator2 = _interopRequireDefault(_regenerator);
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+var _asyncToGenerator2 = require('babel-runtime/helpers/asyncToGenerator');
 
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+var _possibleConstructorReturn2 = require('babel-runtime/helpers/possibleConstructorReturn');
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+
+var _get2 = require('babel-runtime/helpers/get');
+
+var _get3 = _interopRequireDefault(_get2);
+
+var _inherits2 = require('babel-runtime/helpers/inherits');
+
+var _inherits3 = _interopRequireDefault(_inherits2);
+
+var _typeof2 = require('babel-runtime/helpers/typeof');
+
+var _typeof3 = _interopRequireDefault(_typeof2);
+
+var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
+
+var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+
+var _createClass2 = require('babel-runtime/helpers/createClass');
+
+var _createClass3 = _interopRequireDefault(_createClass2);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var SN = SN || {};
 
@@ -34191,15 +38421,11 @@ if (!Array.prototype.includes) {
       if (success) {
         if (statusTimeout) $timeout.cancel(statusTimeout);
         statusTimeout = $timeout(function () {
-          this.saveError = false;
-          this.syncTakingTooLong = false;
           this.showAllChangesSavedStatus();
         }.bind(this), 200);
       } else {
         if (statusTimeout) $timeout.cancel(statusTimeout);
         statusTimeout = $timeout(function () {
-          this.saveError = true;
-          this.syncTakingTooLong = false;
           this.showErrorStatus();
         }.bind(this), 200);
       }
@@ -34241,6 +38467,9 @@ if (!Array.prototype.includes) {
   };
 
   this.showAllChangesSavedStatus = function () {
+    this.saveError = false;
+    this.syncTakingTooLong = false;
+
     var status = "All changes saved";
     if (authManager.offline()) {
       status += " (offline)";
@@ -34249,7 +38478,9 @@ if (!Array.prototype.includes) {
   };
 
   this.showErrorStatus = function () {
-    this.noteStatus = $sce.trustAsHtml("Error syncing<br>(changes saved offline)");
+    this.saveError = true;
+    this.syncTakingTooLong = false;
+    this.noteStatus = $sce.trustAsHtml("<span class='error bold'>Sync Unreachable</span><br>All changes saved offline");
   };
 
   this.contentChanged = function () {
@@ -34289,19 +38520,16 @@ if (!Array.prototype.includes) {
 
   this.togglePin = function () {
     this.note.setAppDataItem("pinned", !this.note.pinned);
-    this.note.setDirty(true);
     this.changesMade();
   };
 
   this.toggleLockNote = function () {
     this.note.setAppDataItem("locked", !this.note.locked);
-    this.note.setDirty(true);
     this.changesMade();
   };
 
   this.toggleArchiveNote = function () {
     this.note.setAppDataItem("archived", !this.note.archived);
-    this.note.setDirty(true);
     this.changesMade(true);
     $rootScope.$broadcast("noteArchived");
   };
@@ -34663,6 +38891,15 @@ if (!Array.prototype.includes) {
 }]).controller('FooterCtrl', ['$rootScope', 'authManager', 'modelManager', '$timeout', 'dbManager', 'syncManager', 'storageManager', 'passcodeManager', 'componentManager', 'singletonManager', 'nativeExtManager', function ($rootScope, authManager, modelManager, $timeout, dbManager, syncManager, storageManager, passcodeManager, componentManager, singletonManager, nativeExtManager) {
   var _this9 = this;
 
+  this.securityUpdateAvailable = authManager.checkForSecurityUpdate();
+  $rootScope.$on("security-update-status-changed", function () {
+    _this9.securityUpdateAvailable = authManager.securityUpdateAvailable;
+  });
+
+  this.openSecurityUpdate = function () {
+    authManager.presentPasswordWizard("upgrade-security");
+  };
+
   $rootScope.$on("reload-ext-data", function () {
     if (_this9.reloadInProgress) {
       return;
@@ -34866,7 +39103,8 @@ if (!Array.prototype.includes) {
 
   function load() {
     // pass keys to storageManager to decrypt storage
-    storageManager.setKeys(passcodeManager.keys());
+    // Update: Wait, why? passcodeManager already handles this.
+    // storageManager.setKeys(passcodeManager.keys());
 
     openDatabase();
     // Retrieve local data and begin sycing timer
@@ -35191,7 +39429,7 @@ if (!Array.prototype.includes) {
         });
       }
     } else {
-      authManager.login(server, email, pw, false, {}, function (response) {
+      authManager.login(server, email, pw, false, false, {}, function (response) {
         window.location.reload();
       });
     }
@@ -35204,7 +39442,7 @@ if (!Array.prototype.includes) {
 ;
 var LockScreen = function () {
   function LockScreen() {
-    _classCallCheck(this, LockScreen);
+    (0, _classCallCheck3.default)(this, LockScreen);
 
     this.restrict = "E";
     this.templateUrl = "lock-screen.html";
@@ -35213,7 +39451,7 @@ var LockScreen = function () {
     };
   }
 
-  _createClass(LockScreen, [{
+  (0, _createClass3.default)(LockScreen, [{
     key: 'controller',
     value: ['$scope', 'passcodeManager', 'authManager', 'syncManager', function controller($scope, passcodeManager, authManager, syncManager) {
       'ngInject';
@@ -35247,7 +39485,6 @@ var LockScreen = function () {
       };
     }]
   }]);
-
   return LockScreen;
 }();
 
@@ -35298,7 +39535,14 @@ angular.module('app').directive('lockScreen', function () {
     var _this12 = this;
 
     var prevSortValue = this.sortBy;
+
     this.sortBy = authManager.getUserPrefValue("sortBy", "created_at");
+
+    if (this.sortBy == "updated_at") {
+      // use client_updated_at instead
+      this.sortBy = "client_updated_at";
+    }
+
     if (prevSortValue && prevSortValue != this.sortBy) {
       $timeout(function () {
         _this12.selectFirstNote();
@@ -35378,7 +39622,7 @@ angular.module('app').directive('lockScreen', function () {
     var base = "";
     if (this.sortBy == "created_at") {
       base += " Date Added";
-    } else if (this.sortBy == "updated_at") {
+    } else if (this.sortBy == "client_updated_at") {
       base += " Date Modifed";
     } else if (this.sortBy == "title") {
       base += " Title";
@@ -35538,7 +39782,7 @@ angular.module('app').directive('lockScreen', function () {
   };
 
   this.selectedSortByUpdated = function () {
-    this.setSortBy("updated_at");
+    this.setSortBy("client_updated_at");
     this.sortDescending = true;
   };
 
@@ -35734,19 +39978,18 @@ var dateFormatter;
 var Item = function () {
   function Item() {
     var json_obj = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-    _classCallCheck(this, Item);
+    (0, _classCallCheck3.default)(this, Item);
 
     this.appData = {};
     this.updateFromJSON(json_obj);
     this.observers = [];
 
     if (!this.uuid) {
-      this.uuid = SFJS.crypto.generateUUID();
+      this.uuid = SFJS.crypto.generateUUIDSync();
     }
   }
 
-  _createClass(Item, [{
+  (0, _createClass3.default)(Item, [{
     key: 'updateFromJSON',
     value: function updateFromJSON(json) {
       _.merge(this, json);
@@ -35758,6 +40001,9 @@ var Item = function () {
         this.created_at = new Date();
         this.updated_at = new Date();
       }
+
+      // Allows the getter to be re-invoked
+      this._client_updated_at = null;
 
       if (json.content) {
         this.mapContentToLocalProperties(this.contentObject);
@@ -35784,7 +40030,7 @@ var Item = function () {
     }
   }, {
     key: 'setDirty',
-    value: function setDirty(dirty) {
+    value: function setDirty(dirty, dontUpdateClientDate) {
       this.dirty = dirty;
 
       // Allows the syncManager to check if an item has been marked dirty after a sync has been started
@@ -35799,15 +40045,23 @@ var Item = function () {
         this.dirtyCount = 0;
       }
 
+      if (dirty && !dontUpdateClientDate) {
+        // Set the client modified date to now if marking the item as dirty
+        this.client_updated_at = new Date();
+      } else if (!this.hasRawClientUpdatedAtValue()) {
+        // copy updated_at
+        this.client_updated_at = new Date(this.updated_at);
+      }
+
       if (dirty) {
         this.notifyObserversOfChange();
       }
     }
   }, {
     key: 'markAllReferencesDirty',
-    value: function markAllReferencesDirty() {
+    value: function markAllReferencesDirty(dontUpdateClientDate) {
       this.allReferencedObjects().forEach(function (reference) {
-        reference.setDirty(true);
+        reference.setDirty(true, dontUpdateClientDate);
       });
     }
   }, {
@@ -35962,6 +40216,11 @@ var Item = function () {
       return this.getDomainDataItem(key, AppDomain);
     }
   }, {
+    key: 'hasRawClientUpdatedAtValue',
+    value: function hasRawClientUpdatedAtValue() {
+      return this.getAppDataItem("client_updated_at") != null;
+    }
+  }, {
     key: 'keysToIgnoreWhenCheckingContentEquality',
 
 
@@ -36022,7 +40281,7 @@ var Item = function () {
   }, {
     key: 'updatedAtString',
     value: function updatedAtString() {
-      return this.dateToLocalizedString(this.updated_at);
+      return this.dateToLocalizedString(this.client_updated_at);
     }
   }, {
     key: 'dateToLocalizedString',
@@ -36054,7 +40313,7 @@ var Item = function () {
         return {};
       }
 
-      if (this.content !== null && _typeof(this.content) === 'object') {
+      if (this.content !== null && (0, _typeof3.default)(this.content) === 'object') {
         // this is the case when mapping localStorage content, in which case the content is already parsed
         return this.content;
       }
@@ -36081,6 +40340,24 @@ var Item = function () {
     get: function get() {
       return this.getAppDataItem("locked");
     }
+  }, {
+    key: 'client_updated_at',
+    get: function get() {
+      if (!this._client_updated_at) {
+        var saved = this.getAppDataItem("client_updated_at");
+        if (saved) {
+          this._client_updated_at = new Date(saved);
+        } else {
+          this._client_updated_at = new Date(this.updated_at);
+        }
+      }
+      return this._client_updated_at;
+    },
+    set: function set(date) {
+      this._client_updated_at = date;
+
+      this.setAppDataItem("client_updated_at", date);
+    }
   }], [{
     key: 'sortItemsByDate',
     value: function sortItemsByDate(items) {
@@ -36089,30 +40366,28 @@ var Item = function () {
       });
     }
   }]);
-
   return Item;
 }();
 
 ;
 var Mfa = function (_Item) {
-  _inherits(Mfa, _Item);
+  (0, _inherits3.default)(Mfa, _Item);
 
   function Mfa(json_obj) {
-    _classCallCheck(this, Mfa);
-
-    return _possibleConstructorReturn(this, (Mfa.__proto__ || Object.getPrototypeOf(Mfa)).call(this, json_obj));
+    (0, _classCallCheck3.default)(this, Mfa);
+    return (0, _possibleConstructorReturn3.default)(this, (Mfa.__proto__ || Object.getPrototypeOf(Mfa)).call(this, json_obj));
   }
 
-  _createClass(Mfa, [{
+  (0, _createClass3.default)(Mfa, [{
     key: 'mapContentToLocalProperties',
     value: function mapContentToLocalProperties(content) {
-      _get(Mfa.prototype.__proto__ || Object.getPrototypeOf(Mfa.prototype), 'mapContentToLocalProperties', this).call(this, content);
+      (0, _get3.default)(Mfa.prototype.__proto__ || Object.getPrototypeOf(Mfa.prototype), 'mapContentToLocalProperties', this).call(this, content);
       this.serverContent = content;
     }
   }, {
     key: 'structureParams',
     value: function structureParams() {
-      return _.merge(this.serverContent, _get(Mfa.prototype.__proto__ || Object.getPrototypeOf(Mfa.prototype), 'structureParams', this).call(this));
+      return _.merge(this.serverContent, (0, _get3.default)(Mfa.prototype.__proto__ || Object.getPrototypeOf(Mfa.prototype), 'structureParams', this).call(this));
     }
   }, {
     key: 'toJSON',
@@ -36130,24 +40405,22 @@ var Mfa = function (_Item) {
       return "SF|MFA";
     }
   }]);
-
   return Mfa;
 }(Item);
 
 ;
 var ServerExtension = function (_Item2) {
-  _inherits(ServerExtension, _Item2);
+  (0, _inherits3.default)(ServerExtension, _Item2);
 
   function ServerExtension(json_obj) {
-    _classCallCheck(this, ServerExtension);
-
-    return _possibleConstructorReturn(this, (ServerExtension.__proto__ || Object.getPrototypeOf(ServerExtension)).call(this, json_obj));
+    (0, _classCallCheck3.default)(this, ServerExtension);
+    return (0, _possibleConstructorReturn3.default)(this, (ServerExtension.__proto__ || Object.getPrototypeOf(ServerExtension)).call(this, json_obj));
   }
 
-  _createClass(ServerExtension, [{
+  (0, _createClass3.default)(ServerExtension, [{
     key: 'mapContentToLocalProperties',
     value: function mapContentToLocalProperties(content) {
-      _get(ServerExtension.prototype.__proto__ || Object.getPrototypeOf(ServerExtension.prototype), 'mapContentToLocalProperties', this).call(this, content);
+      (0, _get3.default)(ServerExtension.prototype.__proto__ || Object.getPrototypeOf(ServerExtension.prototype), 'mapContentToLocalProperties', this).call(this, content);
       this.url = content.url;
     }
   }, {
@@ -36157,13 +40430,13 @@ var ServerExtension = function (_Item2) {
       // The bug would not parse the JSON behind the base64 string and thus saved data in an invalid format.
       // This is the line: https://github.com/standardnotes/web/commit/1ad0bf73d8e995b7588854f1b1e4e4a02303a42f#diff-15753bac364782a3a5876032bcdbf99aR76
       // We'll remedy this for affected users by trying to parse the content string
-      if (_typeof(this.content) !== 'object') {
+      if ((0, _typeof3.default)(this.content) !== 'object') {
         try {
           this.content = JSON.parse(this.content);
         } catch (e) {}
       }
       var params = this.content || {};
-      _.merge(params, _get(ServerExtension.prototype.__proto__ || Object.getPrototypeOf(ServerExtension.prototype), 'structureParams', this).call(this));
+      _.merge(params, (0, _get3.default)(ServerExtension.prototype.__proto__ || Object.getPrototypeOf(ServerExtension.prototype), 'structureParams', this).call(this));
       return params;
     }
   }, {
@@ -36182,22 +40455,21 @@ var ServerExtension = function (_Item2) {
       return "SF|Extension";
     }
   }]);
-
   return ServerExtension;
 }(Item);
 
 ;
 var Component = function (_Item3) {
-  _inherits(Component, _Item3);
+  (0, _inherits3.default)(Component, _Item3);
 
   function Component(json_obj) {
-    _classCallCheck(this, Component);
+    (0, _classCallCheck3.default)(this, Component);
 
     // If making a copy of an existing component (usually during sign in if you have a component active in the session),
     // which may have window set, you may get a cross-origin exception since you'll be trying to copy the window. So we clear it here.
     json_obj.window = null;
 
-    var _this17 = _possibleConstructorReturn(this, (Component.__proto__ || Object.getPrototypeOf(Component)).call(this, json_obj));
+    var _this17 = (0, _possibleConstructorReturn3.default)(this, (Component.__proto__ || Object.getPrototypeOf(Component)).call(this, json_obj));
 
     if (!_this17.componentData) {
       _this17.componentData = {};
@@ -36213,10 +40485,10 @@ var Component = function (_Item3) {
     return _this17;
   }
 
-  _createClass(Component, [{
+  (0, _createClass3.default)(Component, [{
     key: 'mapContentToLocalProperties',
     value: function mapContentToLocalProperties(content) {
-      _get(Component.prototype.__proto__ || Object.getPrototypeOf(Component.prototype), 'mapContentToLocalProperties', this).call(this, content);
+      (0, _get3.default)(Component.prototype.__proto__ || Object.getPrototypeOf(Component.prototype), 'mapContentToLocalProperties', this).call(this, content);
       /* Legacy */
       this.url = content.url || content.hosted_url;
       /* New */
@@ -36255,7 +40527,7 @@ var Component = function (_Item3) {
   }, {
     key: 'handleDeletedContent',
     value: function handleDeletedContent() {
-      _get(Component.prototype.__proto__ || Object.getPrototypeOf(Component.prototype), 'handleDeletedContent', this).call(this);
+      (0, _get3.default)(Component.prototype.__proto__ || Object.getPrototypeOf(Component.prototype), 'handleDeletedContent', this).call(this);
 
       this.active = false;
     }
@@ -36279,7 +40551,7 @@ var Component = function (_Item3) {
         associatedItemIds: this.associatedItemIds
       };
 
-      _.merge(params, _get(Component.prototype.__proto__ || Object.getPrototypeOf(Component.prototype), 'structureParams', this).call(this));
+      _.merge(params, (0, _get3.default)(Component.prototype.__proto__ || Object.getPrototypeOf(Component.prototype), 'structureParams', this).call(this));
       return params;
     }
   }, {
@@ -36315,7 +40587,7 @@ var Component = function (_Item3) {
   }, {
     key: 'keysToIgnoreWhenCheckingContentEquality',
     value: function keysToIgnoreWhenCheckingContentEquality() {
-      return ["active"].concat(_get(Component.prototype.__proto__ || Object.getPrototypeOf(Component.prototype), 'keysToIgnoreWhenCheckingContentEquality', this).call(this));
+      return ["active"].concat((0, _get3.default)(Component.prototype.__proto__ || Object.getPrototypeOf(Component.prototype), 'keysToIgnoreWhenCheckingContentEquality', this).call(this));
     }
 
     /*
@@ -36354,18 +40626,17 @@ var Component = function (_Item3) {
       return ["editor-editor"];
     }
   }]);
-
   return Component;
 }(Item);
 
 ;
 var Editor = function (_Item4) {
-  _inherits(Editor, _Item4);
+  (0, _inherits3.default)(Editor, _Item4);
 
   function Editor(json_obj) {
-    _classCallCheck(this, Editor);
+    (0, _classCallCheck3.default)(this, Editor);
 
-    var _this18 = _possibleConstructorReturn(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, json_obj));
+    var _this18 = (0, _possibleConstructorReturn3.default)(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, json_obj));
 
     if (!_this18.notes) {
       _this18.notes = [];
@@ -36376,10 +40647,10 @@ var Editor = function (_Item4) {
     return _this18;
   }
 
-  _createClass(Editor, [{
+  (0, _createClass3.default)(Editor, [{
     key: 'mapContentToLocalProperties',
     value: function mapContentToLocalProperties(content) {
-      _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'mapContentToLocalProperties', this).call(this, content);
+      (0, _get3.default)(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'mapContentToLocalProperties', this).call(this, content);
       this.url = content.url;
       this.name = content.name;
       this.data = content.data || {};
@@ -36397,7 +40668,7 @@ var Editor = function (_Item4) {
         systemEditor: this.systemEditor
       };
 
-      _.merge(params, _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'structureParams', this).call(this));
+      _.merge(params, (0, _get3.default)(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'structureParams', this).call(this));
       return params;
     }
   }, {
@@ -36417,7 +40688,7 @@ var Editor = function (_Item4) {
           this.notes.push(item);
         }
       }
-      _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'addItemAsRelationship', this).call(this, item);
+      (0, _get3.default)(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'addItemAsRelationship', this).call(this, item);
     }
   }, {
     key: 'removeItemAsRelationship',
@@ -36425,18 +40696,18 @@ var Editor = function (_Item4) {
       if (item.content_type == "Note") {
         _.pull(this.notes, item);
       }
-      _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'removeItemAsRelationship', this).call(this, item);
+      (0, _get3.default)(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'removeItemAsRelationship', this).call(this, item);
     }
   }, {
     key: 'removeAndDirtyAllRelationships',
     value: function removeAndDirtyAllRelationships() {
-      _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'removeAndDirtyAllRelationships', this).call(this);
+      (0, _get3.default)(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'removeAndDirtyAllRelationships', this).call(this);
       this.notes = [];
     }
   }, {
     key: 'removeReferencesNotPresentIn',
     value: function removeReferencesNotPresentIn(references) {
-      _get(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'removeReferencesNotPresentIn', this).call(this, references);
+      (0, _get3.default)(Editor.prototype.__proto__ || Object.getPrototypeOf(Editor.prototype), 'removeReferencesNotPresentIn', this).call(this, references);
 
       var uuids = references.map(function (ref) {
         return ref.uuid;
@@ -36486,13 +40757,12 @@ var Editor = function (_Item4) {
       return "SN|Editor";
     }
   }]);
-
   return Editor;
 }(Item);
 
 ;
 var Action = function Action(json) {
-  _classCallCheck(this, Action);
+  (0, _classCallCheck3.default)(this, Action);
 
   _.merge(this, json);
   this.running = false; // in case running=true was synced with server since model is uploaded nondiscriminatory
@@ -36504,12 +40774,12 @@ var Action = function Action(json) {
 };
 
 var Extension = function (_Component) {
-  _inherits(Extension, _Component);
+  (0, _inherits3.default)(Extension, _Component);
 
   function Extension(json) {
-    _classCallCheck(this, Extension);
+    (0, _classCallCheck3.default)(this, Extension);
 
-    var _this19 = _possibleConstructorReturn(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
+    var _this19 = (0, _possibleConstructorReturn3.default)(this, (Extension.__proto__ || Object.getPrototypeOf(Extension)).call(this, json));
 
     if (json.actions) {
       _this19.actions = json.actions.map(function (action) {
@@ -36523,7 +40793,7 @@ var Extension = function (_Component) {
     return _this19;
   }
 
-  _createClass(Extension, [{
+  (0, _createClass3.default)(Extension, [{
     key: 'actionsWithContextForItem',
     value: function actionsWithContextForItem(item) {
       return this.actions.filter(function (action) {
@@ -36533,7 +40803,7 @@ var Extension = function (_Component) {
   }, {
     key: 'mapContentToLocalProperties',
     value: function mapContentToLocalProperties(content) {
-      _get(Extension.prototype.__proto__ || Object.getPrototypeOf(Extension.prototype), 'mapContentToLocalProperties', this).call(this, content);
+      (0, _get3.default)(Extension.prototype.__proto__ || Object.getPrototypeOf(Extension.prototype), 'mapContentToLocalProperties', this).call(this, content);
       this.description = content.description;
 
       this.supported_types = content.supported_types;
@@ -36554,7 +40824,7 @@ var Extension = function (_Component) {
         supported_types: this.supported_types
       };
 
-      _.merge(params, _get(Extension.prototype.__proto__ || Object.getPrototypeOf(Extension.prototype), 'structureParams', this).call(this));
+      _.merge(params, (0, _get3.default)(Extension.prototype.__proto__ || Object.getPrototypeOf(Extension.prototype), 'structureParams', this).call(this));
       return params;
     }
   }, {
@@ -36563,18 +40833,17 @@ var Extension = function (_Component) {
       return "Extension";
     }
   }]);
-
   return Extension;
 }(Component);
 
 ;
 var Note = function (_Item5) {
-  _inherits(Note, _Item5);
+  (0, _inherits3.default)(Note, _Item5);
 
   function Note(json_obj) {
-    _classCallCheck(this, Note);
+    (0, _classCallCheck3.default)(this, Note);
 
-    var _this20 = _possibleConstructorReturn(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
+    var _this20 = (0, _possibleConstructorReturn3.default)(this, (Note.__proto__ || Object.getPrototypeOf(Note)).call(this, json_obj));
 
     if (!_this20.text) {
       // Some external editors can't handle a null value for text.
@@ -36589,10 +40858,10 @@ var Note = function (_Item5) {
     return _this20;
   }
 
-  _createClass(Note, [{
+  (0, _createClass3.default)(Note, [{
     key: 'mapContentToLocalProperties',
     value: function mapContentToLocalProperties(content) {
-      _get(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'mapContentToLocalProperties', this).call(this, content);
+      (0, _get3.default)(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'mapContentToLocalProperties', this).call(this, content);
       this.title = content.title;
       this.text = content.text;
     }
@@ -36613,7 +40882,7 @@ var Note = function (_Item5) {
         text: this.text
       };
 
-      _.merge(params, _get(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'structureParams', this).call(this));
+      _.merge(params, (0, _get3.default)(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'structureParams', this).call(this));
       return params;
     }
   }, {
@@ -36626,7 +40895,7 @@ var Note = function (_Item5) {
           this.tags.push(item);
         }
       }
-      _get(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'addItemAsRelationship', this).call(this, item);
+      (0, _get3.default)(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'addItemAsRelationship', this).call(this, item);
     }
   }, {
     key: 'removeItemAsRelationship',
@@ -36636,7 +40905,7 @@ var Note = function (_Item5) {
       if (item.content_type == "Tag") {
         _.pull(this.tags, item);
       }
-      _get(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'removeItemAsRelationship', this).call(this, item);
+      (0, _get3.default)(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'removeItemAsRelationship', this).call(this, item);
     }
   }, {
     key: 'removeAndDirtyAllRelationships',
@@ -36654,7 +40923,7 @@ var Note = function (_Item5) {
     value: function removeReferencesNotPresentIn(references) {
       this.savedTagsString = null;
 
-      _get(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'removeReferencesNotPresentIn', this).call(this, references);
+      (0, _get3.default)(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'removeReferencesNotPresentIn', this).call(this, references);
 
       var uuids = references.map(function (ref) {
         return ref.uuid;
@@ -36672,7 +40941,7 @@ var Note = function (_Item5) {
       this.tags.forEach(function (tag) {
         _.pull(tag.notes, this);
       }.bind(this));
-      _get(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'isBeingRemovedLocally', this).call(this);
+      (0, _get3.default)(Note.prototype.__proto__ || Object.getPrototypeOf(Note.prototype), 'isBeingRemovedLocally', this).call(this);
     }
   }, {
     key: 'informReferencesOfUUIDChange',
@@ -36743,18 +41012,17 @@ var Note = function (_Item5) {
       return filtered;
     }
   }]);
-
   return Note;
 }(Item);
 
 ;
 var Tag = function (_Item6) {
-  _inherits(Tag, _Item6);
+  (0, _inherits3.default)(Tag, _Item6);
 
   function Tag(json_obj) {
-    _classCallCheck(this, Tag);
+    (0, _classCallCheck3.default)(this, Tag);
 
-    var _this21 = _possibleConstructorReturn(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
+    var _this21 = (0, _possibleConstructorReturn3.default)(this, (Tag.__proto__ || Object.getPrototypeOf(Tag)).call(this, json_obj));
 
     if (!_this21.notes) {
       _this21.notes = [];
@@ -36762,10 +41030,10 @@ var Tag = function (_Item6) {
     return _this21;
   }
 
-  _createClass(Tag, [{
+  (0, _createClass3.default)(Tag, [{
     key: 'mapContentToLocalProperties',
     value: function mapContentToLocalProperties(content) {
-      _get(Tag.prototype.__proto__ || Object.getPrototypeOf(Tag.prototype), 'mapContentToLocalProperties', this).call(this, content);
+      (0, _get3.default)(Tag.prototype.__proto__ || Object.getPrototypeOf(Tag.prototype), 'mapContentToLocalProperties', this).call(this, content);
       this.title = content.title;
     }
   }, {
@@ -36784,7 +41052,7 @@ var Tag = function (_Item6) {
         title: this.title
       };
 
-      _.merge(params, _get(Tag.prototype.__proto__ || Object.getPrototypeOf(Tag.prototype), 'structureParams', this).call(this));
+      _.merge(params, (0, _get3.default)(Tag.prototype.__proto__ || Object.getPrototypeOf(Tag.prototype), 'structureParams', this).call(this));
       return params;
     }
   }, {
@@ -36795,7 +41063,7 @@ var Tag = function (_Item6) {
           this.notes.unshift(item);
         }
       }
-      _get(Tag.prototype.__proto__ || Object.getPrototypeOf(Tag.prototype), 'addItemAsRelationship', this).call(this, item);
+      (0, _get3.default)(Tag.prototype.__proto__ || Object.getPrototypeOf(Tag.prototype), 'addItemAsRelationship', this).call(this, item);
     }
   }, {
     key: 'removeItemAsRelationship',
@@ -36803,7 +41071,7 @@ var Tag = function (_Item6) {
       if (item.content_type == "Note") {
         _.pull(this.notes, item);
       }
-      _get(Tag.prototype.__proto__ || Object.getPrototypeOf(Tag.prototype), 'removeItemAsRelationship', this).call(this, item);
+      (0, _get3.default)(Tag.prototype.__proto__ || Object.getPrototypeOf(Tag.prototype), 'removeItemAsRelationship', this).call(this, item);
     }
   }, {
     key: 'removeAndDirtyAllRelationships',
@@ -36834,7 +41102,7 @@ var Tag = function (_Item6) {
       this.notes.forEach(function (note) {
         _.pull(note.tags, this);
       }.bind(this));
-      _get(Tag.prototype.__proto__ || Object.getPrototypeOf(Tag.prototype), 'isBeingRemovedLocally', this).call(this);
+      (0, _get3.default)(Tag.prototype.__proto__ || Object.getPrototypeOf(Tag.prototype), 'isBeingRemovedLocally', this).call(this);
     }
   }, {
     key: 'informReferencesOfUUIDChange',
@@ -36885,47 +41153,44 @@ var Tag = function (_Item6) {
       }).join(" ");
     }
   }]);
-
   return Tag;
 }(Item);
 
 ;
 var Theme = function (_Component2) {
-  _inherits(Theme, _Component2);
+  (0, _inherits3.default)(Theme, _Component2);
 
   function Theme(json_obj) {
-    _classCallCheck(this, Theme);
+    (0, _classCallCheck3.default)(this, Theme);
 
-    var _this22 = _possibleConstructorReturn(this, (Theme.__proto__ || Object.getPrototypeOf(Theme)).call(this, json_obj));
+    var _this22 = (0, _possibleConstructorReturn3.default)(this, (Theme.__proto__ || Object.getPrototypeOf(Theme)).call(this, json_obj));
 
     _this22.area = "themes";
     return _this22;
   }
 
-  _createClass(Theme, [{
+  (0, _createClass3.default)(Theme, [{
     key: 'content_type',
     get: function get() {
       return "SN|Theme";
     }
   }]);
-
   return Theme;
 }(Component);
 
 ;
 var EncryptedStorage = function (_Item7) {
-  _inherits(EncryptedStorage, _Item7);
+  (0, _inherits3.default)(EncryptedStorage, _Item7);
 
   function EncryptedStorage(json_obj) {
-    _classCallCheck(this, EncryptedStorage);
-
-    return _possibleConstructorReturn(this, (EncryptedStorage.__proto__ || Object.getPrototypeOf(EncryptedStorage)).call(this, json_obj));
+    (0, _classCallCheck3.default)(this, EncryptedStorage);
+    return (0, _possibleConstructorReturn3.default)(this, (EncryptedStorage.__proto__ || Object.getPrototypeOf(EncryptedStorage)).call(this, json_obj));
   }
 
-  _createClass(EncryptedStorage, [{
+  (0, _createClass3.default)(EncryptedStorage, [{
     key: 'mapContentToLocalProperties',
     value: function mapContentToLocalProperties(content) {
-      _get(EncryptedStorage.prototype.__proto__ || Object.getPrototypeOf(EncryptedStorage.prototype), 'mapContentToLocalProperties', this).call(this, content);
+      (0, _get3.default)(EncryptedStorage.prototype.__proto__ || Object.getPrototypeOf(EncryptedStorage.prototype), 'mapContentToLocalProperties', this).call(this, content);
       this.storage = content.storage;
     }
   }, {
@@ -36935,7 +41200,7 @@ var EncryptedStorage = function (_Item7) {
         storage: this.storage
       };
 
-      _.merge(params, _get(EncryptedStorage.prototype.__proto__ || Object.getPrototypeOf(EncryptedStorage.prototype), 'structureParams', this).call(this));
+      _.merge(params, (0, _get3.default)(EncryptedStorage.prototype.__proto__ || Object.getPrototypeOf(EncryptedStorage.prototype), 'structureParams', this).call(this));
       return params;
     }
   }, {
@@ -36949,103 +41214,256 @@ var EncryptedStorage = function (_Item7) {
       return "SN|EncryptedStorage";
     }
   }]);
-
   return EncryptedStorage;
 }(Item);
 
 ;
 var ItemParams = function () {
   function ItemParams(item, keys, version) {
-    _classCallCheck(this, ItemParams);
+    (0, _classCallCheck3.default)(this, ItemParams);
 
     this.item = item;
     this.keys = keys;
-    this.version = version || "002";
+    this.version = version || SFJS.version();
   }
 
-  _createClass(ItemParams, [{
+  (0, _createClass3.default)(ItemParams, [{
     key: 'paramsForExportFile',
-    value: function paramsForExportFile(includeDeleted) {
-      this.additionalFields = ["updated_at"];
-      this.forExportFile = true;
-      if (includeDeleted) {
-        return this.__params();
-      } else {
-        return _.omit(this.__params(), ["deleted"]);
+    value: function () {
+      var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(includeDeleted) {
+        var result;
+        return _regenerator2.default.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                this.additionalFields = ["updated_at"];
+                this.forExportFile = true;
+
+                if (!includeDeleted) {
+                  _context.next = 6;
+                  break;
+                }
+
+                return _context.abrupt('return', this.__params());
+
+              case 6:
+                _context.next = 8;
+                return this.__params();
+
+              case 8:
+                result = _context.sent;
+                return _context.abrupt('return', _.omit(result, ["deleted"]));
+
+              case 10:
+              case 'end':
+                return _context.stop();
+            }
+          }
+        }, _callee, this);
+      }));
+
+      function paramsForExportFile(_x4) {
+        return _ref.apply(this, arguments);
       }
-    }
+
+      return paramsForExportFile;
+    }()
   }, {
     key: 'paramsForExtension',
-    value: function paramsForExtension() {
-      return this.paramsForExportFile();
-    }
+    value: function () {
+      var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2() {
+        return _regenerator2.default.wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                return _context2.abrupt('return', this.paramsForExportFile());
+
+              case 1:
+              case 'end':
+                return _context2.stop();
+            }
+          }
+        }, _callee2, this);
+      }));
+
+      function paramsForExtension() {
+        return _ref2.apply(this, arguments);
+      }
+
+      return paramsForExtension;
+    }()
   }, {
     key: 'paramsForLocalStorage',
-    value: function paramsForLocalStorage() {
-      this.additionalFields = ["updated_at", "dirty", "errorDecrypting"];
-      this.forExportFile = true;
-      return this.__params();
-    }
+    value: function () {
+      var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3() {
+        return _regenerator2.default.wrap(function _callee3$(_context3) {
+          while (1) {
+            switch (_context3.prev = _context3.next) {
+              case 0:
+                this.additionalFields = ["updated_at", "dirty", "errorDecrypting"];
+                this.forExportFile = true;
+                return _context3.abrupt('return', this.__params());
+
+              case 3:
+              case 'end':
+                return _context3.stop();
+            }
+          }
+        }, _callee3, this);
+      }));
+
+      function paramsForLocalStorage() {
+        return _ref3.apply(this, arguments);
+      }
+
+      return paramsForLocalStorage;
+    }()
   }, {
     key: 'paramsForSync',
-    value: function paramsForSync() {
-      return this.__params();
-    }
+    value: function () {
+      var _ref4 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4() {
+        return _regenerator2.default.wrap(function _callee4$(_context4) {
+          while (1) {
+            switch (_context4.prev = _context4.next) {
+              case 0:
+                return _context4.abrupt('return', this.__params());
+
+              case 1:
+              case 'end':
+                return _context4.stop();
+            }
+          }
+        }, _callee4, this);
+      }));
+
+      function paramsForSync() {
+        return _ref4.apply(this, arguments);
+      }
+
+      return paramsForSync;
+    }()
   }, {
     key: '__params',
-    value: function __params() {
+    value: function () {
+      var _ref5 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee5() {
+        var params, doNotEncrypt, encryptedParams;
+        return _regenerator2.default.wrap(function _callee5$(_context5) {
+          while (1) {
+            switch (_context5.prev = _context5.next) {
+              case 0:
 
-      console.assert(!this.item.dummy, "Item is dummy, should not have gotten here.", this.item.dummy);
+                console.assert(!this.item.dummy, "Item is dummy, should not have gotten here.", this.item.dummy);
 
-      var params = { uuid: this.item.uuid, content_type: this.item.content_type, deleted: this.item.deleted, created_at: this.item.created_at };
-      if (!this.item.errorDecrypting) {
-        // Items should always be encrypted for export files. Only respect item.doNotEncrypt for remote sync params;
-        var doNotEncrypt = this.item.doNotEncrypt() && !this.forExportFile;
-        if (this.keys && !doNotEncrypt) {
-          var encryptedParams = SFItemTransformer.encryptItem(this.item, this.keys, this.version);
-          _.merge(params, encryptedParams);
+                params = { uuid: this.item.uuid, content_type: this.item.content_type, deleted: this.item.deleted, created_at: this.item.created_at };
 
-          if (this.version !== "001") {
-            params.auth_hash = null;
+                if (this.item.errorDecrypting) {
+                  _context5.next = 24;
+                  break;
+                }
+
+                // Items should always be encrypted for export files. Only respect item.doNotEncrypt for remote sync params.
+                doNotEncrypt = this.item.doNotEncrypt() && !this.forExportFile;
+
+                if (!(this.keys && !doNotEncrypt)) {
+                  _context5.next = 12;
+                  break;
+                }
+
+                _context5.next = 7;
+                return SFJS.itemTransformer.encryptItem(this.item, this.keys, this.version);
+
+              case 7:
+                encryptedParams = _context5.sent;
+
+                _.merge(params, encryptedParams);
+
+                if (this.version !== "001") {
+                  params.auth_hash = null;
+                }
+                _context5.next = 22;
+                break;
+
+              case 12:
+                if (!this.forExportFile) {
+                  _context5.next = 16;
+                  break;
+                }
+
+                _context5.t0 = this.item.createContentJSONFromProperties();
+                _context5.next = 20;
+                break;
+
+              case 16:
+                _context5.next = 18;
+                return SFJS.crypto.base64(JSON.stringify(this.item.createContentJSONFromProperties()));
+
+              case 18:
+                _context5.t1 = _context5.sent;
+                _context5.t0 = "000" + _context5.t1;
+
+              case 20:
+                params.content = _context5.t0;
+
+                if (!this.forExportFile) {
+                  params.enc_item_key = null;
+                  params.auth_hash = null;
+                }
+
+              case 22:
+                _context5.next = 27;
+                break;
+
+              case 24:
+                // Error decrypting, keep "content" and related fields as is (and do not try to encrypt, otherwise that would be undefined behavior)
+                params.content = this.item.content;
+                params.enc_item_key = this.item.enc_item_key;
+                params.auth_hash = this.item.auth_hash;
+
+              case 27:
+
+                if (this.additionalFields) {
+                  _.merge(params, _.pick(this.item, this.additionalFields));
+                }
+
+                return _context5.abrupt('return', params);
+
+              case 29:
+              case 'end':
+                return _context5.stop();
+            }
           }
-        } else {
-          params.content = this.forExportFile ? this.item.createContentJSONFromProperties() : "000" + SFJS.crypto.base64(JSON.stringify(this.item.createContentJSONFromProperties()));
-          if (!this.forExportFile) {
-            params.enc_item_key = null;
-            params.auth_hash = null;
-          }
-        }
-      } else {
-        // Error decrypting, keep "content" and related fields as is (and do not try to encrypt, otherwise that would be undefined behavior)
-        params.content = this.item.content;
-        params.enc_item_key = this.item.enc_item_key;
-        params.auth_hash = this.item.auth_hash;
+        }, _callee5, this);
+      }));
+
+      function __params() {
+        return _ref5.apply(this, arguments);
       }
 
-      if (this.additionalFields) {
-        _.merge(params, _.pick(this.item, this.additionalFields));
-      }
-
-      return params;
-    }
+      return __params;
+    }()
   }]);
-
   return ItemParams;
 }();
 
 ;
 var ActionsManager = function () {
-  ActionsManager.$inject = ['httpManager', 'modelManager', 'authManager', 'syncManager'];
-  function ActionsManager(httpManager, modelManager, authManager, syncManager) {
-    _classCallCheck(this, ActionsManager);
+  ActionsManager.$inject = ['httpManager', 'modelManager', 'authManager', 'syncManager', '$rootScope', '$compile', '$timeout'];
+  function ActionsManager(httpManager, modelManager, authManager, syncManager, $rootScope, $compile, $timeout) {
+    (0, _classCallCheck3.default)(this, ActionsManager);
 
     this.httpManager = httpManager;
     this.modelManager = modelManager;
     this.authManager = authManager;
     this.syncManager = syncManager;
+    this.$rootScope = $rootScope;
+    this.$compile = $compile;
+    this.$timeout = $timeout;
+
+    // Used when decrypting old items with new keys. This array is only kept in memory.
+    this.previousPasswords = [];
   }
 
-  _createClass(ActionsManager, [{
+  (0, _createClass3.default)(ActionsManager, [{
     key: 'extensionsInContextOfItem',
     value: function extensionsInContextOfItem(item) {
       return this.extensions.filter(function (ext) {
@@ -37091,124 +41509,328 @@ var ActionsManager = function () {
     }
   }, {
     key: 'executeAction',
-    value: function executeAction(action, extension, item, callback) {
+    value: function () {
+      var _ref6 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee7(action, extension, item, callback) {
+        var _this24 = this;
 
-      var customCallback = function customCallback(response) {
-        action.running = false;
-        callback(response);
-      };
+        var customCallback, decrypted, triedPasswords, handleResponseDecryption, win;
+        return _regenerator2.default.wrap(function _callee7$(_context7) {
+          while (1) {
+            switch (_context7.prev = _context7.next) {
+              case 0:
+                customCallback = function customCallback(response) {
+                  action.running = false;
+                  _this24.$timeout(function () {
+                    callback(response);
+                  });
+                };
 
-      action.running = true;
+                action.running = true;
 
-      var decrypted = action.access_type == "decrypted";
+                decrypted = action.access_type == "decrypted";
+                triedPasswords = [];
 
-      switch (action.verb) {
-        case "get":
-          {
+                handleResponseDecryption = function () {
+                  var _ref7 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee6(response, keys, merge) {
+                    var item, items, _iteratorNormalCompletion12, _didIteratorError12, _iteratorError12, _iterator12, _step12, mappedItem, _iteratorNormalCompletion13, _didIteratorError13, _iteratorError13, _iterator13, _step13, passwordCandidate, keyResults, success;
 
-            this.httpManager.getAbsolute(action.url, {}, function (response) {
-              action.error = false;
-              var items = response.items || [response.item];
-              SFItemTransformer.decryptMultipleItems(items, this.authManager.keys());
-              items = this.modelManager.mapResponseItemsToLocalModels(items, ModelManager.MappingSourceRemoteActionRetrieved);
-              var _iteratorNormalCompletion12 = true;
-              var _didIteratorError12 = false;
-              var _iteratorError12 = undefined;
+                    return _regenerator2.default.wrap(function _callee6$(_context6) {
+                      while (1) {
+                        switch (_context6.prev = _context6.next) {
+                          case 0:
+                            item = response.item;
+                            _context6.next = 3;
+                            return SFJS.itemTransformer.decryptItem(item, keys);
 
-              try {
-                for (var _iterator12 = items[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-                  var item = _step12.value;
+                          case 3:
+                            if (item.errorDecrypting) {
+                              _context6.next = 34;
+                              break;
+                            }
 
-                  item.setDirty(true);
-                }
-              } catch (err) {
-                _didIteratorError12 = true;
-                _iteratorError12 = err;
-              } finally {
-                try {
-                  if (!_iteratorNormalCompletion12 && _iterator12.return) {
-                    _iterator12.return();
-                  }
-                } finally {
-                  if (_didIteratorError12) {
-                    throw _iteratorError12;
-                  }
-                }
-              }
+                            if (!merge) {
+                              _context6.next = 29;
+                              break;
+                            }
 
-              this.syncManager.sync(null);
-              customCallback({ items: items });
-            }.bind(this), function (response) {
-              action.error = true;
-              customCallback(null);
-            });
+                            items = _this24.modelManager.mapResponseItemsToLocalModels([item], ModelManager.MappingSourceRemoteActionRetrieved);
+                            _iteratorNormalCompletion12 = true;
+                            _didIteratorError12 = false;
+                            _iteratorError12 = undefined;
+                            _context6.prev = 9;
 
-            break;
-          }
+                            for (_iterator12 = items[Symbol.iterator](); !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+                              mappedItem = _step12.value;
 
-        case "render":
-          {
+                              mappedItem.setDirty(true);
+                            }
+                            _context6.next = 17;
+                            break;
 
-            this.httpManager.getAbsolute(action.url, {}, function (response) {
-              action.error = false;
-              SFItemTransformer.decryptItem(response.item, this.authManager.keys());
-              var item = this.modelManager.createItem(response.item, true /* Dont notify observers */);
-              customCallback({ item: item });
-            }.bind(this), function (response) {
-              action.error = true;
-              customCallback(null);
-            });
+                          case 13:
+                            _context6.prev = 13;
+                            _context6.t0 = _context6['catch'](9);
+                            _didIteratorError12 = true;
+                            _iteratorError12 = _context6.t0;
 
-            break;
-          }
+                          case 17:
+                            _context6.prev = 17;
+                            _context6.prev = 18;
 
-        case "show":
-          {
-            var win = window.open(action.url, '_blank');
-            win.focus();
-            customCallback();
-            break;
-          }
+                            if (!_iteratorNormalCompletion12 && _iterator12.return) {
+                              _iterator12.return();
+                            }
 
-        case "post":
-          {
-            var params = {};
+                          case 20:
+                            _context6.prev = 20;
 
-            if (action.all) {
-              var items = this.modelManager.allItemsMatchingTypes(action.content_types);
-              params.items = items.map(function (item) {
-                var params = this.outgoingParamsForItem(item, extension, decrypted);
-                return params;
-              }.bind(this));
-            } else {
-              params.items = [this.outgoingParamsForItem(item, extension, decrypted)];
+                            if (!_didIteratorError12) {
+                              _context6.next = 23;
+                              break;
+                            }
+
+                            throw _iteratorError12;
+
+                          case 23:
+                            return _context6.finish(20);
+
+                          case 24:
+                            return _context6.finish(17);
+
+                          case 25:
+                            _this24.syncManager.sync(null);
+                            customCallback({ item: item });
+                            _context6.next = 31;
+                            break;
+
+                          case 29:
+                            item = _this24.modelManager.createItem(item, true /* Dont notify observers */);
+                            customCallback({ item: item });
+
+                          case 31:
+                            return _context6.abrupt('return', true);
+
+                          case 34:
+                            if (response.auth_params) {
+                              _context6.next = 37;
+                              break;
+                            }
+
+                            // In some cases revisions were missing auth params. Instruct the user to email us to get this remedied.
+                            alert("We were unable to decrypt this revision using your current keys, and this revision is missing metadata that would allow us to try different keys to decrypt it. This can likely be fixed with some manual intervention. Please email hello@standardnotes.org for assistance.");
+                            return _context6.abrupt('return');
+
+                          case 37:
+
+                            // Try previous passwords
+                            _iteratorNormalCompletion13 = true;
+                            _didIteratorError13 = false;
+                            _iteratorError13 = undefined;
+                            _context6.prev = 40;
+                            _iterator13 = _this24.previousPasswords[Symbol.iterator]();
+
+                          case 42:
+                            if (_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done) {
+                              _context6.next = 60;
+                              break;
+                            }
+
+                            passwordCandidate = _step13.value;
+
+                            if (!triedPasswords.includes(passwordCandidate)) {
+                              _context6.next = 46;
+                              break;
+                            }
+
+                            return _context6.abrupt('continue', 57);
+
+                          case 46:
+                            triedPasswords.push(passwordCandidate);
+
+                            _context6.next = 49;
+                            return SFJS.crypto.computeEncryptionKeysForUser(passwordCandidate, response.auth_params);
+
+                          case 49:
+                            keyResults = _context6.sent;
+
+                            if (keyResults) {
+                              _context6.next = 52;
+                              break;
+                            }
+
+                            return _context6.abrupt('continue', 57);
+
+                          case 52:
+                            _context6.next = 54;
+                            return handleResponseDecryption(response, keyResults, merge);
+
+                          case 54:
+                            success = _context6.sent;
+
+                            if (!success) {
+                              _context6.next = 57;
+                              break;
+                            }
+
+                            return _context6.abrupt('return', true);
+
+                          case 57:
+                            _iteratorNormalCompletion13 = true;
+                            _context6.next = 42;
+                            break;
+
+                          case 60:
+                            _context6.next = 66;
+                            break;
+
+                          case 62:
+                            _context6.prev = 62;
+                            _context6.t1 = _context6['catch'](40);
+                            _didIteratorError13 = true;
+                            _iteratorError13 = _context6.t1;
+
+                          case 66:
+                            _context6.prev = 66;
+                            _context6.prev = 67;
+
+                            if (!_iteratorNormalCompletion13 && _iterator13.return) {
+                              _iterator13.return();
+                            }
+
+                          case 69:
+                            _context6.prev = 69;
+
+                            if (!_didIteratorError13) {
+                              _context6.next = 72;
+                              break;
+                            }
+
+                            throw _iteratorError13;
+
+                          case 72:
+                            return _context6.finish(69);
+
+                          case 73:
+                            return _context6.finish(66);
+
+                          case 74:
+
+                            _this24.presentPasswordModal(function (password) {
+                              _this24.previousPasswords.push(password);
+                              handleResponseDecryption(response, keys, merge);
+                            });
+
+                            return _context6.abrupt('return', false);
+
+                          case 76:
+                          case 'end':
+                            return _context6.stop();
+                        }
+                      }
+                    }, _callee6, _this24, [[9, 13, 17, 25], [18,, 20, 24], [40, 62, 66, 74], [67,, 69, 73]]);
+                  }));
+
+                  return function handleResponseDecryption(_x9, _x10, _x11) {
+                    return _ref7.apply(this, arguments);
+                  };
+                }();
+
+                _context7.t0 = action.verb;
+                _context7.next = _context7.t0 === "get" ? 8 : _context7.t0 === "render" ? 10 : _context7.t0 === "show" ? 12 : _context7.t0 === "post" ? 16 : 18;
+                break;
+
+              case 8:
+                this.httpManager.getAbsolute(action.url, {}, function (response) {
+                  action.error = false;
+                  handleResponseDecryption(response, _this24.authManager.keys(), true);
+                }, function (response) {
+                  action.error = true;
+                  customCallback(null);
+                });
+                return _context7.abrupt('break', 18);
+
+              case 10:
+
+                this.httpManager.getAbsolute(action.url, {}, function (response) {
+                  action.error = false;
+                  handleResponseDecryption(response, _this24.authManager.keys(), false);
+                }, function (response) {
+                  action.error = true;
+                  customCallback(null);
+                });
+
+                return _context7.abrupt('break', 18);
+
+              case 12:
+                win = window.open(action.url, '_blank');
+
+                win.focus();
+                customCallback();
+                return _context7.abrupt('break', 18);
+
+              case 16:
+                this.outgoingParamsForItem(item, extension, decrypted).then(function (itemParams) {
+                  var params = {
+                    items: [itemParams] // Wrap it in an array
+                  };
+
+                  _this24.performPost(action, extension, params, function (response) {
+                    customCallback(response);
+                  });
+                });
+
+                return _context7.abrupt('break', 18);
+
+              case 18:
+
+                action.lastExecuted = new Date();
+
+              case 19:
+              case 'end':
+                return _context7.stop();
             }
-
-            this.performPost(action, extension, params, function (response) {
-              customCallback(response);
-            });
-
-            break;
           }
+        }, _callee7, this);
+      }));
 
-        default:
-          {}
+      function executeAction(_x5, _x6, _x7, _x8) {
+        return _ref6.apply(this, arguments);
       }
 
-      action.lastExecuted = new Date();
-    }
+      return executeAction;
+    }()
   }, {
     key: 'outgoingParamsForItem',
-    value: function outgoingParamsForItem(item, extension) {
-      var decrypted = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+    value: function () {
+      var _ref8 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee8(item, extension) {
+        var decrypted = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var keys, itemParams;
+        return _regenerator2.default.wrap(function _callee8$(_context8) {
+          while (1) {
+            switch (_context8.prev = _context8.next) {
+              case 0:
+                keys = this.authManager.keys();
 
-      var keys = this.authManager.keys();
-      if (decrypted) {
-        keys = null;
+                if (decrypted) {
+                  keys = null;
+                }
+                itemParams = new ItemParams(item, keys, this.authManager.protocolVersion());
+                return _context8.abrupt('return', itemParams.paramsForExtension());
+
+              case 4:
+              case 'end':
+                return _context8.stop();
+            }
+          }
+        }, _callee8, this);
+      }));
+
+      function outgoingParamsForItem(_x13, _x14) {
+        return _ref8.apply(this, arguments);
       }
-      var itemParams = new ItemParams(item, keys, this.authManager.protocolVersion());
-      return itemParams.paramsForExtension();
-    }
+
+      return outgoingParamsForItem;
+    }()
   }, {
     key: 'performPost',
     value: function performPost(action, extension, params, callback) {
@@ -37226,16 +41848,185 @@ var ActionsManager = function () {
       });
     }
   }, {
+    key: 'presentPasswordModal',
+    value: function presentPasswordModal(callback) {
+
+      var scope = this.$rootScope.$new(true);
+      scope.type = "password";
+      scope.title = "Decryption Assistance";
+      scope.message = "Unable to decrypt this item with your current keys. Please enter your account password at the time of this revision.";
+      scope.callback = callback;
+      var el = this.$compile("<input-modal type='type' message='message' title='title' callback='callback'></input-modal>")(scope);
+      angular.element(document.body).append(el);
+    }
+  }, {
     key: 'extensions',
     get: function get() {
       return this.modelManager.extensions;
     }
   }]);
-
   return ActionsManager;
 }();
 
 angular.module('app').service('actionsManager', ActionsManager);
+;
+var ArchiveManager = function () {
+  ArchiveManager.$inject = ['passcodeManager', 'authManager', 'modelManager'];
+  function ArchiveManager(passcodeManager, authManager, modelManager) {
+    (0, _classCallCheck3.default)(this, ArchiveManager);
+
+    this.passcodeManager = passcodeManager;
+    this.authManager = authManager;
+    this.modelManager = modelManager;
+  }
+
+  /*
+  Public
+  */
+
+  (0, _createClass3.default)(ArchiveManager, [{
+    key: 'downloadBackup',
+    value: function downloadBackup(encrypted) {
+      var _this25 = this;
+
+      // download in Standard File format
+      var keys, authParams, protocolVersion;
+      if (encrypted) {
+        if (this.authManager.offline() && this.passcodeManager.hasPasscode()) {
+          keys = this.passcodeManager.keys();
+          authParams = this.passcodeManager.passcodeAuthParams();
+          protocolVersion = authParams.version;
+        } else {
+          keys = this.authManager.keys();
+          authParams = this.authManager.getAuthParams();
+          protocolVersion = this.authManager.protocolVersion();
+        }
+      }
+      this.__itemsData(keys, authParams, protocolVersion).then(function (data) {
+        _this25.__downloadData(data, 'SN Archive - ' + new Date() + '.txt');
+
+        // download as zipped plain text files
+        if (!keys) {
+          var notes = _this25.modelManager.allItemsMatchingTypes(["Note"]);
+          _this25.__downloadZippedNotes(notes);
+        }
+      });
+    }
+
+    /*
+    Private
+    */
+
+  }, {
+    key: '__itemsData',
+    value: function () {
+      var _ref9 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee9(keys, authParams, protocolVersion) {
+        var data, blobData;
+        return _regenerator2.default.wrap(function _callee9$(_context9) {
+          while (1) {
+            switch (_context9.prev = _context9.next) {
+              case 0:
+                _context9.next = 2;
+                return this.modelManager.getAllItemsJSONData(keys, authParams, protocolVersion);
+
+              case 2:
+                data = _context9.sent;
+                blobData = new Blob([data], { type: 'text/json' });
+                return _context9.abrupt('return', blobData);
+
+              case 5:
+              case 'end':
+                return _context9.stop();
+            }
+          }
+        }, _callee9, this);
+      }));
+
+      function __itemsData(_x15, _x16, _x17) {
+        return _ref9.apply(this, arguments);
+      }
+
+      return __itemsData;
+    }()
+  }, {
+    key: '__loadZip',
+    value: function __loadZip(callback) {
+      if (window.zip) {
+        callback();
+        return;
+      }
+
+      var scriptTag = document.createElement('script');
+      scriptTag.src = "/assets/zip/zip.js";
+      scriptTag.async = false;
+      var headTag = document.getElementsByTagName('head')[0];
+      headTag.appendChild(scriptTag);
+      scriptTag.onload = function () {
+        zip.workerScriptsPath = "assets/zip/";
+        callback();
+      };
+    }
+  }, {
+    key: '__downloadZippedNotes',
+    value: function __downloadZippedNotes(notes) {
+      var _this26 = this;
+
+      this.__loadZip(function () {
+        zip.createWriter(new zip.BlobWriter("application/zip"), function (zipWriter) {
+          var index = 0;
+
+          var nextFile = function nextFile() {
+            var note = notes[index];
+            var blob = new Blob([note.text], { type: 'text/plain' });
+
+            var title = note.title.replace("/", "").replace("\\", "");
+
+            zipWriter.add(title + '-' + note.uuid + '.txt', new zip.BlobReader(blob), function () {
+              index++;
+              if (index < notes.length) {
+                nextFile();
+              } else {
+                zipWriter.close(function (blob) {
+                  _this26.__downloadData(blob, 'Notes Txt Archive - ' + new Date() + '.zip');
+                  zipWriter = null;
+                });
+              }
+            });
+          };
+
+          nextFile();
+        }, onerror);
+      });
+    }
+  }, {
+    key: '__hrefForData',
+    value: function __hrefForData(data) {
+      // If we are replacing a previously generated file we need to
+      // manually revoke the object URL to avoid memory leaks.
+      if (this.textFile !== null) {
+        window.URL.revokeObjectURL(this.textFile);
+      }
+
+      this.textFile = window.URL.createObjectURL(data);
+
+      // returns a URL you can use as a href
+      return this.textFile;
+    }
+  }, {
+    key: '__downloadData',
+    value: function __downloadData(data, fileName) {
+      var link = document.createElement('a');
+      link.setAttribute('download', fileName);
+      link.href = this.__hrefForData(data);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+  }]);
+  return ArchiveManager;
+}();
+
+angular.module('app').service('archiveManager', ArchiveManager);
 ;angular.module('app').provider('authManager', function () {
 
   function domainName() {
@@ -37244,12 +42035,12 @@ angular.module('app').service('actionsManager', ActionsManager);
     return domain;
   }
 
-  this.$get = ['$rootScope', '$timeout', 'httpManager', 'modelManager', 'dbManager', 'storageManager', 'singletonManager', function ($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager, singletonManager) {
-    return new AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager, singletonManager);
+  this.$get = ['$rootScope', '$timeout', 'httpManager', 'modelManager', 'dbManager', 'storageManager', 'singletonManager', '$compile', function ($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager, singletonManager, $compile) {
+    return new AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager, singletonManager, $compile);
   }];
 
-  function AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager, singletonManager) {
-    var _this24 = this;
+  function AuthManager($rootScope, $timeout, httpManager, modelManager, dbManager, storageManager, singletonManager, $compile) {
+    var _this30 = this;
 
     this.loadInitialData = function () {
       var userData = storageManager.getItem("user");
@@ -37315,21 +42106,15 @@ angular.module('app').service('actionsManager', ActionsManager);
 
       var keys = this.keys();
       if (keys && keys.ak) {
+        // If there's no version stored, and there's an ak, it has to be 002. Newer versions would have thier version stored in authParams.
         return "002";
       } else {
         return "001";
       }
     };
 
-    this.costMinimumForVersion = function (version) {
-      // all current versions have a min of 3000
-      // future versions will increase this
-      return 3000;
-    };
-
     this.isProtocolVersionSupported = function (version) {
-      var supportedVersions = ["001", "002"];
-      return supportedVersions.includes(version);
+      return SFJS.supportedVersions().includes(version);
     };
 
     this.getAuthParamsForEmail = function (url, email, extraParams, callback) {
@@ -37338,23 +42123,20 @@ angular.module('app').service('actionsManager', ActionsManager);
         callback(response);
       }, function (response) {
         console.error("Error getting auth params", response);
-        if ((typeof response === 'undefined' ? 'undefined' : _typeof(response)) !== 'object') {
+        if ((typeof response === 'undefined' ? 'undefined' : (0, _typeof3.default)(response)) !== 'object') {
           response = { error: { message: "A server error occurred while trying to sign in. Please try again." } };
         }
         callback(response);
       });
     };
 
-    this.supportsPasswordDerivationCost = function (cost) {
-      // some passwords are created on platforms with stronger pbkdf2 capabilities, like iOS,
-      // which accidentally used 60,000 iterations (now adjusted), which CryptoJS can't handle here (WebCrypto can however).
-      // if user has high password cost and is using browser that doesn't support WebCrypto,
-      // we want to tell them that they can't login with this browser.
-      return SFJS.crypto.supportsPasswordDerivationCost(cost);
-    };
+    this.login = function (url, email, password, ephemeral, strictSignin, extraParams, callback) {
+      var _this27 = this;
 
-    this.login = function (url, email, password, ephemeral, extraParams, callback) {
       this.getAuthParamsForEmail(url, email, extraParams, function (authParams) {
+
+        // SF3 requires a unique identifier in the auth params
+        authParams.identifier = email;
 
         if (authParams.error) {
           callback(authParams);
@@ -37366,43 +42148,72 @@ angular.module('app').service('actionsManager', ActionsManager);
           return;
         }
 
-        if (!this.isProtocolVersionSupported(authParams.version)) {
-          var message = "The protocol version associated with your account is outdated and no longer supported by this application. Please visit standardnotes.org/help/security-update for more information.";
+        if (!_this27.isProtocolVersionSupported(authParams.version)) {
+          var message;
+          if (SFJS.isVersionNewerThanLibraryVersion(authParams.version)) {
+            // The user has a new account type, but is signing in to an older client.
+            message = "This version of the application does not support your newer account type. Please upgrade to the latest version of Standard Notes to sign in.";
+          } else {
+            // The user has a very old account type, which is no longer supported by this client
+            message = "The protocol version associated with your account is outdated and no longer supported by this application. Please visit standardnotes.org/help/security for more information.";
+          }
           callback({ error: { message: message } });
           return;
         }
 
-        if (!this.supportsPasswordDerivationCost(authParams.pw_cost)) {
-          var _message = "Your account was created on a platform with higher security capabilities than this browser supports. " + "If we attempted to generate your login keys here, it would take hours. " + "Please use a browser with more up to date security capabilities, like Google Chrome or Firefox, to log in.";
-          callback({ error: { message: _message } });
-          return;
+        if (SFJS.isProtocolVersionOutdated(authParams.version)) {
+          var _message = 'The encryption version for your account, ' + authParams.version + ', is outdated and requires upgrade. You may proceed with login, but are advised to follow prompts for Security Updates once inside. Please visit standardnotes.org/help/security for more information.\n\nClick \'OK\' to proceed with login.';
+          if (!confirm(_message)) {
+            callback({ error: {} });
+            return;
+          }
         }
 
-        var minimum = this.costMinimumForVersion(authParams.version);
-        if (authParams.pw_cost < minimum) {
-          var _message2 = "Unable to login due to insecure password parameters. Please visit standardnotes.org/help/password-upgrade for more information.";
+        if (!SFJS.supportsPasswordDerivationCost(authParams.pw_cost)) {
+          var _message2 = "Your account was created on a platform with higher security capabilities than this browser supports. " + "If we attempted to generate your login keys here, it would take hours. " + "Please use a browser with more up to date security capabilities, like Google Chrome or Firefox, to log in.";
           callback({ error: { message: _message2 } });
           return;
         }
 
-        SFJS.crypto.computeEncryptionKeysForUser(_.merge({ password: password }, authParams), function (keys) {
+        var minimum = SFJS.costMinimumForVersion(authParams.version);
+        if (authParams.pw_cost < minimum) {
+          var _message3 = "Unable to login due to insecure password parameters. Please visit standardnotes.org/help/security for more information.";
+          callback({ error: { message: _message3 } });
+          return;
+        }
 
+        if (strictSignin) {
+          // Refuse sign in if authParams.version is anything but the latest version
+          var latestVersion = SFJS.version();
+          if (authParams.version !== latestVersion) {
+            var _message4 = 'Strict sign in refused server sign in parameters. The latest security version is ' + latestVersion + ', but your account is reported to have version ' + authParams.version + '. If you\'d like to proceed with sign in anyway, please disable strict sign in and try again.';
+            callback({ error: { message: _message4 } });
+            return;
+          }
+        }
+
+        SFJS.crypto.computeEncryptionKeysForUser(password, authParams).then(function (keys) {
           var requestUrl = url + "/auth/sign_in";
           var params = _.merge({ password: keys.pw, email: email }, extraParams);
+
           httpManager.postAbsolute(requestUrl, params, function (response) {
-            this.setEphemeral(ephemeral);
-            this.handleAuthResponse(response, email, url, authParams, keys);
-            this.checkForSecurityUpdate();
-            callback(response);
-          }.bind(this), function (response) {
+            _this27.setEphemeral(ephemeral);
+            _this27.handleAuthResponse(response, email, url, authParams, keys);
+            _this27.checkForSecurityUpdate();
+            $timeout(function () {
+              return callback(response);
+            });
+          }, function (response) {
             console.error("Error logging in", response);
-            if ((typeof response === 'undefined' ? 'undefined' : _typeof(response)) !== 'object') {
+            if ((typeof response === 'undefined' ? 'undefined' : (0, _typeof3.default)(response)) !== 'object') {
               response = { error: { message: "A server error occurred while trying to sign in. Please try again." } };
             }
-            callback(response);
+            $timeout(function () {
+              return callback(response);
+            });
           });
-        }.bind(this));
-      }.bind(this));
+        });
+      });
     };
 
     this.handleAuthResponse = function (response, email, url, authParams, keys) {
@@ -37426,87 +42237,79 @@ angular.module('app').service('actionsManager', ActionsManager);
 
     this.saveKeys = function (keys) {
       this._keys = keys;
-      // Doesn't need to be saved.
+      // pw doesn't need to be saved.
       // storageManager.setItem("pw", keys.pw);
       storageManager.setItem("mk", keys.mk);
       storageManager.setItem("ak", keys.ak);
     };
 
     this.register = function (url, email, password, ephemeral, callback) {
-      SFJS.crypto.generateInitialEncryptionKeysForUser({ password: password, email: email }, function (keys, authParams) {
+      var _this28 = this;
+
+      SFJS.crypto.generateInitialKeysAndAuthParamsForUser(email, password).then(function (results) {
+        var keys = results.keys;
+        var authParams = results.authParams;
+
         var requestUrl = url + "/auth";
         var params = _.merge({ password: keys.pw, email: email }, authParams);
 
         httpManager.postAbsolute(requestUrl, params, function (response) {
-          this.setEphemeral(ephemeral);
-          this.handleAuthResponse(response, email, url, authParams, keys);
+          _this28.setEphemeral(ephemeral);
+          _this28.handleAuthResponse(response, email, url, authParams, keys);
           callback(response);
-        }.bind(this), function (response) {
+        }, function (response) {
           console.error("Registration error", response);
-          if ((typeof response === 'undefined' ? 'undefined' : _typeof(response)) !== 'object') {
+          if ((typeof response === 'undefined' ? 'undefined' : (0, _typeof3.default)(response)) !== 'object') {
             response = { error: { message: "A server error occurred while trying to register. Please try again." } };
           }
           callback(response);
-        }.bind(this));
-      }.bind(this));
-    };
-
-    this.changePassword = function (email, new_password, callback) {
-      SFJS.crypto.generateInitialEncryptionKeysForUser({ password: new_password, email: email }, function (keys, authParams) {
-        var requestUrl = storageManager.getItem("server") + "/auth/change_pw";
-        var params = _.merge({ new_password: keys.pw }, authParams);
-
-        httpManager.postAbsolute(requestUrl, params, function (response) {
-          this.handleAuthResponse(response, email, null, authParams, keys);
-          callback(response);
-        }.bind(this), function (response) {
-          var error = response;
-          if (!error) {
-            error = { message: "Something went wrong while changing your password. Your password was not changed. Please try again." };
-          }
-          console.error("Change pw error", response);
-          callback({ error: error });
         });
-      }.bind(this));
+      });
     };
 
-    this.updateAuthParams = function (authParams, callback) {
-      var requestUrl = storageManager.getItem("server") + "/auth/update";
-      var params = authParams;
+    this.changePassword = function (current_server_pw, newKeys, newAuthParams, callback) {
+      var _this29 = this;
+
+      var email = this.user.email;
+      var newServerPw = newKeys.pw;
+
+      var requestUrl = storageManager.getItem("server") + "/auth/change_pw";
+      var params = _.merge({ new_password: newServerPw, current_password: current_server_pw }, newAuthParams);
+
       httpManager.postAbsolute(requestUrl, params, function (response) {
-        storageManager.setItem("auth_params", JSON.stringify(authParams));
-        if (callback) {
-          callback(response);
+        _this29.handleAuthResponse(response, email, null, newAuthParams, newKeys);
+        callback(response);
+
+        // Allows security update status to be changed if neccessary
+        _this29.checkForSecurityUpdate();
+      }, function (response) {
+        if ((typeof response === 'undefined' ? 'undefined' : (0, _typeof3.default)(response)) !== 'object') {
+          response = { error: { message: "Something went wrong while changing your password. Your password was not changed. Please try again." } };
         }
-      }.bind(this), function (response) {
-        var error = response;
-        console.error("Update error:", response);
-        if (callback) {
-          callback({ error: error });
-        }
+        callback(response);
       });
     };
 
     this.checkForSecurityUpdate = function () {
       if (this.offline()) {
-        return;
+        return false;
       }
 
-      if (this.protocolVersion() === "001") {
-        if (this.keys().ak) {
-          // upgrade to 002
-          var authParams = this.getAuthParams();
-          authParams.version = "002";
-          this.updateAuthParams(authParams, function (response) {
-            if (!response.error) {
-              // let rest of UI load first
-              $timeout(function () {
-                alert("Your encryption version has been updated. To take full advantage of this update, please resync all your items by clicking Account -> Advanced -> Re-encrypt All Items.");
-              }, 750);
-            }
-          });
-        }
+      var latest = SFJS.version();
+      var updateAvailable = this.protocolVersion() !== latest;
+      if (updateAvailable !== this.securityUpdateAvailable) {
+        this.securityUpdateAvailable = updateAvailable;
+        $rootScope.$broadcast("security-update-status-changed");
       }
+
+      return this.securityUpdateAvailable;
+    };
+
+    this.presentPasswordWizard = function (type) {
+      var scope = $rootScope.$new(true);
+      scope.type = type;
+      var el = $compile("<password-wizard type='type'></password-wizard>")(scope);
+      angular.element(document.body).append(el);
     };
 
     this.staticifyObject = function (object) {
@@ -37524,8 +42327,8 @@ angular.module('app').service('actionsManager', ActionsManager);
     var prefsContentType = "SN|UserPreferences";
 
     singletonManager.registerSingleton({ content_type: prefsContentType }, function (resolvedSingleton) {
-      _this24.userPreferences = resolvedSingleton;
-      _this24.userPreferencesDidChange();
+      _this30.userPreferences = resolvedSingleton;
+      _this30.userPreferencesDidChange();
     }, function (valueCallback) {
       // Safe to create. Create and return object.
       var prefs = new Item({ content_type: prefsContentType });
@@ -37569,9 +42372,9 @@ var ClientDataDomain = "org.standardnotes.sn.components";
 var ComponentManager = function () {
   ComponentManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'desktopManager', 'nativeExtManager', '$timeout', '$compile'];
   function ComponentManager($rootScope, modelManager, syncManager, desktopManager, nativeExtManager, $timeout, $compile) {
-    var _this25 = this;
+    var _this31 = this;
 
-    _classCallCheck(this, ComponentManager);
+    (0, _classCallCheck3.default)(this, ComponentManager);
 
     this.$compile = $compile;
     this.$rootScope = $rootScope;
@@ -37585,32 +42388,32 @@ var ComponentManager = function () {
     this.activeComponents = [];
 
     var detectFocusChange = function detectFocusChange(event) {
-      var _iteratorNormalCompletion13 = true;
-      var _didIteratorError13 = false;
-      var _iteratorError13 = undefined;
+      var _iteratorNormalCompletion14 = true;
+      var _didIteratorError14 = false;
+      var _iteratorError14 = undefined;
 
       try {
-        for (var _iterator13 = _this25.activeComponents[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-          var component = _step13.value;
+        for (var _iterator14 = _this31.activeComponents[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+          var component = _step14.value;
 
-          if (document.activeElement == _this25.iframeForComponent(component)) {
-            _this25.timeout(function () {
-              _this25.focusChangedForComponent(component);
+          if (document.activeElement == _this31.iframeForComponent(component)) {
+            _this31.timeout(function () {
+              _this31.focusChangedForComponent(component);
             });
             break;
           }
         }
       } catch (err) {
-        _didIteratorError13 = true;
-        _iteratorError13 = err;
+        _didIteratorError14 = true;
+        _iteratorError14 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion13 && _iterator13.return) {
-            _iterator13.return();
+          if (!_iteratorNormalCompletion14 && _iterator14.return) {
+            _iterator14.return();
           }
         } finally {
-          if (_didIteratorError13) {
-            throw _iteratorError13;
+          if (_didIteratorError14) {
+            throw _iteratorError14;
           }
         }
       }
@@ -37622,7 +42425,7 @@ var ComponentManager = function () {
     desktopManager.registerUpdateObserver(function (component) {
       // Reload theme if active
       if (component.active && component.isTheme()) {
-        _this25.postActiveThemeToAllComponents();
+        _this31.postActiveThemeToAllComponents();
       }
     });
 
@@ -37658,35 +42461,35 @@ var ComponentManager = function () {
       */
       if (syncedComponents.length > 0 && source != ModelManager.MappingSourceRemoteSaved) {
         // Ensure any component in our data is installed by the system
-        _this25.desktopManager.syncComponentsInstallation(syncedComponents);
+        _this31.desktopManager.syncComponentsInstallation(syncedComponents);
       }
 
-      var _iteratorNormalCompletion14 = true;
-      var _didIteratorError14 = false;
-      var _iteratorError14 = undefined;
+      var _iteratorNormalCompletion15 = true;
+      var _didIteratorError15 = false;
+      var _iteratorError15 = undefined;
 
       try {
-        for (var _iterator14 = syncedComponents[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-          var component = _step14.value;
+        for (var _iterator15 = syncedComponents[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+          var component = _step15.value;
 
-          var activeComponent = _.find(_this25.activeComponents, { uuid: component.uuid });
+          var activeComponent = _.find(_this31.activeComponents, { uuid: component.uuid });
           if (component.active && !component.deleted && !activeComponent) {
-            _this25.activateComponent(component);
+            _this31.activateComponent(component);
           } else if (!component.active && activeComponent) {
-            _this25.deactivateComponent(component);
+            _this31.deactivateComponent(component);
           }
         }
       } catch (err) {
-        _didIteratorError14 = true;
-        _iteratorError14 = err;
+        _didIteratorError15 = true;
+        _iteratorError15 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion14 && _iterator14.return) {
-            _iterator14.return();
+          if (!_iteratorNormalCompletion15 && _iterator15.return) {
+            _iterator15.return();
           }
         } finally {
-          if (_didIteratorError14) {
-            throw _iteratorError14;
+          if (_didIteratorError15) {
+            throw _iteratorError15;
           }
         }
       }
@@ -37707,84 +42510,9 @@ var ComponentManager = function () {
         }];
 
 
-        _this25.runWithPermissions(observer.component, requiredPermissions, function () {
-          _this25.sendItemsInReply(observer.component, relevantItems, observer.originalMessage);
+        _this31.runWithPermissions(observer.component, requiredPermissions, function () {
+          _this31.sendItemsInReply(observer.component, relevantItems, observer.originalMessage);
         });
-      };
-
-      var _iteratorNormalCompletion15 = true;
-      var _didIteratorError15 = false;
-      var _iteratorError15 = undefined;
-
-      try {
-        for (var _iterator15 = _this25.streamObservers[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-          var observer = _step15.value;
-          var relevantItems;
-          var requiredPermissions;
-
-          var _ret = _loop(observer);
-
-          if (_ret === 'continue') continue;
-        }
-      } catch (err) {
-        _didIteratorError15 = true;
-        _iteratorError15 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion15 && _iterator15.return) {
-            _iterator15.return();
-          }
-        } finally {
-          if (_didIteratorError15) {
-            throw _iteratorError15;
-          }
-        }
-      }
-
-      var requiredContextPermissions = [{
-        name: "stream-context-item"
-      }];
-
-      var _loop2 = function _loop2(observer) {
-        var _iteratorNormalCompletion17 = true;
-        var _didIteratorError17 = false;
-        var _iteratorError17 = undefined;
-
-        try {
-          for (var _iterator17 = _this25.handlers[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
-            var handler = _step17.value;
-
-            if (!handler.areas.includes(observer.component.area) && !handler.areas.includes("*")) {
-              continue;
-            }
-            if (handler.contextRequestHandler) {
-              itemInContext = handler.contextRequestHandler(observer.component);
-
-              if (itemInContext) {
-                matchingItem = _.find(allItems, { uuid: itemInContext.uuid });
-
-                if (matchingItem) {
-                  _this25.runWithPermissions(observer.component, requiredContextPermissions, function () {
-                    _this25.sendContextItemInReply(observer.component, matchingItem, observer.originalMessage, source);
-                  });
-                }
-              }
-            }
-          }
-        } catch (err) {
-          _didIteratorError17 = true;
-          _iteratorError17 = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion17 && _iterator17.return) {
-              _iterator17.return();
-            }
-          } finally {
-            if (_didIteratorError17) {
-              throw _iteratorError17;
-            }
-          }
-        }
       };
 
       var _iteratorNormalCompletion16 = true;
@@ -37792,12 +42520,14 @@ var ComponentManager = function () {
       var _iteratorError16 = undefined;
 
       try {
-        for (var _iterator16 = _this25.contextStreamObservers[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+        for (var _iterator16 = _this31.streamObservers[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
           var observer = _step16.value;
-          var itemInContext;
-          var matchingItem;
+          var relevantItems;
+          var requiredPermissions;
 
-          _loop2(observer);
+          var _ret = _loop(observer);
+
+          if (_ret === 'continue') continue;
         }
       } catch (err) {
         _didIteratorError16 = true;
@@ -37813,19 +42543,92 @@ var ComponentManager = function () {
           }
         }
       }
+
+      var requiredContextPermissions = [{
+        name: "stream-context-item"
+      }];
+
+      var _loop2 = function _loop2(observer) {
+        var _iteratorNormalCompletion18 = true;
+        var _didIteratorError18 = false;
+        var _iteratorError18 = undefined;
+
+        try {
+          for (var _iterator18 = _this31.handlers[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
+            var handler = _step18.value;
+
+            if (!handler.areas.includes(observer.component.area) && !handler.areas.includes("*")) {
+              continue;
+            }
+            if (handler.contextRequestHandler) {
+              itemInContext = handler.contextRequestHandler(observer.component);
+
+              if (itemInContext) {
+                matchingItem = _.find(allItems, { uuid: itemInContext.uuid });
+
+                if (matchingItem) {
+                  _this31.runWithPermissions(observer.component, requiredContextPermissions, function () {
+                    _this31.sendContextItemInReply(observer.component, matchingItem, observer.originalMessage, source);
+                  });
+                }
+              }
+            }
+          }
+        } catch (err) {
+          _didIteratorError18 = true;
+          _iteratorError18 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion18 && _iterator18.return) {
+              _iterator18.return();
+            }
+          } finally {
+            if (_didIteratorError18) {
+              throw _iteratorError18;
+            }
+          }
+        }
+      };
+
+      var _iteratorNormalCompletion17 = true;
+      var _didIteratorError17 = false;
+      var _iteratorError17 = undefined;
+
+      try {
+        for (var _iterator17 = _this31.contextStreamObservers[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+          var observer = _step17.value;
+          var itemInContext;
+          var matchingItem;
+
+          _loop2(observer);
+        }
+      } catch (err) {
+        _didIteratorError17 = true;
+        _iteratorError17 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion17 && _iterator17.return) {
+            _iterator17.return();
+          }
+        } finally {
+          if (_didIteratorError17) {
+            throw _iteratorError17;
+          }
+        }
+      }
     });
   }
 
-  _createClass(ComponentManager, [{
+  (0, _createClass3.default)(ComponentManager, [{
     key: 'postActiveThemeToAllComponents',
     value: function postActiveThemeToAllComponents() {
-      var _iteratorNormalCompletion18 = true;
-      var _didIteratorError18 = false;
-      var _iteratorError18 = undefined;
+      var _iteratorNormalCompletion19 = true;
+      var _didIteratorError19 = false;
+      var _iteratorError19 = undefined;
 
       try {
-        for (var _iterator18 = this.components[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
-          var component = _step18.value;
+        for (var _iterator19 = this.components[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
+          var component = _step19.value;
 
           // Skip over components that are themes themselves,
           // or components that are not active, or components that don't have a window
@@ -37835,16 +42638,16 @@ var ComponentManager = function () {
           this.postActiveThemeToComponent(component);
         }
       } catch (err) {
-        _didIteratorError18 = true;
-        _iteratorError18 = err;
+        _didIteratorError19 = true;
+        _iteratorError19 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion18 && _iterator18.return) {
-            _iterator18.return();
+          if (!_iteratorNormalCompletion19 && _iterator19.return) {
+            _iterator19.return();
           }
         } finally {
-          if (_didIteratorError18) {
-            throw _iteratorError18;
+          if (_didIteratorError19) {
+            throw _iteratorError19;
           }
         }
       }
@@ -37869,13 +42672,13 @@ var ComponentManager = function () {
   }, {
     key: 'contextItemDidChangeInArea',
     value: function contextItemDidChangeInArea(area) {
-      var _iteratorNormalCompletion19 = true;
-      var _didIteratorError19 = false;
-      var _iteratorError19 = undefined;
+      var _iteratorNormalCompletion20 = true;
+      var _didIteratorError20 = false;
+      var _iteratorError20 = undefined;
 
       try {
-        for (var _iterator19 = this.handlers[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
-          var handler = _step19.value;
+        for (var _iterator20 = this.handlers[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
+          var handler = _step20.value;
 
           if (handler.areas.includes(area) === false && !handler.areas.includes("*")) {
             continue;
@@ -37884,13 +42687,13 @@ var ComponentManager = function () {
             return observer.component.area === area;
           });
 
-          var _iteratorNormalCompletion20 = true;
-          var _didIteratorError20 = false;
-          var _iteratorError20 = undefined;
+          var _iteratorNormalCompletion21 = true;
+          var _didIteratorError21 = false;
+          var _iteratorError21 = undefined;
 
           try {
-            for (var _iterator20 = observers[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
-              var observer = _step20.value;
+            for (var _iterator21 = observers[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
+              var observer = _step21.value;
 
               if (handler.contextRequestHandler) {
                 var itemInContext = handler.contextRequestHandler(observer.component);
@@ -37898,31 +42701,31 @@ var ComponentManager = function () {
               }
             }
           } catch (err) {
-            _didIteratorError20 = true;
-            _iteratorError20 = err;
+            _didIteratorError21 = true;
+            _iteratorError21 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion20 && _iterator20.return) {
-                _iterator20.return();
+              if (!_iteratorNormalCompletion21 && _iterator21.return) {
+                _iterator21.return();
               }
             } finally {
-              if (_didIteratorError20) {
-                throw _iteratorError20;
+              if (_didIteratorError21) {
+                throw _iteratorError21;
               }
             }
           }
         }
       } catch (err) {
-        _didIteratorError19 = true;
-        _iteratorError19 = err;
+        _didIteratorError20 = true;
+        _iteratorError20 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion19 && _iterator19.return) {
-            _iterator19.return();
+          if (!_iteratorNormalCompletion20 && _iterator20.return) {
+            _iterator20.return();
           }
         } finally {
-          if (_didIteratorError19) {
-            throw _iteratorError19;
+          if (_didIteratorError20) {
+            throw _iteratorError20;
           }
         }
       }
@@ -38036,7 +42839,7 @@ var ComponentManager = function () {
   }, {
     key: 'handleMessage',
     value: function handleMessage(component, message) {
-      var _this26 = this;
+      var _this32 = this;
 
       if (!component) {
         if (this.loggingEnabled) {
@@ -38089,33 +42892,33 @@ var ComponentManager = function () {
 
       var _loop3 = function _loop3(handler) {
         if (handler.areas.includes(component.area) || handler.areas.includes("*")) {
-          _this26.timeout(function () {
+          _this32.timeout(function () {
             handler.actionHandler(component, message.action, message.data);
           });
         }
       };
 
-      var _iteratorNormalCompletion21 = true;
-      var _didIteratorError21 = false;
-      var _iteratorError21 = undefined;
+      var _iteratorNormalCompletion22 = true;
+      var _didIteratorError22 = false;
+      var _iteratorError22 = undefined;
 
       try {
-        for (var _iterator21 = this.handlers[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
-          var handler = _step21.value;
+        for (var _iterator22 = this.handlers[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
+          var handler = _step22.value;
 
           _loop3(handler);
         }
       } catch (err) {
-        _didIteratorError21 = true;
-        _iteratorError21 = err;
+        _didIteratorError22 = true;
+        _iteratorError22 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion21 && _iterator21.return) {
-            _iterator21.return();
+          if (!_iteratorNormalCompletion22 && _iterator22.return) {
+            _iterator22.return();
           }
         } finally {
-          if (_didIteratorError21) {
-            throw _iteratorError21;
+          if (_didIteratorError22) {
+            throw _iteratorError22;
           }
         }
       }
@@ -38138,55 +42941,55 @@ var ComponentManager = function () {
           privateProperties = privateProperties.concat(["url", "hosted_url", "local_url"]);
         }
       }
-      var _iteratorNormalCompletion22 = true;
-      var _didIteratorError22 = false;
-      var _iteratorError22 = undefined;
+      var _iteratorNormalCompletion23 = true;
+      var _didIteratorError23 = false;
+      var _iteratorError23 = undefined;
 
       try {
-        for (var _iterator22 = responseItems[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
-          var responseItem = _step22.value;
+        for (var _iterator23 = responseItems[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
+          var responseItem = _step23.value;
 
 
           // Do not pass in actual items here, otherwise that would be destructive.
           // Instead, generic JS/JSON objects should be passed.
           console.assert(typeof responseItem.setDirty !== 'function');
 
-          var _iteratorNormalCompletion23 = true;
-          var _didIteratorError23 = false;
-          var _iteratorError23 = undefined;
+          var _iteratorNormalCompletion24 = true;
+          var _didIteratorError24 = false;
+          var _iteratorError24 = undefined;
 
           try {
-            for (var _iterator23 = privateProperties[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
-              var prop = _step23.value;
+            for (var _iterator24 = privateProperties[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
+              var prop = _step24.value;
 
               delete responseItem.content[prop];
             }
           } catch (err) {
-            _didIteratorError23 = true;
-            _iteratorError23 = err;
+            _didIteratorError24 = true;
+            _iteratorError24 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion23 && _iterator23.return) {
-                _iterator23.return();
+              if (!_iteratorNormalCompletion24 && _iterator24.return) {
+                _iterator24.return();
               }
             } finally {
-              if (_didIteratorError23) {
-                throw _iteratorError23;
+              if (_didIteratorError24) {
+                throw _iteratorError24;
               }
             }
           }
         }
       } catch (err) {
-        _didIteratorError22 = true;
-        _iteratorError22 = err;
+        _didIteratorError23 = true;
+        _iteratorError23 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion22 && _iterator22.return) {
-            _iterator22.return();
+          if (!_iteratorNormalCompletion23 && _iterator23.return) {
+            _iterator23.return();
           }
         } finally {
-          if (_didIteratorError22) {
-            throw _iteratorError22;
+          if (_didIteratorError23) {
+            throw _iteratorError23;
           }
         }
       }
@@ -38194,7 +42997,7 @@ var ComponentManager = function () {
   }, {
     key: 'handleStreamItemsMessage',
     value: function handleStreamItemsMessage(component, message) {
-      var _this27 = this;
+      var _this33 = this;
 
       var requiredPermissions = [{
         name: "stream-items",
@@ -38202,9 +43005,9 @@ var ComponentManager = function () {
       }];
 
       this.runWithPermissions(component, requiredPermissions, function () {
-        if (!_.find(_this27.streamObservers, { identifier: component.uuid })) {
+        if (!_.find(_this33.streamObservers, { identifier: component.uuid })) {
           // for pushing laster as changes come in
-          _this27.streamObservers.push({
+          _this33.streamObservers.push({
             identifier: component.uuid,
             component: component,
             originalMessage: message,
@@ -38214,32 +43017,32 @@ var ComponentManager = function () {
 
         // push immediately now
         var items = [];
-        var _iteratorNormalCompletion24 = true;
-        var _didIteratorError24 = false;
-        var _iteratorError24 = undefined;
+        var _iteratorNormalCompletion25 = true;
+        var _didIteratorError25 = false;
+        var _iteratorError25 = undefined;
 
         try {
-          for (var _iterator24 = message.data.content_types[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
-            var contentType = _step24.value;
+          for (var _iterator25 = message.data.content_types[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
+            var contentType = _step25.value;
 
-            items = items.concat(_this27.modelManager.itemsForContentType(contentType));
+            items = items.concat(_this33.modelManager.validItemsForContentType(contentType));
           }
         } catch (err) {
-          _didIteratorError24 = true;
-          _iteratorError24 = err;
+          _didIteratorError25 = true;
+          _iteratorError25 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion24 && _iterator24.return) {
-              _iterator24.return();
+            if (!_iteratorNormalCompletion25 && _iterator25.return) {
+              _iterator25.return();
             }
           } finally {
-            if (_didIteratorError24) {
-              throw _iteratorError24;
+            if (_didIteratorError25) {
+              throw _iteratorError25;
             }
           }
         }
 
-        _this27.sendItemsInReply(component, items, message);
+        _this33.sendItemsInReply(component, items, message);
       });
     }
   }, {
@@ -38261,30 +43064,32 @@ var ComponentManager = function () {
         }
 
         // push immediately now
-        var _iteratorNormalCompletion25 = true;
-        var _didIteratorError25 = false;
-        var _iteratorError25 = undefined;
+        var _iteratorNormalCompletion26 = true;
+        var _didIteratorError26 = false;
+        var _iteratorError26 = undefined;
 
         try {
-          for (var _iterator25 = this.handlersForArea(component.area)[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
-            var handler = _step25.value;
+          for (var _iterator26 = this.handlersForArea(component.area)[Symbol.iterator](), _step26; !(_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done); _iteratorNormalCompletion26 = true) {
+            var handler = _step26.value;
 
             if (handler.contextRequestHandler) {
               var itemInContext = handler.contextRequestHandler(component);
-              this.sendContextItemInReply(component, itemInContext, message);
+              if (itemInContext) {
+                this.sendContextItemInReply(component, itemInContext, message);
+              }
             }
           }
         } catch (err) {
-          _didIteratorError25 = true;
-          _iteratorError25 = err;
+          _didIteratorError26 = true;
+          _iteratorError26 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion25 && _iterator25.return) {
-              _iterator25.return();
+            if (!_iteratorNormalCompletion26 && _iterator26.return) {
+              _iterator26.return();
             }
           } finally {
-            if (_didIteratorError25) {
-              throw _iteratorError25;
+            if (_didIteratorError26) {
+              throw _iteratorError26;
             }
           }
         }
@@ -38293,13 +43098,13 @@ var ComponentManager = function () {
   }, {
     key: 'isItemWithinComponentContextJurisdiction',
     value: function isItemWithinComponentContextJurisdiction(item, component) {
-      var _iteratorNormalCompletion26 = true;
-      var _didIteratorError26 = false;
-      var _iteratorError26 = undefined;
+      var _iteratorNormalCompletion27 = true;
+      var _didIteratorError27 = false;
+      var _iteratorError27 = undefined;
 
       try {
-        for (var _iterator26 = this.handlersForArea(component.area)[Symbol.iterator](), _step26; !(_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done); _iteratorNormalCompletion26 = true) {
-          var handler = _step26.value;
+        for (var _iterator27 = this.handlersForArea(component.area)[Symbol.iterator](), _step27; !(_iteratorNormalCompletion27 = (_step27 = _iterator27.next()).done); _iteratorNormalCompletion27 = true) {
+          var handler = _step27.value;
 
           if (handler.contextRequestHandler) {
             var itemInContext = handler.contextRequestHandler(component);
@@ -38309,16 +43114,16 @@ var ComponentManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError26 = true;
-        _iteratorError26 = err;
+        _didIteratorError27 = true;
+        _iteratorError27 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion26 && _iterator26.return) {
-            _iterator26.return();
+          if (!_iteratorNormalCompletion27 && _iterator27.return) {
+            _iterator27.return();
           }
         } finally {
-          if (_didIteratorError26) {
-            throw _iteratorError26;
+          if (_didIteratorError27) {
+            throw _iteratorError27;
           }
         }
       }
@@ -38335,7 +43140,7 @@ var ComponentManager = function () {
   }, {
     key: 'handleSaveItemsMessage',
     value: function handleSaveItemsMessage(component, message) {
-      var _this28 = this;
+      var _this34 = this;
 
       var responseItems = message.data.items;
       var requiredPermissions;
@@ -38357,21 +43162,21 @@ var ComponentManager = function () {
 
       this.runWithPermissions(component, requiredPermissions, function () {
 
-        _this28.removePrivatePropertiesFromResponseItems(responseItems, component, { includeUrls: true });
+        _this34.removePrivatePropertiesFromResponseItems(responseItems, component, { includeUrls: true });
 
         /*
         We map the items here because modelManager is what updates the UI. If you were to instead get the items directly,
         this would update them server side via sync, but would never make its way back to the UI.
         */
-        var localItems = _this28.modelManager.mapResponseItemsToLocalModels(responseItems, ModelManager.MappingSourceComponentRetrieved);
+        var localItems = _this34.modelManager.mapResponseItemsToLocalModels(responseItems, ModelManager.MappingSourceComponentRetrieved);
 
-        var _iteratorNormalCompletion27 = true;
-        var _didIteratorError27 = false;
-        var _iteratorError27 = undefined;
+        var _iteratorNormalCompletion28 = true;
+        var _didIteratorError28 = false;
+        var _iteratorError28 = undefined;
 
         try {
-          for (var _iterator27 = localItems[Symbol.iterator](), _step27; !(_iteratorNormalCompletion27 = (_step27 = _iterator27.next()).done); _iteratorNormalCompletion27 = true) {
-            var item = _step27.value;
+          for (var _iterator28 = localItems[Symbol.iterator](), _step28; !(_iteratorNormalCompletion28 = (_step28 = _iterator28.next()).done); _iteratorNormalCompletion28 = true) {
+            var item = _step28.value;
 
             var responseItem = _.find(responseItems, { uuid: item.uuid });
             _.merge(item.content, responseItem.content);
@@ -38379,64 +43184,6 @@ var ComponentManager = function () {
               item.setDomainDataItem(component.url || component.uuid, responseItem.clientData, ClientDataDomain);
             }
             item.setDirty(true);
-          }
-        } catch (err) {
-          _didIteratorError27 = true;
-          _iteratorError27 = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion27 && _iterator27.return) {
-              _iterator27.return();
-            }
-          } finally {
-            if (_didIteratorError27) {
-              throw _iteratorError27;
-            }
-          }
-        }
-
-        _this28.syncManager.sync(function (response) {
-          // Allow handlers to be notified when a save begins and ends, to update the UI
-          var saveMessage = Object.assign({}, message);
-          saveMessage.action = response && response.error ? "save-error" : "save-success";
-          _this28.replyToMessage(component, message, { error: response.error });
-          _this28.handleMessage(component, saveMessage);
-        }, null, "handleSaveItemsMessage");
-      });
-    }
-  }, {
-    key: 'handleCreateItemsMessage',
-    value: function handleCreateItemsMessage(component, message) {
-      var _this29 = this;
-
-      var responseItems = message.data.item ? [message.data.item] : message.data.items;
-      var uniqueContentTypes = _.uniq(responseItems.map(function (item) {
-        return item.content_type;
-      }));
-      var requiredPermissions = [{
-        name: "stream-items",
-        content_types: uniqueContentTypes
-      }];
-
-      this.runWithPermissions(component, requiredPermissions, function () {
-        _this29.removePrivatePropertiesFromResponseItems(responseItems, component);
-        var processedItems = [];
-        var _iteratorNormalCompletion28 = true;
-        var _didIteratorError28 = false;
-        var _iteratorError28 = undefined;
-
-        try {
-          for (var _iterator28 = responseItems[Symbol.iterator](), _step28; !(_iteratorNormalCompletion28 = (_step28 = _iterator28.next()).done); _iteratorNormalCompletion28 = true) {
-            var responseItem = _step28.value;
-
-            var item = _this29.modelManager.createItem(responseItem);
-            if (responseItem.clientData) {
-              item.setDomainDataItem(component.url || component.uuid, responseItem.clientData, ClientDataDomain);
-            }
-            _this29.modelManager.addItem(item);
-            _this29.modelManager.resolveReferencesForItem(item, true);
-            item.setDirty(true);
-            processedItems.push(item);
           }
         } catch (err) {
           _didIteratorError28 = true;
@@ -38453,19 +43200,78 @@ var ComponentManager = function () {
           }
         }
 
-        _this29.syncManager.sync("handleCreateItemMessage");
+        _this34.syncManager.sync(function (response) {
+          // Allow handlers to be notified when a save begins and ends, to update the UI
+          var saveMessage = Object.assign({}, message);
+          saveMessage.action = response && response.error ? "save-error" : "save-success";
+          _this34.replyToMessage(component, message, { error: response.error });
+          _this34.handleMessage(component, saveMessage);
+        }, null, "handleSaveItemsMessage");
+      });
+    }
+  }, {
+    key: 'handleCreateItemsMessage',
+    value: function handleCreateItemsMessage(component, message) {
+      var _this35 = this;
 
-        var reply = message.action == "save-item" ? { item: _this29.jsonForItem(processedItems[0], component) } : { items: processedItems.map(function (item) {
-            return _this29.jsonForItem(item, component);
+      var responseItems = message.data.item ? [message.data.item] : message.data.items;
+      var uniqueContentTypes = _.uniq(responseItems.map(function (item) {
+        return item.content_type;
+      }));
+      var requiredPermissions = [{
+        name: "stream-items",
+        content_types: uniqueContentTypes
+      }];
+
+      this.runWithPermissions(component, requiredPermissions, function () {
+        _this35.removePrivatePropertiesFromResponseItems(responseItems, component);
+        var processedItems = [];
+        var _iteratorNormalCompletion29 = true;
+        var _didIteratorError29 = false;
+        var _iteratorError29 = undefined;
+
+        try {
+          for (var _iterator29 = responseItems[Symbol.iterator](), _step29; !(_iteratorNormalCompletion29 = (_step29 = _iterator29.next()).done); _iteratorNormalCompletion29 = true) {
+            var responseItem = _step29.value;
+
+            var item = _this35.modelManager.createItem(responseItem);
+            if (responseItem.clientData) {
+              item.setDomainDataItem(component.url || component.uuid, responseItem.clientData, ClientDataDomain);
+            }
+            _this35.modelManager.addItem(item);
+            _this35.modelManager.resolveReferencesForItem(item, true);
+            item.setDirty(true);
+            processedItems.push(item);
+          }
+        } catch (err) {
+          _didIteratorError29 = true;
+          _iteratorError29 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion29 && _iterator29.return) {
+              _iterator29.return();
+            }
+          } finally {
+            if (_didIteratorError29) {
+              throw _iteratorError29;
+            }
+          }
+        }
+
+        _this35.syncManager.sync("handleCreateItemMessage");
+
+        // "create-item" or "create-items" are possible messages handled here
+        var reply = message.action == "create-item" ? { item: _this35.jsonForItem(processedItems[0], component) } : { items: processedItems.map(function (item) {
+            return _this35.jsonForItem(item, component);
           }) };
 
-        _this29.replyToMessage(component, message, reply);
+        _this35.replyToMessage(component, message, reply);
       });
     }
   }, {
     key: 'handleDeleteItemsMessage',
     value: function handleDeleteItemsMessage(component, message) {
-      var _this30 = this;
+      var _this36 = this;
 
       var requiredContentTypes = _.uniq(message.data.items.map(function (i) {
         return i.content_type;
@@ -38480,58 +43286,58 @@ var ComponentManager = function () {
         var noun = itemsData.length == 1 ? "item" : "items";
         if (confirm('Are you sure you want to delete ' + itemsData.length + ' ' + noun + '?')) {
           // Filter for any components and deactivate before deleting
-          var _iteratorNormalCompletion29 = true;
-          var _didIteratorError29 = false;
-          var _iteratorError29 = undefined;
+          var _iteratorNormalCompletion30 = true;
+          var _didIteratorError30 = false;
+          var _iteratorError30 = undefined;
 
           try {
-            for (var _iterator29 = itemsData[Symbol.iterator](), _step29; !(_iteratorNormalCompletion29 = (_step29 = _iterator29.next()).done); _iteratorNormalCompletion29 = true) {
-              var itemData = _step29.value;
+            for (var _iterator30 = itemsData[Symbol.iterator](), _step30; !(_iteratorNormalCompletion30 = (_step30 = _iterator30.next()).done); _iteratorNormalCompletion30 = true) {
+              var itemData = _step30.value;
 
-              var model = _this30.modelManager.findItem(itemData.uuid);
+              var model = _this36.modelManager.findItem(itemData.uuid);
               if (["SN|Component", "SN|Theme"].includes(model.content_type)) {
-                _this30.deactivateComponent(model, true);
+                _this36.deactivateComponent(model, true);
               }
-              _this30.modelManager.setItemToBeDeleted(model);
+              _this36.modelManager.setItemToBeDeleted(model);
             }
           } catch (err) {
-            _didIteratorError29 = true;
-            _iteratorError29 = err;
+            _didIteratorError30 = true;
+            _iteratorError30 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion29 && _iterator29.return) {
-                _iterator29.return();
+              if (!_iteratorNormalCompletion30 && _iterator30.return) {
+                _iterator30.return();
               }
             } finally {
-              if (_didIteratorError29) {
-                throw _iteratorError29;
+              if (_didIteratorError30) {
+                throw _iteratorError30;
               }
             }
           }
 
-          _this30.syncManager.sync("handleDeleteItemsMessage");
+          _this36.syncManager.sync("handleDeleteItemsMessage");
         }
       });
     }
   }, {
     key: 'handleRequestPermissionsMessage',
     value: function handleRequestPermissionsMessage(component, message) {
-      var _this31 = this;
+      var _this37 = this;
 
       this.runWithPermissions(component, message.data.permissions, function () {
-        _this31.replyToMessage(component, message, { approved: true });
+        _this37.replyToMessage(component, message, { approved: true });
       });
     }
   }, {
     key: 'handleSetComponentDataMessage',
     value: function handleSetComponentDataMessage(component, message) {
-      var _this32 = this;
+      var _this38 = this;
 
       // A component setting its own data does not require special permissions
       this.runWithPermissions(component, [], function () {
         component.componentData = message.data.componentData;
         component.setDirty(true);
-        _this32.syncManager.sync("handleSetComponentDataMessage");
+        _this38.syncManager.sync("handleSetComponentDataMessage");
       });
     }
   }, {
@@ -38576,13 +43382,13 @@ var ComponentManager = function () {
       var acquiredPermissions = component.permissions;
       var acquiredMatchesRequired = true;
 
-      var _iteratorNormalCompletion30 = true;
-      var _didIteratorError30 = false;
-      var _iteratorError30 = undefined;
+      var _iteratorNormalCompletion31 = true;
+      var _didIteratorError31 = false;
+      var _iteratorError31 = undefined;
 
       try {
-        for (var _iterator30 = requiredPermissions[Symbol.iterator](), _step30; !(_iteratorNormalCompletion30 = (_step30 = _iterator30.next()).done); _iteratorNormalCompletion30 = true) {
-          var required = _step30.value;
+        for (var _iterator31 = requiredPermissions[Symbol.iterator](), _step31; !(_iteratorNormalCompletion31 = (_step31 = _iterator31.next()).done); _iteratorNormalCompletion31 = true) {
+          var required = _step31.value;
 
           var matching = acquiredPermissions.find(function (candidate) {
             var matchesContentTypes = true;
@@ -38607,16 +43413,16 @@ var ComponentManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError30 = true;
-        _iteratorError30 = err;
+        _didIteratorError31 = true;
+        _iteratorError31 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion30 && _iterator30.return) {
-            _iterator30.return();
+          if (!_iteratorNormalCompletion31 && _iterator31.return) {
+            _iterator31.return();
           }
         } finally {
-          if (_didIteratorError30) {
-            throw _iteratorError30;
+          if (_didIteratorError31) {
+            throw _iteratorError31;
           }
         }
       }
@@ -38641,29 +43447,29 @@ var ComponentManager = function () {
 
       scope.callback = function (approved) {
         if (approved) {
-          var _iteratorNormalCompletion31 = true;
-          var _didIteratorError31 = false;
-          var _iteratorError31 = undefined;
+          var _iteratorNormalCompletion32 = true;
+          var _didIteratorError32 = false;
+          var _iteratorError32 = undefined;
 
           try {
-            for (var _iterator31 = permissions[Symbol.iterator](), _step31; !(_iteratorNormalCompletion31 = (_step31 = _iterator31.next()).done); _iteratorNormalCompletion31 = true) {
-              var permission = _step31.value;
+            for (var _iterator32 = permissions[Symbol.iterator](), _step32; !(_iteratorNormalCompletion32 = (_step32 = _iterator32.next()).done); _iteratorNormalCompletion32 = true) {
+              var permission = _step32.value;
 
               if (!component.permissions.includes(permission)) {
                 component.permissions.push(permission);
               }
             }
           } catch (err) {
-            _didIteratorError31 = true;
-            _iteratorError31 = err;
+            _didIteratorError32 = true;
+            _iteratorError32 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion31 && _iterator31.return) {
-                _iterator31.return();
+              if (!_iteratorNormalCompletion32 && _iterator32.return) {
+                _iterator32.return();
               }
             } finally {
-              if (_didIteratorError31) {
-                throw _iteratorError31;
+              if (_didIteratorError32) {
+                throw _iteratorError32;
               }
             }
           }
@@ -38753,7 +43559,7 @@ var ComponentManager = function () {
         console.log("Web|componentManager|registerComponentWindow", component);
       }
       component.window = componentWindow;
-      component.sessionKey = SFJS.crypto.generateUUID();
+      component.sessionKey = SFJS.crypto.generateUUIDSync();
       this.sendMessageToComponent(component, {
         action: "component-registered",
         sessionKey: component.sessionKey,
@@ -38773,55 +43579,6 @@ var ComponentManager = function () {
       var didChange = component.active != true;
 
       component.active = true;
-      var _iteratorNormalCompletion32 = true;
-      var _didIteratorError32 = false;
-      var _iteratorError32 = undefined;
-
-      try {
-        for (var _iterator32 = this.handlers[Symbol.iterator](), _step32; !(_iteratorNormalCompletion32 = (_step32 = _iterator32.next()).done); _iteratorNormalCompletion32 = true) {
-          var handler = _step32.value;
-
-          if (handler.areas.includes(component.area) || handler.areas.includes("*")) {
-            handler.activationHandler(component);
-          }
-        }
-      } catch (err) {
-        _didIteratorError32 = true;
-        _iteratorError32 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion32 && _iterator32.return) {
-            _iterator32.return();
-          }
-        } finally {
-          if (_didIteratorError32) {
-            throw _iteratorError32;
-          }
-        }
-      }
-
-      if (didChange && !dontSync) {
-        component.setDirty(true);
-        this.syncManager.sync("activateComponent");
-      }
-
-      if (!this.activeComponents.includes(component)) {
-        this.activeComponents.push(component);
-      }
-
-      if (component.area == "themes") {
-        this.postActiveThemeToAllComponents();
-      }
-    }
-  }, {
-    key: 'deactivateComponent',
-    value: function deactivateComponent(component) {
-      var dontSync = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-      var didChange = component.active != false;
-      component.active = false;
-      component.sessionKey = null;
-
       var _iteratorNormalCompletion33 = true;
       var _didIteratorError33 = false;
       var _iteratorError33 = undefined;
@@ -38851,32 +43608,25 @@ var ComponentManager = function () {
 
       if (didChange && !dontSync) {
         component.setDirty(true);
-        this.syncManager.sync("deactivateComponent");
+        this.syncManager.sync("activateComponent");
       }
 
-      _.pull(this.activeComponents, component);
-
-      this.streamObservers = this.streamObservers.filter(function (o) {
-        return o.component !== component;
-      });
-
-      this.contextStreamObservers = this.contextStreamObservers.filter(function (o) {
-        return o.component !== component;
-      });
+      if (!this.activeComponents.includes(component)) {
+        this.activeComponents.push(component);
+      }
 
       if (component.area == "themes") {
         this.postActiveThemeToAllComponents();
       }
     }
   }, {
-    key: 'reloadComponent',
-    value: function reloadComponent(component) {
-      var _this33 = this;
+    key: 'deactivateComponent',
+    value: function deactivateComponent(component) {
+      var dontSync = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
-      //
-      // Do soft deactivate
-      //
+      var didChange = component.active != false;
       component.active = false;
+      component.sessionKey = null;
 
       var _iteratorNormalCompletion34 = true;
       var _didIteratorError34 = false;
@@ -38905,6 +43655,62 @@ var ComponentManager = function () {
         }
       }
 
+      if (didChange && !dontSync) {
+        component.setDirty(true);
+        this.syncManager.sync("deactivateComponent");
+      }
+
+      _.pull(this.activeComponents, component);
+
+      this.streamObservers = this.streamObservers.filter(function (o) {
+        return o.component !== component;
+      });
+
+      this.contextStreamObservers = this.contextStreamObservers.filter(function (o) {
+        return o.component !== component;
+      });
+
+      if (component.area == "themes") {
+        this.postActiveThemeToAllComponents();
+      }
+    }
+  }, {
+    key: 'reloadComponent',
+    value: function reloadComponent(component) {
+      var _this39 = this;
+
+      //
+      // Do soft deactivate
+      //
+      component.active = false;
+
+      var _iteratorNormalCompletion35 = true;
+      var _didIteratorError35 = false;
+      var _iteratorError35 = undefined;
+
+      try {
+        for (var _iterator35 = this.handlers[Symbol.iterator](), _step35; !(_iteratorNormalCompletion35 = (_step35 = _iterator35.next()).done); _iteratorNormalCompletion35 = true) {
+          var handler = _step35.value;
+
+          if (handler.areas.includes(component.area) || handler.areas.includes("*")) {
+            handler.activationHandler(component);
+          }
+        }
+      } catch (err) {
+        _didIteratorError35 = true;
+        _iteratorError35 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion35 && _iterator35.return) {
+            _iterator35.return();
+          }
+        } finally {
+          if (_didIteratorError35) {
+            throw _iteratorError35;
+          }
+        }
+      }
+
       if (component.area == "themes") {
         this.postActiveThemeToAllComponents();
       }
@@ -38915,39 +43721,39 @@ var ComponentManager = function () {
 
       this.timeout(function () {
         component.active = true;
-        var _iteratorNormalCompletion35 = true;
-        var _didIteratorError35 = false;
-        var _iteratorError35 = undefined;
+        var _iteratorNormalCompletion36 = true;
+        var _didIteratorError36 = false;
+        var _iteratorError36 = undefined;
 
         try {
-          for (var _iterator35 = _this33.handlers[Symbol.iterator](), _step35; !(_iteratorNormalCompletion35 = (_step35 = _iterator35.next()).done); _iteratorNormalCompletion35 = true) {
-            var handler = _step35.value;
+          for (var _iterator36 = _this39.handlers[Symbol.iterator](), _step36; !(_iteratorNormalCompletion36 = (_step36 = _iterator36.next()).done); _iteratorNormalCompletion36 = true) {
+            var handler = _step36.value;
 
             if (handler.areas.includes(component.area) || handler.areas.includes("*")) {
               handler.activationHandler(component);
             }
           }
         } catch (err) {
-          _didIteratorError35 = true;
-          _iteratorError35 = err;
+          _didIteratorError36 = true;
+          _iteratorError36 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion35 && _iterator35.return) {
-              _iterator35.return();
+            if (!_iteratorNormalCompletion36 && _iterator36.return) {
+              _iterator36.return();
             }
           } finally {
-            if (_didIteratorError35) {
-              throw _iteratorError35;
+            if (_didIteratorError36) {
+              throw _iteratorError36;
             }
           }
         }
 
-        if (!_this33.activeComponents.includes(component)) {
-          _this33.activeComponents.push(component);
+        if (!_this39.activeComponents.includes(component)) {
+          _this39.activeComponents.push(component);
         }
 
         if (component.area == "themes") {
-          _this33.postActiveThemeToAllComponents();
+          _this39.postActiveThemeToAllComponents();
         }
       });
     }
@@ -38965,48 +43771,18 @@ var ComponentManager = function () {
   }, {
     key: 'iframeForComponent',
     value: function iframeForComponent(component) {
-      var _iteratorNormalCompletion36 = true;
-      var _didIteratorError36 = false;
-      var _iteratorError36 = undefined;
-
-      try {
-        for (var _iterator36 = Array.from(document.getElementsByTagName("iframe"))[Symbol.iterator](), _step36; !(_iteratorNormalCompletion36 = (_step36 = _iterator36.next()).done); _iteratorNormalCompletion36 = true) {
-          var frame = _step36.value;
-
-          var componentId = frame.dataset.componentId;
-          if (componentId === component.uuid) {
-            return frame;
-          }
-        }
-      } catch (err) {
-        _didIteratorError36 = true;
-        _iteratorError36 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion36 && _iterator36.return) {
-            _iterator36.return();
-          }
-        } finally {
-          if (_didIteratorError36) {
-            throw _iteratorError36;
-          }
-        }
-      }
-    }
-  }, {
-    key: 'focusChangedForComponent',
-    value: function focusChangedForComponent(component) {
-      var focused = document.activeElement == this.iframeForComponent(component);
       var _iteratorNormalCompletion37 = true;
       var _didIteratorError37 = false;
       var _iteratorError37 = undefined;
 
       try {
-        for (var _iterator37 = this.handlers[Symbol.iterator](), _step37; !(_iteratorNormalCompletion37 = (_step37 = _iterator37.next()).done); _iteratorNormalCompletion37 = true) {
-          var handler = _step37.value;
+        for (var _iterator37 = Array.from(document.getElementsByTagName("iframe"))[Symbol.iterator](), _step37; !(_iteratorNormalCompletion37 = (_step37 = _iterator37.next()).done); _iteratorNormalCompletion37 = true) {
+          var frame = _step37.value;
 
-          // Notify all handlers, and not just ones that match this component type
-          handler.focusHandler && handler.focusHandler(component, focused);
+          var componentId = frame.dataset.componentId;
+          if (componentId === component.uuid) {
+            return frame;
+          }
         }
       } catch (err) {
         _didIteratorError37 = true;
@@ -39019,6 +43795,36 @@ var ComponentManager = function () {
         } finally {
           if (_didIteratorError37) {
             throw _iteratorError37;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'focusChangedForComponent',
+    value: function focusChangedForComponent(component) {
+      var focused = document.activeElement == this.iframeForComponent(component);
+      var _iteratorNormalCompletion38 = true;
+      var _didIteratorError38 = false;
+      var _iteratorError38 = undefined;
+
+      try {
+        for (var _iterator38 = this.handlers[Symbol.iterator](), _step38; !(_iteratorNormalCompletion38 = (_step38 = _iterator38.next()).done); _iteratorNormalCompletion38 = true) {
+          var handler = _step38.value;
+
+          // Notify all handlers, and not just ones that match this component type
+          handler.focusHandler && handler.focusHandler(component, focused);
+        }
+      } catch (err) {
+        _didIteratorError38 = true;
+        _iteratorError38 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion38 && _iterator38.return) {
+            _iterator38.return();
+          }
+        } finally {
+          if (_didIteratorError38) {
+            throw _iteratorError38;
           }
         }
       }
@@ -39057,7 +43863,6 @@ var ComponentManager = function () {
       return this.modelManager.allItemsMatchingTypes(["SN|Component", "SN|Theme"]);
     }
   }]);
-
   return ComponentManager;
 }();
 
@@ -39065,12 +43870,12 @@ angular.module('app').service('componentManager', ComponentManager);
 ;
 var DBManager = function () {
   function DBManager() {
-    _classCallCheck(this, DBManager);
+    (0, _classCallCheck3.default)(this, DBManager);
 
     this.locked = true;
   }
 
-  _createClass(DBManager, [{
+  (0, _createClass3.default)(DBManager, [{
     key: 'displayOfflineAlert',
     value: function displayOfflineAlert() {
       var message = "There was an issue loading your offline database. This could happen for two reasons:";
@@ -39229,7 +44034,6 @@ var DBManager = function () {
       };
     }
   }]);
-
   return DBManager;
 }();
 
@@ -39239,9 +44043,9 @@ angular.module('app').service('dbManager', DBManager);
 var DesktopManager = function () {
   DesktopManager.$inject = ['$rootScope', '$timeout', 'modelManager', 'syncManager', 'authManager', 'passcodeManager'];
   function DesktopManager($rootScope, $timeout, modelManager, syncManager, authManager, passcodeManager) {
-    var _this34 = this;
+    var _this40 = this;
 
-    _classCallCheck(this, DesktopManager);
+    (0, _classCallCheck3.default)(this, DesktopManager);
 
     this.passcodeManager = passcodeManager;
     this.modelManager = modelManager;
@@ -39254,53 +44058,102 @@ var DesktopManager = function () {
     this.isDesktop = isDesktopApplication();
 
     $rootScope.$on("initial-data-loaded", function () {
-      _this34.dataLoaded = true;
-      if (_this34.dataLoadHandler) {
-        _this34.dataLoadHandler();
+      _this40.dataLoaded = true;
+      if (_this40.dataLoadHandler) {
+        _this40.dataLoadHandler();
       }
     });
 
     $rootScope.$on("major-data-change", function () {
-      if (_this34.majorDataChangeHandler) {
-        _this34.majorDataChangeHandler();
+      if (_this40.majorDataChangeHandler) {
+        _this40.majorDataChangeHandler();
       }
     });
   }
 
-  _createClass(DesktopManager, [{
+  (0, _createClass3.default)(DesktopManager, [{
     key: 'getApplicationDataPath',
     value: function getApplicationDataPath() {
       console.assert(this.applicationDataPath, "applicationDataPath is null");
       return this.applicationDataPath;
     }
 
-    /* Sending a component in its raw state is really slow for the desktop app */
+    /*
+      Sending a component in its raw state is really slow for the desktop app
+      Keys are not passed into ItemParams, so the result is not encrypted
+     */
 
   }, {
     key: 'convertComponentForTransmission',
-    value: function convertComponentForTransmission(component) {
-      return new ItemParams(component).paramsForExportFile(true);
-    }
+    value: function () {
+      var _ref10 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee10(component) {
+        return _regenerator2.default.wrap(function _callee10$(_context10) {
+          while (1) {
+            switch (_context10.prev = _context10.next) {
+              case 0:
+                return _context10.abrupt('return', new ItemParams(component).paramsForExportFile(true));
+
+              case 1:
+              case 'end':
+                return _context10.stop();
+            }
+          }
+        }, _callee10, this);
+      }));
+
+      function convertComponentForTransmission(_x22) {
+        return _ref10.apply(this, arguments);
+      }
+
+      return convertComponentForTransmission;
+    }()
 
     // All `components` should be installed
 
   }, {
     key: 'syncComponentsInstallation',
     value: function syncComponentsInstallation(components) {
-      var _this35 = this;
+      var _this41 = this;
 
       if (!this.isDesktop) return;
 
-      var data = components.map(function (component) {
-        return _this35.convertComponentForTransmission(component);
+      Promise.all(components.map(function (component) {
+        return _this41.convertComponentForTransmission(component);
+      })).then(function (data) {
+        _this41.installationSyncHandler(data);
       });
-      this.installationSyncHandler(data);
     }
   }, {
     key: 'installComponent',
-    value: function installComponent(component) {
-      this.installComponentHandler(this.convertComponentForTransmission(component));
-    }
+    value: function () {
+      var _ref11 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee11(component) {
+        return _regenerator2.default.wrap(function _callee11$(_context11) {
+          while (1) {
+            switch (_context11.prev = _context11.next) {
+              case 0:
+                _context11.t0 = this;
+                _context11.next = 3;
+                return this.convertComponentForTransmission(component);
+
+              case 3:
+                _context11.t1 = _context11.sent;
+
+                _context11.t0.installComponentHandler.call(_context11.t0, _context11.t1);
+
+              case 5:
+              case 'end':
+                return _context11.stop();
+            }
+          }
+        }, _callee11, this);
+      }));
+
+      function installComponent(_x23) {
+        return _ref11.apply(this, arguments);
+      }
+
+      return installComponent;
+    }()
   }, {
     key: 'registerUpdateObserver',
     value: function registerUpdateObserver(callback) {
@@ -39332,7 +44185,7 @@ var DesktopManager = function () {
   }, {
     key: 'desktop_onComponentInstallationComplete',
     value: function desktop_onComponentInstallationComplete(componentData, error) {
-      var _this36 = this;
+      var _this42 = this;
 
       console.log("Web|Component Installation/Update Complete", componentData, error);
 
@@ -39348,47 +44201,15 @@ var DesktopManager = function () {
       if (error) {
         component.setAppDataItem("installError", error);
       } else {
-        var _iteratorNormalCompletion38 = true;
-        var _didIteratorError38 = false;
-        var _iteratorError38 = undefined;
-
-        try {
-          for (var _iterator38 = permissableKeys[Symbol.iterator](), _step38; !(_iteratorNormalCompletion38 = (_step38 = _iterator38.next()).done); _iteratorNormalCompletion38 = true) {
-            var key = _step38.value;
-
-            component[key] = componentData.content[key];
-          }
-        } catch (err) {
-          _didIteratorError38 = true;
-          _iteratorError38 = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion38 && _iterator38.return) {
-              _iterator38.return();
-            }
-          } finally {
-            if (_didIteratorError38) {
-              throw _iteratorError38;
-            }
-          }
-        }
-
-        this.modelManager.notifySyncObserversOfModels([component], ModelManager.MappingSourceDesktopInstalled);
-        component.setAppDataItem("installError", null);
-      }
-      component.setDirty(true);
-      this.syncManager.sync("onComponentInstallationComplete");
-
-      this.timeout(function () {
         var _iteratorNormalCompletion39 = true;
         var _didIteratorError39 = false;
         var _iteratorError39 = undefined;
 
         try {
-          for (var _iterator39 = _this36.updateObservers[Symbol.iterator](), _step39; !(_iteratorNormalCompletion39 = (_step39 = _iterator39.next()).done); _iteratorNormalCompletion39 = true) {
-            var observer = _step39.value;
+          for (var _iterator39 = permissableKeys[Symbol.iterator](), _step39; !(_iteratorNormalCompletion39 = (_step39 = _iterator39.next()).done); _iteratorNormalCompletion39 = true) {
+            var key = _step39.value;
 
-            observer.callback(component);
+            component[key] = componentData.content[key];
           }
         } catch (err) {
           _didIteratorError39 = true;
@@ -39401,6 +44222,38 @@ var DesktopManager = function () {
           } finally {
             if (_didIteratorError39) {
               throw _iteratorError39;
+            }
+          }
+        }
+
+        this.modelManager.notifySyncObserversOfModels([component], ModelManager.MappingSourceDesktopInstalled);
+        component.setAppDataItem("installError", null);
+      }
+      component.setDirty(true);
+      this.syncManager.sync("onComponentInstallationComplete");
+
+      this.timeout(function () {
+        var _iteratorNormalCompletion40 = true;
+        var _didIteratorError40 = false;
+        var _iteratorError40 = undefined;
+
+        try {
+          for (var _iterator40 = _this42.updateObservers[Symbol.iterator](), _step40; !(_iteratorNormalCompletion40 = (_step40 = _iterator40.next()).done); _iteratorNormalCompletion40 = true) {
+            var observer = _step40.value;
+
+            observer.callback(component);
+          }
+        } catch (err) {
+          _didIteratorError40 = true;
+          _iteratorError40 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion40 && _iterator40.return) {
+              _iterator40.return();
+            }
+          } finally {
+            if (_didIteratorError40) {
+              throw _iteratorError40;
             }
           }
         }
@@ -39434,7 +44287,7 @@ var DesktopManager = function () {
     }
   }, {
     key: 'desktop_requestBackupFile',
-    value: function desktop_requestBackupFile() {
+    value: function desktop_requestBackupFile(callback) {
       var keys, authParams, protocolVersion;
       if (this.authManager.offline() && this.passcodeManager.hasPasscode()) {
         keys = this.passcodeManager.keys();
@@ -39446,9 +44299,10 @@ var DesktopManager = function () {
         protocolVersion = this.authManager.protocolVersion();
       }
 
-      var data = this.modelManager.getAllItemsJSONData(keys, authParams, protocolVersion, true /* return null on empty */
-      );
-      return data;
+      this.modelManager.getAllItemsJSONData(keys, authParams, protocolVersion, true /* return null on empty */
+      ).then(function (data) {
+        callback(data);
+      });
     }
   }, {
     key: 'desktop_setMajorDataChangeHandler',
@@ -39456,7 +44310,6 @@ var DesktopManager = function () {
       this.majorDataChangeHandler = handler;
     }
   }]);
-
   return DesktopManager;
 }();
 
@@ -39465,14 +44318,14 @@ angular.module('app').service('desktopManager', DesktopManager);
 var HttpManager = function () {
   HttpManager.$inject = ['$timeout', 'storageManager'];
   function HttpManager($timeout, storageManager) {
-    _classCallCheck(this, HttpManager);
+    (0, _classCallCheck3.default)(this, HttpManager);
 
     // calling callbacks in a $timeout allows angular UI to update
     this.$timeout = $timeout;
     this.storageManager = storageManager;
   }
 
-  _createClass(HttpManager, [{
+  (0, _createClass3.default)(HttpManager, [{
     key: 'setAuthHeadersForRequest',
     value: function setAuthHeadersForRequest(request) {
       var token = this.storageManager.getItem("jwt");
@@ -39545,7 +44398,6 @@ var HttpManager = function () {
       }).join("&");
     }
   }]);
-
   return HttpManager;
 }();
 
@@ -39554,9 +44406,9 @@ angular.module('app').service('httpManager', HttpManager);
 var MigrationManager = function () {
   MigrationManager.$inject = ['$rootScope', 'modelManager', 'syncManager', 'componentManager'];
   function MigrationManager($rootScope, modelManager, syncManager, componentManager) {
-    var _this37 = this;
+    var _this43 = this;
 
-    _classCallCheck(this, MigrationManager);
+    (0, _classCallCheck3.default)(this, MigrationManager);
 
     this.$rootScope = $rootScope;
     this.modelManager = modelManager;
@@ -39568,13 +44420,13 @@ var MigrationManager = function () {
     this.addEditorToComponentMigrator();
 
     this.modelManager.addItemSyncObserver("migration-manager", "*", function (allItems, validItems, deletedItems) {
-      var _iteratorNormalCompletion40 = true;
-      var _didIteratorError40 = false;
-      var _iteratorError40 = undefined;
+      var _iteratorNormalCompletion41 = true;
+      var _didIteratorError41 = false;
+      var _iteratorError41 = undefined;
 
       try {
-        for (var _iterator40 = _this37.migrators[Symbol.iterator](), _step40; !(_iteratorNormalCompletion40 = (_step40 = _iterator40.next()).done); _iteratorNormalCompletion40 = true) {
-          var migrator = _step40.value;
+        for (var _iterator41 = _this43.migrators[Symbol.iterator](), _step41; !(_iteratorNormalCompletion41 = (_step41 = _iterator41.next()).done); _iteratorNormalCompletion41 = true) {
+          var migrator = _step41.value;
 
           var items = allItems.filter(function (item) {
             return item.content_type == migrator.content_type;
@@ -39584,16 +44436,16 @@ var MigrationManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError40 = true;
-        _iteratorError40 = err;
+        _didIteratorError41 = true;
+        _iteratorError41 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion40 && _iterator40.return) {
-            _iterator40.return();
+          if (!_iteratorNormalCompletion41 && _iterator41.return) {
+            _iterator41.return();
           }
         } finally {
-          if (_didIteratorError40) {
-            throw _iteratorError40;
+          if (_didIteratorError41) {
+            throw _iteratorError41;
           }
         }
       }
@@ -39605,27 +44457,27 @@ var MigrationManager = function () {
   convert to using the new component API.
   */
 
-  _createClass(MigrationManager, [{
+  (0, _createClass3.default)(MigrationManager, [{
     key: 'addEditorToComponentMigrator',
     value: function addEditorToComponentMigrator() {
-      var _this38 = this;
+      var _this44 = this;
 
       this.migrators.push({
         content_type: "SN|Editor",
 
         handler: function handler(editors) {
           // Convert editors to components
-          var _iteratorNormalCompletion41 = true;
-          var _didIteratorError41 = false;
-          var _iteratorError41 = undefined;
+          var _iteratorNormalCompletion42 = true;
+          var _didIteratorError42 = false;
+          var _iteratorError42 = undefined;
 
           try {
-            for (var _iterator41 = editors[Symbol.iterator](), _step41; !(_iteratorNormalCompletion41 = (_step41 = _iterator41.next()).done); _iteratorNormalCompletion41 = true) {
-              var editor = _step41.value;
+            for (var _iterator42 = editors[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
+              var editor = _step42.value;
 
               // If there's already a component for this url, then skip this editor
-              if (editor.url && !_this38.componentManager.componentForUrl(editor.url)) {
-                var component = _this38.modelManager.createItem({
+              if (editor.url && !_this44.componentManager.componentForUrl(editor.url)) {
+                var component = _this44.modelManager.createItem({
                   content_type: "SN|Component",
                   url: editor.url,
                   name: editor.name,
@@ -39633,33 +44485,8 @@ var MigrationManager = function () {
                 });
                 component.setAppDataItem("data", editor.data);
                 component.setDirty(true);
-                _this38.modelManager.addItem(component);
+                _this44.modelManager.addItem(component);
               }
-            }
-          } catch (err) {
-            _didIteratorError41 = true;
-            _iteratorError41 = err;
-          } finally {
-            try {
-              if (!_iteratorNormalCompletion41 && _iterator41.return) {
-                _iterator41.return();
-              }
-            } finally {
-              if (_didIteratorError41) {
-                throw _iteratorError41;
-              }
-            }
-          }
-
-          var _iteratorNormalCompletion42 = true;
-          var _didIteratorError42 = false;
-          var _iteratorError42 = undefined;
-
-          try {
-            for (var _iterator42 = editors[Symbol.iterator](), _step42; !(_iteratorNormalCompletion42 = (_step42 = _iterator42.next()).done); _iteratorNormalCompletion42 = true) {
-              var _editor = _step42.value;
-
-              _this38.modelManager.setItemToBeDeleted(_editor);
             }
           } catch (err) {
             _didIteratorError42 = true;
@@ -39676,12 +44503,36 @@ var MigrationManager = function () {
             }
           }
 
-          _this38.syncManager.sync("addEditorToComponentMigrator");
+          var _iteratorNormalCompletion43 = true;
+          var _didIteratorError43 = false;
+          var _iteratorError43 = undefined;
+
+          try {
+            for (var _iterator43 = editors[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
+              var _editor = _step43.value;
+
+              _this44.modelManager.setItemToBeDeleted(_editor);
+            }
+          } catch (err) {
+            _didIteratorError43 = true;
+            _iteratorError43 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion43 && _iterator43.return) {
+                _iterator43.return();
+              }
+            } finally {
+              if (_didIteratorError43) {
+                throw _iteratorError43;
+              }
+            }
+          }
+
+          _this44.syncManager.sync("addEditorToComponentMigrator");
         }
       });
     }
   }]);
-
   return MigrationManager;
 }();
 
@@ -39690,7 +44541,7 @@ angular.module('app').service('migrationManager', MigrationManager);
 var ModelManager = function () {
   ModelManager.$inject = ['storageManager'];
   function ModelManager(storageManager) {
-    _classCallCheck(this, ModelManager);
+    (0, _classCallCheck3.default)(this, ModelManager);
 
     ModelManager.MappingSourceRemoteRetrieved = "MappingSourceRemoteRetrieved";
     ModelManager.MappingSourceRemoteSaved = "MappingSourceRemoteSaved";
@@ -39716,7 +44567,7 @@ var ModelManager = function () {
     this.acceptableContentTypes = ["Note", "Tag", "Extension", "SN|Editor", "SN|Theme", "SN|Component", "SF|Extension", "SN|UserPreferences", "SF|MFA"];
   }
 
-  _createClass(ModelManager, [{
+  (0, _createClass3.default)(ModelManager, [{
     key: 'resetLocalMemory',
     value: function resetLocalMemory() {
       this.notes.length = 0;
@@ -39727,7 +44578,7 @@ var ModelManager = function () {
   }, {
     key: 'alternateUUIDForItem',
     value: function alternateUUIDForItem(item, callback, removeOriginal) {
-      var _this39 = this;
+      var _this45 = this;
 
       // We need to clone this item and give it a new uuid, then delete item with old uuid from db (you can't modify uuid's in our indexeddb setup)
 
@@ -39736,7 +44587,7 @@ var ModelManager = function () {
 
       var newItem = this.createItem(item);
 
-      newItem.uuid = SFJS.crypto.generateUUID();
+      newItem.uuid = SFJS.crypto.generateUUIDSync();
 
       // Update uuids of relationships
       newItem.informReferencesOfUUIDChange(item.uuid, newItem.uuid);
@@ -39746,7 +44597,7 @@ var ModelManager = function () {
       console.log(item.uuid, "-->", newItem.uuid);
 
       var block = function block() {
-        _this39.addItem(newItem);
+        _this45.addItem(newItem);
         newItem.setDirty(true);
         newItem.markAllReferencesDirty();
         callback();
@@ -39768,27 +44619,27 @@ var ModelManager = function () {
       // for example, editors have a one way relationship with notes. When a note changes its UUID, it has no way to inform the editor
       // to update its relationships
 
-      var _iteratorNormalCompletion43 = true;
-      var _didIteratorError43 = false;
-      var _iteratorError43 = undefined;
+      var _iteratorNormalCompletion44 = true;
+      var _didIteratorError44 = false;
+      var _iteratorError44 = undefined;
 
       try {
-        for (var _iterator43 = this.items[Symbol.iterator](), _step43; !(_iteratorNormalCompletion43 = (_step43 = _iterator43.next()).done); _iteratorNormalCompletion43 = true) {
-          var model = _step43.value;
+        for (var _iterator44 = this.items[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
+          var model = _step44.value;
 
           model.potentialItemOfInterestHasChangedItsUUID(newItem, oldUUID, newUUID);
         }
       } catch (err) {
-        _didIteratorError43 = true;
-        _iteratorError43 = err;
+        _didIteratorError44 = true;
+        _iteratorError44 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion43 && _iterator43.return) {
-            _iterator43.return();
+          if (!_iteratorNormalCompletion44 && _iterator44.return) {
+            _iterator44.return();
           }
         } finally {
-          if (_didIteratorError43) {
-            throw _iteratorError43;
+          if (_didIteratorError44) {
+            throw _iteratorError44;
           }
         }
       }
@@ -39801,10 +44652,10 @@ var ModelManager = function () {
       });
     }
   }, {
-    key: 'itemsForContentType',
-    value: function itemsForContentType(contentType) {
+    key: 'validItemsForContentType',
+    value: function validItemsForContentType(contentType) {
       return this.allItems.filter(function (item) {
-        return item.content_type == contentType;
+        return item.content_type == contentType && !item.errorDecrypting;
       });
     }
   }, {
@@ -39840,13 +44691,13 @@ var ModelManager = function () {
           modelsToNotifyObserversOf = [];
 
       // first loop should add and process items
-      var _iteratorNormalCompletion44 = true;
-      var _didIteratorError44 = false;
-      var _iteratorError44 = undefined;
+      var _iteratorNormalCompletion45 = true;
+      var _didIteratorError45 = false;
+      var _iteratorError45 = undefined;
 
       try {
-        for (var _iterator44 = items[Symbol.iterator](), _step44; !(_iteratorNormalCompletion44 = (_step44 = _iterator44.next()).done); _iteratorNormalCompletion44 = true) {
-          var json_obj = _step44.value;
+        for (var _iterator45 = items[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
+          var json_obj = _step45.value;
 
           if ((!json_obj.content_type || !json_obj.content) && !json_obj.deleted && !json_obj.errorDecrypting) {
             // An item that is not deleted should never have empty content
@@ -39857,27 +44708,27 @@ var ModelManager = function () {
           // Lodash's _.omit, which was previously used, seems to cause unexpected behavior
           // when json_obj is an ES6 item class. So we instead manually omit each key.
           if (Array.isArray(omitFields)) {
-            var _iteratorNormalCompletion45 = true;
-            var _didIteratorError45 = false;
-            var _iteratorError45 = undefined;
+            var _iteratorNormalCompletion46 = true;
+            var _didIteratorError46 = false;
+            var _iteratorError46 = undefined;
 
             try {
-              for (var _iterator45 = omitFields[Symbol.iterator](), _step45; !(_iteratorNormalCompletion45 = (_step45 = _iterator45.next()).done); _iteratorNormalCompletion45 = true) {
-                var key = _step45.value;
+              for (var _iterator46 = omitFields[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
+                var key = _step46.value;
 
                 delete json_obj[key];
               }
             } catch (err) {
-              _didIteratorError45 = true;
-              _iteratorError45 = err;
+              _didIteratorError46 = true;
+              _iteratorError46 = err;
             } finally {
               try {
-                if (!_iteratorNormalCompletion45 && _iterator45.return) {
-                  _iterator45.return();
+                if (!_iteratorNormalCompletion46 && _iterator46.return) {
+                  _iterator46.return();
                 }
               } finally {
-                if (_didIteratorError45) {
-                  throw _iteratorError45;
+                if (_didIteratorError46) {
+                  throw _iteratorError46;
                 }
               }
             }
@@ -39902,7 +44753,7 @@ var ModelManager = function () {
           if (json_obj.deleted == true || unknownContentType) {
             if (json_obj.deleted && json_obj.dirty) {
               // Item was marked as deleted but not yet synced
-              // We need to create this item as usual, but just not add it to indivudal arrays
+              // We need to create this item as usual, but just not add it to individual arrays
               // i.e add to this.items but not this.notes (so that it can be retrieved with getDirtyItems)
               isDirtyItemPendingDelete = true;
             } else {
@@ -39920,23 +44771,27 @@ var ModelManager = function () {
 
           this.addItem(item, isDirtyItemPendingDelete);
 
-          modelsToNotifyObserversOf.push(item);
+          // Observers do not need to handle items that errored while decrypting.
+          if (!item.errorDecrypting) {
+            modelsToNotifyObserversOf.push(item);
+          }
+
           models.push(item);
           processedObjects.push(json_obj);
         }
 
         // second loop should process references
       } catch (err) {
-        _didIteratorError44 = true;
-        _iteratorError44 = err;
+        _didIteratorError45 = true;
+        _iteratorError45 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion44 && _iterator44.return) {
-            _iterator44.return();
+          if (!_iteratorNormalCompletion45 && _iterator45.return) {
+            _iterator45.return();
           }
         } finally {
-          if (_didIteratorError44) {
-            throw _iteratorError44;
+          if (_didIteratorError45) {
+            throw _iteratorError45;
           }
         }
       }
@@ -39958,26 +44813,26 @@ var ModelManager = function () {
   }, {
     key: 'notifySyncObserversOfModels',
     value: function notifySyncObserversOfModels(models, source) {
-      var _iteratorNormalCompletion46 = true;
-      var _didIteratorError46 = false;
-      var _iteratorError46 = undefined;
+      var _iteratorNormalCompletion47 = true;
+      var _didIteratorError47 = false;
+      var _iteratorError47 = undefined;
 
       try {
-        for (var _iterator46 = this.itemSyncObservers[Symbol.iterator](), _step46; !(_iteratorNormalCompletion46 = (_step46 = _iterator46.next()).done); _iteratorNormalCompletion46 = true) {
-          var observer = _step46.value;
+        for (var _iterator47 = this.itemSyncObservers[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
+          var observer = _step47.value;
 
           var allRelevantItems = observer.type == "*" ? models : models.filter(function (item) {
             return item.content_type == observer.type;
           });
           var validItems = [],
               deletedItems = [];
-          var _iteratorNormalCompletion47 = true;
-          var _didIteratorError47 = false;
-          var _iteratorError47 = undefined;
+          var _iteratorNormalCompletion48 = true;
+          var _didIteratorError48 = false;
+          var _iteratorError48 = undefined;
 
           try {
-            for (var _iterator47 = allRelevantItems[Symbol.iterator](), _step47; !(_iteratorNormalCompletion47 = (_step47 = _iterator47.next()).done); _iteratorNormalCompletion47 = true) {
-              var item = _step47.value;
+            for (var _iterator48 = allRelevantItems[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
+              var item = _step48.value;
 
               if (item.deleted) {
                 deletedItems.push(item);
@@ -39986,16 +44841,16 @@ var ModelManager = function () {
               }
             }
           } catch (err) {
-            _didIteratorError47 = true;
-            _iteratorError47 = err;
+            _didIteratorError48 = true;
+            _iteratorError48 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion47 && _iterator47.return) {
-                _iterator47.return();
+              if (!_iteratorNormalCompletion48 && _iterator48.return) {
+                _iterator48.return();
               }
             } finally {
-              if (_didIteratorError47) {
-                throw _iteratorError47;
+              if (_didIteratorError48) {
+                throw _iteratorError48;
               }
             }
           }
@@ -40005,16 +44860,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError46 = true;
-        _iteratorError46 = err;
+        _didIteratorError47 = true;
+        _iteratorError47 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion46 && _iterator46.return) {
-            _iterator46.return();
+          if (!_iteratorNormalCompletion47 && _iterator47.return) {
+            _iterator47.return();
           }
         } finally {
-          if (_didIteratorError46) {
-            throw _iteratorError46;
+          if (_didIteratorError47) {
+            throw _iteratorError47;
           }
         }
       }
@@ -40022,13 +44877,13 @@ var ModelManager = function () {
   }, {
     key: 'notifyItemChangeObserversOfModels',
     value: function notifyItemChangeObserversOfModels(models) {
-      var _iteratorNormalCompletion48 = true;
-      var _didIteratorError48 = false;
-      var _iteratorError48 = undefined;
+      var _iteratorNormalCompletion49 = true;
+      var _didIteratorError49 = false;
+      var _iteratorError49 = undefined;
 
       try {
-        for (var _iterator48 = this.itemChangeObservers[Symbol.iterator](), _step48; !(_iteratorNormalCompletion48 = (_step48 = _iterator48.next()).done); _iteratorNormalCompletion48 = true) {
-          var observer = _step48.value;
+        for (var _iterator49 = this.itemChangeObservers[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
+          var observer = _step49.value;
 
           var relevantItems = models.filter(function (item) {
             return _.includes(observer.content_types, item.content_type) || _.includes(observer.content_types, "*");
@@ -40039,16 +44894,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError48 = true;
-        _iteratorError48 = err;
+        _didIteratorError49 = true;
+        _iteratorError49 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion48 && _iterator48.return) {
-            _iterator48.return();
+          if (!_iteratorNormalCompletion49 && _iterator49.return) {
+            _iterator49.return();
           }
         } finally {
-          if (_didIteratorError48) {
-            throw _iteratorError48;
+          if (_didIteratorError49) {
+            throw _iteratorError49;
           }
         }
       }
@@ -40170,13 +45025,13 @@ var ModelManager = function () {
         return;
       }
 
-      var _iteratorNormalCompletion49 = true;
-      var _didIteratorError49 = false;
-      var _iteratorError49 = undefined;
+      var _iteratorNormalCompletion50 = true;
+      var _didIteratorError50 = false;
+      var _iteratorError50 = undefined;
 
       try {
-        for (var _iterator49 = contentObject.references[Symbol.iterator](), _step49; !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
-          var reference = _step49.value;
+        for (var _iterator50 = contentObject.references[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
+          var reference = _step50.value;
 
           var referencedItem = this.findItem(reference.uuid);
           if (referencedItem) {
@@ -40191,16 +45046,16 @@ var ModelManager = function () {
           }
         }
       } catch (err) {
-        _didIteratorError49 = true;
-        _iteratorError49 = err;
+        _didIteratorError50 = true;
+        _iteratorError50 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion49 && _iterator49.return) {
-            _iterator49.return();
+          if (!_iteratorNormalCompletion50 && _iterator50.return) {
+            _iterator50.return();
           }
         } finally {
-          if (_didIteratorError49) {
-            throw _iteratorError49;
+          if (_didIteratorError50) {
+            throw _iteratorError50;
           }
         }
       }
@@ -40228,35 +45083,36 @@ var ModelManager = function () {
   }, {
     key: 'getDirtyItems',
     value: function getDirtyItems() {
-      // Items that have errorDecrypting should never be synced back up to the server
       return this.items.filter(function (item) {
-        return item.dirty == true && !item.dummy && !item.errorDecrypting;
+        // An item that has an error decrypting can be synced only if it is being deleted.
+        // Otherwise, we don't want to send corrupt content up to the server.
+        return item.dirty == true && !item.dummy && (!item.errorDecrypting || item.deleted);
       });
     }
   }, {
     key: 'clearDirtyItems',
     value: function clearDirtyItems(items) {
-      var _iteratorNormalCompletion50 = true;
-      var _didIteratorError50 = false;
-      var _iteratorError50 = undefined;
+      var _iteratorNormalCompletion51 = true;
+      var _didIteratorError51 = false;
+      var _iteratorError51 = undefined;
 
       try {
-        for (var _iterator50 = items[Symbol.iterator](), _step50; !(_iteratorNormalCompletion50 = (_step50 = _iterator50.next()).done); _iteratorNormalCompletion50 = true) {
-          var item = _step50.value;
+        for (var _iterator51 = items[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
+          var item = _step51.value;
 
           item.setDirty(false);
         }
       } catch (err) {
-        _didIteratorError50 = true;
-        _iteratorError50 = err;
+        _didIteratorError51 = true;
+        _iteratorError51 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion50 && _iterator50.return) {
-            _iterator50.return();
+          if (!_iteratorNormalCompletion51 && _iterator51.return) {
+            _iterator51.return();
           }
         } finally {
-          if (_didIteratorError50) {
-            throw _iteratorError50;
+          if (_didIteratorError51) {
+            throw _iteratorError51;
           }
         }
       }
@@ -40292,31 +45148,33 @@ var ModelManager = function () {
   }, {
     key: 'setAllItemsDirty',
     value: function setAllItemsDirty() {
+      var dontUpdateClientDates = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
       var relevantItems = this.allItems.filter(function (item) {
         return _.includes(this.acceptableContentTypes, item.content_type);
       }.bind(this));
 
-      var _iteratorNormalCompletion51 = true;
-      var _didIteratorError51 = false;
-      var _iteratorError51 = undefined;
+      var _iteratorNormalCompletion52 = true;
+      var _didIteratorError52 = false;
+      var _iteratorError52 = undefined;
 
       try {
-        for (var _iterator51 = relevantItems[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
-          var item = _step51.value;
+        for (var _iterator52 = relevantItems[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
+          var item = _step52.value;
 
-          item.setDirty(true);
+          item.setDirty(true, dontUpdateClientDates);
         }
       } catch (err) {
-        _didIteratorError51 = true;
-        _iteratorError51 = err;
+        _didIteratorError52 = true;
+        _iteratorError52 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion51 && _iterator51.return) {
-            _iterator51.return();
+          if (!_iteratorNormalCompletion52 && _iterator52.return) {
+            _iterator52.return();
           }
         } finally {
-          if (_didIteratorError51) {
-            throw _iteratorError51;
+          if (_didIteratorError52) {
+            throw _iteratorError52;
           }
         }
       }
@@ -40361,25 +45219,44 @@ var ModelManager = function () {
 
   }, {
     key: 'getAllItemsJSONData',
-    value: function getAllItemsJSONData(keys, authParams, protocolVersion, returnNullIfEmpty) {
-      var items = _.map(this.allItems, function (item) {
-        var itemParams = new ItemParams(item, keys, protocolVersion);
-        return itemParams.paramsForExportFile();
-      });
+    value: function () {
+      var _ref12 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee12(keys, authParams, protocolVersion, returnNullIfEmpty) {
+        return _regenerator2.default.wrap(function _callee12$(_context12) {
+          while (1) {
+            switch (_context12.prev = _context12.next) {
+              case 0:
+                return _context12.abrupt('return', Promise.all(this.allItems.map(function (item) {
+                  var itemParams = new ItemParams(item, keys, protocolVersion);
+                  return itemParams.paramsForExportFile();
+                })).then(function (items) {
+                  if (returnNullIfEmpty && items.length == 0) {
+                    return null;
+                  }
 
-      if (returnNullIfEmpty && items.length == 0) {
-        return null;
+                  var data = { items: items };
+
+                  if (keys) {
+                    // auth params are only needed when encrypted with a standard file key
+                    data["auth_params"] = authParams;
+                  }
+
+                  return JSON.stringify(data, null, 2 /* pretty print */);
+                }));
+
+              case 1:
+              case 'end':
+                return _context12.stop();
+            }
+          }
+        }, _callee12, this);
+      }));
+
+      function getAllItemsJSONData(_x28, _x29, _x30, _x31) {
+        return _ref12.apply(this, arguments);
       }
 
-      var data = { items: items };
-
-      if (keys) {
-        // auth params are only needed when encrypted with a standard file key
-        data["auth_params"] = authParams;
-      }
-
-      return JSON.stringify(data, null, 2 /* pretty print */);
-    }
+      return getAllItemsJSONData;
+    }()
 
     /*
     Misc
@@ -40419,7 +45296,6 @@ var ModelManager = function () {
       return Note.filterDummyNotes(this.notes);
     }
   }]);
-
   return ModelManager;
 }();
 
@@ -40429,7 +45305,7 @@ angular.module('app').service('modelManager', ModelManager);
 var NativeExtManager = function () {
   NativeExtManager.$inject = ['modelManager', 'syncManager', 'singletonManager'];
   function NativeExtManager(modelManager, syncManager, singletonManager) {
-    _classCallCheck(this, NativeExtManager);
+    (0, _classCallCheck3.default)(this, NativeExtManager);
 
     this.modelManager = modelManager;
     this.syncManager = syncManager;
@@ -40443,7 +45319,7 @@ var NativeExtManager = function () {
     this.resolveBatchManager();
   }
 
-  _createClass(NativeExtManager, [{
+  (0, _createClass3.default)(NativeExtManager, [{
     key: 'isSystemExtension',
     value: function isSystemExtension(extension) {
       return this.systemExtensions.includes(extension.uuid);
@@ -40451,11 +45327,11 @@ var NativeExtManager = function () {
   }, {
     key: 'resolveExtensionsManager',
     value: function resolveExtensionsManager() {
-      var _this40 = this;
+      var _this46 = this;
 
       this.singletonManager.registerSingleton({ content_type: "SN|Component", package_info: { identifier: this.extensionsManagerIdentifier } }, function (resolvedSingleton) {
         // Resolved Singleton
-        _this40.systemExtensions.push(resolvedSingleton.uuid);
+        _this46.systemExtensions.push(resolvedSingleton.uuid);
 
         var needsSync = false;
         if (isDesktopApplication()) {
@@ -40472,7 +45348,7 @@ var NativeExtManager = function () {
 
         if (needsSync) {
           resolvedSingleton.setDirty(true);
-          _this40.syncManager.sync("resolveExtensionsManager");
+          _this46.syncManager.sync("resolveExtensionsManager");
         }
       }, function (valueCallback) {
         // Safe to create. Create and return object.
@@ -40485,7 +45361,7 @@ var NativeExtManager = function () {
 
         var packageInfo = {
           name: "Extensions",
-          identifier: _this40.extensionsManagerIdentifier
+          identifier: _this46.extensionsManagerIdentifier
         };
 
         var item = {
@@ -40507,13 +45383,13 @@ var NativeExtManager = function () {
           item.content.hosted_url = window._extensions_manager_location;
         }
 
-        var component = _this40.modelManager.createItem(item);
-        _this40.modelManager.addItem(component);
+        var component = _this46.modelManager.createItem(item);
+        _this46.modelManager.addItem(component);
 
         component.setDirty(true);
-        _this40.syncManager.sync("resolveExtensionsManager createNew");
+        _this46.syncManager.sync("resolveExtensionsManager createNew");
 
-        _this40.systemExtensions.push(component.uuid);
+        _this46.systemExtensions.push(component.uuid);
 
         valueCallback(component);
       });
@@ -40521,11 +45397,11 @@ var NativeExtManager = function () {
   }, {
     key: 'resolveBatchManager',
     value: function resolveBatchManager() {
-      var _this41 = this;
+      var _this47 = this;
 
       this.singletonManager.registerSingleton({ content_type: "SN|Component", package_info: { identifier: this.batchManagerIdentifier } }, function (resolvedSingleton) {
         // Resolved Singleton
-        _this41.systemExtensions.push(resolvedSingleton.uuid);
+        _this47.systemExtensions.push(resolvedSingleton.uuid);
 
         var needsSync = false;
         if (isDesktopApplication()) {
@@ -40542,7 +45418,7 @@ var NativeExtManager = function () {
 
         if (needsSync) {
           resolvedSingleton.setDirty(true);
-          _this41.syncManager.sync("resolveExtensionsManager");
+          _this47.syncManager.sync("resolveExtensionsManager");
         }
       }, function (valueCallback) {
         // Safe to create. Create and return object.
@@ -40555,7 +45431,7 @@ var NativeExtManager = function () {
 
         var packageInfo = {
           name: "Batch Manager",
-          identifier: _this41.batchManagerIdentifier
+          identifier: _this47.batchManagerIdentifier
         };
 
         var item = {
@@ -40577,19 +45453,18 @@ var NativeExtManager = function () {
           item.content.hosted_url = window._batch_manager_location;
         }
 
-        var component = _this41.modelManager.createItem(item);
-        _this41.modelManager.addItem(component);
+        var component = _this47.modelManager.createItem(item);
+        _this47.modelManager.addItem(component);
 
         component.setDirty(true);
-        _this41.syncManager.sync("resolveBatchManager createNew");
+        _this47.syncManager.sync("resolveBatchManager createNew");
 
-        _this41.systemExtensions.push(component.uuid);
+        _this47.systemExtensions.push(component.uuid);
 
         valueCallback(component);
       });
     }
   }]);
-
   return NativeExtManager;
 }();
 
@@ -40601,7 +45476,7 @@ angular.module('app').service('nativeExtManager', NativeExtManager);
   }];
 
   function PasscodeManager($rootScope, $timeout, modelManager, dbManager, authManager, storageManager) {
-    var _this42 = this;
+    var _this49 = this;
 
     this._hasPasscode = storageManager.getItem("offlineParams", StorageManager.Fixed) != null;
     this._locked = this._hasPasscode;
@@ -40622,42 +45497,52 @@ angular.module('app').service('nativeExtManager', NativeExtManager);
       return JSON.parse(storageManager.getItem("offlineParams", StorageManager.Fixed));
     };
 
+    this.protocolVersion = function () {
+      return this._authParams && this._authParams.version;
+    };
+
     this.unlock = function (passcode, callback) {
+      var _this48 = this;
+
       var params = this.passcodeAuthParams();
-      SFJS.crypto.computeEncryptionKeysForUser(_.merge({ password: passcode }, params), function (keys) {
+      SFJS.crypto.computeEncryptionKeysForUser(passcode, params).then(function (keys) {
         if (keys.pw !== params.hash) {
           callback(false);
           return;
         }
 
-        this._keys = keys;
-        this.decryptLocalStorage(keys);
-        this._locked = false;
-        callback(true);
-      }.bind(this));
+        _this48._keys = keys;
+        _this48._authParams = params;
+        _this48.decryptLocalStorage(keys, params).then(function () {
+          _this48._locked = false;
+          callback(true);
+        });
+      });
     };
 
     this.setPasscode = function (passcode, callback) {
-      var cost = SFJS.crypto.defaultPasswordGenerationCost();
-      var salt = SFJS.crypto.generateRandomKey(512);
-      var defaultParams = { pw_cost: cost, pw_salt: salt, version: "002" };
+      var uuid = SFJS.crypto.generateUUIDSync();
 
-      SFJS.crypto.computeEncryptionKeysForUser(_.merge({ password: passcode }, defaultParams), function (keys) {
-        defaultParams.hash = keys.pw;
-        this._keys = keys;
-        this._hasPasscode = true;
+      SFJS.crypto.generateInitialKeysAndAuthParamsForUser(uuid, passcode).then(function (results) {
+        var keys = results.keys;
+        var authParams = results.authParams;
+
+        authParams.hash = keys.pw;
+        _this49._keys = keys;
+        _this49._hasPasscode = true;
+        _this49._authParams = authParams;
 
         // Encrypting will initially clear localStorage
-        this.encryptLocalStorage(keys);
+        _this49.encryptLocalStorage(keys, authParams);
 
         // After it's cleared, it's safe to write to it
-        storageManager.setItem("offlineParams", JSON.stringify(defaultParams), StorageManager.Fixed);
+        storageManager.setItem("offlineParams", JSON.stringify(authParams), StorageManager.Fixed);
         callback(true);
-      }.bind(_this42));
+      });
     };
 
     this.changePasscode = function (newPasscode, callback) {
-      _this42.setPasscode(newPasscode, callback);
+      _this49.setPasscode(newPasscode, callback);
     };
 
     this.clearPasscode = function () {
@@ -40667,17 +45552,34 @@ angular.module('app').service('nativeExtManager', NativeExtManager);
       this._hasPasscode = false;
     };
 
-    this.encryptLocalStorage = function (keys) {
-      storageManager.setKeys(keys);
+    this.encryptLocalStorage = function (keys, authParams) {
+      storageManager.setKeys(keys, authParams);
       // Switch to Ephemeral storage, wiping Fixed storage
       // Last argument is `force`, which we set to true because in the case of changing passcode
       storageManager.setItemsMode(authManager.isEphemeralSession() ? StorageManager.Ephemeral : StorageManager.FixedEncrypted, true);
     };
 
-    this.decryptLocalStorage = function (keys) {
-      storageManager.setKeys(keys);
-      storageManager.decryptStorage();
-    };
+    this.decryptLocalStorage = function () {
+      var _ref13 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee13(keys, authParams) {
+        return _regenerator2.default.wrap(function _callee13$(_context13) {
+          while (1) {
+            switch (_context13.prev = _context13.next) {
+              case 0:
+                storageManager.setKeys(keys, authParams);
+                return _context13.abrupt('return', storageManager.decryptStorage());
+
+              case 2:
+              case 'end':
+                return _context13.stop();
+            }
+          }
+        }, _callee13, this);
+      }));
+
+      return function (_x32, _x33) {
+        return _ref13.apply(this, arguments);
+      };
+    }();
   }
 });
 ; /*
@@ -40698,16 +45600,16 @@ angular.module('app').service('nativeExtManager', NativeExtManager);
 var SingletonManager = function () {
   SingletonManager.$inject = ['$rootScope', 'modelManager'];
   function SingletonManager($rootScope, modelManager) {
-    var _this43 = this;
+    var _this50 = this;
 
-    _classCallCheck(this, SingletonManager);
+    (0, _classCallCheck3.default)(this, SingletonManager);
 
     this.$rootScope = $rootScope;
     this.modelManager = modelManager;
     this.singletonHandlers = [];
 
     $rootScope.$on("initial-data-loaded", function (event, data) {
-      _this43.resolveSingletons(modelManager.allItems, null, true);
+      _this50.resolveSingletons(modelManager.allItems, null, true);
     });
 
     $rootScope.$on("sync:completed", function (event, data) {
@@ -40720,11 +45622,11 @@ var SingletonManager = function () {
       // the whole purpose of this thing.
 
       // Updated solution: resolveSingletons will now evaluate both of these arrays separately.
-      _this43.resolveSingletons(data.retrievedItems, data.savedItems);
+      _this50.resolveSingletons(data.retrievedItems, data.savedItems);
     });
   }
 
-  _createClass(SingletonManager, [{
+  (0, _createClass3.default)(SingletonManager, [{
     key: 'registerSingleton',
     value: function registerSingleton(predicate, resolveCallback, createBlock) {
       /*
@@ -40741,7 +45643,7 @@ var SingletonManager = function () {
   }, {
     key: 'resolveSingletons',
     value: function resolveSingletons(retrievedItems, savedItems, initialLoad) {
-      var _this44 = this;
+      var _this51 = this;
 
       retrievedItems = retrievedItems || [];
       savedItems = savedItems || [];
@@ -40749,19 +45651,19 @@ var SingletonManager = function () {
       var _loop4 = function _loop4(singletonHandler) {
         predicate = singletonHandler.predicate;
 
-        var retrievedSingletonItems = _this44.filterItemsWithPredicate(retrievedItems, predicate);
+        var retrievedSingletonItems = _this51.filterItemsWithPredicate(retrievedItems, predicate);
 
         // We only want to consider saved items count to see if it's more than 0, and do nothing else with it.
         // This way we know there was some action and things need to be resolved. The saved items will come up
         // in filterItemsWithPredicate(this.modelManager.allItems) and be deleted anyway
-        var savedSingletonItemsCount = _this44.filterItemsWithPredicate(savedItems, predicate).length;
+        var savedSingletonItemsCount = _this51.filterItemsWithPredicate(savedItems, predicate).length;
 
         if (retrievedSingletonItems.length > 0 || savedSingletonItemsCount > 0) {
           /*
             Check local inventory and make sure only 1 similar item exists. If more than 1, delete newest
             Note that this local inventory will also contain whatever is in retrievedItems.
           */
-          allExtantItemsMatchingPredicate = _this44.filterItemsWithPredicate(_this44.modelManager.allItems, predicate);
+          allExtantItemsMatchingPredicate = _this51.filterItemsWithPredicate(_this51.modelManager.allItems, predicate);
 
           /*
             Delete all but the earliest created
@@ -40779,32 +45681,32 @@ var SingletonManager = function () {
             // Delete everything but the first one
             var toDelete = sorted.slice(1, sorted.length);
 
-            var _iteratorNormalCompletion53 = true;
-            var _didIteratorError53 = false;
-            var _iteratorError53 = undefined;
+            var _iteratorNormalCompletion54 = true;
+            var _didIteratorError54 = false;
+            var _iteratorError54 = undefined;
 
             try {
-              for (var _iterator53 = toDelete[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
-                d = _step53.value;
+              for (var _iterator54 = toDelete[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
+                d = _step54.value;
 
-                _this44.modelManager.setItemToBeDeleted(d);
+                _this51.modelManager.setItemToBeDeleted(d);
               }
             } catch (err) {
-              _didIteratorError53 = true;
-              _iteratorError53 = err;
+              _didIteratorError54 = true;
+              _iteratorError54 = err;
             } finally {
               try {
-                if (!_iteratorNormalCompletion53 && _iterator53.return) {
-                  _iterator53.return();
+                if (!_iteratorNormalCompletion54 && _iterator54.return) {
+                  _iterator54.return();
                 }
               } finally {
-                if (_didIteratorError53) {
-                  throw _iteratorError53;
+                if (_didIteratorError54) {
+                  throw _iteratorError54;
                 }
               }
             }
 
-            _this44.$rootScope.sync("resolveSingletons");
+            _this51.$rootScope.sync("resolveSingletons");
 
             // Send remaining item to callback
             singletonHandler.singleton = winningItem;
@@ -40833,13 +45735,13 @@ var SingletonManager = function () {
         }
       };
 
-      var _iteratorNormalCompletion52 = true;
-      var _didIteratorError52 = false;
-      var _iteratorError52 = undefined;
+      var _iteratorNormalCompletion53 = true;
+      var _didIteratorError53 = false;
+      var _iteratorError53 = undefined;
 
       try {
-        for (var _iterator52 = this.singletonHandlers[Symbol.iterator](), _step52; !(_iteratorNormalCompletion52 = (_step52 = _iterator52.next()).done); _iteratorNormalCompletion52 = true) {
-          var singletonHandler = _step52.value;
+        for (var _iterator53 = this.singletonHandlers[Symbol.iterator](), _step53; !(_iteratorNormalCompletion53 = (_step53 = _iterator53.next()).done); _iteratorNormalCompletion53 = true) {
+          var singletonHandler = _step53.value;
           var predicate;
           var allExtantItemsMatchingPredicate;
           var d;
@@ -40848,16 +45750,16 @@ var SingletonManager = function () {
           _loop4(singletonHandler);
         }
       } catch (err) {
-        _didIteratorError52 = true;
-        _iteratorError52 = err;
+        _didIteratorError53 = true;
+        _iteratorError53 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion52 && _iterator52.return) {
-            _iterator52.return();
+          if (!_iteratorNormalCompletion53 && _iterator53.return) {
+            _iterator53.return();
           }
         } finally {
-          if (_didIteratorError52) {
-            throw _iteratorError52;
+          if (_didIteratorError53) {
+            throw _iteratorError53;
           }
         }
       }
@@ -40865,10 +45767,10 @@ var SingletonManager = function () {
   }, {
     key: 'filterItemsWithPredicate',
     value: function filterItemsWithPredicate(items, predicate) {
-      var _this45 = this;
+      var _this52 = this;
 
       return items.filter(function (candidate) {
-        return _this45.itemSatisfiesPredicate(candidate, predicate);
+        return _this52.itemSatisfiesPredicate(candidate, predicate);
       });
     }
   }, {
@@ -40877,7 +45779,7 @@ var SingletonManager = function () {
       for (var key in predicate) {
         var predicateValue = predicate[key];
         var candidateValue = candidate[key];
-        if ((typeof predicateValue === 'undefined' ? 'undefined' : _typeof(predicateValue)) == 'object') {
+        if ((typeof predicateValue === 'undefined' ? 'undefined' : (0, _typeof3.default)(predicateValue)) == 'object') {
           // Check nested properties
           if (!candidateValue) {
             // predicateValue is 'object' but candidateValue is null
@@ -40894,7 +45796,6 @@ var SingletonManager = function () {
       return true;
     }
   }]);
-
   return SingletonManager;
 }();
 
@@ -40902,12 +45803,12 @@ angular.module('app').service('singletonManager', SingletonManager);
 ;
 var MemoryStorage = function () {
   function MemoryStorage() {
-    _classCallCheck(this, MemoryStorage);
+    (0, _classCallCheck3.default)(this, MemoryStorage);
 
     this.memory = {};
   }
 
-  _createClass(MemoryStorage, [{
+  (0, _createClass3.default)(MemoryStorage, [{
     key: 'getItem',
     value: function getItem(key) {
       return this.memory[key] || null;
@@ -40943,19 +45844,18 @@ var MemoryStorage = function () {
       return Object.keys(this.memory).length;
     }
   }]);
-
   return MemoryStorage;
 }();
 
 var StorageManager = function () {
   StorageManager.$inject = ['dbManager'];
   function StorageManager(dbManager) {
-    _classCallCheck(this, StorageManager);
+    (0, _classCallCheck3.default)(this, StorageManager);
 
     this.dbManager = dbManager;
   }
 
-  _createClass(StorageManager, [{
+  (0, _createClass3.default)(StorageManager, [{
     key: 'initialize',
     value: function initialize(hasPasscode, ephemeral) {
       if (hasPasscode) {
@@ -41064,52 +45964,99 @@ var StorageManager = function () {
     }
   }, {
     key: 'setKeys',
-    value: function setKeys(keys) {
+    value: function setKeys(keys, authParams) {
       this.encryptedStorageKeys = keys;
+      this.encryptedStorageAuthParams = authParams;
     }
   }, {
     key: 'writeEncryptedStorageToDisk',
     value: function writeEncryptedStorageToDisk() {
+      var _this53 = this;
+
       var encryptedStorage = new EncryptedStorage();
       // Copy over totality of current storage
       encryptedStorage.storage = this.storageAsHash();
 
       // Save new encrypted storage in Fixed storage
-      var params = new ItemParams(encryptedStorage, this.encryptedStorageKeys);
-      this.setItem("encryptedStorage", JSON.stringify(params.paramsForSync()), StorageManager.Fixed);
+      var params = new ItemParams(encryptedStorage, this.encryptedStorageKeys, this.encryptedStorageAuthParams.version);
+      params.paramsForSync().then(function (syncParams) {
+        _this53.setItem("encryptedStorage", JSON.stringify(syncParams), StorageManager.Fixed);
+      });
     }
   }, {
     key: 'decryptStorage',
-    value: function decryptStorage() {
-      var stored = JSON.parse(this.getItem("encryptedStorage", StorageManager.Fixed));
-      SFItemTransformer.decryptItem(stored, this.encryptedStorageKeys);
-      var encryptedStorage = new EncryptedStorage(stored);
+    value: function () {
+      var _ref14 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee14() {
+        var stored, encryptedStorage, _iteratorNormalCompletion55, _didIteratorError55, _iteratorError55, _iterator55, _step55, key;
 
-      var _iteratorNormalCompletion54 = true;
-      var _didIteratorError54 = false;
-      var _iteratorError54 = undefined;
+        return _regenerator2.default.wrap(function _callee14$(_context14) {
+          while (1) {
+            switch (_context14.prev = _context14.next) {
+              case 0:
+                stored = JSON.parse(this.getItem("encryptedStorage", StorageManager.Fixed));
+                _context14.next = 3;
+                return SFJS.itemTransformer.decryptItem(stored, this.encryptedStorageKeys);
 
-      try {
-        for (var _iterator54 = Object.keys(encryptedStorage.storage)[Symbol.iterator](), _step54; !(_iteratorNormalCompletion54 = (_step54 = _iterator54.next()).done); _iteratorNormalCompletion54 = true) {
-          var key = _step54.value;
+              case 3:
+                encryptedStorage = new EncryptedStorage(stored);
+                _iteratorNormalCompletion55 = true;
+                _didIteratorError55 = false;
+                _iteratorError55 = undefined;
+                _context14.prev = 7;
 
-          this.setItem(key, encryptedStorage.storage[key]);
-        }
-      } catch (err) {
-        _didIteratorError54 = true;
-        _iteratorError54 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion54 && _iterator54.return) {
-            _iterator54.return();
+
+                for (_iterator55 = Object.keys(encryptedStorage.storage)[Symbol.iterator](); !(_iteratorNormalCompletion55 = (_step55 = _iterator55.next()).done); _iteratorNormalCompletion55 = true) {
+                  key = _step55.value;
+
+                  this.setItem(key, encryptedStorage.storage[key]);
+                }
+                _context14.next = 15;
+                break;
+
+              case 11:
+                _context14.prev = 11;
+                _context14.t0 = _context14['catch'](7);
+                _didIteratorError55 = true;
+                _iteratorError55 = _context14.t0;
+
+              case 15:
+                _context14.prev = 15;
+                _context14.prev = 16;
+
+                if (!_iteratorNormalCompletion55 && _iterator55.return) {
+                  _iterator55.return();
+                }
+
+              case 18:
+                _context14.prev = 18;
+
+                if (!_didIteratorError55) {
+                  _context14.next = 21;
+                  break;
+                }
+
+                throw _iteratorError55;
+
+              case 21:
+                return _context14.finish(18);
+
+              case 22:
+                return _context14.finish(15);
+
+              case 23:
+              case 'end':
+                return _context14.stop();
+            }
           }
-        } finally {
-          if (_didIteratorError54) {
-            throw _iteratorError54;
-          }
-        }
+        }, _callee14, this, [[7, 11, 15, 23], [16,, 18, 22]]);
+      }));
+
+      function decryptStorage() {
+        return _ref14.apply(this, arguments);
       }
-    }
+
+      return decryptStorage;
+    }()
   }, {
     key: 'hasPasscode',
     value: function hasPasscode() {
@@ -41184,7 +46131,6 @@ var StorageManager = function () {
       return this._memoryStorage;
     }
   }]);
-
   return StorageManager;
 }();
 
@@ -41197,7 +46143,7 @@ angular.module('app').service('storageManager', StorageManager);
 var SyncManager = function () {
   SyncManager.$inject = ['$rootScope', 'modelManager', 'authManager', 'dbManager', 'httpManager', '$interval', '$timeout', 'storageManager', 'passcodeManager'];
   function SyncManager($rootScope, modelManager, authManager, dbManager, httpManager, $interval, $timeout, storageManager, passcodeManager) {
-    _classCallCheck(this, SyncManager);
+    (0, _classCallCheck3.default)(this, SyncManager);
 
     this.$rootScope = $rootScope;
     this.httpManager = httpManager;
@@ -41211,132 +46157,175 @@ var SyncManager = function () {
     this.syncStatus = {};
   }
 
-  _createClass(SyncManager, [{
+  (0, _createClass3.default)(SyncManager, [{
     key: 'writeItemsToLocalStorage',
     value: function writeItemsToLocalStorage(items, offlineOnly, callback) {
+      var _this54 = this;
+
       if (items.length == 0) {
         callback && callback();
         return;
       }
-      // Use null to use the latest protocol version if offline
-      var version = this.authManager.offline() ? null : this.authManager.protocolVersion();
-      var keys = this.authManager.offline() ? this.passcodeManager.keys() : this.authManager.keys();
-      var params = items.map(function (item) {
-        var itemParams = new ItemParams(item, keys, version);
-        itemParams = itemParams.paramsForLocalStorage();
-        if (offlineOnly) {
-          delete itemParams.dirty;
-        }
-        return itemParams;
-      }.bind(this));
 
-      this.storageManager.saveModels(params, callback);
+      var version = this.authManager.offline() ? this.passcodeManager.protocolVersion() : this.authManager.protocolVersion();
+      var keys = this.authManager.offline() ? this.passcodeManager.keys() : this.authManager.keys();
+
+      Promise.all(items.map(function () {
+        var _ref15 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee15(item) {
+          var itemParams;
+          return _regenerator2.default.wrap(function _callee15$(_context15) {
+            while (1) {
+              switch (_context15.prev = _context15.next) {
+                case 0:
+                  itemParams = new ItemParams(item, keys, version);
+                  _context15.next = 3;
+                  return itemParams.paramsForLocalStorage();
+
+                case 3:
+                  itemParams = _context15.sent;
+
+                  if (offlineOnly) {
+                    delete itemParams.dirty;
+                  }
+                  return _context15.abrupt('return', itemParams);
+
+                case 6:
+                case 'end':
+                  return _context15.stop();
+              }
+            }
+          }, _callee15, _this54);
+        }));
+
+        return function (_x34) {
+          return _ref15.apply(this, arguments);
+        };
+      }())).then(function (params) {
+        _this54.storageManager.saveModels(params, callback);
+      });
     }
   }, {
     key: 'loadLocalItems',
-    value: function loadLocalItems(callback) {
-      var params = this.storageManager.getAllModels(function (items) {
-        var items = this.handleItemsResponse(items, null, ModelManager.MappingSourceLocalRetrieved);
-        Item.sortItemsByDate(items);
-        callback(items);
-      }.bind(this));
-    }
+    value: function () {
+      var _ref16 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee17(callback) {
+        var _this55 = this;
+
+        return _regenerator2.default.wrap(function _callee17$(_context17) {
+          while (1) {
+            switch (_context17.prev = _context17.next) {
+              case 0:
+                this.storageManager.getAllModels(function (items) {
+                  // break it up into chunks to make interface more responsive for large item counts
+                  var total = items.length;
+                  var iteration = 50;
+                  var current = 0;
+                  var processed = [];
+
+                  var completion = function completion() {
+                    Item.sortItemsByDate(processed);
+                    callback(processed);
+                  };
+
+                  var decryptNext = function () {
+                    var _ref17 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee16() {
+                      var subitems, processedSubitems;
+                      return _regenerator2.default.wrap(function _callee16$(_context16) {
+                        while (1) {
+                          switch (_context16.prev = _context16.next) {
+                            case 0:
+                              subitems = items.slice(current, current + iteration);
+                              _context16.next = 3;
+                              return _this55.handleItemsResponse(subitems, null, ModelManager.MappingSourceLocalRetrieved);
+
+                            case 3:
+                              processedSubitems = _context16.sent;
+
+                              processed.push(processedSubitems);
+
+                              current += subitems.length;
+
+                              if (current < total) {
+                                _this55.$timeout(function () {
+                                  decryptNext();
+                                });
+                              } else {
+                                completion();
+                              }
+
+                            case 7:
+                            case 'end':
+                              return _context16.stop();
+                          }
+                        }
+                      }, _callee16, _this55);
+                    }));
+
+                    return function decryptNext() {
+                      return _ref17.apply(this, arguments);
+                    };
+                  }();
+
+                  decryptNext();
+                });
+
+              case 1:
+              case 'end':
+                return _context17.stop();
+            }
+          }
+        }, _callee17, this);
+      }));
+
+      function loadLocalItems(_x35) {
+        return _ref16.apply(this, arguments);
+      }
+
+      return loadLocalItems;
+    }()
   }, {
     key: 'syncOffline',
     value: function syncOffline(items, callback) {
+      var _this56 = this;
+
       // Update all items updated_at to now
-      var _iteratorNormalCompletion55 = true;
-      var _didIteratorError55 = false;
-      var _iteratorError55 = undefined;
+      var _iteratorNormalCompletion56 = true;
+      var _didIteratorError56 = false;
+      var _iteratorError56 = undefined;
 
       try {
-        for (var _iterator55 = items[Symbol.iterator](), _step55; !(_iteratorNormalCompletion55 = (_step55 = _iterator55.next()).done); _iteratorNormalCompletion55 = true) {
-          var item = _step55.value;
+        for (var _iterator56 = items[Symbol.iterator](), _step56; !(_iteratorNormalCompletion56 = (_step56 = _iterator56.next()).done); _iteratorNormalCompletion56 = true) {
+          var item = _step56.value;
 
           item.updated_at = new Date();
         }
       } catch (err) {
-        _didIteratorError55 = true;
-        _iteratorError55 = err;
+        _didIteratorError56 = true;
+        _iteratorError56 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion55 && _iterator55.return) {
-            _iterator55.return();
+          if (!_iteratorNormalCompletion56 && _iterator56.return) {
+            _iterator56.return();
           }
         } finally {
-          if (_didIteratorError55) {
-            throw _iteratorError55;
+          if (_didIteratorError56) {
+            throw _iteratorError56;
           }
         }
       }
 
       this.writeItemsToLocalStorage(items, true, function (responseItems) {
         // delete anything needing to be deleted
-        var _iteratorNormalCompletion56 = true;
-        var _didIteratorError56 = false;
-        var _iteratorError56 = undefined;
-
-        try {
-          for (var _iterator56 = items[Symbol.iterator](), _step56; !(_iteratorNormalCompletion56 = (_step56 = _iterator56.next()).done); _iteratorNormalCompletion56 = true) {
-            var item = _step56.value;
-
-            if (item.deleted) {
-              this.modelManager.removeItemLocally(item);
-            }
-          }
-        } catch (err) {
-          _didIteratorError56 = true;
-          _iteratorError56 = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion56 && _iterator56.return) {
-              _iterator56.return();
-            }
-          } finally {
-            if (_didIteratorError56) {
-              throw _iteratorError56;
-            }
-          }
-        }
-
-        this.$rootScope.$broadcast("sync:completed", {});
-
-        // Required in order for modelManager to notify sync observers
-        this.modelManager.didSyncModelsOffline(items);
-
-        if (callback) {
-          callback({ success: true });
-        }
-      }.bind(this));
-    }
-
-    /*
-      In the case of signing in and merging local data, we alternative UUIDs
-      to avoid overwriting data a user may retrieve that has the same UUID.
-      Alternating here forces us to to create duplicates of the items instead.
-     */
-
-  }, {
-    key: 'markAllItemsDirtyAndSaveOffline',
-    value: function markAllItemsDirtyAndSaveOffline(callback, alternateUUIDs) {
-      var _this46 = this;
-
-      // use a copy, as alternating uuid will affect array
-      var originalItems = this.modelManager.allItems.filter(function (item) {
-        return !item.errorDecrypting;
-      }).slice();
-
-      var block = function block() {
-        var allItems = _this46.modelManager.allItems;
         var _iteratorNormalCompletion57 = true;
         var _didIteratorError57 = false;
         var _iteratorError57 = undefined;
 
         try {
-          for (var _iterator57 = allItems[Symbol.iterator](), _step57; !(_iteratorNormalCompletion57 = (_step57 = _iterator57.next()).done); _iteratorNormalCompletion57 = true) {
+          for (var _iterator57 = items[Symbol.iterator](), _step57; !(_iteratorNormalCompletion57 = (_step57 = _iterator57.next()).done); _iteratorNormalCompletion57 = true) {
             var item = _step57.value;
 
-            item.setDirty(true);
+            if (item.deleted) {
+              _this56.modelManager.removeItemLocally(item);
+            }
           }
         } catch (err) {
           _didIteratorError57 = true;
@@ -41353,7 +46342,61 @@ var SyncManager = function () {
           }
         }
 
-        _this46.writeItemsToLocalStorage(allItems, false, callback);
+        _this56.$rootScope.$broadcast("sync:completed", {});
+
+        // Required in order for modelManager to notify sync observers
+        _this56.modelManager.didSyncModelsOffline(items);
+
+        if (callback) {
+          callback({ success: true });
+        }
+      });
+    }
+
+    /*
+      In the case of signing in and merging local data, we alternative UUIDs
+      to avoid overwriting data a user may retrieve that has the same UUID.
+      Alternating here forces us to to create duplicates of the items instead.
+     */
+
+  }, {
+    key: 'markAllItemsDirtyAndSaveOffline',
+    value: function markAllItemsDirtyAndSaveOffline(callback, alternateUUIDs) {
+      var _this57 = this;
+
+      // use a copy, as alternating uuid will affect array
+      var originalItems = this.modelManager.allItems.filter(function (item) {
+        return !item.errorDecrypting;
+      }).slice();
+
+      var block = function block() {
+        var allItems = _this57.modelManager.allItems;
+        var _iteratorNormalCompletion58 = true;
+        var _didIteratorError58 = false;
+        var _iteratorError58 = undefined;
+
+        try {
+          for (var _iterator58 = allItems[Symbol.iterator](), _step58; !(_iteratorNormalCompletion58 = (_step58 = _iterator58.next()).done); _iteratorNormalCompletion58 = true) {
+            var item = _step58.value;
+
+            item.setDirty(true);
+          }
+        } catch (err) {
+          _didIteratorError58 = true;
+          _iteratorError58 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion58 && _iterator58.return) {
+              _iterator58.return();
+            }
+          } finally {
+            if (_didIteratorError58) {
+              throw _iteratorError58;
+            }
+          }
+        }
+
+        _this57.writeItemsToLocalStorage(allItems, false, callback);
       };
 
       if (alternateUUIDs) {
@@ -41376,7 +46419,7 @@ var SyncManager = function () {
           // but for some reason retained their data (This happens in Firefox when using private mode).
           // In this case, we should pass false so that both copies are kept. However, it's difficult to
           // detect when the app has entered this state. We will just use true to remove original items for now.
-          _this46.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
+          _this57.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
         };
 
         alternateNextItem();
@@ -41397,27 +46440,27 @@ var SyncManager = function () {
         allCallbacks.push(currentCallback);
       }
       if (allCallbacks.length) {
-        var _iteratorNormalCompletion58 = true;
-        var _didIteratorError58 = false;
-        var _iteratorError58 = undefined;
+        var _iteratorNormalCompletion59 = true;
+        var _didIteratorError59 = false;
+        var _iteratorError59 = undefined;
 
         try {
-          for (var _iterator58 = allCallbacks[Symbol.iterator](), _step58; !(_iteratorNormalCompletion58 = (_step58 = _iterator58.next()).done); _iteratorNormalCompletion58 = true) {
-            var eachCallback = _step58.value;
+          for (var _iterator59 = allCallbacks[Symbol.iterator](), _step59; !(_iteratorNormalCompletion59 = (_step59 = _iterator59.next()).done); _iteratorNormalCompletion59 = true) {
+            var eachCallback = _step59.value;
 
             eachCallback(response);
           }
         } catch (err) {
-          _didIteratorError58 = true;
-          _iteratorError58 = err;
+          _didIteratorError59 = true;
+          _iteratorError59 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion58 && _iterator58.return) {
-              _iterator58.return();
+            if (!_iteratorNormalCompletion59 && _iterator59.return) {
+              _iterator59.return();
             }
           } finally {
-            if (_didIteratorError58) {
-              throw _iteratorError58;
+            if (_didIteratorError59) {
+              throw _iteratorError59;
             }
           }
         }
@@ -41455,286 +46498,429 @@ var SyncManager = function () {
     }
   }, {
     key: 'sync',
-    value: function sync(callback) {
-      var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-      var source = arguments[2];
+    value: function () {
+      var _ref18 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee19(callback) {
+        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        var source = arguments[2];
+
+        var allDirtyItems, isContinuationSync, submitLimit, subItems, version, keys, params, _iteratorNormalCompletion60, _didIteratorError60, _iteratorError60, _iterator60, _step60, item, onSyncCompletion, onSyncSuccess;
+
+        return _regenerator2.default.wrap(function _callee19$(_context19) {
+          while (1) {
+            switch (_context19.prev = _context19.next) {
+              case 0:
+                if (!this.syncLocked) {
+                  _context19.next = 3;
+                  break;
+                }
+
+                console.log("Sync Locked, Returning;");
+                return _context19.abrupt('return');
+
+              case 3:
+
+                if (!options) options = {};
+
+                if (typeof callback == 'string') {
+                  // is source string, used to avoid filling parameters on call
+                  source = callback;
+                  callback = null;
+                }
+
+                // console.log("Syncing from", source);
+
+                allDirtyItems = this.modelManager.getDirtyItems();
+
+                // When a user hits the physical refresh button, we want to force refresh, in case
+                // the sync engine is stuck in some inProgress loop.
+
+                if (!(this.syncStatus.syncOpInProgress && !options.force)) {
+                  _context19.next = 12;
+                  break;
+                }
+
+                this.repeatOnCompletion = true;
+                if (callback) {
+                  this.queuedCallbacks.push(callback);
+                }
+
+                // write to local storage nonetheless, since some users may see several second delay in server response.
+                // if they close the browser before the ongoing sync request completes, local changes will be lost if we dont save here
+                this.writeItemsToLocalStorage(allDirtyItems, false, null);
+
+                console.log("Sync op in progress; returning.");
+                return _context19.abrupt('return');
+
+              case 12:
+                if (!this.authManager.offline()) {
+                  _context19.next = 16;
+                  break;
+                }
+
+                this.syncOffline(allDirtyItems, callback);
+                this.modelManager.clearDirtyItems(allDirtyItems);
+                return _context19.abrupt('return');
+
+              case 16:
+                isContinuationSync = this.syncStatus.needsMoreSync;
 
 
-      if (this.syncLocked) {
-        console.log("Sync Locked, Returning;");
-        return;
-      }
+                this.syncStatus.syncOpInProgress = true;
+                this.syncStatus.syncStart = new Date();
+                this.beginCheckingIfSyncIsTakingTooLong();
 
-      if (!options) options = {};
+                submitLimit = 100;
+                subItems = allDirtyItems.slice(0, submitLimit);
 
-      if (typeof callback == 'string') {
-        // is source string, used to avoid filling parameters on call
-        source = callback;
-        callback = null;
-      }
+                if (subItems.length < allDirtyItems.length) {
+                  // more items left to be synced, repeat
+                  this.syncStatus.needsMoreSync = true;
+                } else {
+                  this.syncStatus.needsMoreSync = false;
+                }
 
-      // console.log("Syncing from", source);
+                if (!isContinuationSync) {
+                  this.syncStatus.total = allDirtyItems.length;
+                  this.syncStatus.current = 0;
+                }
 
-      var allDirtyItems = this.modelManager.getDirtyItems();
+                // If items are marked as dirty during a long running sync request, total isn't updated
+                // This happens mostly in the case of large imports and sync conflicts where duplicated items are created
+                if (this.syncStatus.current > this.syncStatus.total) {
+                  this.syncStatus.total = this.syncStatus.current;
+                }
 
-      // When a user hits the physical refresh button, we want to force refresh, in case
-      // the sync engine is stuck in some inProgress loop.
-      if (this.syncStatus.syncOpInProgress && !options.force) {
-        this.repeatOnCompletion = true;
-        if (callback) {
-          this.queuedCallbacks.push(callback);
-        }
+                // when doing a sync request that returns items greater than the limit, and thus subsequent syncs are required,
+                // we want to keep track of all retreived items, then save to local storage only once all items have been retrieved,
+                // so that relationships remain intact
+                if (!this.allRetreivedItems) {
+                  this.allRetreivedItems = [];
+                }
 
-        // write to local storage nonetheless, since some users may see several second delay in server response.
-        // if they close the browser before the ongoing sync request completes, local changes will be lost if we dont save here
-        this.writeItemsToLocalStorage(allDirtyItems, false, null);
+                // We also want to do this for savedItems
+                if (!this.allSavedItems) {
+                  this.allSavedItems = [];
+                }
 
-        console.log("Sync op in progress; returning.");
-        return;
-      }
+                version = this.authManager.protocolVersion();
+                keys = this.authManager.keys();
+                params = {};
 
-      // we want to write all dirty items to disk only if the user is offline, or if the sync op fails
-      // if the sync op succeeds, these items will be written to disk by handling the "saved_items" response from the server
-      if (this.authManager.offline()) {
-        this.syncOffline(allDirtyItems, callback);
-        this.modelManager.clearDirtyItems(allDirtyItems);
-        return;
-      }
+                params.limit = 150;
 
-      var isContinuationSync = this.syncStatus.needsMoreSync;
+                _context19.next = 33;
+                return Promise.all(subItems.map(function (item) {
+                  var itemParams = new ItemParams(item, keys, version);
+                  itemParams.additionalFields = options.additionalFields;
+                  return itemParams.paramsForSync();
+                })).then(function (itemsParams) {
+                  params.items = itemsParams;
+                });
 
-      this.syncStatus.syncOpInProgress = true;
-      this.syncStatus.syncStart = new Date();
-      this.beginCheckingIfSyncIsTakingTooLong();
+              case 33:
+                _iteratorNormalCompletion60 = true;
+                _didIteratorError60 = false;
+                _iteratorError60 = undefined;
+                _context19.prev = 36;
 
-      var submitLimit = 100;
-      var subItems = allDirtyItems.slice(0, submitLimit);
-      if (subItems.length < allDirtyItems.length) {
-        // more items left to be synced, repeat
-        this.syncStatus.needsMoreSync = true;
-      } else {
-        this.syncStatus.needsMoreSync = false;
-      }
 
-      if (!isContinuationSync) {
-        this.syncStatus.total = allDirtyItems.length;
-        this.syncStatus.current = 0;
-      }
+                for (_iterator60 = subItems[Symbol.iterator](); !(_iteratorNormalCompletion60 = (_step60 = _iterator60.next()).done); _iteratorNormalCompletion60 = true) {
+                  item = _step60.value;
 
-      // when doing a sync request that returns items greater than the limit, and thus subsequent syncs are required,
-      // we want to keep track of all retreived items, then save to local storage only once all items have been retrieved,
-      // so that relationships remain intact
-      if (!this.allRetreivedItems) {
-        this.allRetreivedItems = [];
-      }
+                  // Reset dirty counter to 0, since we're about to sync it.
+                  // This means anyone marking the item as dirty after this will cause it so sync again and not be cleared on sync completion.
+                  item.dirtyCount = 0;
+                }
 
-      // We also want to do this for savedItems
-      if (!this.allSavedItems) {
-        this.allSavedItems = [];
-      }
+                _context19.next = 44;
+                break;
 
-      var version = this.authManager.protocolVersion();
-      var keys = this.authManager.keys();
+              case 40:
+                _context19.prev = 40;
+                _context19.t0 = _context19['catch'](36);
+                _didIteratorError60 = true;
+                _iteratorError60 = _context19.t0;
 
-      var params = {};
-      params.limit = 150;
-      params.items = _.map(subItems, function (item) {
-        var itemParams = new ItemParams(item, keys, version);
-        itemParams.additionalFields = options.additionalFields;
-        return itemParams.paramsForSync();
-      }.bind(this));
+              case 44:
+                _context19.prev = 44;
+                _context19.prev = 45;
 
-      var _iteratorNormalCompletion59 = true;
-      var _didIteratorError59 = false;
-      var _iteratorError59 = undefined;
+                if (!_iteratorNormalCompletion60 && _iterator60.return) {
+                  _iterator60.return();
+                }
 
-      try {
-        for (var _iterator59 = subItems[Symbol.iterator](), _step59; !(_iteratorNormalCompletion59 = (_step59 = _iterator59.next()).done); _iteratorNormalCompletion59 = true) {
-          var item = _step59.value;
+              case 47:
+                _context19.prev = 47;
 
-          // Reset dirty counter to 0, since we're about to sync it.
-          // This means anyone marking the item as dirty after this will cause it so sync again and not be cleared on sync completion.
-          item.dirtyCount = 0;
-        }
-      } catch (err) {
-        _didIteratorError59 = true;
-        _iteratorError59 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion59 && _iterator59.return) {
-            _iterator59.return();
-          }
-        } finally {
-          if (_didIteratorError59) {
-            throw _iteratorError59;
-          }
-        }
-      }
+                if (!_didIteratorError60) {
+                  _context19.next = 50;
+                  break;
+                }
 
-      params.sync_token = this.syncToken;
-      params.cursor_token = this.cursorToken;
+                throw _iteratorError60;
 
-      var onSyncCompletion = function (response) {
-        this.stopCheckingIfSyncIsTakingTooLong();
-      }.bind(this);
+              case 50:
+                return _context19.finish(47);
 
-      var onSyncSuccess = function (response) {
-        // Check to make sure any subItem hasn't been marked as dirty again while a sync was ongoing
-        var itemsToClearAsDirty = [];
-        var _iteratorNormalCompletion60 = true;
-        var _didIteratorError60 = false;
-        var _iteratorError60 = undefined;
+              case 51:
+                return _context19.finish(44);
 
-        try {
-          for (var _iterator60 = subItems[Symbol.iterator](), _step60; !(_iteratorNormalCompletion60 = (_step60 = _iterator60.next()).done); _iteratorNormalCompletion60 = true) {
-            var item = _step60.value;
+              case 52:
+                params.sync_token = this.syncToken;
+                params.cursor_token = this.cursorToken;
 
-            if (item.dirtyCount == 0) {
-              // Safe to clear as dirty
-              itemsToClearAsDirty.push(item);
+                onSyncCompletion = function (response) {
+                  this.stopCheckingIfSyncIsTakingTooLong();
+                }.bind(this);
+
+                onSyncSuccess = function () {
+                  var _ref19 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee18(response) {
+                    var itemsToClearAsDirty, _iteratorNormalCompletion61, _didIteratorError61, _iteratorError61, _iterator61, _step61, item, allSavedUUIDs, retrieved, omitFields, saved, unsaved, majorDataChangeThreshold;
+
+                    return _regenerator2.default.wrap(function _callee18$(_context18) {
+                      while (1) {
+                        switch (_context18.prev = _context18.next) {
+                          case 0:
+                            // Check to make sure any subItem hasn't been marked as dirty again while a sync was ongoing
+                            itemsToClearAsDirty = [];
+                            _iteratorNormalCompletion61 = true;
+                            _didIteratorError61 = false;
+                            _iteratorError61 = undefined;
+                            _context18.prev = 4;
+
+                            for (_iterator61 = subItems[Symbol.iterator](); !(_iteratorNormalCompletion61 = (_step61 = _iterator61.next()).done); _iteratorNormalCompletion61 = true) {
+                              item = _step61.value;
+
+                              if (item.dirtyCount == 0) {
+                                // Safe to clear as dirty
+                                itemsToClearAsDirty.push(item);
+                              }
+                            }
+                            _context18.next = 12;
+                            break;
+
+                          case 8:
+                            _context18.prev = 8;
+                            _context18.t0 = _context18['catch'](4);
+                            _didIteratorError61 = true;
+                            _iteratorError61 = _context18.t0;
+
+                          case 12:
+                            _context18.prev = 12;
+                            _context18.prev = 13;
+
+                            if (!_iteratorNormalCompletion61 && _iterator61.return) {
+                              _iterator61.return();
+                            }
+
+                          case 15:
+                            _context18.prev = 15;
+
+                            if (!_didIteratorError61) {
+                              _context18.next = 18;
+                              break;
+                            }
+
+                            throw _iteratorError61;
+
+                          case 18:
+                            return _context18.finish(15);
+
+                          case 19:
+                            return _context18.finish(12);
+
+                          case 20:
+                            this.modelManager.clearDirtyItems(itemsToClearAsDirty);
+                            this.syncStatus.error = null;
+
+                            this.$rootScope.$broadcast("sync:updated_token", this.syncToken);
+
+                            // Filter retrieved_items to remove any items that may be in saved_items for this complete sync operation
+                            // When signing in, and a user requires many round trips to complete entire retrieval of data, an item may be saved
+                            // on the first trip, then on subsequent trips using cursor_token, this same item may be returned, since it's date is
+                            // greater than cursor_token. We keep track of all saved items in whole sync operation with this.allSavedItems
+                            // We need this because singletonManager looks at retrievedItems as higher precendence than savedItems, but if it comes in both
+                            // then that's problematic.
+                            allSavedUUIDs = this.allSavedItems.map(function (item) {
+                              return item.uuid;
+                            });
+
+                            response.retrieved_items = response.retrieved_items.filter(function (candidate) {
+                              return !allSavedUUIDs.includes(candidate.uuid);
+                            });
+
+                            // Map retrieved items to local data
+                            // Note that deleted items will not be returned
+                            _context18.next = 27;
+                            return this.handleItemsResponse(response.retrieved_items, null, ModelManager.MappingSourceRemoteRetrieved);
+
+                          case 27:
+                            retrieved = _context18.sent;
+
+
+                            // Append items to master list of retrieved items for this ongoing sync operation
+                            this.allRetreivedItems = this.allRetreivedItems.concat(retrieved);
+
+                            // Merge only metadata for saved items
+                            // we write saved items to disk now because it clears their dirty status then saves
+                            // if we saved items before completion, we had have to save them as dirty and save them again on success as clean
+                            omitFields = ["content", "auth_hash"];
+
+                            // Map saved items to local data
+
+                            _context18.next = 32;
+                            return this.handleItemsResponse(response.saved_items, omitFields, ModelManager.MappingSourceRemoteSaved);
+
+                          case 32:
+                            saved = _context18.sent;
+
+
+                            // Append items to master list of saved items for this ongoing sync operation
+                            this.allSavedItems = this.allSavedItems.concat(saved);
+
+                            // Create copies of items or alternate their uuids if neccessary
+                            unsaved = response.unsaved;
+
+                            this.handleUnsavedItemsResponse(unsaved);
+
+                            this.writeItemsToLocalStorage(saved, false, null);
+
+                            this.syncStatus.syncOpInProgress = false;
+                            this.syncStatus.current += subItems.length;
+
+                            // set the sync token at the end, so that if any errors happen above, you can resync
+                            this.syncToken = response.sync_token;
+                            this.cursorToken = response.cursor_token;
+
+                            onSyncCompletion(response);
+
+                            if (this.cursorToken || this.syncStatus.needsMoreSync) {
+                              setTimeout(function () {
+                                this.sync(callback, options, "onSyncSuccess cursorToken || needsMoreSync");
+                              }.bind(this), 10); // wait 10ms to allow UI to update
+                            } else if (this.repeatOnCompletion) {
+                              this.repeatOnCompletion = false;
+                              setTimeout(function () {
+                                this.sync(callback, options, "onSyncSuccess repeatOnCompletion");
+                              }.bind(this), 10); // wait 10ms to allow UI to update
+                            } else {
+                              this.writeItemsToLocalStorage(this.allRetreivedItems, false, null);
+
+                              // The number of changed items that constitute a major change
+                              // This is used by the desktop app to create backups
+                              majorDataChangeThreshold = 10;
+
+                              if (this.allRetreivedItems.length >= majorDataChangeThreshold || saved.length >= majorDataChangeThreshold || unsaved.length >= majorDataChangeThreshold) {
+                                this.$rootScope.$broadcast("major-data-change");
+                              }
+
+                              this.callQueuedCallbacksAndCurrent(callback, response);
+                              this.$rootScope.$broadcast("sync:completed", { retrievedItems: this.allRetreivedItems, savedItems: this.allSavedItems });
+
+                              this.allRetreivedItems = [];
+                              this.allSavedItems = [];
+                            }
+
+                          case 43:
+                          case 'end':
+                            return _context18.stop();
+                        }
+                      }
+                    }, _callee18, this, [[4, 8, 12, 20], [13,, 15, 19]]);
+                  }));
+
+                  return function (_x38) {
+                    return _ref19.apply(this, arguments);
+                  };
+                }().bind(this);
+
+                try {
+                  this.httpManager.postAbsolute(this.syncURL, params, function (response) {
+
+                    try {
+                      onSyncSuccess(response);
+                    } catch (e) {
+                      console.log("Caught sync success exception:", e);
+                    }
+                  }.bind(this), function (response) {
+                    console.log("Sync error: ", response);
+                    var error = response ? response.error : { message: "Could not connect to server." };
+
+                    this.syncStatus.syncOpInProgress = false;
+                    this.syncStatus.error = error;
+                    this.writeItemsToLocalStorage(allDirtyItems, false, null);
+
+                    onSyncCompletion(response);
+
+                    this.$rootScope.$broadcast("sync:error", error);
+
+                    this.callQueuedCallbacksAndCurrent(callback, { error: "Sync error" });
+                  }.bind(this));
+                } catch (e) {
+                  console.log("Sync exception caught:", e);
+                }
+
+              case 57:
+              case 'end':
+                return _context19.stop();
             }
           }
-        } catch (err) {
-          _didIteratorError60 = true;
-          _iteratorError60 = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion60 && _iterator60.return) {
-              _iterator60.return();
-            }
-          } finally {
-            if (_didIteratorError60) {
-              throw _iteratorError60;
-            }
-          }
-        }
+        }, _callee19, this, [[36, 40, 44, 52], [45,, 47, 51]]);
+      }));
 
-        this.modelManager.clearDirtyItems(itemsToClearAsDirty);
-        this.syncStatus.error = null;
-
-        this.$rootScope.$broadcast("sync:updated_token", this.syncToken);
-
-        // Filter retrieved_items to remove any items that may be in saved_items for this complete sync operation
-        // When signing in, and a user requires many round trips to complete entire retrieval of data, an item may be saved
-        // on the first trip, then on subsequent trips using cursor_token, this same item may be returned, since it's date is
-        // greater than cursor_token. We keep track of all saved items in whole sync operation with this.allSavedItems
-        // We need this because singletonManager looks at retrievedItems as higher precendence than savedItems, but if it comes in both
-        // then that's problematic.
-        var allSavedUUIDs = this.allSavedItems.map(function (item) {
-          return item.uuid;
-        });
-        response.retrieved_items = response.retrieved_items.filter(function (candidate) {
-          return !allSavedUUIDs.includes(candidate.uuid);
-        });
-
-        // Map retrieved items to local data
-        // Note that deleted items will not be returned
-        var retrieved = this.handleItemsResponse(response.retrieved_items, null, ModelManager.MappingSourceRemoteRetrieved);
-
-        // Append items to master list of retrieved items for this ongoing sync operation
-        this.allRetreivedItems = this.allRetreivedItems.concat(retrieved);
-
-        // Merge only metadata for saved items
-        // we write saved items to disk now because it clears their dirty status then saves
-        // if we saved items before completion, we had have to save them as dirty and save them again on success as clean
-        var omitFields = ["content", "auth_hash"];
-
-        // Map saved items to local data
-        var saved = this.handleItemsResponse(response.saved_items, omitFields, ModelManager.MappingSourceRemoteSaved);
-
-        // Append items to master list of saved items for this ongoing sync operation
-        this.allSavedItems = this.allSavedItems.concat(saved);
-
-        // Create copies of items or alternate their uuids if neccessary
-        var unsaved = response.unsaved;
-        this.handleUnsavedItemsResponse(unsaved);
-
-        this.writeItemsToLocalStorage(saved, false, null);
-
-        this.syncStatus.syncOpInProgress = false;
-        this.syncStatus.current += subItems.length;
-
-        // set the sync token at the end, so that if any errors happen above, you can resync
-        this.syncToken = response.sync_token;
-        this.cursorToken = response.cursor_token;
-
-        onSyncCompletion(response);
-
-        if (this.cursorToken || this.syncStatus.needsMoreSync) {
-          setTimeout(function () {
-            this.sync(callback, options, "onSyncSuccess cursorToken || needsMoreSync");
-          }.bind(this), 10); // wait 10ms to allow UI to update
-        } else if (this.repeatOnCompletion) {
-          this.repeatOnCompletion = false;
-          setTimeout(function () {
-            this.sync(callback, options, "onSyncSuccess repeatOnCompletion");
-          }.bind(this), 10); // wait 10ms to allow UI to update
-        } else {
-          this.writeItemsToLocalStorage(this.allRetreivedItems, false, null);
-
-          // The number of changed items that constitute a major change
-          // This is used by the desktop app to create backups
-          var majorDataChangeThreshold = 10;
-          if (this.allRetreivedItems.length >= majorDataChangeThreshold || saved.length >= majorDataChangeThreshold || unsaved.length >= majorDataChangeThreshold) {
-            this.$rootScope.$broadcast("major-data-change");
-          }
-
-          this.callQueuedCallbacksAndCurrent(callback, response);
-          this.$rootScope.$broadcast("sync:completed", { retrievedItems: this.allRetreivedItems, savedItems: this.allSavedItems });
-
-          this.allRetreivedItems = [];
-          this.allSavedItems = [];
-        }
-      }.bind(this);
-
-      try {
-        this.httpManager.postAbsolute(this.syncURL, params, function (response) {
-
-          try {
-            onSyncSuccess(response);
-          } catch (e) {
-            console.log("Caught sync success exception:", e);
-          }
-        }.bind(this), function (response) {
-          console.log("Sync error: ", response);
-          var error = response ? response.error : { message: "Could not connect to server." };
-
-          this.syncStatus.syncOpInProgress = false;
-          this.syncStatus.error = error;
-          this.writeItemsToLocalStorage(allDirtyItems, false, null);
-
-          onSyncCompletion(response);
-
-          this.$rootScope.$broadcast("sync:error", error);
-
-          this.callQueuedCallbacksAndCurrent(callback, { error: "Sync error" });
-        }.bind(this));
-      } catch (e) {
-        console.log("Sync exception caught:", e);
+      function sync(_x37) {
+        return _ref18.apply(this, arguments);
       }
-    }
+
+      return sync;
+    }()
   }, {
     key: 'handleItemsResponse',
-    value: function handleItemsResponse(responseItems, omitFields, source) {
-      var keys = this.authManager.keys() || this.passcodeManager.keys();
-      SFItemTransformer.decryptMultipleItems(responseItems, keys);
-      var items = this.modelManager.mapResponseItemsToLocalModelsOmittingFields(responseItems, omitFields, source);
+    value: function () {
+      var _ref20 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee20(responseItems, omitFields, source) {
+        var keys, items, itemsWithErrorStatusChange;
+        return _regenerator2.default.wrap(function _callee20$(_context20) {
+          while (1) {
+            switch (_context20.prev = _context20.next) {
+              case 0:
+                keys = this.authManager.keys() || this.passcodeManager.keys();
+                _context20.next = 3;
+                return SFJS.itemTransformer.decryptMultipleItems(responseItems, keys);
 
-      // During the decryption process, items may be marked as "errorDecrypting". If so, we want to be sure
-      // to persist this new state by writing these items back to local storage. When an item's "errorDecrypting"
-      // flag is changed, its "errorDecryptingValueChanged" flag will be set, so we can find these items by filtering (then unsetting) below:
-      var itemsWithErrorStatusChange = items.filter(function (item) {
-        var valueChanged = item.errorDecryptingValueChanged;
-        // unset after consuming value
-        item.errorDecryptingValueChanged = false;
-        return valueChanged;
-      });
-      if (itemsWithErrorStatusChange.length > 0) {
-        this.writeItemsToLocalStorage(itemsWithErrorStatusChange, false, null);
+              case 3:
+                items = this.modelManager.mapResponseItemsToLocalModelsOmittingFields(responseItems, omitFields, source);
+
+                // During the decryption process, items may be marked as "errorDecrypting". If so, we want to be sure
+                // to persist this new state by writing these items back to local storage. When an item's "errorDecrypting"
+                // flag is changed, its "errorDecryptingValueChanged" flag will be set, so we can find these items by filtering (then unsetting) below:
+
+                itemsWithErrorStatusChange = items.filter(function (item) {
+                  var valueChanged = item.errorDecryptingValueChanged;
+                  // unset after consuming value
+                  item.errorDecryptingValueChanged = false;
+                  return valueChanged;
+                });
+
+                if (itemsWithErrorStatusChange.length > 0) {
+                  this.writeItemsToLocalStorage(itemsWithErrorStatusChange, false, null);
+                }
+
+                return _context20.abrupt('return', items);
+
+              case 7:
+              case 'end':
+                return _context20.stop();
+            }
+          }
+        }, _callee20, this);
+      }));
+
+      function handleItemsResponse(_x39, _x40, _x41) {
+        return _ref20.apply(this, arguments);
       }
 
-      return items;
-    }
+      return handleItemsResponse;
+    }()
   }, {
     key: 'refreshErroredItems',
     value: function refreshErroredItems() {
@@ -41747,62 +46933,118 @@ var SyncManager = function () {
     }
   }, {
     key: 'handleUnsavedItemsResponse',
-    value: function handleUnsavedItemsResponse(unsaved) {
-      var _this47 = this;
+    value: function () {
+      var _ref21 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee22(unsaved) {
+        var _this58 = this;
 
-      if (unsaved.length == 0) {
-        return;
+        var i, handleNext;
+        return _regenerator2.default.wrap(function _callee22$(_context22) {
+          while (1) {
+            switch (_context22.prev = _context22.next) {
+              case 0:
+                if (!(unsaved.length == 0)) {
+                  _context22.next = 2;
+                  break;
+                }
+
+                return _context22.abrupt('return');
+
+              case 2:
+
+                console.log("Handle unsaved", unsaved);
+
+                i = 0;
+
+                handleNext = function () {
+                  var _ref22 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee21() {
+                    var mapping, itemResponse, item, error, dup;
+                    return _regenerator2.default.wrap(function _callee21$(_context21) {
+                      while (1) {
+                        switch (_context21.prev = _context21.next) {
+                          case 0:
+                            if (!(i >= unsaved.length)) {
+                              _context21.next = 3;
+                              break;
+                            }
+
+                            // Handled all items
+                            _this58.sync(null, { additionalFields: ["created_at", "updated_at"] });
+                            return _context21.abrupt('return');
+
+                          case 3:
+                            mapping = unsaved[i];
+                            itemResponse = mapping.item;
+                            _context21.next = 7;
+                            return SFJS.itemTransformer.decryptMultipleItems([itemResponse], _this58.authManager.keys());
+
+                          case 7:
+                            item = _this58.modelManager.findItem(itemResponse.uuid);
+
+                            if (item) {
+                              _context21.next = 10;
+                              break;
+                            }
+
+                            return _context21.abrupt('return');
+
+                          case 10:
+                            error = mapping.error;
+
+
+                            if (error.tag === "uuid_conflict") {
+                              // UUID conflicts can occur if a user attempts to
+                              // import an old data archive with uuids from the old account into a new account
+                              _this58.modelManager.alternateUUIDForItem(item, function () {
+                                i++;
+                                handleNext();
+                              }, true);
+                            } else if (error.tag === "sync_conflict") {
+                              // Create a new item with the same contents of this item if the contents differ
+
+                              // We want a new uuid for the new item. Note that this won't neccessarily adjust references.
+                              itemResponse.uuid = null;
+
+                              dup = _this58.modelManager.createDuplicateItem(itemResponse);
+
+                              if (!itemResponse.deleted && !item.isItemContentEqualWith(dup)) {
+                                _this58.modelManager.addItem(dup);
+                                dup.conflict_of = item.uuid;
+                                dup.setDirty(true);
+                              }
+
+                              i++;
+                              handleNext();
+                            }
+
+                          case 12:
+                          case 'end':
+                            return _context21.stop();
+                        }
+                      }
+                    }, _callee21, _this58);
+                  }));
+
+                  return function handleNext() {
+                    return _ref22.apply(this, arguments);
+                  };
+                }();
+
+                handleNext();
+
+              case 6:
+              case 'end':
+                return _context22.stop();
+            }
+          }
+        }, _callee22, this);
+      }));
+
+      function handleUnsavedItemsResponse(_x42) {
+        return _ref21.apply(this, arguments);
       }
 
-      console.log("Handle unsaved", unsaved);
-
-      var i = 0;
-      var handleNext = function handleNext() {
-        if (i >= unsaved.length) {
-          // Handled all items
-          _this47.sync(null, { additionalFields: ["created_at", "updated_at"] });
-          return;
-        }
-
-        var mapping = unsaved[i];
-        var itemResponse = mapping.item;
-        SFItemTransformer.decryptMultipleItems([itemResponse], _this47.authManager.keys());
-        var item = _this47.modelManager.findItem(itemResponse.uuid);
-
-        if (!item) {
-          // Could be deleted
-          return;
-        }
-
-        var error = mapping.error;
-
-        if (error.tag === "uuid_conflict") {
-          // UUID conflicts can occur if a user attempts to
-          // import an old data archive with uuids from the old account into a new account
-          _this47.modelManager.alternateUUIDForItem(item, function () {
-            i++;
-            handleNext();
-          }, true);
-        } else if (error.tag === "sync_conflict") {
-          // Create a new item with the same contents of this item if the contents differ
-
-          // We want a new uuid for the new item. Note that this won't neccessarily adjust references.
-          itemResponse.uuid = null;
-
-          var dup = _this47.modelManager.createDuplicateItem(itemResponse);
-          if (!itemResponse.deleted && !item.isItemContentEqualWith(dup)) {
-            _this47.modelManager.addItem(dup);
-            dup.conflict_of = item.uuid;
-            dup.setDirty(true);
-          }
-
-          i++;
-          handleNext();
-        }
-      };
-
-      handleNext();
-    }
+      return handleUnsavedItemsResponse;
+    }()
   }, {
     key: 'clearSyncToken',
     value: function clearSyncToken() {
@@ -41872,7 +47114,6 @@ var SyncManager = function () {
       return this._queuedCallbacks;
     }
   }]);
-
   return SyncManager;
 }();
 
@@ -41881,32 +47122,32 @@ angular.module('app').service('syncManager', SyncManager);
 var ThemeManager = function () {
   ThemeManager.$inject = ['componentManager', 'desktopManager'];
   function ThemeManager(componentManager, desktopManager) {
-    var _this48 = this;
+    var _this59 = this;
 
-    _classCallCheck(this, ThemeManager);
+    (0, _classCallCheck3.default)(this, ThemeManager);
 
     this.componentManager = componentManager;
 
     desktopManager.registerUpdateObserver(function (component) {
       // Reload theme if active
       if (component.active && component.isTheme()) {
-        _this48.deactivateTheme(component);
+        _this59.deactivateTheme(component);
         setTimeout(function () {
-          _this48.activateTheme(component);
+          _this59.activateTheme(component);
         }, 10);
       }
     });
 
     componentManager.registerHandler({ identifier: "themeManager", areas: ["themes"], activationHandler: function activationHandler(component) {
         if (component.active) {
-          _this48.activateTheme(component);
+          _this59.activateTheme(component);
         } else {
-          _this48.deactivateTheme(component);
+          _this59.deactivateTheme(component);
         }
       } });
   }
 
-  _createClass(ThemeManager, [{
+  (0, _createClass3.default)(ThemeManager, [{
     key: 'activateTheme',
     value: function activateTheme(theme) {
       var url = this.componentManager.urlForComponent(theme);
@@ -41928,7 +47169,6 @@ var ThemeManager = function () {
       }
     }
   }]);
-
   return ThemeManager;
 }();
 
@@ -42151,7 +47391,7 @@ angular.module('app').service('themeManager', ThemeManager);
 ;
 var AccountMenu = function () {
   function AccountMenu() {
-    _classCallCheck(this, AccountMenu);
+    (0, _classCallCheck3.default)(this, AccountMenu);
 
     this.restrict = "E";
     this.templateUrl = "directives/account-menu.html";
@@ -42161,14 +47401,15 @@ var AccountMenu = function () {
     };
   }
 
-  _createClass(AccountMenu, [{
+  (0, _createClass3.default)(AccountMenu, [{
     key: 'controller',
-    value: ['$scope', '$rootScope', 'authManager', 'modelManager', 'syncManager', 'dbManager', 'passcodeManager', '$timeout', 'storageManager', function controller($scope, $rootScope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager) {
+    value: ['$scope', '$rootScope', 'authManager', 'modelManager', 'syncManager', 'dbManager', 'passcodeManager', '$timeout', 'storageManager', '$compile', 'archiveManager', function controller($scope, $rootScope, authManager, modelManager, syncManager, dbManager, passcodeManager, $timeout, storageManager, $compile, archiveManager) {
       'ngInject';
 
       $scope.formData = { mergeLocal: true, url: syncManager.serverURL, ephemeral: false };
       $scope.user = authManager.user;
       $scope.server = syncManager.serverURL;
+      $scope.securityUpdateAvailable = authManager.checkForSecurityUpdate();
 
       $scope.close = function () {
         $timeout(function () {
@@ -42183,63 +47424,6 @@ var AccountMenu = function () {
       $scope.canAddPasscode = !authManager.isEphemeralSession();
 
       $scope.syncStatus = syncManager.syncStatus;
-      $scope.newPasswordData = {};
-
-      $scope.showPasswordChangeForm = function () {
-        $scope.newPasswordData.showForm = true;
-      };
-
-      $scope.submitPasswordChange = function () {
-
-        var newPass = $scope.newPasswordData.newPassword;
-
-        if (!newPass || newPass.length == 0) {
-          return;
-        }
-
-        if (newPass != $scope.newPasswordData.newPasswordConfirmation) {
-          alert("Your new password does not match its confirmation.");
-          $scope.newPasswordData.status = null;
-          return;
-        }
-
-        var email = $scope.user.email;
-        if (!email) {
-          alert("We don't have your email stored. Please log out then log back in to fix this issue.");
-          $scope.newPasswordData.status = null;
-          return;
-        }
-
-        $scope.newPasswordData.status = "Generating New Keys...";
-        $scope.newPasswordData.showForm = false;
-
-        // perform a sync beforehand to pull in any last minutes changes before we change the encryption key (and thus cant decrypt new changes)
-        syncManager.sync(function (response) {
-          authManager.changePassword(email, newPass, function (response) {
-            if (response.error) {
-              alert("There was an error changing your password. Please try again.");
-              $scope.newPasswordData.status = null;
-              return;
-            }
-
-            // re-encrypt all items
-            $scope.newPasswordData.status = "Re-encrypting all items with your new key...";
-
-            modelManager.setAllItemsDirty();
-            syncManager.sync(function (response) {
-              if (response.error) {
-                alert("There was an error re-encrypting your items. Your password was changed, but not all your items were properly re-encrypted and synced. You should try syncing again. If all else fails, you should restore your notes from backup.");
-                return;
-              }
-              $scope.newPasswordData.status = "Successfully changed password and re-encrypted all items.";
-              $timeout(function () {
-                alert("Your password has been changed, and your items successfully re-encrypted and synced. You must sign out of all other signed in applications and sign in again, or else you may corrupt your data.");
-                $scope.newPasswordData = {};
-              }, 1000);
-            });
-          });
-        }, null, "submitPasswordChange");
-      };
 
       $scope.submitMfaForm = function () {
         var params = {};
@@ -42267,9 +47451,11 @@ var AccountMenu = function () {
 
         $scope.formData.status = "Generating Login Keys...";
         $timeout(function () {
-          authManager.login($scope.formData.url, $scope.formData.email, $scope.formData.user_password, $scope.formData.ephemeral, extraParams, function (response) {
+          authManager.login($scope.formData.url, $scope.formData.email, $scope.formData.user_password, $scope.formData.ephemeral, $scope.formData.strictSignin, extraParams, function (response) {
             if (!response || response.error) {
+
               syncManager.unlockSyncing();
+
               $scope.formData.status = null;
               var error = response ? response.error : { message: "An unknown error occured."
 
@@ -42286,8 +47472,10 @@ var AccountMenu = function () {
                   $timeout(function () {
                     $scope.formData.showLogin = true;
                     $scope.formData.mfa = null;
+                    if (error.message) {
+                      alert(error.message);
+                    }
                   });
-                  alert(error.message);
                 }
             }
 
@@ -42356,6 +47544,13 @@ var AccountMenu = function () {
         }
       };
 
+      $scope.openPasswordWizard = function (type) {
+        // Close the account menu
+        $scope.close();
+
+        authManager.presentPasswordWizard(type);
+      };
+
       // Allows indexeddb unencrypted logs to be deleted
       // clearAllModels will remove data from backing store, but not from working memory
       // See: https://github.com/standardnotes/desktop/issues/131
@@ -42405,7 +47600,7 @@ var AccountMenu = function () {
                     var message = 'Import complete. ' + errorCount + ' items were not imported because there was an error decrypting them. Make sure the password is correct and try again.';
                     alert(message);
                   } else {
-                    alert("Your data was successfully imported.");
+                    alert("Your data has been successfully imported.");
                   }
                 }
               }, 10);
@@ -42443,9 +47638,9 @@ var AccountMenu = function () {
         var onDataReady = function (errorCount) {
           var items = modelManager.mapResponseItemsToLocalModels(data.items, ModelManager.MappingSourceFileImport);
           items.forEach(function (item) {
-            item.setDirty(true);
+            item.setDirty(true, true);
             item.deleted = false;
-            item.markAllReferencesDirty();
+            item.markAllReferencesDirty(true);
 
             // We don't want to activate any components during import process in case of exceptions
             // breaking up the import proccess
@@ -42460,33 +47655,35 @@ var AccountMenu = function () {
         }.bind(this);
 
         if (data.auth_params) {
-          SFJS.crypto.computeEncryptionKeysForUser(_.merge({ password: password }, data.auth_params), function (keys) {
+          SFJS.crypto.computeEncryptionKeysForUser(password, data.auth_params).then(function (keys) {
             try {
-              SFItemTransformer.decryptMultipleItems(data.items, keys, false); /* throws = false as we don't want to interrupt all decryption if just one fails */
-              // delete items enc_item_key since the user's actually key will do the encrypting once its passed off
-              data.items.forEach(function (item) {
-                item.enc_item_key = null;
-                item.auth_hash = null;
-              });
+              SFJS.itemTransformer.decryptMultipleItems(data.items, keys, false) /* throws = false as we don't want to interrupt all decryption if just one fails */
+              .then(function () {
+                // delete items enc_item_key since the user's actually key will do the encrypting once its passed off
+                data.items.forEach(function (item) {
+                  item.enc_item_key = null;
+                  item.auth_hash = null;
+                });
 
-              var errorCount = 0;
-              // Don't import items that didn't decrypt properly
-              data.items = data.items.filter(function (item) {
-                if (item.errorDecrypting) {
-                  errorCount++;
-                  return false;
-                }
-                return true;
-              });
+                var errorCount = 0;
+                // Don't import items that didn't decrypt properly
+                data.items = data.items.filter(function (item) {
+                  if (item.errorDecrypting) {
+                    errorCount++;
+                    return false;
+                  }
+                  return true;
+                });
 
-              onDataReady(errorCount);
+                onDataReady(errorCount);
+              });
             } catch (e) {
               console.log("Error decrypting", e);
               alert("There was an error decrypting your items. Make sure the password you entered is correct and try again.");
               callback(null);
               return;
             }
-          }.bind(this));
+          });
         } else {
           onDataReady();
         }
@@ -42496,158 +47693,8 @@ var AccountMenu = function () {
       Export
       */
 
-      function loadZip(callback) {
-        if (window.zip) {
-          callback();
-          return;
-        }
-
-        var scriptTag = document.createElement('script');
-        scriptTag.src = "/assets/zip/zip.js";
-        scriptTag.async = false;
-        var headTag = document.getElementsByTagName('head')[0];
-        headTag.appendChild(scriptTag);
-        scriptTag.onload = function () {
-          zip.workerScriptsPath = "assets/zip/";
-          callback();
-        };
-      }
-
-      function downloadZippedNotes(notes) {
-        loadZip(function () {
-
-          zip.createWriter(new zip.BlobWriter("application/zip"), function (zipWriter) {
-
-            var index = 0;
-            function nextFile() {
-              var note = notes[index];
-              var blob = new Blob([note.text], { type: 'text/plain' });
-              zipWriter.add(note.title + '-' + note.uuid + '.txt', new zip.BlobReader(blob), function () {
-                index++;
-                if (index < notes.length) {
-                  nextFile();
-                } else {
-                  zipWriter.close(function (blob) {
-                    downloadData(blob, 'Notes Txt Archive - ' + new Date() + '.zip');
-                    zipWriter = null;
-                  });
-                }
-              });
-            }
-
-            nextFile();
-          }, onerror);
-        });
-      }
-
-      var textFile = null;
-
-      function hrefForData(data) {
-        // If we are replacing a previously generated file we need to
-        // manually revoke the object URL to avoid memory leaks.
-        if (textFile !== null) {
-          window.URL.revokeObjectURL(textFile);
-        }
-
-        textFile = window.URL.createObjectURL(data);
-
-        // returns a URL you can use as a href
-        return textFile;
-      }
-
-      function downloadData(data, fileName) {
-        var link = document.createElement('a');
-        link.setAttribute('download', fileName);
-        link.href = hrefForData(data);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-      }
-
       $scope.downloadDataArchive = function () {
-        // download in Standard File format
-        var keys, authParams, protocolVersion;
-        if ($scope.archiveFormData.encrypted) {
-          if (authManager.offline() && passcodeManager.hasPasscode()) {
-            keys = passcodeManager.keys();
-            authParams = passcodeManager.passcodeAuthParams();
-            protocolVersion = authParams.version;
-          } else {
-            keys = authManager.keys();
-            authParams = authManager.getAuthParams();
-            protocolVersion = authManager.protocolVersion();
-          }
-        }
-        var data = $scope.itemsData(keys, authParams, protocolVersion);
-        downloadData(data, 'SN Archive - ' + new Date() + '.txt');
-
-        // download as zipped plain text files
-        if (!keys) {
-          var notes = modelManager.allItemsMatchingTypes(["Note"]);
-          downloadZippedNotes(notes);
-        }
-      };
-
-      $scope.itemsData = function (keys, authParams, protocolVersion) {
-        var data = modelManager.getAllItemsJSONData(keys, authParams, protocolVersion);
-        var blobData = new Blob([data], { type: 'text/json' });
-        return blobData;
-      };
-
-      // Advanced
-
-      $scope.reencryptPressed = function () {
-        if (!confirm("Are you sure you want to re-encrypt and sync all your items? This is useful when updates are made to our encryption specification. You should have been instructed to come here from our website.")) {
-          return;
-        }
-
-        if (!confirm("It is highly recommended that you download a backup of your data before proceeding. Press cancel to go back. Note that this procedure can take some time, depending on the number of items you have. Do not close the app during process.")) {
-          return;
-        }
-
-        modelManager.setAllItemsDirty();
-        syncManager.sync(function (response) {
-          if (response.error) {
-            alert("There was an error re-encrypting your items. You should try syncing again. If all else fails, you should restore your notes from backup.");
-            return;
-          }
-
-          $timeout(function () {
-            alert("Your items have been successfully re-encrypted and synced. You must sign out of all other signed in applications (mobile, desktop, web) and sign in again, or else you may corrupt your data.");
-            $scope.newPasswordData = {};
-          }, 1000);
-        }, null, "reencryptPressed");
-      };
-
-      // 002 Update
-
-      $scope.securityUpdateAvailable = function () {
-        var keys = authManager.keys();
-        return keys && !keys.ak;
-      };
-
-      $scope.clickedSecurityUpdate = function () {
-        if (!$scope.securityUpdateData) {
-          $scope.securityUpdateData = {};
-        }
-        $scope.securityUpdateData.showForm = true;
-      };
-
-      $scope.submitSecurityUpdateForm = function () {
-        $scope.securityUpdateData.processing = true;
-        var authParams = authManager.getAuthParams();
-
-        SFJS.crypto.computeEncryptionKeysForUser(_.merge({ password: $scope.securityUpdateData.password }, authParams), function (keys) {
-          if (keys.mk !== authManager.keys().mk) {
-            alert("Invalid password. Please try again.");
-            $timeout(function () {
-              $scope.securityUpdateData.processing = false;
-            });
-            return;
-          }
-
-          authManager.saveKeys(keys);
-        });
+        archiveManager.downloadBackup($scope.archiveFormData.encrypted);
       };
 
       /*
@@ -42752,7 +47799,6 @@ var AccountMenu = function () {
       };
     }]
   }]);
-
   return AccountMenu;
 }();
 
@@ -42762,7 +47808,7 @@ angular.module('app').directive('accountMenu', function () {
 ;
 var ActionsMenu = function () {
   function ActionsMenu() {
-    _classCallCheck(this, ActionsMenu);
+    (0, _classCallCheck3.default)(this, ActionsMenu);
 
     this.restrict = "E";
     this.templateUrl = "directives/actions-menu.html";
@@ -42771,7 +47817,7 @@ var ActionsMenu = function () {
     };
   }
 
-  _createClass(ActionsMenu, [{
+  (0, _createClass3.default)(ActionsMenu, [{
     key: 'controller',
     value: ['$scope', 'modelManager', 'actionsManager', function controller($scope, modelManager, actionsManager) {
       'ngInject';
@@ -42789,27 +47835,27 @@ var ActionsMenu = function () {
         });
       };
 
-      var _iteratorNormalCompletion61 = true;
-      var _didIteratorError61 = false;
-      var _iteratorError61 = undefined;
+      var _iteratorNormalCompletion62 = true;
+      var _didIteratorError62 = false;
+      var _iteratorError62 = undefined;
 
       try {
-        for (var _iterator61 = $scope.extensions[Symbol.iterator](), _step61; !(_iteratorNormalCompletion61 = (_step61 = _iterator61.next()).done); _iteratorNormalCompletion61 = true) {
-          var ext = _step61.value;
+        for (var _iterator62 = $scope.extensions[Symbol.iterator](), _step62; !(_iteratorNormalCompletion62 = (_step62 = _iterator62.next()).done); _iteratorNormalCompletion62 = true) {
+          var ext = _step62.value;
 
           _loop5(ext);
         }
       } catch (err) {
-        _didIteratorError61 = true;
-        _iteratorError61 = err;
+        _didIteratorError62 = true;
+        _iteratorError62 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion61 && _iterator61.return) {
-            _iterator61.return();
+          if (!_iteratorNormalCompletion62 && _iterator62.return) {
+            _iterator62.return();
           }
         } finally {
-          if (_didIteratorError61) {
-            throw _iteratorError61;
+          if (_didIteratorError62) {
+            throw _iteratorError62;
           }
         }
       }
@@ -42854,7 +47900,7 @@ var ActionsMenu = function () {
       };
 
       $scope.subRowsForAction = function (parentAction, extension) {
-        var _this49 = this;
+        var _this60 = this;
 
         if (!parentAction.subactions) {
           return null;
@@ -42862,10 +47908,10 @@ var ActionsMenu = function () {
         return parentAction.subactions.map(function (subaction) {
           return {
             onClick: function onClick($event) {
-              _this49.executeAction(subaction, extension, parentAction);
+              _this60.executeAction(subaction, extension, parentAction);
               $event.stopPropagation();
             },
-            title: subaction.label,
+            label: subaction.label,
             subtitle: subaction.desc,
             spinnerClass: subaction.running ? 'info' : null
           };
@@ -42873,7 +47919,6 @@ var ActionsMenu = function () {
       };
     }]
   }]);
-
   return ActionsMenu;
 }();
 
@@ -42883,7 +47928,7 @@ angular.module('app').directive('actionsMenu', function () {
 ;
 var ComponentModal = function () {
   function ComponentModal() {
-    _classCallCheck(this, ComponentModal);
+    (0, _classCallCheck3.default)(this, ComponentModal);
 
     this.restrict = "E";
     this.templateUrl = "directives/component-modal.html";
@@ -42895,7 +47940,7 @@ var ComponentModal = function () {
     };
   }
 
-  _createClass(ComponentModal, [{
+  (0, _createClass3.default)(ComponentModal, [{
     key: 'link',
     value: function link($scope, el, attrs) {
       $scope.el = el;
@@ -42913,7 +47958,6 @@ var ComponentModal = function () {
       };
     }]
   }]);
-
   return ComponentModal;
 }();
 
@@ -42923,7 +47967,7 @@ angular.module('app').directive('componentModal', function () {
 ;
 var ComponentView = function () {
   function ComponentView($rootScope, componentManager, desktopManager, $timeout) {
-    _classCallCheck(this, ComponentView);
+    (0, _classCallCheck3.default)(this, ComponentView);
 
     this.restrict = "E";
     this.templateUrl = "directives/component-view.html";
@@ -42938,10 +47982,10 @@ var ComponentView = function () {
     this.timeout = $timeout;
   }
 
-  _createClass(ComponentView, [{
+  (0, _createClass3.default)(ComponentView, [{
     key: 'link',
     value: function link($scope, el, attrs, ctrl) {
-      var _this50 = this;
+      var _this61 = this;
 
       $scope.el = el;
 
@@ -42951,19 +47995,19 @@ var ComponentView = function () {
 
       this.componentManager.registerHandler({ identifier: $scope.identifier, areas: [$scope.component.area], activationHandler: function activationHandler(component) {
           if (component.active) {
-            _this50.timeout(function () {
-              var iframe = _this50.componentManager.iframeForComponent(component);
+            _this61.timeout(function () {
+              var iframe = _this61.componentManager.iframeForComponent(component);
               if (iframe) {
                 iframe.onload = function () {
                   this.componentManager.registerComponentWindow(component, iframe.contentWindow);
-                }.bind(_this50);
+                }.bind(_this61);
               }
             });
           }
         },
         actionHandler: function actionHandler(component, action, data) {
           if (action == "set-size") {
-            _this50.componentManager.handleSetSizeEvent(component, data);
+            _this61.componentManager.handleSetSizeEvent(component, data);
           }
         } });
 
@@ -43067,7 +48111,6 @@ var ComponentView = function () {
       });
     }]
   }]);
-
   return ComponentView;
 }();
 
@@ -43077,7 +48120,7 @@ angular.module('app').directive('componentView', ['$rootScope', 'componentManage
 ;
 var EditorMenu = function () {
   function EditorMenu() {
-    _classCallCheck(this, EditorMenu);
+    (0, _classCallCheck3.default)(this, EditorMenu);
 
     this.restrict = "E";
     this.templateUrl = "directives/editor-menu.html";
@@ -43088,7 +48131,7 @@ var EditorMenu = function () {
     };
   }
 
-  _createClass(EditorMenu, [{
+  (0, _createClass3.default)(EditorMenu, [{
     key: 'controller',
     value: ['$scope', 'componentManager', 'syncManager', '$timeout', function controller($scope, componentManager, syncManager, $timeout) {
       'ngInject';
@@ -43173,7 +48216,6 @@ var EditorMenu = function () {
       };
     }]
   }]);
-
   return EditorMenu;
 }();
 
@@ -43181,16 +48223,61 @@ angular.module('app').directive('editorMenu', function () {
   return new EditorMenu();
 });
 ;
+var InputModal = function () {
+  function InputModal() {
+    (0, _classCallCheck3.default)(this, InputModal);
+
+    this.restrict = "E";
+    this.templateUrl = "directives/input-modal.html";
+    this.scope = {
+      type: "=",
+      title: "=",
+      message: "=",
+      placeholder: "=",
+      callback: "&"
+    };
+  }
+
+  (0, _createClass3.default)(InputModal, [{
+    key: 'link',
+    value: function link($scope, el, attrs) {
+      $scope.el = el;
+    }
+  }, {
+    key: 'controller',
+    value: ['$scope', 'modelManager', 'archiveManager', 'authManager', 'syncManager', '$timeout', function controller($scope, modelManager, archiveManager, authManager, syncManager, $timeout) {
+      'ngInject';
+
+      $scope.formData = {};
+
+      $scope.dismiss = function () {
+        $scope.el.remove();
+        $scope.$destroy();
+      };
+
+      $scope.submit = function () {
+        $scope.callback()($scope.formData.input);
+        $scope.dismiss();
+      };
+    }]
+  }]);
+  return InputModal;
+}();
+
+angular.module('app').directive('inputModal', function () {
+  return new InputModal();
+});
+;
 var MenuRow = function () {
   function MenuRow() {
-    _classCallCheck(this, MenuRow);
+    (0, _classCallCheck3.default)(this, MenuRow);
 
     this.restrict = "E";
     this.transclude = true;
     this.templateUrl = "directives/menu-row.html";
     this.scope = {
       circle: "=",
-      title: "=",
+      label: "=",
       subtite: "=",
       hasButton: "=",
       buttonText: "=",
@@ -43198,11 +48285,12 @@ var MenuRow = function () {
       buttonAction: "&",
       spinnerClass: "=",
       subRows: "=",
-      faded: "="
+      faded: "=",
+      desc: "="
     };
   }
 
-  _createClass(MenuRow, [{
+  (0, _createClass3.default)(MenuRow, [{
     key: 'controller',
     value: ['$scope', 'componentManager', function controller($scope, componentManager) {
       'ngInject';
@@ -43213,7 +48301,6 @@ var MenuRow = function () {
       };
     }]
   }]);
-
   return MenuRow;
 }();
 
@@ -43223,7 +48310,7 @@ angular.module('app').directive('menuRow', function () {
 ;
 var PanelResizer = function () {
   function PanelResizer() {
-    _classCallCheck(this, PanelResizer);
+    (0, _classCallCheck3.default)(this, PanelResizer);
 
     this.restrict = "E";
     this.templateUrl = "directives/panel-resizer.html";
@@ -43241,7 +48328,7 @@ var PanelResizer = function () {
     };
   }
 
-  _createClass(PanelResizer, [{
+  (0, _createClass3.default)(PanelResizer, [{
     key: 'link',
     value: function link(scope, elem, attrs, ctrl) {
       scope.elem = elem;
@@ -43459,7 +48546,6 @@ var PanelResizer = function () {
       });
     }]
   }]);
-
   return PanelResizer;
 }();
 
@@ -43484,9 +48570,254 @@ function debounce(func, wait, immediate) {
   };
 };
 ;
+var PasswordWizard = function () {
+  function PasswordWizard() {
+    (0, _classCallCheck3.default)(this, PasswordWizard);
+
+    this.restrict = "E";
+    this.templateUrl = "directives/password-wizard.html";
+    this.scope = {
+      type: "="
+    };
+  }
+
+  (0, _createClass3.default)(PasswordWizard, [{
+    key: 'link',
+    value: function link($scope, el, attrs) {
+      $scope.el = el;
+    }
+  }, {
+    key: 'controller',
+    value: ['$scope', 'modelManager', 'archiveManager', 'authManager', 'syncManager', '$timeout', function controller($scope, modelManager, archiveManager, authManager, syncManager, $timeout) {
+      'ngInject';
+
+      $scope.dismiss = function () {
+        $scope.el.remove();
+        $scope.$destroy();
+      };
+
+      $scope.syncStatus = syncManager.syncStatus;
+      $scope.formData = {};
+
+      var IntroStep = 0;
+      var BackupStep = 1;
+      var SignoutStep = 2;
+      var PasswordStep = 3;
+      var SyncStep = 4;
+      var FinishStep = 5;
+
+      var DefaultContinueTitle = "Continue";
+      $scope.continueTitle = DefaultContinueTitle;
+
+      $scope.step = IntroStep;
+
+      $scope.titleForStep = function (step) {
+        switch (step) {
+          case BackupStep:
+            return "Download a backup of your data";
+          case SignoutStep:
+            return "Sign out of all your devices";
+          case PasswordStep:
+            return $scope.changePassword ? "Password information" : "Enter your current password";
+          case SyncStep:
+            return "Encrypt and sync data with new keys";
+          case FinishStep:
+            return "Sign back in to your devices";
+          default:
+            return null;
+        }
+      };
+
+      $scope.configure = function () {
+        if ($scope.type == "change-pw") {
+          $scope.title = "Change Password";
+          $scope.changePassword = true;
+        } else if ($scope.type == "upgrade-security") {
+          $scope.title = "Security Update";
+          $scope.securityUpdate = true;
+        }
+      }();
+
+      $scope.continue = function () {
+
+        if ($scope.step == FinishStep) {
+          $scope.dismiss();
+          return;
+        }
+
+        var next = function next() {
+          $scope.step += 1;
+          $scope.initializeStep($scope.step);
+        };
+
+        var preprocessor = $scope.preprocessorForStep($scope.step);
+        if (preprocessor) {
+          preprocessor(function () {
+            next();
+          });
+        } else {
+          next();
+        }
+      };
+
+      $scope.downloadBackup = function (encrypted) {
+        archiveManager.downloadBackup(encrypted);
+      };
+
+      $scope.preprocessorForStep = function (step) {
+        if (step == PasswordStep) {
+          return function (callback) {
+            $scope.showSpinner = true;
+            $scope.continueTitle = "Generating Keys...";
+            $timeout(function () {
+              $scope.validateCurrentPassword(function (success) {
+                $scope.showSpinner = false;
+                $scope.continueTitle = DefaultContinueTitle;
+                if (success) {
+                  callback();
+                }
+              });
+            });
+          };
+        }
+      };
+
+      var FailedSyncMessage = "There was an error re-encrypting your items. Your password was changed, but not all your items were properly re-encrypted and synced. You should try syncing again. If all else fails, you should restore your notes from backup.";
+
+      $scope.initializeStep = function (step) {
+        if (step == SyncStep) {
+          $scope.lockContinue = true;
+          $scope.formData.status = "Processing encryption keys...";
+          $scope.formData.processing = true;
+
+          $scope.processPasswordChange(function (passwordSuccess) {
+            $scope.formData.statusError = !passwordSuccess;
+            $scope.formData.processing = passwordSuccess;
+
+            if (passwordSuccess) {
+              $scope.formData.status = "Encrypting and syncing data with new keys...";
+
+              $scope.resyncData(function (syncSuccess) {
+                $scope.formData.statusError = !syncSuccess;
+                $scope.formData.processing = !syncSuccess;
+                if (syncSuccess) {
+                  $scope.lockContinue = false;
+
+                  if ($scope.changePassword) {
+                    $scope.formData.status = "Successfully changed password and synced all items.";
+                  } else if ($scope.securityUpdate) {
+                    $scope.formData.status = "Successfully performed security update and synced all items.";
+                  }
+                } else {
+                  $scope.formData.status = FailedSyncMessage;
+                }
+              });
+            } else {
+              $scope.formData.status = "Unable to process your password. Please try again.";
+            }
+          });
+        } else if (step == FinishStep) {
+          $scope.continueTitle = "Finish";
+        }
+      };
+
+      $scope.validateCurrentPassword = function (callback) {
+        var _this62 = this;
+
+        var currentPassword = $scope.formData.currentPassword;
+        var newPass = $scope.securityUpdate ? currentPassword : $scope.formData.newPassword;
+
+        if ($scope.changePassword) {
+          if (!newPass || newPass.length == 0) {
+            callback(false);
+            return;
+          }
+
+          if (newPass != $scope.formData.newPasswordConfirmation) {
+            alert("Your new password does not match its confirmation.");
+            $scope.formData.status = null;
+            callback(false);
+            return;
+          }
+        }
+
+        if (!authManager.user.email) {
+          alert("We don't have your email stored. Please log out then log back in to fix this issue.");
+          $scope.formData.status = null;
+          callback(false);
+          return;
+        }
+
+        // Ensure value for current password matches what's saved
+        var authParams = authManager.getAuthParams();
+        var password = $scope.formData.currentPassword;
+        SFJS.crypto.computeEncryptionKeysForUser(password, authParams).then(function (keys) {
+          var success = keys.mk === authManager.keys().mk;
+          if (success) {
+            _this62.currentServerPw = keys.pw;
+          } else {
+            alert("The current password you entered is not correct. Please try again.");
+          }
+          $timeout(function () {
+            return callback(success);
+          });
+        });
+      };
+
+      $scope.resyncData = function (callback) {
+        modelManager.setAllItemsDirty();
+        syncManager.sync(function (response) {
+          if (response.error) {
+            alert(FailedSyncMessage);
+            $timeout(function () {
+              return callback(false);
+            });
+          } else {
+            $timeout(function () {
+              return callback(true);
+            });
+          }
+        });
+      };
+
+      $scope.processPasswordChange = function (callback) {
+        var newUserPassword = $scope.securityUpdate ? $scope.formData.currentPassword : $scope.formData.newPassword;
+
+        var currentServerPw = this.currentServerPw;
+
+        SFJS.crypto.generateInitialKeysAndAuthParamsForUser(authManager.user.email, newUserPassword).then(function (results) {
+          var newKeys = results.keys;
+          var newAuthParams = results.authParams;
+
+          // perform a sync beforehand to pull in any last minutes changes before we change the encryption key (and thus cant decrypt new changes)
+          syncManager.sync(function (response) {
+            authManager.changePassword(currentServerPw, newKeys, newAuthParams, function (response) {
+              if (response.error) {
+                alert(response.error.message ? response.error.message : "There was an error changing your password. Please try again.");
+                $timeout(function () {
+                  return callback(false);
+                });
+              } else {
+                $timeout(function () {
+                  return callback(true);
+                });
+              }
+            });
+          }, null, "submitPasswordChange");
+        });
+      };
+    }]
+  }]);
+  return PasswordWizard;
+}();
+
+angular.module('app').directive('passwordWizard', function () {
+  return new PasswordWizard();
+});
+;
 var PermissionsModal = function () {
   function PermissionsModal() {
-    _classCallCheck(this, PermissionsModal);
+    (0, _classCallCheck3.default)(this, PermissionsModal);
 
     this.restrict = "E";
     this.templateUrl = "directives/permissions-modal.html";
@@ -43498,7 +48829,7 @@ var PermissionsModal = function () {
     };
   }
 
-  _createClass(PermissionsModal, [{
+  (0, _createClass3.default)(PermissionsModal, [{
     key: 'link',
     value: function link($scope, el, attrs) {
 
@@ -43585,7 +48916,6 @@ var PermissionsModal = function () {
       };
     }]
   }]);
-
   return PermissionsModal;
 }();
 
@@ -43594,7 +48924,7 @@ angular.module('app').directive('permissionsModal', function () {
 });
 
 
-},{}]},{},[1]);
+},{"babel-runtime/helpers/asyncToGenerator":9,"babel-runtime/helpers/classCallCheck":10,"babel-runtime/helpers/createClass":11,"babel-runtime/helpers/get":12,"babel-runtime/helpers/inherits":13,"babel-runtime/helpers/possibleConstructorReturn":14,"babel-runtime/helpers/typeof":15,"babel-runtime/regenerator":16}]},{},[116]);
 ;angular.module('app').run(['$templateCache', function($templateCache) {
   'use strict';
 
@@ -43638,10 +48968,21 @@ angular.module('app').directive('permissionsModal', function () {
     "<h2 class='title'>No Password Reset.</h2>\n" +
     "<div class='text'>Because your notes are encrypted using your password, Standard Notes does not have a password reset option. You cannot forget your password.</div>\n" +
     "</div>\n" +
-    "<div class='advanced-options panel-row' ng-if='formData.showAdvanced'>\n" +
+    "<div class='notification unpadded default advanced-options panel-row' ng-if='formData.showAdvanced'>\n" +
     "<div class='panel-column stretch'>\n" +
+    "<h4 class='title panel-row padded-row'>Advanced Options</h4>\n" +
+    "<div class='bordered-row padded-row'>\n" +
     "<label>Sync Server Domain</label>\n" +
     "<input class='form-control mt-5' name='server' ng-model='formData.url' placeholder='Server URL' required type='text'>\n" +
+    "</div>\n" +
+    "<label class='padded-row' ng-if='formData.showLogin'>\n" +
+    "<input ng-model='formData.strictSignin' type='checkbox'>\n" +
+    "Use strict sign in\n" +
+    "<span>\n" +
+    "<a href='https://standardnotes.org/help/security' target='_blank'>(Learn more)</a>\n" +
+    "</span>\n" +
+    "</input>\n" +
+    "</label>\n" +
     "</div>\n" +
     "</div>\n" +
     "<div class='button-group stretch panel-row form-submit'>\n" +
@@ -43674,6 +49015,13 @@ angular.module('app').directive('permissionsModal', function () {
     "</div>\n" +
     "<div ng-if='!formData.showLogin &amp;&amp; !formData.showRegister &amp;&amp; !formData.mfa'>\n" +
     "<div class='panel-section' ng-if='user'>\n" +
+    "<div class='notification danger' ng-if='syncStatus.error'>\n" +
+    "<h2 class='title'>Sync Unreachable</h2>\n" +
+    "<div class='text'>Hmm...we can't seem to sync your account. The reason: {{syncStatus.error.message}}</div>\n" +
+    "<p>\n" +
+    "<a href='https://standardnotes.org/help' target='_blank'>Need help?</a>\n" +
+    "</p>\n" +
+    "</div>\n" +
     "<div class='panel-row'>\n" +
     "<h2 class='title wrap'>{{user.email}}</h2>\n" +
     "<div class='horizontal-group' delay-hide='true' delay='1000' show='syncStatus.syncOpInProgress || syncStatus.needsMoreSync'>\n" +
@@ -43684,60 +49032,13 @@ angular.module('app').directive('permissionsModal', function () {
     "</div>\n" +
     "</div>\n" +
     "</div>\n" +
-    "<div class='subtitle danger panel-row' ng-if='syncStatus.error'>Error syncing: {{syncStatus.error.message}}</div>\n" +
     "<div class='subtitle subtle normal'>{{server}}</div>\n" +
     "<div class='panel-row'></div>\n" +
-    "<a class='panel-row condensed' ng-click='newPasswordData.changePassword = !newPasswordData.changePassword'>Change Password</a>\n" +
-    "<div class='notification warning' ng-if='newPasswordData.changePassword'>\n" +
-    "<h1 class='title'>Change Password</h1>\n" +
-    "<div class='text'>\n" +
-    "<p>Since your encryption key is based on your password, changing your password requires all your notes and tags to be re-encrypted using your new key.</p>\n" +
-    "<p>If you have thousands of items, this can take several minutes — you must keep the application window open during this process.</p>\n" +
-    "<p>After changing your password, you must log out of all other applications currently signed in to your account.</p>\n" +
-    "<p class='bold'>It is highly recommended you download a backup of your data before proceeding.</p>\n" +
-    "</div>\n" +
-    "<div class='panel-row' ng-if='!newPasswordData.status'>\n" +
-    "<div class='horizontal-group' ng-if='!newPasswordData.showForm'>\n" +
-    "<a class='red' ng-click='showPasswordChangeForm()'>Continue</a>\n" +
-    "<a ng-click='newPasswordData.changePassword = false; newPasswordData.showForm = false'>Cancel</a>\n" +
-    "</div>\n" +
-    "<div class='panel-row' ng-if='newPasswordData.showForm'>\n" +
-    "<form class='panel-form stretch'>\n" +
-    "<input ng-model='newPasswordData.newPassword' placeholder='Enter new password' type='password'>\n" +
-    "<input ng-model='newPasswordData.newPasswordConfirmation' placeholder='Confirm new password' type='password'>\n" +
-    "<div class='button-group stretch panel-row form-submit'>\n" +
-    "<div class='button info' ng-click='submitPasswordChange()' type='submit'>\n" +
-    "<div class='label'>Submit</div>\n" +
-    "</div>\n" +
-    "</div>\n" +
-    "<a ng-click='newPasswordData.changePassword = false; newPasswordData.showForm = false'>Cancel</a>\n" +
-    "</form>\n" +
-    "</div>\n" +
-    "</div>\n" +
-    "<p class='italic mt-10' ng-if='newPasswordData.status'>{{newPasswordData.status}}</p>\n" +
-    "</div>\n" +
-    "<a class='panel-row condensed' ng-click='showAdvanced = !showAdvanced'>Advanced</a>\n" +
-    "<div ng-if='showAdvanced'>\n" +
-    "<a class='panel-row' ng-click='reencryptPressed()'>Resync All Items</a>\n" +
-    "</div>\n" +
-    "<a class='panel-row condensed' ng-click='clickedSecurityUpdate()' ng-if='securityUpdateAvailable()'>Security Update Available</a>\n" +
-    "<div class='notification default' ng-if='securityUpdateData.showForm'>\n" +
-    "<p>\n" +
-    "<a href='https://standardnotes.org/help/security-update' target='_blank'>Learn more.</a>\n" +
-    "</p>\n" +
-    "<form class='panel-form stretch' ng-if='!securityUpdateData.processing' ng-submit='submitSecurityUpdateForm()'>\n" +
-    "<p>Enter your password to update:</p>\n" +
-    "<input class='panel-row' ng-model='securityUpdateData.password' placeholder='Enter password' type='password'>\n" +
-    "<div class='button-group stretch panel-row form-submit'>\n" +
-    "<button class='button info' ng-type='submit'>\n" +
-    "<div class='label'>Update</div>\n" +
-    "</button>\n" +
-    "</div>\n" +
-    "</form>\n" +
-    "<div class='panel-row' ng-if='securityUpdateData.processing'>\n" +
-    "<p class='info'>Processing...</p>\n" +
-    "</div>\n" +
-    "</div>\n" +
+    "<a class='panel-row condensed' ng-click='openPasswordWizard(&#39;change-pw&#39;)'>Change Password</a>\n" +
+    "<a class='panel-row justify-left condensed success' ng-click='openPasswordWizard(&#39;upgrade-security&#39;)' ng-if='securityUpdateAvailable'>\n" +
+    "<div class='inline circle small success mr-8'></div>\n" +
+    "<div class='inline'>Security Update Available</div>\n" +
+    "</a>\n" +
     "</div>\n" +
     "<div class='panel-section'>\n" +
     "<h3 class='title panel-row'>Encryption</h3>\n" +
@@ -43821,6 +49122,10 @@ angular.module('app').directive('permissionsModal', function () {
     "<div class='label'>Decrypt & Import</div>\n" +
     "</button>\n" +
     "</div>\n" +
+    "<p>\n" +
+    "Importing from backup will overwrite existing notes with matching note from backup. Existing notes not found in the backup will remain as-is and won't be overwritten.\n" +
+    "</p>\n" +
+    "<p>If you'd like to import only a selection of notes instead of the whole file, please use the Batch Manager extension instead.</p>\n" +
     "</form>\n" +
     "</div>\n" +
     "<div class='panel-row'>\n" +
@@ -43846,7 +49151,7 @@ angular.module('app').directive('permissionsModal', function () {
     "<div class='sn-component'>\n" +
     "<div class='menu-panel dropdown-menu'>\n" +
     "<a class='no-decoration' href='https://standardnotes.org/extensions' ng-if='extensions.length == 0' target='blank'>\n" +
-    "<menu-row title='&#39;Download Actions&#39;'></menu-row>\n" +
+    "<menu-row label='&#39;Download Actions&#39;'></menu-row>\n" +
     "</a>\n" +
     "<div ng-repeat='extension in extensions'>\n" +
     "<div class='header' ng-click='extension.hide = !extension.hide; $event.stopPropagation();'>\n" +
@@ -43856,7 +49161,7 @@ angular.module('app').directive('permissionsModal', function () {
     "<div ng-if='extension.hide'>…</div>\n" +
     "</div>\n" +
     "</div>\n" +
-    "<menu-row ng-click='executeAction(action, extension); $event.stopPropagation();' ng-if='!extension.hide' ng-repeat='action in extension.actionsWithContextForItem(item)' spinner-class='action.running ? &#39;info&#39; : null' sub-rows='action.subrows' subtitle='action.desc' title='action.label'>\n" +
+    "<menu-row label='action.label' ng-click='executeAction(action, extension); $event.stopPropagation();' ng-if='!extension.hide' ng-repeat='action in extension.actionsWithContextForItem(item)' spinner-class='action.running ? &#39;info&#39; : null' sub-rows='action.subrows' subtitle='action.desc'>\n" +
     "<div class='sublabel' ng-if='action.access_type'>\n" +
     "Uses\n" +
     "<strong>{{action.access_type}}</strong>\n" +
@@ -43866,7 +49171,7 @@ angular.module('app').directive('permissionsModal', function () {
     "</div>\n" +
     "</div>\n" +
     "</div>\n" +
-    "<div class='modal medium' ng-click='$event.stopPropagation();' ng-if='renderData.showRenderModal'>\n" +
+    "<div class='modal medium-text medium' ng-click='$event.stopPropagation();' ng-if='renderData.showRenderModal'>\n" +
     "<div class='content'>\n" +
     "<div class='sn-component'>\n" +
     "<div class='panel'>\n" +
@@ -43876,7 +49181,7 @@ angular.module('app').directive('permissionsModal', function () {
     "</div>\n" +
     "<div class='content selectable'>\n" +
     "<h2>{{renderData.title}}</h2>\n" +
-    "<p class='normal' style='white-space: pre-wrap; font-family: monospace; font-size: 16px;'>{{renderData.text}}</p>\n" +
+    "<p class='normal' style='white-space: pre-wrap; font-size: 16px;'>{{renderData.text}}</p>\n" +
     "</div>\n" +
     "</div>\n" +
     "</div>\n" +
@@ -44016,24 +49321,24 @@ angular.module('app').directive('permissionsModal', function () {
     "<div class='header'>\n" +
     "<h4 class='title'>Note Editor</h4>\n" +
     "</div>\n" +
-    "<menu-row circle='selectedEditor == null &amp;&amp; &#39;success&#39;' ng-click='selectComponent($event, null)' title='&#39;Plain Editor&#39;'></menu-row>\n" +
-    "<menu-row button-action='toggleDefaultForEditor(editor)' button-class='defaultEditor == editor ? &#39;warning&#39; : &#39;info&#39;' button-text='defaultEditor == editor ? &#39;Undefault&#39; : &#39;Set Default&#39;' circle='selectedEditor === editor &amp;&amp; &#39;success&#39;' has-button='selectedEditor == editor || defaultEditor == editor' ng-click='selectComponent($event, editor)' ng-repeat='editor in editors' title='editor.name'>\n" +
+    "<menu-row circle='selectedEditor == null &amp;&amp; &#39;success&#39;' label='&#39;Plain Editor&#39;' ng-click='selectComponent($event, null)'></menu-row>\n" +
+    "<menu-row button-action='toggleDefaultForEditor(editor)' button-class='defaultEditor == editor ? &#39;warning&#39; : &#39;info&#39;' button-text='defaultEditor == editor ? &#39;Undefault&#39; : &#39;Set Default&#39;' circle='selectedEditor === editor &amp;&amp; &#39;success&#39;' has-button='selectedEditor == editor || defaultEditor == editor' label='editor.name' ng-click='selectComponent($event, editor)' ng-repeat='editor in editors'>\n" +
     "<div class='column' ng-if='component.conflict_of || shouldDisplayRunningLocallyLabel(editor)'>\n" +
-    "<strong class='red medium' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
+    "<strong class='red medium-text' ng-if='editor.conflict_of'>Conflicted copy</strong>\n" +
     "<div class='sublabel' ng-if='shouldDisplayRunningLocallyLabel(editor)'>Running Locally</div>\n" +
     "</div>\n" +
     "</menu-row>\n" +
     "<a class='no-decoration' href='https://standardnotes.org/extensions' ng-if='editors.length == 0' target='blank'>\n" +
-    "<menu-row title='&#39;Download More Editors&#39;'></menu-row>\n" +
+    "<menu-row label='&#39;Download More Editors&#39;'></menu-row>\n" +
     "</a>\n" +
     "</div>\n" +
     "<div class='section' ng-if='stack.length &gt; 0'>\n" +
     "<div class='header'>\n" +
     "<h4 class='title'>Editor Stack</h4>\n" +
     "</div>\n" +
-    "<menu-row circle='stackComponentEnabled(component) ? &#39;success&#39; : &#39;danger&#39;' ng-click='selectComponent($event, component)' ng-repeat='component in stack' title='component.name'>\n" +
+    "<menu-row circle='stackComponentEnabled(component) ? &#39;success&#39; : &#39;danger&#39;' label='component.name' ng-click='selectComponent($event, component)' ng-repeat='component in stack'>\n" +
     "<div class='column' ng-if='component.conflict_of || shouldDisplayRunningLocallyLabel(component)'>\n" +
-    "<strong class='red medium' ng-if='component.conflict_of'>Conflicted copy</strong>\n" +
+    "<strong class='red medium-text' ng-if='component.conflict_of'>Conflicted copy</strong>\n" +
     "<div class='sublabel' ng-if='shouldDisplayRunningLocallyLabel(component)'>Running Locally</div>\n" +
     "</div>\n" +
     "</menu-row>\n" +
@@ -44043,8 +49348,41 @@ angular.module('app').directive('permissionsModal', function () {
   );
 
 
+  $templateCache.put('directives/input-modal.html',
+    "<div class='modal small auto-height'>\n" +
+    "<div class='content'>\n" +
+    "<div class='sn-component'>\n" +
+    "<div class='panel'>\n" +
+    "<div class='header'>\n" +
+    "<h1 class='title'>{{title}}</h1>\n" +
+    "<a class='close-button' ng-click='dismiss()'>Close</a>\n" +
+    "</div>\n" +
+    "<div class='content'>\n" +
+    "<div class='panel-section'>\n" +
+    "<p class='panel-row'>{{message}}</p>\n" +
+    "<div class='panel-row'>\n" +
+    "<div class='panel-column stretch'>\n" +
+    "<form ng-submit='submit()'>\n" +
+    "<input class='form-control' ng-model='formData.input' placeholder='{{placeholder}}' should-focus='true' sn-autofocus='true' type='{{type}}'>\n" +
+    "</form>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "<div class='footer'>\n" +
+    "<a class='right' ng-click='submit()'>\n" +
+    "Submit\n" +
+    "</a>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "</div>\n"
+  );
+
+
   $templateCache.put('directives/menu-row.html',
-    "<div class='row'>\n" +
+    "<div class='row' ng-attr-title='{{desc}}'>\n" +
     "<div class='column'>\n" +
     "<div class='left'>\n" +
     "<div class='column' ng-if='circle'>\n" +
@@ -44052,7 +49390,7 @@ angular.module('app').directive('permissionsModal', function () {
     "</div>\n" +
     "<div class='column' ng-class='{&#39;faded&#39; : faded}'>\n" +
     "<div class='label'>\n" +
-    "{{title}}\n" +
+    "{{label}}\n" +
     "</div>\n" +
     "<div class='sublabel' ng-if='subtitle'>\n" +
     "{{subtitle}}\n" +
@@ -44061,7 +49399,7 @@ angular.module('app').directive('permissionsModal', function () {
     "</div>\n" +
     "</div>\n" +
     "<div class='subrows' ng-if='subRows &amp;&amp; subRows.length &gt; 0'>\n" +
-    "<menu-row ng-click='row.onClick($event); $event.stopPropagation();' ng-repeat='row in subRows' spinner-class='row.spinnerClass' subtitle='row.subtitle' title='row.title'></menu-row>\n" +
+    "<menu-row label='row.label' ng-click='row.onClick($event); $event.stopPropagation();' ng-repeat='row in subRows' spinner-class='row.spinnerClass' subtitle='row.subtitle'></menu-row>\n" +
     "</div>\n" +
     "</div>\n" +
     "<div class='column' ng-if='hasButton'>\n" +
@@ -44078,6 +49416,148 @@ angular.module('app').directive('permissionsModal', function () {
 
   $templateCache.put('directives/panel-resizer.html',
     "<div class='panel-resizer-column'></div>\n"
+  );
+
+
+  $templateCache.put('directives/password-wizard.html',
+    "<div class='modal small auto-height' id='password-wizard'>\n" +
+    "<div class='content'>\n" +
+    "<div class='sn-component'>\n" +
+    "<div class='panel'>\n" +
+    "<div class='header'>\n" +
+    "<h1 class='title'>{{title}}</h1>\n" +
+    "<a class='close-button' ng-click='dismiss()'>Close</a>\n" +
+    "</div>\n" +
+    "<div class='content'>\n" +
+    "<div ng-if='step == 0'>\n" +
+    "<div ng-if='changePassword'>\n" +
+    "<h2 class='title panel-row'>Change your password</h2>\n" +
+    "<p>\n" +
+    "Changing your password involves changing your encryption key, which requires your data to be re-encrypted and synced.\n" +
+    "If you have many items, syncing your data can take several minutes.\n" +
+    "</p>\n" +
+    "<p class='panel-row'>\n" +
+    "<strong>You must keep the application window open during this process.</strong>\n" +
+    "</p>\n" +
+    "</div>\n" +
+    "<div ng-if='securityUpdate'>\n" +
+    "<h2 class='title panel-row'>Perform security update</h2>\n" +
+    "<p>\n" +
+    "A new update is available for your account. Updates address improvements and enhancements to our security specification.\n" +
+    "This process will guide you through the update, and perform the steps necessary with your supervision.\n" +
+    "</p>\n" +
+    "<p>\n" +
+    "For more information about security updates, please visit\n" +
+    "<a href='https://standardnotes.org/help/security' target='_blank'>standardnotes.org/help/security.</a>\n" +
+    "</p>\n" +
+    "</div>\n" +
+    "<p class='panel-row'>\n" +
+    "<div class='info'>Press Continue to proceed.</div>\n" +
+    "</p>\n" +
+    "<div class='panel-row'></div>\n" +
+    "<div class='panel-row'></div>\n" +
+    "</div>\n" +
+    "<div class='panel-section' ng-if='step &gt; 0'>\n" +
+    "<h3 class='title panel-row'>Step {{step}} — {{titleForStep(step)}}</h3>\n" +
+    "<div ng-if='step == 1'>\n" +
+    "<p class='panel-row'>\n" +
+    "As a result of this process, the entirety of your data will be re-encrypted and synced to your account. This is a generally safe process,\n" +
+    "but unforeseen factors like poor network connectivity or a sudden shutdown of your computer may cause this process to fail.\n" +
+    "It's best to be on the safe side before large operations such as this one.\n" +
+    "</p>\n" +
+    "<div class='panel-row'></div>\n" +
+    "<div class='panel-row'>\n" +
+    "<div class='button-group'>\n" +
+    "<div class='button info' ng-click='downloadBackup(true)'>\n" +
+    "<div class='label'>Download Encrypted Backup</div>\n" +
+    "</div>\n" +
+    "<div class='button info' ng-click='downloadBackup(false)'>\n" +
+    "<div class='label'>Download Decrypted Backup</div>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "<div ng-if='step == 2'>\n" +
+    "<p class='panel-row'>\n" +
+    "As a result of this process, your encryption keys will change.\n" +
+    "Any device on which you use Standard Notes will need to end its session. After this process completes, you will be asked to sign back in.\n" +
+    "</p>\n" +
+    "<p class='bold panel-row info-i'>Please sign out of all applications (excluding this one), including:</p>\n" +
+    "<ul>\n" +
+    "<li>Desktop</li>\n" +
+    "<li>Web (Chrome, Firefox, Safari)</li>\n" +
+    "<li>Mobile (iOS and Android)</li>\n" +
+    "</ul>\n" +
+    "<p class='panel-row'>\n" +
+    "If you do not currently have access to a device you're signed in on, you may proceed,\n" +
+    "but must make signing out and back in the first step upon gaining access to that device.\n" +
+    "</p>\n" +
+    "<p class='panel-row'>Press Continue only when you have completed signing out of all your devices.</p>\n" +
+    "</div>\n" +
+    "<div ng-if='step == 3'>\n" +
+    "<div ng-if='changePassword'></div>\n" +
+    "<div ng-if='securityUpdate'>\n" +
+    "<p class='panel-row'>Enter your current password. We'll run this through our encryption scheme to generate strong new encryption keys.</p>\n" +
+    "</div>\n" +
+    "<div class='panel-row'></div>\n" +
+    "<div class='panel-row'>\n" +
+    "<div class='panel-column stretch'>\n" +
+    "<form>\n" +
+    "<input class='form-control' ng-model='formData.currentPassword' placeholder='Current Password' should-focus='true' sn-autofocus='true' type='password'>\n" +
+    "<input class='form-control' ng-if='changePassword' ng-model='formData.newPassword' placeholder='New Password' type='password'>\n" +
+    "<input class='form-control' ng-if='changePassword' ng-model='formData.newPasswordConfirmation' placeholder='Confirm New Password' type='password'>\n" +
+    "</form>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "<div ng-if='step == 4'>\n" +
+    "<p class='panel-row'>\n" +
+    "Your data is being re-encrypted with your new keys and synced to your account.\n" +
+    "</p>\n" +
+    "<p class='panel-row danger'>\n" +
+    "Do not close this window until this process completes.\n" +
+    "</p>\n" +
+    "<div class='panel-row'>\n" +
+    "<div class='panel-column'>\n" +
+    "<div class='spinner small inline info mr-5' ng-if='formData.processing'></div>\n" +
+    "<div class='inline bold' ng-class='{&#39;info&#39; : !formData.statusError, &#39;error&#39; : formData.statusError}'>\n" +
+    "{{formData.status}}\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "<div class='panel-column' delay-hide='true' delay='1000' show='syncStatus.syncOpInProgress || syncStatus.needsMoreSync'>\n" +
+    "<p class='info'>\n" +
+    "Syncing {{syncStatus.current}}/{{syncStatus.total}}\n" +
+    "</p>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "<div ng-if='step == 5'>\n" +
+    "<div ng-if='changePassword'>\n" +
+    "<p class='panel-row'>Your password has been successfully changed.</p>\n" +
+    "</div>\n" +
+    "<div ng-if='securityUpdate'>\n" +
+    "<p class='panel-row'>\n" +
+    "The security update has been successfully applied to your account.\n" +
+    "</p>\n" +
+    "</div>\n" +
+    "<p class='panel-row'>\n" +
+    "<strong>Please ensure you are running the latest version of Standard Notes on all platforms to ensure maximum compatibility.</strong>\n" +
+    "</p>\n" +
+    "<p class='panel-row'>You may now sign back in on all your devices and close this window.</p>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "<div class='footer'>\n" +
+    "<div class='empty'></div>\n" +
+    "<a class='right' ng-class='{&#39;disabled&#39; : lockContinue}' ng-click='continue()'>\n" +
+    "<div class='spinner small inline info mr-5' ng-if='showSpinner'></div>\n" +
+    "{{continueTitle}}\n" +
+    "</a>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "</div>\n" +
+    "</div>\n"
   );
 
 
@@ -44117,7 +49597,7 @@ angular.module('app').directive('permissionsModal', function () {
 
 
   $templateCache.put('editor.html',
-    "<div class='section editor' id='editor-column'>\n" +
+    "<div aria-label='Note' class='section editor' id='editor-column'>\n" +
     "<div class='sn-component'>\n" +
     "<div class='app-bar no-edges' ng-if='ctrl.note.locked' ng-init='ctrl.lockText = &#39;Note Locked&#39;' ng-mouseleave='ctrl.lockText = &#39;Note Locked&#39;' ng-mouseover='ctrl.lockText = &#39;Unlock&#39;'>\n" +
     "<div class='left'>\n" +
@@ -44134,7 +49614,7 @@ angular.module('app').directive('permissionsModal', function () {
     "<div class='title'>\n" +
     "<input class='input' id='note-title-editor' ng-blur='ctrl.onNameBlur()' ng-change='ctrl.nameChanged()' ng-disabled='ctrl.note.locked' ng-focus='ctrl.onNameFocus()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.saveTitle($event)' ng-model='ctrl.note.title' select-on-click='true'>\n" +
     "</div>\n" +
-    "<div id='save-status' ng-bind-html='ctrl.noteStatus' ng-class='{&#39;red bold&#39;: ctrl.saveError, &#39;warning bold&#39;: ctrl.syncTakingTooLong}'></div>\n" +
+    "<div id='save-status' ng-bind-html='ctrl.noteStatus' ng-class='{&#39;error bold&#39;: ctrl.syncTakingTooLong}'></div>\n" +
     "<div class='editor-tags'>\n" +
     "<div id='note-tags-component-container' ng-if='ctrl.tagsComponent'>\n" +
     "<component-view class='component-view' component='ctrl.tagsComponent' ng-class='{&#39;locked&#39; : ctrl.note.locked }' ng-style='ctrl.note.locked &amp;&amp; {&#39;pointer-events&#39; : &#39;none&#39;}'></component-view>\n" +
@@ -44146,23 +49626,23 @@ angular.module('app').directive('permissionsModal', function () {
     "<div class='app-bar no-edges'>\n" +
     "<div class='left'>\n" +
     "<div class='item' click-outside='ctrl.showMenu = false;' is-open='ctrl.showMenu' ng-class='{&#39;selected&#39; : ctrl.showMenu}' ng-click='ctrl.showMenu = !ctrl.showMenu; ctrl.showExtensions = false; ctrl.showEditorMenu = false;'>\n" +
-    "<div class='label'>Menu</div>\n" +
+    "<div class='label'>Options</div>\n" +
     "<div class='menu-panel dropdown-menu' ng-if='ctrl.showMenu'>\n" +
     "<div class='section'>\n" +
     "<div class='header'>\n" +
     "<h4 class='title'>Note Options</h4>\n" +
     "</div>\n" +
-    "<menu-row ng-click='ctrl.selectedMenuItem($event, true); ctrl.togglePin()' title='ctrl.note.pinned ? &#39;Unpin&#39; : &#39;Pin&#39;'></menu-row>\n" +
-    "<menu-row ng-click='ctrl.selectedMenuItem($event, true); ctrl.toggleArchiveNote()' title='ctrl.note.archived ? &#39;Unarchive&#39; : &#39;Archive&#39;'></menu-row>\n" +
-    "<menu-row ng-click='ctrl.selectedMenuItem($event, true); ctrl.toggleLockNote()' title='ctrl.note.locked ? &#39;Unlock&#39; : &#39;Lock&#39;'></menu-row>\n" +
-    "<menu-row ng-click='ctrl.selectedMenuItem($event); ctrl.deleteNote()' title='&#39;Delete&#39;'></menu-row>\n" +
+    "<menu-row desc='&#39;Pin or unpin a note from the top of your list&#39;' label='ctrl.note.pinned ? &#39;Unpin&#39; : &#39;Pin&#39;' ng-click='ctrl.selectedMenuItem($event, true); ctrl.togglePin()'></menu-row>\n" +
+    "<menu-row desc='&#39;Archive or unarchive a note from your Archived system tag&#39;' label='ctrl.note.archived ? &#39;Unarchive&#39; : &#39;Archive&#39;' ng-click='ctrl.selectedMenuItem($event, true); ctrl.toggleArchiveNote()'></menu-row>\n" +
+    "<menu-row desc='&#39;Locking notes prevents unintentional editing&#39;' label='ctrl.note.locked ? &#39;Unlock&#39; : &#39;Lock&#39;' ng-click='ctrl.selectedMenuItem($event, true); ctrl.toggleLockNote()'></menu-row>\n" +
+    "<menu-row desc='&#39;Delete this note permanently from all your devices&#39;' label='&#39;Delete&#39;' ng-click='ctrl.selectedMenuItem($event); ctrl.deleteNote()'></menu-row>\n" +
     "</div>\n" +
     "<div class='section' ng-if='!ctrl.selectedEditor'>\n" +
     "<div class='header'>\n" +
     "<h4 class='title'>Global Display</h4>\n" +
     "</div>\n" +
-    "<menu-row circle='ctrl.monospaceFont ? &#39;success&#39; : &#39;default&#39;' ng-click='ctrl.selectedMenuItem($event, true); ctrl.toggleKey(&#39;monospaceFont&#39;)' title='&#39;Monospace Font&#39;'></menu-row>\n" +
-    "<menu-row circle='ctrl.spellcheck ? &#39;success&#39; : &#39;default&#39;' ng-click='ctrl.selectedMenuItem($event, true); ctrl.toggleKey(&#39;spellcheck&#39;)' title='&#39;Spellcheck&#39;'></menu-row>\n" +
+    "<menu-row circle='ctrl.monospaceFont ? &#39;success&#39; : &#39;default&#39;' desc='&#39;Toggles the font style for the default editor&#39;' label='&#39;Monospace Font&#39;' ng-click='ctrl.selectedMenuItem($event, true); ctrl.toggleKey(&#39;monospaceFont&#39;)'></menu-row>\n" +
+    "<menu-row circle='ctrl.spellcheck ? &#39;success&#39; : &#39;default&#39;' desc='&#39;Toggles spellcheck for the default editor&#39;' label='&#39;Spellcheck&#39;' ng-click='ctrl.selectedMenuItem($event, true); ctrl.toggleKey(&#39;spellcheck&#39;)'></menu-row>\n" +
     "</div>\n" +
     "</div>\n" +
     "</div>\n" +
@@ -44183,9 +49663,9 @@ angular.module('app').directive('permissionsModal', function () {
     "<textarea class='editable' dir='auto' id='note-text-editor' ng-attr-spellcheck='{{ctrl.spellcheck}}' ng-change='ctrl.contentChanged()' ng-click='ctrl.clickedTextArea()' ng-disabled='ctrl.note.locked' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.selectedEditor' ng-model='ctrl.note.text' ng-trim='false'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
     "<panel-resizer control='ctrl.resizeControl' hoverable='true' min-width='300' on-resize-finish='ctrl.onPanelResizeFinish' panel-id='&#39;editor-content&#39;' property='&#39;right&#39;'></panel-resizer>\n" +
     "</div>\n" +
-    "<section class='section' ng-if='ctrl.note.errorDecrypting'>\n" +
+    "<div class='section' ng-if='ctrl.note.errorDecrypting'>\n" +
     "<p class='medium-padding' style='padding-top: 0 !important;'>There was an error decrypting this item. Ensure you are running the latest version of this app, then sign out and sign back in to try again.</p>\n" +
-    "</section>\n" +
+    "</div>\n" +
     "<div id='editor-pane-component-stack'>\n" +
     "<div class='sn-component'>\n" +
     "<component-view class='component-view component-stack-item border-color' component='component' manual-dealloc='true' ng-if='component.active' ng-repeat='component in ctrl.componentStack' ng-show='!component.hidden'></component-view>\n" +
@@ -44222,7 +49702,10 @@ angular.module('app').directive('permissionsModal', function () {
     "</div>\n" +
     "</div>\n" +
     "<div class='right'>\n" +
-    "<div class='item' ng-click='ctrl.clickedNewUpdateAnnouncement()' ng-if='ctrl.newUpdateAvailable'>\n" +
+    "<div class='item' ng-click='ctrl.openSecurityUpdate()' ng-if='ctrl.securityUpdateAvailable'>\n" +
+    "<span class='success label'>Security update available.</span>\n" +
+    "</div>\n" +
+    "<div class='item' ng-click='ctrl.clickedNewUpdateAnnouncement()' ng-if='ctrl.newUpdateAvailable == true'>\n" +
     "<span class='info label'>New update available.</span>\n" +
     "</div>\n" +
     "<div class='item no-pointer' ng-if='ctrl.lastSyncDate &amp;&amp; !ctrl.isRefreshing'>\n" +
@@ -44299,16 +49782,16 @@ angular.module('app').directive('permissionsModal', function () {
 
 
   $templateCache.put('notes.html',
-    "<div class='section notes' id='notes-column'>\n" +
+    "<div aria-label='Notes' class='section notes' id='notes-column'>\n" +
     "<div class='content'>\n" +
     "<div class='section-title-bar' id='notes-title-bar'>\n" +
     "<div class='padded'>\n" +
     "<div class='section-title-bar-header'>\n" +
     "<div class='title'>{{ctrl.panelTitle()}}</div>\n" +
-    "<div class='add-button' id='notes-add-button' ng-click='ctrl.createNewNote()'>+</div>\n" +
+    "<div class='add-button' id='notes-add-button' ng-click='ctrl.createNewNote()' title='Create a new note in the selected tag'>+</div>\n" +
     "</div>\n" +
-    "<div class='filter-section'>\n" +
-    "<input class='filter-bar mousetrap' id='search-bar' lowercase='true' ng-blur='ctrl.onFilterEnter()' ng-change='ctrl.filterTextChanged()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.onFilterEnter();' ng-model='ctrl.noteFilter.text' placeholder='Search' select-on-click='true'>\n" +
+    "<div class='filter-section' role='search'>\n" +
+    "<input class='filter-bar mousetrap' id='search-bar' lowercase='true' ng-blur='ctrl.onFilterEnter()' ng-change='ctrl.filterTextChanged()' ng-keyup='$event.keyCode == 13 &amp;&amp; ctrl.onFilterEnter();' ng-model='ctrl.noteFilter.text' placeholder='Search' select-on-click='true' title='Searches notes in the currently selected tag'>\n" +
     "<div id='search-clear-button' ng-click='ctrl.clearFilterText();' ng-if='ctrl.noteFilter.text'>✕</div>\n" +
     "</input>\n" +
     "</div>\n" +
@@ -44333,19 +49816,19 @@ angular.module('app').directive('permissionsModal', function () {
     "<div class='header'>\n" +
     "<h4 class='title'>Sort By</h4>\n" +
     "</div>\n" +
-    "<menu-row circle='ctrl.sortBy == &#39;created_at&#39; &amp;&amp; &#39;success&#39;' ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByCreated()' title='&#39;Date Added&#39;'></menu-row>\n" +
-    "<menu-row circle='ctrl.sortBy == &#39;updated_at&#39; &amp;&amp; &#39;success&#39;' ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByUpdated()' title='&#39;Date Modified&#39;'></menu-row>\n" +
-    "<menu-row circle='ctrl.sortBy == &#39;title&#39; &amp;&amp; &#39;success&#39;' ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByTitle()' title='&#39;Title&#39;'></menu-row>\n" +
+    "<menu-row circle='ctrl.sortBy == &#39;created_at&#39; &amp;&amp; &#39;success&#39;' desc='&#39;Sort notes by newest first&#39;' label='&#39;Date Added&#39;' ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByCreated()'></menu-row>\n" +
+    "<menu-row circle='ctrl.sortBy == &#39;client_updated_at&#39; &amp;&amp; &#39;success&#39;' desc='&#39;Sort notes with the most recently updated first&#39;' label='&#39;Date Modified&#39;' ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByUpdated()'></menu-row>\n" +
+    "<menu-row circle='ctrl.sortBy == &#39;title&#39; &amp;&amp; &#39;success&#39;' desc='&#39;Sort notes alphabetically by their title&#39;' label='&#39;Title&#39;' ng-click='ctrl.selectedMenuItem($event); ctrl.selectedSortByTitle()'></menu-row>\n" +
     "</div>\n" +
     "<div class='section' ng-if='!ctrl.tag.archiveTag'>\n" +
     "<div class='header'>\n" +
     "<h4 class='title'>Display</h4>\n" +
     "</div>\n" +
-    "<menu-row circle='ctrl.showArchived ? &#39;success&#39; : &#39;danger&#39;' faded='!ctrl.showArchived' ng-click='ctrl.selectedMenuItem($event); ctrl.toggleKey(&#39;showArchived&#39;)' title='&#39;Archived Notes&#39;'></menu-row>\n" +
-    "<menu-row circle='ctrl.hidePinned ? &#39;danger&#39; : &#39;success&#39;' faded='ctrl.hidePinned' ng-click='ctrl.selectedMenuItem($event); ctrl.toggleKey(&#39;hidePinned&#39;)' title='&#39;Pinned Notes&#39;'></menu-row>\n" +
-    "<menu-row circle='ctrl.hideNotePreview ? &#39;danger&#39; : &#39;success&#39;' faded='ctrl.hideNotePreview' ng-click='ctrl.selectedMenuItem($event); ctrl.toggleKey(&#39;hideNotePreview&#39;)' title='&#39;Note Preview&#39;'></menu-row>\n" +
-    "<menu-row circle='ctrl.hideDate ? &#39;danger&#39; : &#39;success&#39;' faded='ctrl.hideDate' ng-click='ctrl.selectedMenuItem($event); ctrl.toggleKey(&#39;hideDate&#39;)' title='&#39;Date&#39;'></menu-row>\n" +
-    "<menu-row circle='ctrl.hideTags ? &#39;danger&#39; : &#39;success&#39;' faded='ctrl.hideTags' ng-click='ctrl.selectedMenuItem($event); ctrl.toggleKey(&#39;hideTags&#39;)' title='&#39;Tags&#39;'></menu-row>\n" +
+    "<menu-row circle='ctrl.showArchived ? &#39;success&#39; : &#39;danger&#39;' desc='&#39;Archived notes are usually hidden. You can explicitly show them with this option.&#39;' faded='!ctrl.showArchived' label='&#39;Archived Notes&#39;' ng-click='ctrl.selectedMenuItem($event); ctrl.toggleKey(&#39;showArchived&#39;)'></menu-row>\n" +
+    "<menu-row circle='ctrl.hidePinned ? &#39;danger&#39; : &#39;success&#39;' desc='&#39;Pinned notes always appear on top. You can hide them temporarily with this option so you can focus on other notes in the list.&#39;' faded='ctrl.hidePinned' label='&#39;Pinned Notes&#39;' ng-click='ctrl.selectedMenuItem($event); ctrl.toggleKey(&#39;hidePinned&#39;)'></menu-row>\n" +
+    "<menu-row circle='ctrl.hideNotePreview ? &#39;danger&#39; : &#39;success&#39;' desc='&#39;Hide the note preview for a more condensed list of notes&#39;' faded='ctrl.hideNotePreview' label='&#39;Note Preview&#39;' ng-click='ctrl.selectedMenuItem($event); ctrl.toggleKey(&#39;hideNotePreview&#39;)'></menu-row>\n" +
+    "<menu-row circle='ctrl.hideDate ? &#39;danger&#39; : &#39;success&#39;' desc='&#39;Hide the date displayed in each row&#39;' faded='ctrl.hideDate' label='&#39;Date&#39;' ng-click='ctrl.selectedMenuItem($event); ctrl.toggleKey(&#39;hideDate&#39;)'></menu-row>\n" +
+    "<menu-row circle='ctrl.hideTags ? &#39;danger&#39; : &#39;success&#39;' desc='&#39;Hide the list of tags associated with each note&#39;' faded='ctrl.hideTags' label='&#39;Tags&#39;' ng-click='ctrl.selectedMenuItem($event); ctrl.toggleKey(&#39;hideTags&#39;)'></menu-row>\n" +
     "</div>\n" +
     "</div>\n" +
     "</div>\n" +
@@ -44355,15 +49838,15 @@ angular.module('app').directive('permissionsModal', function () {
     "<div class='scrollable'>\n" +
     "<div can-load='true' class='infinite-scroll' id='notes-scrollable' infinite-scroll='ctrl.paginate()' threshold='200'>\n" +
     "<div class='note' ng-class='{&#39;selected&#39; : ctrl.selectedNote == note}' ng-click='ctrl.selectNote(note, true)' ng-repeat='note in (ctrl.sortedNotes = (ctrl.tag.notes | filter: ctrl.filterNotes | sortBy: ctrl.sortBy | limitTo:ctrl.notesToDisplay)) track by note.uuid'>\n" +
-    "<strong class='red medium' ng-if='note.conflict_of'>Conflicted copy</strong>\n" +
-    "<strong class='red medium' ng-if='note.errorDecrypting'>Error decrypting</strong>\n" +
+    "<strong class='red medium-text' ng-if='note.conflict_of'>Conflicted copy</strong>\n" +
+    "<strong class='red medium-text' ng-if='note.errorDecrypting'>Error decrypting</strong>\n" +
     "<div class='pinned tinted' ng-class='{&#39;tinted-selected&#39; : ctrl.selectedNote == note}' ng-if='note.pinned'>\n" +
     "<i class='icon ion-bookmark'></i>\n" +
-    "<strong class='medium'>Pinned</strong>\n" +
+    "<strong class='medium-text'>Pinned</strong>\n" +
     "</div>\n" +
     "<div class='archived tinted' ng-class='{&#39;tinted-selected&#39; : ctrl.selectedNote == note}' ng-if='note.archived &amp;&amp; !ctrl.tag.archiveTag'>\n" +
     "<i class='icon ion-ios-box'></i>\n" +
-    "<strong class='medium'>Archived</strong>\n" +
+    "<strong class='medium-text'>Archived</strong>\n" +
     "</div>\n" +
     "<div class='tags-string' ng-if='ctrl.shouldShowTags(note)'>\n" +
     "<div class='faded'>{{note.savedTagsString || note.tagsString()}}</div>\n" +
@@ -44375,8 +49858,8 @@ angular.module('app').directive('permissionsModal', function () {
     "{{note.text}}\n" +
     "</div>\n" +
     "<div class='date faded' ng-if='!ctrl.hideDate'>\n" +
-    "<span ng-if='ctrl.sortBy == &#39;updated_at&#39;'>Modified {{note.updatedAtString() || 'Now'}}</span>\n" +
-    "<span ng-if='ctrl.sortBy != &#39;updated_at&#39;'>{{note.createdAtString() || 'Now'}}</span>\n" +
+    "<span ng-if='ctrl.sortBy == &#39;client_updated_at&#39;'>Modified {{note.updatedAtString() || 'Now'}}</span>\n" +
+    "<span ng-if='ctrl.sortBy != &#39;client_updated_at&#39;'>{{note.createdAtString() || 'Now'}}</span>\n" +
     "</div>\n" +
     "</div>\n" +
     "</div>\n" +
@@ -44388,7 +49871,7 @@ angular.module('app').directive('permissionsModal', function () {
 
 
   $templateCache.put('tags.html',
-    "<div class='section tags' id='tags-column'>\n" +
+    "<div aria-label='Tags' class='section tags' id='tags-column'>\n" +
     "<div class='component-view-container' ng-if='ctrl.component.active'>\n" +
     "<component-view class='component-view' component='ctrl.component'></component-view>\n" +
     "</div>\n" +
@@ -44396,7 +49879,7 @@ angular.module('app').directive('permissionsModal', function () {
     "<div class='section-title-bar' id='tags-title-bar'>\n" +
     "<div class='section-title-bar-header'>\n" +
     "<div class='title'>Tags</div>\n" +
-    "<div class='add-button' id='tag-add-button' ng-click='ctrl.clickedAddNewTag()'>+</div>\n" +
+    "<div class='add-button' id='tag-add-button' ng-click='ctrl.clickedAddNewTag()' title='Create a new tag'>+</div>\n" +
     "</div>\n" +
     "</div>\n" +
     "<div class='scrollable'>\n" +
@@ -44412,8 +49895,8 @@ angular.module('app').directive('permissionsModal', function () {
     "<input class='title' ng-attr-id='tag-{{tag.uuid}}' ng-blur='ctrl.saveTag($event, tag)' ng-change='ctrl.tagTitleDidChange(tag)' ng-click='ctrl.selectTag(tag)' ng-keyup='$event.keyCode == 13 &amp;&amp; $event.target.blur()' ng-model='tag.title' should-focus='ctrl.newTag || ctrl.editingTag == tag' sn-autofocus='true' spellcheck='false'>\n" +
     "<div class='count'>{{ctrl.noteCount(tag)}}</div>\n" +
     "</div>\n" +
-    "<div class='red small bold' ng-if='tag.conflict_of'>Conflicted copy</div>\n" +
-    "<div class='red small bold' ng-if='tag.errorDecrypting'>Error decrypting</div>\n" +
+    "<div class='red small-text bold' ng-if='tag.conflict_of'>Conflicted copy</div>\n" +
+    "<div class='red small-text bold' ng-if='tag.errorDecrypting'>Error decrypting</div>\n" +
     "<div class='menu' ng-if='ctrl.selectedTag == tag'>\n" +
     "<a class='item' ng-click='ctrl.selectedRenameTag($event, tag)' ng-if='!ctrl.editingTag'>Rename</a>\n" +
     "<a class='item' ng-click='ctrl.saveTag($event, tag)' ng-if='ctrl.editingTag'>Save</a>\n" +
