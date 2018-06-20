@@ -42697,7 +42697,9 @@ var ComponentManager = function () {
 
               if (handler.contextRequestHandler) {
                 var itemInContext = handler.contextRequestHandler(observer.component);
-                this.sendContextItemInReply(observer.component, itemInContext, observer.originalMessage);
+                if (itemInContext) {
+                  this.sendContextItemInReply(observer.component, itemInContext, observer.originalMessage);
+                }
               }
             }
           } catch (err) {
@@ -49663,7 +49665,7 @@ angular.module('app').directive('permissionsModal', function () {
     "<div class='editor-content' id='editor-content' ng-if='ctrl.noteReady &amp;&amp; !ctrl.note.errorDecrypting'>\n" +
     "<panel-resizer class='left' control='ctrl.resizeControl' hoverable='true' min-width='300' on-resize-finish='ctrl.onPanelResizeFinish' panel-id='&#39;editor-content&#39;' property='&#39;left&#39;'></panel-resizer>\n" +
     "<component-view class='component-view' component='ctrl.selectedEditor' ng-class='{&#39;locked&#39; : ctrl.note.locked }' ng-if='ctrl.selectedEditor' ng-style='ctrl.note.locked &amp;&amp; {&#39;pointer-events&#39; : &#39;none&#39;}'></component-view>\n" +
-    "<textarea class='editable' dir='auto' id='note-text-editor' ng-attr-spellcheck='{{ctrl.spellcheck}}' ng-change='ctrl.contentChanged()' ng-click='ctrl.clickedTextArea()' ng-disabled='ctrl.note.locked' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.selectedEditor' ng-model='ctrl.note.text' ng-trim='false'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
+    "<textarea class='editable' dir='auto' id='note-text-editor' ng-attr-spellcheck='{{ctrl.spellcheck}}' ng-change='ctrl.contentChanged()' ng-click='ctrl.clickedTextArea()' ng-focus='ctrl.onContentFocus()' ng-if='!ctrl.selectedEditor' ng-model='ctrl.note.text' ng-readonly='ctrl.note.locked' ng-trim='false'>{{ctrl.onSystemEditorLoad()}}</textarea>\n" +
     "<panel-resizer control='ctrl.resizeControl' hoverable='true' min-width='300' on-resize-finish='ctrl.onPanelResizeFinish' panel-id='&#39;editor-content&#39;' property='&#39;right&#39;'></panel-resizer>\n" +
     "</div>\n" +
     "<div class='section' ng-if='ctrl.note.errorDecrypting'>\n" +
