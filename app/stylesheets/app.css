@@ -74,13 +74,12 @@ p {
   top: 0;
   right: 0;
   z-index: 1;
-  width: 6px;
+  width: 8px;
   height: 100%;
   position: absolute;
   cursor: col-resize;
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(0, 0, 0, 0.1);
   opacity: 0;
-  border: 1px dashed rgba(8, 109, 214, 0.15);
   border-top: none;
   border-bottom: none;
 }
@@ -223,12 +222,12 @@ p {
   font-size: 14px !important;
 }
 
-.windows-web ::-webkit-scrollbar, .windows-desktop ::-webkit-scrollbar, .linux-web ::-webkit-scrollbar, .linux-desktop ::-webkit-scrollbar {
+.mac-web ::-webkit-scrollbar, .windows-web ::-webkit-scrollbar, .windows-desktop ::-webkit-scrollbar, .linux-web ::-webkit-scrollbar, .linux-desktop ::-webkit-scrollbar {
   width: 14px;
   height: 18px;
   border-left: 0.5px solid #E7E7E7;
 }
-.windows-web ::-webkit-scrollbar-thumb, .windows-desktop ::-webkit-scrollbar-thumb, .linux-web ::-webkit-scrollbar-thumb, .linux-desktop ::-webkit-scrollbar-thumb {
+.mac-web ::-webkit-scrollbar-thumb, .windows-web ::-webkit-scrollbar-thumb, .windows-desktop ::-webkit-scrollbar-thumb, .linux-web ::-webkit-scrollbar-thumb, .linux-desktop ::-webkit-scrollbar-thumb {
   height: 6px;
   border: 4px solid rgba(0, 0, 0, 0);
   background-clip: padding-box;
@@ -236,12 +235,12 @@ p {
   background-color: #dfdfdf;
   -webkit-box-shadow: inset -1px -1px 0px rgba(0, 0, 0, 0.05), inset 1px 1px 0px rgba(0, 0, 0, 0.05);
 }
-.windows-web ::-webkit-scrollbar-button, .windows-desktop ::-webkit-scrollbar-button, .linux-web ::-webkit-scrollbar-button, .linux-desktop ::-webkit-scrollbar-button {
+.mac-web ::-webkit-scrollbar-button, .windows-web ::-webkit-scrollbar-button, .windows-desktop ::-webkit-scrollbar-button, .linux-web ::-webkit-scrollbar-button, .linux-desktop ::-webkit-scrollbar-button {
   width: 0;
   height: 0;
   display: none;
 }
-.windows-web ::-webkit-scrollbar-corner, .windows-desktop ::-webkit-scrollbar-corner, .linux-web ::-webkit-scrollbar-corner, .linux-desktop ::-webkit-scrollbar-corner {
+.mac-web ::-webkit-scrollbar-corner, .windows-web ::-webkit-scrollbar-corner, .windows-desktop ::-webkit-scrollbar-corner, .linux-web ::-webkit-scrollbar-corner, .linux-desktop ::-webkit-scrollbar-corner {
   background-color: transparent;
 }
 

@@ -39623,7 +39623,7 @@ angular.module('app').directive('lockScreen', function () {
     if (this.sortBy == "created_at") {
       base += " Date Added";
     } else if (this.sortBy == "client_updated_at") {
-      base += " Date Modifed";
+      base += " Date Modified";
     } else if (this.sortBy == "title") {
       base += " Title";
     }
@@ -41979,7 +41979,7 @@ var ArchiveManager = function () {
             var note = notes[index];
             var blob = new Blob([note.text], { type: 'text/plain' });
 
-            var title = note.title.replace("/", "").replace("\\", "");
+            var title = note.title.replace(/\//g, "").replace(/\\+/g, "");
 
             zipWriter.add(title + '-' + note.uuid + '.txt', new zip.BlobReader(blob), function () {
               index++;
@@ -44370,7 +44370,7 @@ var HttpManager = function () {
           } else {
             console.error("Request error:", response);
             this.$timeout(function () {
-              onerror(response);
+              onerror(response, xmlhttp.status);
             });
           }
         }
@@ -46842,7 +46842,10 @@ var SyncManager = function () {
                     } catch (e) {
                       console.log("Caught sync success exception:", e);
                     }
-                  }.bind(this), function (response) {
+                  }.bind(this), function (response, statusCode) {
+                    if (statusCode == 401) {
+                      alert("Your session has expired. New changes will not be pulled in. Please sign out and sign back in to refresh your session.");
+                    }
                     console.log("Sync error: ", response);
                     var error = response ? response.error : { message: "Could not connect to server." };
 
