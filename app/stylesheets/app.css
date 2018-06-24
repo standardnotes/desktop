@@ -742,6 +742,7 @@ a.disabled {
 .component-view {
   flex-grow: 1;
   display: flex;
+  overflow-y: auto;
 }
 .component-view .sn-component {
   min-width: 100%;

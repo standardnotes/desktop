@@ -1014,7 +1014,7 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
       return generateRandomKey;
     }()
   }, {
-    key: 'generateRandomEncryptionKey',
+    key: 'generateItemEncryptionKey',
     value: function () {
       var _ref5 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4() {
         var length, cost, salt, passphrase;
@@ -1022,7 +1022,7 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
           while (1) {
             switch (_context4.prev = _context4.next) {
               case 0:
-                // Key length needs to be 512 in order to decrypt properly on mobile and web.
+                // Generates a key that will be split in half, each being 256 bits. So total length will need to be 512.
                 length = 512;
                 cost = 1;
                 _context4.next = 4;
@@ -1045,11 +1045,11 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee4, this);
       }));
 
-      function generateRandomEncryptionKey() {
+      function generateItemEncryptionKey() {
         return _ref5.apply(this, arguments);
       }
 
-      return generateRandomEncryptionKey;
+      return generateItemEncryptionKey;
     }()
   }, {
     key: 'firstHalfOfKey',
@@ -1437,7 +1437,7 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
 
 
     /**
-    Internal
+    Public
     */
 
     value: function () {
@@ -1448,7 +1448,7 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
             switch (_context16.prev = _context16.next) {
               case 0:
                 _context16.next = 2;
-                return this.webCryptoImportKey(password);
+                return this.webCryptoImportKey(password, "PBKDF2", "deriveBits");
 
               case 2:
                 key = _context16.sent;
@@ -1479,21 +1479,29 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
       return pbkdf2;
     }()
   }, {
-    key: 'webCryptoImportKey',
+    key: 'generateRandomKey',
     value: function () {
-      var _ref19 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee17(input) {
+      var _ref19 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee17(bits) {
+        var _this3 = this;
+
+        var extractable;
         return regeneratorRuntime.wrap(function _callee17$(_context17) {
           while (1) {
             switch (_context17.prev = _context17.next) {
               case 0:
-                return _context17.abrupt('return', subtleCrypto.importKey("raw", this.stringToArrayBuffer(input), { name: "PBKDF2" }, false, ["deriveBits"]).then(function (key) {
-                  return key;
+                extractable = true;
+                return _context17.abrupt('return', subtleCrypto.generateKey({ name: "AES-CBC", length: bits }, extractable, ["encrypt", "decrypt"]).then(function (keyObject) {
+                  return subtleCrypto.exportKey("raw", keyObject).then(function (keyData) {
+                    var key = _this3.arrayBufferToHexString(new Uint8Array(keyData));
+                    return key;
+                  }).catch(function (err) {
+                    console.error("Error exporting key", err);
+                  });
                 }).catch(function (err) {
-                  console.error(err);
-                  return null;
+                  console.error("Error generating key", err);
                 }));
 
-              case 1:
+              case 2:
               case 'end':
                 return _context17.stop();
             }
@@ -1501,35 +1509,25 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
         }, _callee17, this);
       }));
 
-      function webCryptoImportKey(_x30) {
+      function generateRandomKey(_x30) {
         return _ref19.apply(this, arguments);
       }
 
-      return webCryptoImportKey;
+      return generateRandomKey;
     }()
   }, {
-    key: 'webCryptoDeriveBits',
+    key: 'generateItemEncryptionKey',
     value: function () {
-      var _ref20 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee18(key, pw_salt, pw_cost, length) {
-        var _this3 = this;
-
-        var params;
+      var _ref20 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee18() {
+        var length;
         return regeneratorRuntime.wrap(function _callee18$(_context18) {
           while (1) {
             switch (_context18.prev = _context18.next) {
               case 0:
-                params = {
-                  "name": "PBKDF2",
-                  salt: this.stringToArrayBuffer(pw_salt),
-                  iterations: pw_cost,
-                  hash: { name: "SHA-512" }
-                };
-                return _context18.abrupt('return', subtleCrypto.deriveBits(params, key, length).then(function (bits) {
-                  var key = _this3.arrayBufferToHexString(new Uint8Array(bits));
-                  return key;
-                }).catch(function (err) {
-                  console.error(err);
-                  return null;
+                // Generates a key that will be split in half, each being 256 bits. So total length will need to be 512.
+                length = 256;
+                return _context18.abrupt('return', Promise.all([this.generateRandomKey(length), this.generateRandomKey(length)]).then(function (values) {
+                  return values.join("");
                 }));
 
               case 2:
@@ -1540,8 +1538,98 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
         }, _callee18, this);
       }));
 
-      function webCryptoDeriveBits(_x31, _x32, _x33, _x34) {
+      function generateItemEncryptionKey() {
         return _ref20.apply(this, arguments);
+      }
+
+      return generateItemEncryptionKey;
+    }()
+
+    /* This is a functioning implementation of WebCrypto's encrypt, however, in basic testing, CrpytoJS performs about 30-40% faster, surprisingly. */
+    /*
+    async encryptText(text, key, iv) {
+      var ivData  = this.hexStringToArrayBuffer(iv);
+      const alg = { name: 'AES-CBC', iv: ivData };
+       const keyBuffer = this.hexStringToArrayBuffer(key);
+      var keyData = await this.webCryptoImportKey(keyBuffer, alg.name, "encrypt");
+       var textData = this.stringToArrayBuffer(text);
+       return crypto.subtle.encrypt(alg, keyData, textData).then((result) => {
+        let cipher = this.arrayBufferToBase64(result);
+        return cipher;
+      })
+    }
+    */
+
+    /**
+    Internal
+    */
+
+  }, {
+    key: 'webCryptoImportKey',
+    value: function () {
+      var _ref21 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee19(input, alg, action) {
+        var text;
+        return regeneratorRuntime.wrap(function _callee19$(_context19) {
+          while (1) {
+            switch (_context19.prev = _context19.next) {
+              case 0:
+                text = typeof input === "string" ? this.stringToArrayBuffer(input) : input;
+                return _context19.abrupt('return', subtleCrypto.importKey("raw", text, { name: alg }, false, [action]).then(function (key) {
+                  return key;
+                }).catch(function (err) {
+                  console.error(err);
+                  return null;
+                }));
+
+              case 2:
+              case 'end':
+                return _context19.stop();
+            }
+          }
+        }, _callee19, this);
+      }));
+
+      function webCryptoImportKey(_x31, _x32, _x33) {
+        return _ref21.apply(this, arguments);
+      }
+
+      return webCryptoImportKey;
+    }()
+  }, {
+    key: 'webCryptoDeriveBits',
+    value: function () {
+      var _ref22 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee20(key, pw_salt, pw_cost, length) {
+        var _this4 = this;
+
+        var params;
+        return regeneratorRuntime.wrap(function _callee20$(_context20) {
+          while (1) {
+            switch (_context20.prev = _context20.next) {
+              case 0:
+                params = {
+                  "name": "PBKDF2",
+                  salt: this.stringToArrayBuffer(pw_salt),
+                  iterations: pw_cost,
+                  hash: { name: "SHA-512" }
+                };
+                return _context20.abrupt('return', subtleCrypto.deriveBits(params, key, length).then(function (bits) {
+                  var key = _this4.arrayBufferToHexString(new Uint8Array(bits));
+                  return key;
+                }).catch(function (err) {
+                  console.error(err);
+                  return null;
+                }));
+
+              case 2:
+              case 'end':
+                return _context20.stop();
+            }
+          }
+        }, _callee20, this);
+      }));
+
+      function webCryptoDeriveBits(_x34, _x35, _x36, _x37) {
+        return _ref22.apply(this, arguments);
       }
 
       return webCryptoDeriveBits;
@@ -1581,6 +1669,24 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
       }
       return hexString;
     }
+  }, {
+    key: 'hexStringToArrayBuffer',
+    value: function hexStringToArrayBuffer(hex) {
+      for (var bytes = [], c = 0; c < hex.length; c += 2) {
+        bytes.push(parseInt(hex.substr(c, 2), 16));
+      }return new Uint8Array(bytes);
+    }
+  }, {
+    key: 'arrayBufferToBase64',
+    value: function arrayBufferToBase64(buffer) {
+      var binary = '';
+      var bytes = new Uint8Array(buffer);
+      var len = bytes.byteLength;
+      for (var i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return window.btoa(binary);
+    }
   }]);
 
   return SFCryptoWeb;
@@ -1597,60 +1703,60 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
   _createClass(SFItemTransformer, [{
     key: '_private_encryptString',
     value: function () {
-      var _ref21 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee19(string, encryptionKey, authKey, uuid, version) {
+      var _ref23 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee21(string, encryptionKey, authKey, uuid, version) {
         var fullCiphertext, contentCiphertext, iv, ciphertextToAuth, authHash;
-        return regeneratorRuntime.wrap(function _callee19$(_context19) {
+        return regeneratorRuntime.wrap(function _callee21$(_context21) {
           while (1) {
-            switch (_context19.prev = _context19.next) {
+            switch (_context21.prev = _context21.next) {
               case 0:
                 if (!(version === "001")) {
-                  _context19.next = 7;
+                  _context21.next = 7;
                   break;
                 }
 
-                _context19.next = 3;
+                _context21.next = 3;
                 return this.crypto.encryptText(string, encryptionKey, null);
 
               case 3:
-                contentCiphertext = _context19.sent;
+                contentCiphertext = _context21.sent;
 
                 fullCiphertext = version + contentCiphertext;
-                _context19.next = 18;
+                _context21.next = 18;
                 break;
 
               case 7:
-                _context19.next = 9;
+                _context21.next = 9;
                 return this.crypto.generateRandomKey(128);
 
               case 9:
-                iv = _context19.sent;
-                _context19.next = 12;
+                iv = _context21.sent;
+                _context21.next = 12;
                 return this.crypto.encryptText(string, encryptionKey, iv);
 
               case 12:
-                contentCiphertext = _context19.sent;
+                contentCiphertext = _context21.sent;
                 ciphertextToAuth = [version, uuid, iv, contentCiphertext].join(":");
-                _context19.next = 16;
+                _context21.next = 16;
                 return this.crypto.hmac256(ciphertextToAuth, authKey);
 
               case 16:
-                authHash = _context19.sent;
+                authHash = _context21.sent;
 
                 fullCiphertext = [version, authHash, uuid, iv, contentCiphertext].join(":");
 
               case 18:
-                return _context19.abrupt('return', fullCiphertext);
+                return _context21.abrupt('return', fullCiphertext);
 
               case 19:
               case 'end':
-                return _context19.stop();
+                return _context21.stop();
             }
           }
-        }, _callee19, this);
+        }, _callee21, this);
       }));
 
-      function _private_encryptString(_x35, _x36, _x37, _x38, _x39) {
-        return _ref21.apply(this, arguments);
+      function _private_encryptString(_x38, _x39, _x40, _x41, _x42) {
+        return _ref23.apply(this, arguments);
       }
 
       return _private_encryptString;
@@ -1658,87 +1764,87 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
   }, {
     key: 'encryptItem',
     value: function () {
-      var _ref22 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee20(item, keys) {
+      var _ref24 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee22(item, keys) {
         var version = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "003";
         var params, item_key, ek, ak, ciphertext, authHash;
-        return regeneratorRuntime.wrap(function _callee20$(_context20) {
+        return regeneratorRuntime.wrap(function _callee22$(_context22) {
           while (1) {
-            switch (_context20.prev = _context20.next) {
+            switch (_context22.prev = _context22.next) {
               case 0:
                 params = {};
                 // encrypt item key
 
-                _context20.next = 3;
-                return this.crypto.generateRandomEncryptionKey();
+                _context22.next = 3;
+                return this.crypto.generateItemEncryptionKey();
 
               case 3:
-                item_key = _context20.sent;
+                item_key = _context22.sent;
 
                 if (!(version === "001")) {
-                  _context20.next = 10;
+                  _context22.next = 10;
                   break;
                 }
 
-                _context20.next = 7;
+                _context22.next = 7;
                 return this.crypto.encryptText(item_key, keys.mk, null);
 
               case 7:
-                params.enc_item_key = _context20.sent;
-                _context20.next = 13;
+                params.enc_item_key = _context22.sent;
+                _context22.next = 13;
                 break;
 
               case 10:
-                _context20.next = 12;
+                _context22.next = 12;
                 return this._private_encryptString(item_key, keys.mk, keys.ak, item.uuid, version);
 
               case 12:
-                params.enc_item_key = _context20.sent;
+                params.enc_item_key = _context22.sent;
 
               case 13:
-                _context20.next = 15;
+                _context22.next = 15;
                 return this.crypto.firstHalfOfKey(item_key);
 
               case 15:
-                ek = _context20.sent;
-                _context20.next = 18;
+                ek = _context22.sent;
+                _context22.next = 18;
                 return this.crypto.secondHalfOfKey(item_key);
 
               case 18:
-                ak = _context20.sent;
-                _context20.next = 21;
+                ak = _context22.sent;
+                _context22.next = 21;
                 return this._private_encryptString(JSON.stringify(item.createContentJSONFromProperties()), ek, ak, item.uuid, version);
 
               case 21:
-                ciphertext = _context20.sent;
+                ciphertext = _context22.sent;
 
                 if (!(version === "001")) {
-                  _context20.next = 27;
+                  _context22.next = 27;
                   break;
                 }
 
-                _context20.next = 25;
+                _context22.next = 25;
                 return this.crypto.hmac256(ciphertext, ak);
 
               case 25:
-                authHash = _context20.sent;
+                authHash = _context22.sent;
 
                 params.auth_hash = authHash;
 
               case 27:
 
                 params.content = ciphertext;
-                return _context20.abrupt('return', params);
+                return _context22.abrupt('return', params);
 
               case 29:
               case 'end':
-                return _context20.stop();
+                return _context22.stop();
             }
           }
-        }, _callee20, this);
+        }, _callee22, this);
       }));
 
-      function encryptItem(_x41, _x42) {
-        return _ref22.apply(this, arguments);
+      function encryptItem(_x44, _x45) {
+        return _ref24.apply(this, arguments);
       }
 
       return encryptItem;
@@ -1774,52 +1880,52 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
   }, {
     key: 'decryptItem',
     value: function () {
-      var _ref23 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee21(item, keys) {
+      var _ref25 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee23(item, keys) {
         var encryptedItemKey, requiresAuth, keyParams, item_key, ek, ak, itemParams, content;
-        return regeneratorRuntime.wrap(function _callee21$(_context21) {
+        return regeneratorRuntime.wrap(function _callee23$(_context23) {
           while (1) {
-            switch (_context21.prev = _context21.next) {
+            switch (_context23.prev = _context23.next) {
               case 0:
                 if (!(typeof item.content != "string")) {
-                  _context21.next = 2;
+                  _context23.next = 2;
                   break;
                 }
 
-                return _context21.abrupt('return');
+                return _context23.abrupt('return');
 
               case 2:
                 if (!item.content.startsWith("000")) {
-                  _context21.next = 14;
+                  _context23.next = 14;
                   break;
                 }
 
-                _context21.prev = 3;
-                _context21.t0 = JSON;
-                _context21.next = 7;
+                _context23.prev = 3;
+                _context23.t0 = JSON;
+                _context23.next = 7;
                 return this.crypto.base64Decode(item.content.substring(3, item.content.length));
 
               case 7:
-                _context21.t1 = _context21.sent;
-                item.content = _context21.t0.parse.call(_context21.t0, _context21.t1);
-                _context21.next = 13;
+                _context23.t1 = _context23.sent;
+                item.content = _context23.t0.parse.call(_context23.t0, _context23.t1);
+                _context23.next = 13;
                 break;
 
               case 11:
-                _context21.prev = 11;
-                _context21.t2 = _context21['catch'](3);
+                _context23.prev = 11;
+                _context23.t2 = _context23['catch'](3);
 
               case 13:
-                return _context21.abrupt('return');
+                return _context23.abrupt('return');
 
               case 14:
                 if (item.enc_item_key) {
-                  _context21.next = 17;
+                  _context23.next = 17;
                   break;
                 }
 
                 // This needs to be here to continue, return otherwise
                 console.log("Missing item encryption key, skipping decryption.");
-                return _context21.abrupt('return');
+                return _context23.abrupt('return');
 
               case 17:
 
@@ -1837,25 +1943,26 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
                 // return if uuid in auth hash does not match item uuid. Signs of tampering.
 
                 if (!(keyParams.uuid && keyParams.uuid !== item.uuid)) {
-                  _context21.next = 25;
+                  _context23.next = 26;
                   break;
                 }
 
+                console.error("Item key params UUID does not match item UUID");
                 if (!item.errorDecrypting) {
                   item.errorDecryptingValueChanged = true;
                 }
                 item.errorDecrypting = true;
-                return _context21.abrupt('return');
+                return _context23.abrupt('return');
 
-              case 25:
-                _context21.next = 27;
+              case 26:
+                _context23.next = 28;
                 return this.crypto.decryptText(keyParams, requiresAuth);
 
-              case 27:
-                item_key = _context21.sent;
+              case 28:
+                item_key = _context23.sent;
 
                 if (item_key) {
-                  _context21.next = 32;
+                  _context23.next = 33;
                   break;
                 }
 
@@ -1863,25 +1970,25 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
                   item.errorDecryptingValueChanged = true;
                 }
                 item.errorDecrypting = true;
-                return _context21.abrupt('return');
+                return _context23.abrupt('return');
 
-              case 32:
-                _context21.next = 34;
+              case 33:
+                _context23.next = 35;
                 return this.crypto.firstHalfOfKey(item_key);
 
-              case 34:
-                ek = _context21.sent;
-                _context21.next = 37;
+              case 35:
+                ek = _context23.sent;
+                _context23.next = 38;
                 return this.crypto.secondHalfOfKey(item_key);
 
-              case 37:
-                ak = _context21.sent;
+              case 38:
+                ak = _context23.sent;
                 itemParams = this.encryptionComponentsFromString(item.content, ek, ak);
 
                 // return if uuid in auth hash does not match item uuid. Signs of tampering.
 
                 if (!(itemParams.uuid && itemParams.uuid !== item.uuid)) {
-                  _context21.next = 43;
+                  _context23.next = 44;
                   break;
                 }
 
@@ -1889,20 +1996,20 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
                   item.errorDecryptingValueChanged = true;
                 }
                 item.errorDecrypting = true;
-                return _context21.abrupt('return');
+                return _context23.abrupt('return');
 
-              case 43:
+              case 44:
 
                 if (!itemParams.authHash) {
                   // legacy 001
                   itemParams.authHash = item.auth_hash;
                 }
 
-                _context21.next = 46;
+                _context23.next = 47;
                 return this.crypto.decryptText(itemParams, true);
 
-              case 46:
-                content = _context21.sent;
+              case 47:
+                content = _context23.sent;
 
                 if (!content) {
                   if (!item.errorDecrypting) {
@@ -1918,16 +2025,16 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
                   item.content = content;
                 }
 
-              case 48:
+              case 49:
               case 'end':
-                return _context21.stop();
+                return _context23.stop();
             }
           }
-        }, _callee21, this, [[3, 11]]);
+        }, _callee23, this, [[3, 11]]);
       }));
 
-      function decryptItem(_x43, _x44) {
-        return _ref23.apply(this, arguments);
+      function decryptItem(_x46, _x47) {
+        return _ref25.apply(this, arguments);
       }
 
       return decryptItem;
@@ -1935,47 +2042,47 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
   }, {
     key: 'decryptMultipleItems',
     value: function () {
-      var _ref24 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee23(items, keys, throws) {
-        var _this4 = this;
+      var _ref26 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee25(items, keys, throws) {
+        var _this5 = this;
 
         var decrypt;
-        return regeneratorRuntime.wrap(function _callee23$(_context23) {
+        return regeneratorRuntime.wrap(function _callee25$(_context25) {
           while (1) {
-            switch (_context23.prev = _context23.next) {
+            switch (_context25.prev = _context25.next) {
               case 0:
                 decrypt = function () {
-                  var _ref25 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee22(item) {
+                  var _ref27 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee24(item) {
                     var isString;
-                    return regeneratorRuntime.wrap(function _callee22$(_context22) {
+                    return regeneratorRuntime.wrap(function _callee24$(_context24) {
                       while (1) {
-                        switch (_context22.prev = _context22.next) {
+                        switch (_context24.prev = _context24.next) {
                           case 0:
                             if (!(item.deleted == true && item.content == null)) {
-                              _context22.next = 2;
+                              _context24.next = 2;
                               break;
                             }
 
-                            return _context22.abrupt('return');
+                            return _context24.abrupt('return');
 
                           case 2:
                             isString = typeof item.content === 'string' || item.content instanceof String;
 
                             if (!isString) {
-                              _context22.next = 17;
+                              _context24.next = 17;
                               break;
                             }
 
-                            _context22.prev = 4;
-                            _context22.next = 7;
-                            return _this4.decryptItem(item, keys);
+                            _context24.prev = 4;
+                            _context24.next = 7;
+                            return _this5.decryptItem(item, keys);
 
                           case 7:
-                            _context22.next = 17;
+                            _context24.next = 17;
                             break;
 
                           case 9:
-                            _context22.prev = 9;
-                            _context22.t0 = _context22['catch'](4);
+                            _context24.prev = 9;
+                            _context24.t0 = _context24['catch'](4);
 
                             if (!item.errorDecrypting) {
                               item.errorDecryptingValueChanged = true;
@@ -1983,43 +2090,43 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
                             item.errorDecrypting = true;
 
                             if (!throws) {
-                              _context22.next = 15;
+                              _context24.next = 15;
                               break;
                             }
 
-                            throw _context22.t0;
+                            throw _context24.t0;
 
                           case 15:
-                            console.error("Error decrypting item", item, _context22.t0);
-                            return _context22.abrupt('return');
+                            console.error("Error decrypting item", item, _context24.t0);
+                            return _context24.abrupt('return');
 
                           case 17:
                           case 'end':
-                            return _context22.stop();
+                            return _context24.stop();
                         }
                       }
-                    }, _callee22, _this4, [[4, 9]]);
+                    }, _callee24, _this5, [[4, 9]]);
                   }));
 
-                  return function decrypt(_x48) {
-                    return _ref25.apply(this, arguments);
+                  return function decrypt(_x51) {
+                    return _ref27.apply(this, arguments);
                   };
                 }();
 
-                return _context23.abrupt('return', Promise.all(items.map(function (item) {
+                return _context25.abrupt('return', Promise.all(items.map(function (item) {
                   return decrypt(item);
                 })));
 
               case 2:
               case 'end':
-                return _context23.stop();
+                return _context25.stop();
             }
           }
-        }, _callee23, this);
+        }, _callee25, this);
       }));
 
-      function decryptMultipleItems(_x45, _x46, _x47) {
-        return _ref24.apply(this, arguments);
+      function decryptMultipleItems(_x48, _x49, _x50) {
+        return _ref26.apply(this, arguments);
       }
 
       return decryptMultipleItems;
@@ -38674,7 +38781,8 @@ if (!Array.prototype.includes) {
         _this3.tagsComponent = component.active ? component : null;
       } else if (component.area == "editor-editor") {
         // An editor is already active, ensure the potential replacement is explicitely enabled for this item
-        if (_this3.selectedEditor) {
+        // We also check if the selectedEditor is active. If it's inactive, we want to treat it as an external reference wishing to deactivate this editor (i.e componentView)
+        if (_this3.selectedEditor && _this3.selectedEditor.active) {
           if (component.isExplicitlyEnabledForItem(_this3.note)) {
             _this3.selectedEditor = component;
           }
@@ -42442,15 +42550,18 @@ var ComponentManager = function () {
       this.handleMessage(this.componentForSessionKey(event.data.sessionKey), event.data);
     }.bind(this), false);
 
-    this.modelManager.addItemSyncObserver("component-manager", "*", function (allItems, validItems, deletedItems, source) {
+    this.modelManager.addItemSyncObserver("component-manager", "*", function (allItems, validItems, deletedItems, source, sourceKey) {
 
       /* If the source of these new or updated items is from a Component itself saving items, we don't need to notify
         components again of the same item. Regarding notifying other components than the issuing component, other mapping sources
         will take care of that, like ModelManager.MappingSourceRemoteSaved
+         Update: We will now check sourceKey to determine whether the incoming change should be sent to
+        a component. If sourceKey == component.uuid, it will be skipped. This way, if one component triggers a change,
+        it's sent to other components.
        */
-      if (source == ModelManager.MappingSourceComponentRetrieved) {
-        return;
-      }
+      // if(source == ModelManager.MappingSourceComponentRetrieved) {
+      //   return;
+      // }
 
       var syncedComponents = allItems.filter(function (item) {
         return item.content_type === "SN|Component" || item.content_type == "SN|Theme";
@@ -42495,6 +42606,11 @@ var ComponentManager = function () {
       }
 
       var _loop = function _loop(observer) {
+        if (sourceKey && sourceKey == observer.component.uuid) {
+          // Don't notify source of change, as it is the originator, doesn't need duplicate event.
+          return 'continue';
+        }
+
         relevantItems = allItems.filter(function (item) {
           return observer.contentTypes.indexOf(item.content_type) !== -1;
         });
@@ -42549,6 +42665,11 @@ var ComponentManager = function () {
       }];
 
       var _loop2 = function _loop2(observer) {
+        if (sourceKey && sourceKey == observer.component.uuid) {
+          // Don't notify source of change, as it is the originator, doesn't need duplicate event.
+          return 'continue';
+        }
+
         var _iteratorNormalCompletion18 = true;
         var _didIteratorError18 = false;
         var _iteratorError18 = undefined;
@@ -42600,7 +42721,9 @@ var ComponentManager = function () {
           var itemInContext;
           var matchingItem;
 
-          _loop2(observer);
+          var _ret2 = _loop2(observer);
+
+          if (_ret2 === 'continue') continue;
         }
       } catch (err) {
         _didIteratorError17 = true;
@@ -43170,7 +43293,7 @@ var ComponentManager = function () {
         We map the items here because modelManager is what updates the UI. If you were to instead get the items directly,
         this would update them server side via sync, but would never make its way back to the UI.
         */
-        var localItems = _this34.modelManager.mapResponseItemsToLocalModels(responseItems, ModelManager.MappingSourceComponentRetrieved);
+        var localItems = _this34.modelManager.mapResponseItemsToLocalModels(responseItems, ModelManager.MappingSourceComponentRetrieved, component.uuid);
 
         var _iteratorNormalCompletion28 = true;
         var _didIteratorError28 = false;
@@ -44682,12 +44805,12 @@ var ModelManager = function () {
     }
   }, {
     key: 'mapResponseItemsToLocalModels',
-    value: function mapResponseItemsToLocalModels(items, source) {
-      return this.mapResponseItemsToLocalModelsOmittingFields(items, null, source);
+    value: function mapResponseItemsToLocalModels(items, source, sourceKey) {
+      return this.mapResponseItemsToLocalModelsOmittingFields(items, null, source, sourceKey);
     }
   }, {
     key: 'mapResponseItemsToLocalModelsOmittingFields',
-    value: function mapResponseItemsToLocalModelsOmittingFields(items, omitFields, source) {
+    value: function mapResponseItemsToLocalModelsOmittingFields(items, omitFields, source, sourceKey) {
       var models = [],
           processedObjects = [],
           modelsToNotifyObserversOf = [];
@@ -44805,7 +44928,7 @@ var ModelManager = function () {
         }
       }
 
-      this.notifySyncObserversOfModels(modelsToNotifyObserversOf, source);
+      this.notifySyncObserversOfModels(modelsToNotifyObserversOf, source, sourceKey);
 
       return models;
     }
@@ -44814,7 +44937,7 @@ var ModelManager = function () {
 
   }, {
     key: 'notifySyncObserversOfModels',
-    value: function notifySyncObserversOfModels(models, source) {
+    value: function notifySyncObserversOfModels(models, source, sourceKey) {
       var _iteratorNormalCompletion47 = true;
       var _didIteratorError47 = false;
       var _iteratorError47 = undefined;
@@ -44858,7 +44981,7 @@ var ModelManager = function () {
           }
 
           if (allRelevantItems.length > 0) {
-            observer.callback(allRelevantItems, validItems, deletedItems, source);
+            observer.callback(allRelevantItems, validItems, deletedItems, source, sourceKey);
           }
         }
       } catch (err) {
@@ -48057,7 +48180,7 @@ var ComponentView = function () {
       };
 
       $scope.$on("ext-reload-complete", function () {
-        $scope.reloadStatus();
+        $scope.reloadStatus(false);
       });
 
       $scope.reloadComponent = function () {
@@ -48066,6 +48189,8 @@ var ComponentView = function () {
       };
 
       $scope.reloadStatus = function () {
+        var doManualReload = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
         var component = $scope.component;
         $scope.reloading = true;
         var previouslyValid = $scope.componentValid;
@@ -48088,9 +48213,9 @@ var ComponentView = function () {
           }
         }
 
-        if (expired && !$scope.triedReloading) {
+        if (expired && doManualReload) {
           // Try reloading, handled by footer, which will open Extensions window momentarily to pull in latest data
-          $scope.triedReloading = true;
+          // Upon completion, this method, reloadStatus, will be called, upon where doManualReload will be false to prevent recursion.
           $rootScope.$broadcast("reload-ext-data");
         }
 
@@ -48105,14 +48230,18 @@ var ComponentView = function () {
         return url;
       };
 
-      $scope.$on("$destroy", function () {
-        // console.log("Deregistering handler", $scope.identifier, $scope.component.name);
+      $scope.destroy = function () {
         componentManager.deregisterHandler($scope.identifier);
         if ($scope.component && !$scope.manualDealloc) {
           componentManager.deactivateComponent($scope.component, true);
         }
 
         desktopManager.deregisterUpdateObserver($scope.updateObserver);
+      };
+
+      $scope.$on("$destroy", function () {
+        // console.log("Deregistering handler", $scope.identifier, $scope.component.name);
+        $scope.destroy();
       });
     }]
   }]);
@@ -49249,16 +49378,27 @@ angular.module('app').directive('permissionsModal', function () {
     "<div class='spinner info small' ng-if='reloading'></div>\n" +
     "</div>\n" +
     "<div class='panel-row'></div>\n" +
+    "<div class='panel-section'>\n" +
+    "<p ng-if='component.isEditor()'>\n" +
+    "<strong>Otherwise</strong>, please follow the steps below to disable any external editors,\n" +
+    "so you can edit your note using the plain text editor instead.\n" +
+    "</p>\n" +
+    "<p>To temporarily disable this extension:</p>\n" +
     "<div class='panel-row'>\n" +
-    "<div class='panel-column'>\n" +
-    "<p><strong>Otherwise</strong>, please follow the steps below to disable any external editors, so you can edit your note using the plain text editor instead.</p>\n" +
-    "<p>\n" +
+    "<div class='button info' ng-click='destroy()'>\n" +
+    "<div class='label'>Disable Extension</div>\n" +
+    "</div>\n" +
+    "<div class='spinner info small' ng-if='reloading'></div>\n" +
+    "</div>\n" +
+    "<div class='panel-row'></div>\n" +
+    "<div ng-if='component.isEditor()'>\n" +
+    "<p>To disassociate this note from this editor:</p>\n" +
     "<ol>\n" +
     "<li>Click the \"Editor\" menu item above (under the note title).</li>\n" +
     "<li>Select \"Plain Editor\".</li>\n" +
     "<li>Repeat this for every note you'd like to access. You can also delete the editor completely to disable it for all notes. To do so, click \"Extensions\" in the lower left corner of the app, then, for every editor, click \"Uninstall\".</li>\n" +
     "</ol>\n" +
-    "</p>\n" +
+    "</div>\n" +
     "<p>\n" +
     "Need help? Please email us at\n" +
     "<a href='mailto:hello@standardnotes.org' target='_blank'>hello@standardnotes.org</a>\n" +
@@ -49266,7 +49406,6 @@ angular.module('app').directive('permissionsModal', function () {
     "<a href='https://standardnotes.org/help' target='_blank'>Help</a>\n" +
     "page.\n" +
     "</p>\n" +
-    "</div>\n" +
     "</div>\n" +
     "</div>\n" +
     "</div>\n" +
@@ -49844,7 +49983,7 @@ angular.module('app').directive('permissionsModal', function () {
     "<div can-load='true' class='infinite-scroll' id='notes-scrollable' infinite-scroll='ctrl.paginate()' threshold='200'>\n" +
     "<div class='note' ng-class='{&#39;selected&#39; : ctrl.selectedNote == note}' ng-click='ctrl.selectNote(note, true)' ng-repeat='note in (ctrl.sortedNotes = (ctrl.tag.notes | filter: ctrl.filterNotes | sortBy: ctrl.sortBy | limitTo:ctrl.notesToDisplay)) track by note.uuid'>\n" +
     "<strong class='red medium-text' ng-if='note.conflict_of'>Conflicted copy</strong>\n" +
-    "<strong class='red medium-text' ng-if='note.errorDecrypting'>Error decrypting</strong>\n" +
+    "<strong class='red medium-text' ng-if='note.errorDecrypting'>Unable to Decrypt</strong>\n" +
     "<div class='pinned tinted' ng-class='{&#39;tinted-selected&#39; : ctrl.selectedNote == note}' ng-if='note.pinned'>\n" +
     "<i class='icon ion-bookmark'></i>\n" +
     "<strong class='medium-text'>Pinned</strong>\n" +
@@ -49901,7 +50040,7 @@ angular.module('app').directive('permissionsModal', function () {
     "<div class='count'>{{ctrl.noteCount(tag)}}</div>\n" +
     "</div>\n" +
     "<div class='red small-text bold' ng-if='tag.conflict_of'>Conflicted copy</div>\n" +
-    "<div class='red small-text bold' ng-if='tag.errorDecrypting'>Error decrypting</div>\n" +
+    "<div class='red small-text bold' ng-if='tag.errorDecrypting'>Unable to Decrypt</div>\n" +
     "<div class='menu' ng-if='ctrl.selectedTag == tag'>\n" +
     "<a class='item' ng-click='ctrl.selectedRenameTag($event, tag)' ng-if='!ctrl.editingTag'>Rename</a>\n" +
     "<a class='item' ng-click='ctrl.saveTag($event, tag)' ng-if='ctrl.editingTag'>Save</a>\n" +
