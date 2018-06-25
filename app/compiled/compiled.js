@@ -38307,6 +38307,18 @@ if (!Array.prototype.includes) {
     this.loadTagsString();
   }.bind(this));
 
+  // Right now this only handles offline saving status changes.
+  this.syncStatusObserver = syncManager.registerSyncStatusObserver(function (status) {
+    if (status.localError) {
+      $timeout(function () {
+        _this3.showErrorStatus({
+          message: "Offline Saving Issue",
+          desc: "Changes not saved"
+        });
+      }, 500);
+    } else {}
+  });
+
   modelManager.addItemSyncObserver("component-manager", "Note", function (allItems, validItems, deletedItems, source) {
     if (!_this3.note) {
       return;
@@ -38584,10 +38596,16 @@ if (!Array.prototype.includes) {
     this.noteStatus = $sce.trustAsHtml(status);
   };
 
-  this.showErrorStatus = function () {
+  this.showErrorStatus = function (error) {
+    if (!error) {
+      error = {
+        message: "Sync Unreachable",
+        desc: "All changes saved offline"
+      };
+    }
     this.saveError = true;
     this.syncTakingTooLong = false;
-    this.noteStatus = $sce.trustAsHtml("<span class='error bold'>Sync Unreachable</span><br>All changes saved offline");
+    this.noteStatus = $sce.trustAsHtml('<span class=\'error bold\'>' + error.message + '</span><br>' + error.desc);
   };
 
   this.contentChanged = function () {
@@ -38822,10 +38840,18 @@ if (!Array.prototype.includes) {
         if (data.item.content_type == "Tag") {
           var tag = modelManager.findItem(data.item.uuid);
           _this3.addTag(tag);
+
+          // Currently extensions are not notified of association until a full server sync completes.
+          // We need a better system for this, but for now, we'll manually notify observers
+          modelManager.notifySyncObserversOfModels([_this3.note], ModelManager.MappingSourceLocalSaved);
         }
       } else if (action === "deassociate-item") {
         var tag = modelManager.findItem(data.item.uuid);
         _this3.removeTag(tag);
+
+        // Currently extensions are not notified of association until a full server sync completes.
+        // We need a better system for this, but for now, we'll manually notify observers
+        modelManager.notifySyncObserversOfModels([_this3.note], ModelManager.MappingSourceLocalSaved);
       } else if (action === "save-items" || action === "save-success" || action == "save-error") {
         if (data.items.map(function (item) {
           return item.uuid;
@@ -43836,6 +43862,14 @@ var ComponentManager = function () {
         }
       }
 
+      this.streamObservers = this.streamObservers.filter(function (o) {
+        return o.component !== component;
+      });
+
+      this.contextStreamObservers = this.contextStreamObservers.filter(function (o) {
+        return o.component !== component;
+      });
+
       if (component.area == "themes") {
         this.postActiveThemeToAllComponents();
       }
@@ -44092,11 +44126,11 @@ var DBManager = function () {
     }
   }, {
     key: 'saveModels',
-    value: function saveModels(items, callback) {
+    value: function saveModels(items, onsuccess, onerror) {
 
       if (items.length == 0) {
-        if (callback) {
-          callback();
+        if (onsuccess) {
+          onsuccess();
         }
         return;
       }
@@ -44109,6 +44143,17 @@ var DBManager = function () {
           console.log("Transaction error:", event.target.errorCode);
         };
 
+        transaction.onabort = function (event) {
+          console.log("Offline saving aborted:", event);
+          var error = event.target.error;
+          if (error.name == "QuotaExceededError") {
+            alert("Unable to save changes locally because your device is out of space. Please free up some disk space and try again, otherwise, your data may end up in an inconsistent state.");
+          } else {
+            alert('Unable to save changes locally due to an unknown system issue. Issue Code: ' + error.code + ' Issue Name: ' + error.name + '.');
+          }
+          onerror && onerror(error);
+        };
+
         var itemObjectStore = transaction.objectStore("items");
         var i = 0;
         putNext();
@@ -44119,8 +44164,8 @@ var DBManager = function () {
             itemObjectStore.put(item).onsuccess = putNext;
             ++i;
           } else {
-            if (callback) {
-              callback();
+            if (onsuccess) {
+              onsuccess();
             }
           }
         }
@@ -46226,11 +46271,11 @@ var StorageManager = function () {
     }
   }, {
     key: 'saveModels',
-    value: function saveModels(items, callback) {
+    value: function saveModels(items, onsuccess, onerror) {
       if (this.modelStorageMode == StorageManager.Fixed) {
-        this.dbManager.saveModels(items, callback);
+        this.dbManager.saveModels(items, onsuccess, onerror);
       } else {
-        callback && callback();
+        onsuccess && onsuccess();
       }
     }
   }, {
@@ -46280,12 +46325,34 @@ var SyncManager = function () {
     this.storageManager = storageManager;
     this.passcodeManager = passcodeManager;
     this.syncStatus = {};
+    this.syncStatusObservers = [];
   }
 
   (0, _createClass3.default)(SyncManager, [{
+    key: 'registerSyncStatusObserver',
+    value: function registerSyncStatusObserver(callback) {
+      var observer = { key: new Date(), callback: callback };
+      this.syncStatusObservers.push(observer);
+      return observer;
+    }
+  }, {
+    key: 'removeSyncStatusObserver',
+    value: function removeSyncStatusObserver(observer) {
+      _.pull(this.syncStatusObservers, observer);
+    }
+  }, {
+    key: 'syncStatusDidChange',
+    value: function syncStatusDidChange() {
+      var _this54 = this;
+
+      this.syncStatusObservers.forEach(function (observer) {
+        observer.callback(_this54.syncStatus);
+      });
+    }
+  }, {
     key: 'writeItemsToLocalStorage',
     value: function writeItemsToLocalStorage(items, offlineOnly, callback) {
-      var _this54 = this;
+      var _this55 = this;
 
       if (items.length == 0) {
         callback && callback();
@@ -46319,21 +46386,32 @@ var SyncManager = function () {
                   return _context15.stop();
               }
             }
-          }, _callee15, _this54);
+          }, _callee15, _this55);
         }));
 
         return function (_x34) {
           return _ref15.apply(this, arguments);
         };
       }())).then(function (params) {
-        _this54.storageManager.saveModels(params, callback);
+        _this55.storageManager.saveModels(params, function () {
+          // on success
+          if (_this55.syncStatus.localError) {
+            _this55.syncStatus.localError = null;
+            _this55.syncStatusDidChange();
+          }
+          callback && callback();
+        }, function (error) {
+          // on error
+          _this55.syncStatus.localError = error;
+          _this55.syncStatusDidChange();
+        });
       });
     }
   }, {
     key: 'loadLocalItems',
     value: function () {
       var _ref16 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee17(callback) {
-        var _this55 = this;
+        var _this56 = this;
 
         return _regenerator2.default.wrap(function _callee17$(_context17) {
           while (1) {
@@ -46360,7 +46438,7 @@ var SyncManager = function () {
                             case 0:
                               subitems = items.slice(current, current + iteration);
                               _context16.next = 3;
-                              return _this55.handleItemsResponse(subitems, null, ModelManager.MappingSourceLocalRetrieved);
+                              return _this56.handleItemsResponse(subitems, null, ModelManager.MappingSourceLocalRetrieved);
 
                             case 3:
                               processedSubitems = _context16.sent;
@@ -46370,7 +46448,7 @@ var SyncManager = function () {
                               current += subitems.length;
 
                               if (current < total) {
-                                _this55.$timeout(function () {
+                                _this56.$timeout(function () {
                                   decryptNext();
                                 });
                               } else {
@@ -46382,7 +46460,7 @@ var SyncManager = function () {
                               return _context16.stop();
                           }
                         }
-                      }, _callee16, _this55);
+                      }, _callee16, _this56);
                     }));
 
                     return function decryptNext() {
@@ -46410,7 +46488,7 @@ var SyncManager = function () {
   }, {
     key: 'syncOffline',
     value: function syncOffline(items, callback) {
-      var _this56 = this;
+      var _this57 = this;
 
       // Update all items updated_at to now
       var _iteratorNormalCompletion56 = true;
@@ -46449,7 +46527,7 @@ var SyncManager = function () {
             var item = _step57.value;
 
             if (item.deleted) {
-              _this56.modelManager.removeItemLocally(item);
+              _this57.modelManager.removeItemLocally(item);
             }
           }
         } catch (err) {
@@ -46467,10 +46545,10 @@ var SyncManager = function () {
           }
         }
 
-        _this56.$rootScope.$broadcast("sync:completed", {});
+        _this57.$rootScope.$broadcast("sync:completed", {});
 
         // Required in order for modelManager to notify sync observers
-        _this56.modelManager.didSyncModelsOffline(items);
+        _this57.modelManager.didSyncModelsOffline(items);
 
         if (callback) {
           callback({ success: true });
@@ -46487,7 +46565,7 @@ var SyncManager = function () {
   }, {
     key: 'markAllItemsDirtyAndSaveOffline',
     value: function markAllItemsDirtyAndSaveOffline(callback, alternateUUIDs) {
-      var _this57 = this;
+      var _this58 = this;
 
       // use a copy, as alternating uuid will affect array
       var originalItems = this.modelManager.allItems.filter(function (item) {
@@ -46495,7 +46573,7 @@ var SyncManager = function () {
       }).slice();
 
       var block = function block() {
-        var allItems = _this57.modelManager.allItems;
+        var allItems = _this58.modelManager.allItems;
         var _iteratorNormalCompletion58 = true;
         var _didIteratorError58 = false;
         var _iteratorError58 = undefined;
@@ -46521,7 +46599,7 @@ var SyncManager = function () {
           }
         }
 
-        _this57.writeItemsToLocalStorage(allItems, false, callback);
+        _this58.writeItemsToLocalStorage(allItems, false, callback);
       };
 
       if (alternateUUIDs) {
@@ -46544,7 +46622,7 @@ var SyncManager = function () {
           // but for some reason retained their data (This happens in Firefox when using private mode).
           // In this case, we should pass false so that both copies are kept. However, it's difficult to
           // detect when the app has entered this state. We will just use true to remove original items for now.
-          _this57.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
+          _this58.modelManager.alternateUUIDForItem(item, alternateNextItem, true);
         };
 
         alternateNextItem();
@@ -47063,7 +47141,7 @@ var SyncManager = function () {
     key: 'handleUnsavedItemsResponse',
     value: function () {
       var _ref21 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee22(unsaved) {
-        var _this58 = this;
+        var _this59 = this;
 
         var i, handleNext;
         return _regenerator2.default.wrap(function _callee22$(_context22) {
@@ -47096,17 +47174,17 @@ var SyncManager = function () {
                             }
 
                             // Handled all items
-                            _this58.sync(null, { additionalFields: ["created_at", "updated_at"] });
+                            _this59.sync(null, { additionalFields: ["created_at", "updated_at"] });
                             return _context21.abrupt('return');
 
                           case 3:
                             mapping = unsaved[i];
                             itemResponse = mapping.item;
                             _context21.next = 7;
-                            return SFJS.itemTransformer.decryptMultipleItems([itemResponse], _this58.authManager.keys());
+                            return SFJS.itemTransformer.decryptMultipleItems([itemResponse], _this59.authManager.keys());
 
                           case 7:
-                            item = _this58.modelManager.findItem(itemResponse.uuid);
+                            item = _this59.modelManager.findItem(itemResponse.uuid);
 
                             if (item) {
                               _context21.next = 10;
@@ -47122,7 +47200,7 @@ var SyncManager = function () {
                             if (error.tag === "uuid_conflict") {
                               // UUID conflicts can occur if a user attempts to
                               // import an old data archive with uuids from the old account into a new account
-                              _this58.modelManager.alternateUUIDForItem(item, function () {
+                              _this59.modelManager.alternateUUIDForItem(item, function () {
                                 i++;
                                 handleNext();
                               }, true);
@@ -47132,10 +47210,10 @@ var SyncManager = function () {
                               // We want a new uuid for the new item. Note that this won't neccessarily adjust references.
                               itemResponse.uuid = null;
 
-                              dup = _this58.modelManager.createDuplicateItem(itemResponse);
+                              dup = _this59.modelManager.createDuplicateItem(itemResponse);
 
                               if (!itemResponse.deleted && !item.isItemContentEqualWith(dup)) {
-                                _this58.modelManager.addItem(dup);
+                                _this59.modelManager.addItem(dup);
                                 dup.conflict_of = item.uuid;
                                 dup.setDirty(true);
                               }
@@ -47149,7 +47227,7 @@ var SyncManager = function () {
                             return _context21.stop();
                         }
                       }
-                    }, _callee21, _this58);
+                    }, _callee21, _this59);
                   }));
 
                   return function handleNext() {
@@ -47250,7 +47328,7 @@ angular.module('app').service('syncManager', SyncManager);
 var ThemeManager = function () {
   ThemeManager.$inject = ['componentManager', 'desktopManager'];
   function ThemeManager(componentManager, desktopManager) {
-    var _this59 = this;
+    var _this60 = this;
 
     (0, _classCallCheck3.default)(this, ThemeManager);
 
@@ -47259,18 +47337,18 @@ var ThemeManager = function () {
     desktopManager.registerUpdateObserver(function (component) {
       // Reload theme if active
       if (component.active && component.isTheme()) {
-        _this59.deactivateTheme(component);
+        _this60.deactivateTheme(component);
         setTimeout(function () {
-          _this59.activateTheme(component);
+          _this60.activateTheme(component);
         }, 10);
       }
     });
 
     componentManager.registerHandler({ identifier: "themeManager", areas: ["themes"], activationHandler: function activationHandler(component) {
         if (component.active) {
-          _this59.activateTheme(component);
+          _this60.activateTheme(component);
         } else {
-          _this59.deactivateTheme(component);
+          _this60.deactivateTheme(component);
         }
       } });
   }
@@ -48028,7 +48106,7 @@ var ActionsMenu = function () {
       };
 
       $scope.subRowsForAction = function (parentAction, extension) {
-        var _this60 = this;
+        var _this61 = this;
 
         if (!parentAction.subactions) {
           return null;
@@ -48036,7 +48114,7 @@ var ActionsMenu = function () {
         return parentAction.subactions.map(function (subaction) {
           return {
             onClick: function onClick($event) {
-              _this60.executeAction(subaction, extension, parentAction);
+              _this61.executeAction(subaction, extension, parentAction);
               $event.stopPropagation();
             },
             label: subaction.label,
@@ -48113,7 +48191,7 @@ var ComponentView = function () {
   (0, _createClass3.default)(ComponentView, [{
     key: 'link',
     value: function link($scope, el, attrs, ctrl) {
-      var _this61 = this;
+      var _this62 = this;
 
       $scope.el = el;
 
@@ -48123,19 +48201,19 @@ var ComponentView = function () {
 
       this.componentManager.registerHandler({ identifier: $scope.identifier, areas: [$scope.component.area], activationHandler: function activationHandler(component) {
           if (component.active) {
-            _this61.timeout(function () {
-              var iframe = _this61.componentManager.iframeForComponent(component);
+            _this62.timeout(function () {
+              var iframe = _this62.componentManager.iframeForComponent(component);
               if (iframe) {
                 iframe.onload = function () {
                   this.componentManager.registerComponentWindow(component, iframe.contentWindow);
-                }.bind(_this61);
+                }.bind(_this62);
               }
             });
           }
         },
         actionHandler: function actionHandler(component, action, data) {
           if (action == "set-size") {
-            _this61.componentManager.handleSetSizeEvent(component, data);
+            _this62.componentManager.handleSetSizeEvent(component, data);
           }
         } });
 
@@ -48856,7 +48934,7 @@ var PasswordWizard = function () {
       };
 
       $scope.validateCurrentPassword = function (callback) {
-        var _this62 = this;
+        var _this63 = this;
 
         var currentPassword = $scope.formData.currentPassword;
         var newPass = $scope.securityUpdate ? currentPassword : $scope.formData.newPassword;
@@ -48888,7 +48966,7 @@ var PasswordWizard = function () {
         SFJS.crypto.computeEncryptionKeysForUser(password, authParams).then(function (keys) {
           var success = keys.mk === authManager.keys().mk;
           if (success) {
-            _this62.currentServerPw = keys.pw;
+            _this63.currentServerPw = keys.pw;
           } else {
             alert("The current password you entered is not correct. Please try again.");
           }
