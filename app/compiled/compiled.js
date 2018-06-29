@@ -40366,6 +40366,14 @@ var Item = function () {
     value: function keysToIgnoreWhenCheckingContentEquality() {
       return [];
     }
+
+    // Same as above, but keys inside appData[AppDomain]
+
+  }, {
+    key: 'appDataKeysToIgnoreWhenCheckingContentEquality',
+    value: function appDataKeysToIgnoreWhenCheckingContentEquality() {
+      return ["client_updated_at"];
+    }
   }, {
     key: 'isItemContentEqualWith',
     value: function isItemContentEqualWith(otherItem) {
@@ -40397,8 +40405,14 @@ var Item = function () {
 
         return obj;
       };
-      var left = omit(this.structureParams(), this.keysToIgnoreWhenCheckingContentEquality());
-      var right = omit(otherItem.structureParams(), otherItem.keysToIgnoreWhenCheckingContentEquality());
+
+      var left = this.structureParams();
+      left.appData[AppDomain] = omit(left.appData[AppDomain], this.appDataKeysToIgnoreWhenCheckingContentEquality());
+      left = omit(left, this.keysToIgnoreWhenCheckingContentEquality());
+
+      var right = otherItem.structureParams();
+      right.appData[AppDomain] = omit(right.appData[AppDomain], otherItem.appDataKeysToIgnoreWhenCheckingContentEquality());
+      right = omit(right, otherItem.keysToIgnoreWhenCheckingContentEquality());
 
       return JSON.stringify(left) === JSON.stringify(right);
     }
@@ -42477,8 +42491,10 @@ angular.module('app').service('archiveManager', ArchiveManager);
     };
 
     this.syncUserPreferences = function () {
-      this.userPreferences.setDirty(true);
-      $rootScope.sync("syncUserPreferences");
+      if (this.userPreferences) {
+        this.userPreferences.setDirty(true);
+        $rootScope.sync("syncUserPreferences");
+      }
     };
 
     this.getUserPrefValue = function (key, defaultValue) {
