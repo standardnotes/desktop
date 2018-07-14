@@ -2204,7 +2204,7 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
 
 ;
 var SFModelManager = exports.SFModelManager = function () {
-  function SFModelManager() {
+  function SFModelManager(timeout) {
     _classCallCheck(this, SFModelManager);
 
     SFModelManager.MappingSourceRemoteRetrieved = "MappingSourceRemoteRetrieved";
@@ -2219,6 +2219,8 @@ var SFModelManager = exports.SFModelManager = function () {
     SFModelManager.isMappingSourceRetrieved = function (source) {
       return [SFModelManager.MappingSourceRemoteRetrieved, SFModelManager.MappingSourceComponentRetrieved, SFModelManager.MappingSourceRemoteActionRetrieved].includes(source);
     };
+
+    this.$timeout = timeout || setTimeout.bind(window);
 
     this.itemSyncObservers = [];
     this.itemsPendingRemoval = [];
@@ -2578,7 +2580,9 @@ var SFModelManager = exports.SFModelManager = function () {
           }
 
           if (allRelevantItems.length > 0) {
-            observer.callback(allRelevantItems, validItems, deletedItems, source, sourceKey);
+            this.$timeout(function () {
+              observer.callback(allRelevantItems, validItems, deletedItems, source, sourceKey);
+            });
           }
         }
       } catch (err) {
@@ -41861,7 +41865,7 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
 
 ;
 var SFModelManager = exports.SFModelManager = function () {
-  function SFModelManager() {
+  function SFModelManager(timeout) {
     _classCallCheck(this, SFModelManager);
 
     SFModelManager.MappingSourceRemoteRetrieved = "MappingSourceRemoteRetrieved";
@@ -41876,6 +41880,8 @@ var SFModelManager = exports.SFModelManager = function () {
     SFModelManager.isMappingSourceRetrieved = function (source) {
       return [SFModelManager.MappingSourceRemoteRetrieved, SFModelManager.MappingSourceComponentRetrieved, SFModelManager.MappingSourceRemoteActionRetrieved].includes(source);
     };
+
+    this.$timeout = timeout || setTimeout.bind(window);
 
     this.itemSyncObservers = [];
     this.itemsPendingRemoval = [];
@@ -42235,7 +42241,9 @@ var SFModelManager = exports.SFModelManager = function () {
           }
 
           if (allRelevantItems.length > 0) {
-            observer.callback(allRelevantItems, validItems, deletedItems, source, sourceKey);
+            this.$timeout(function () {
+              observer.callback(allRelevantItems, validItems, deletedItems, source, sourceKey);
+            });
           }
         }
       } catch (err) {
@@ -56661,13 +56669,13 @@ angular.module('app').service('migrationManager', MigrationManager);
 SFItem.AppDomain = "org.standardnotes.sn";
 
 var ModelManager = function (_SFModelManager) {
-  ModelManager.$inject = ['storageManager'];
+  ModelManager.$inject = ['storageManager', '$timeout'];
   (0, _inherits4.default)(ModelManager, _SFModelManager);
 
-  function ModelManager(storageManager) {
+  function ModelManager(storageManager, $timeout) {
     (0, _classCallCheck4.default)(this, ModelManager);
 
-    var _this53 = (0, _possibleConstructorReturn4.default)(this, (ModelManager.__proto__ || Object.getPrototypeOf(ModelManager)).call(this));
+    var _this53 = (0, _possibleConstructorReturn4.default)(this, (ModelManager.__proto__ || Object.getPrototypeOf(ModelManager)).call(this, $timeout));
 
     _this53.notes = [];
     _this53.tags = [];
