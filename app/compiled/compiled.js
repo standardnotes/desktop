@@ -55009,7 +55009,7 @@ var ComponentManager = function () {
           // Allow handlers to be notified when a save begins and ends, to update the UI
           var saveMessage = Object.assign({}, message);
           saveMessage.action = response && response.error ? "save-error" : "save-success";
-          _this37.replyToMessage(component, message, { error: response.error });
+          _this37.replyToMessage(component, message, { error: response && response.error });
           _this37.handleMessage(component, saveMessage);
         });
       });
@@ -55041,7 +55041,7 @@ var ComponentManager = function () {
 
             var item = _this38.modelManager.createItem(responseItem);
             if (responseItem.clientData) {
-              item.setDomainDataItem(getClientDataKey(), responseItem.clientData, ComponentManager.ClientDataDomain);
+              item.setDomainDataItem(component.getClientDataKey(), responseItem.clientData, ComponentManager.ClientDataDomain);
             }
             _this38.modelManager.addItem(item);
             _this38.modelManager.resolveReferencesForItem(item, true);
@@ -59640,7 +59640,7 @@ var PasswordWizard = function () {
       $scope.resyncData = function (callback) {
         modelManager.setAllItemsDirty();
         syncManager.sync().then(function (response) {
-          if (response.error) {
+          if (!response || response.error) {
             alert(FailedSyncMessage);
             $timeout(function () {
               return callback(false);
