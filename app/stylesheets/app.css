@@ -675,6 +675,11 @@ a.disabled {
   font-size: 16px;
 }
 
+#item-preview-modal > .content {
+  width: 800px;
+  height: 500px;
+}
+
 .panel {
   background-color: white;
 }
@@ -744,6 +749,7 @@ a.disabled {
 .component-view {
   flex-grow: 1;
   display: flex;
+  flex-direction: column;
   overflow-y: auto;
 }
 .component-view .sn-component {
@@ -804,6 +810,9 @@ a.disabled {
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
+.sn-component .app-bar.no-top-edge {
+  border-top: 0;
+}
 
 .panel {
   color: black;
@@ -819,6 +828,10 @@ a.disabled {
 }
 .panel a {
   color: #086dd6;
+}
+
+#session-history-menu .menu-panel .row .sublabel.opaque {
+  opacity: 1;
 }
 
 /*!
