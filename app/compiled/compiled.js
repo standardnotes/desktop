@@ -3184,7 +3184,9 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
 
             try {
               _this11.addHistoryEntryForItem(item);
-            } catch (e) {}
+            } catch (e) {
+              console.log("Caught exception while trying to add item history entry", e);
+            }
           }
         } catch (err) {
           _didIteratorError22 = true;
@@ -6292,6 +6294,8 @@ var SFPredicate = exports.SFPredicate = function () {
    `SFItemHistory.HistoryEntryClassMapping` class property value is set.)
   */
 
+// See default class values at bottom of this file, including `SFHistorySession.LargeItemEntryAmountThreshold`.
+
 var SFHistorySession = exports.SFHistorySession = function (_SFItem) {
   _inherits(SFHistorySession, _SFItem);
 
@@ -6349,10 +6353,11 @@ var SFHistorySession = exports.SFHistorySession = function (_SFItem) {
   }, {
     key: "optimizeHistoryForItem",
     value: function optimizeHistoryForItem(item) {
-      // Clean up if there are too many revisions
-      var LargeRevisionAmount = 40;
+      // Clean up if there are too many revisions. Note SFHistorySession.LargeItemEntryAmountThreshold is the amount of revisions which above, call
+      // for an optimization. An optimization may not remove entries above this threshold. It will determine what it should keep and what it shouldn't.
+      // So, it is possible to have a threshold of 60 but have 600 entries, if the item history deems those worth keeping.
       var itemHistory = this.historyForItem(item);
-      if (itemHistory.entries.length > LargeRevisionAmount) {
+      if (itemHistory.entries.length > SFHistorySession.LargeItemEntryAmountThreshold) {
         itemHistory.optimize();
       }
     }
@@ -6361,7 +6366,12 @@ var SFHistorySession = exports.SFHistorySession = function (_SFItem) {
   return SFHistorySession;
 }(SFItem);
 
-;
+// See comment in `this.optimizeHistoryForItem`
+
+
+SFHistorySession.LargeItemEntryAmountThreshold = 60;
+; // See default class values at bottom of this file, including `SFItemHistory.LargeEntryDeltaThreshold`.
+
 var SFItemHistory = exports.SFItemHistory = function () {
   function SFItemHistory() {
     var params = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -6427,8 +6437,8 @@ var SFItemHistory = exports.SFItemHistory = function () {
       prospectiveEntry.setPreviousEntry(previousEntry);
 
       // Don't add first revision if text length is 0, as this means it's a new note.
-      // Actually, we'll skip this. If we do this, the first character added to a new note
-      // will be displayed as "1 characters loaded"
+      // Actually, nevermind. If we do this, the first character added to a new note
+      // will be displayed as "1 characters loaded".
       // if(!previousRevision && prospectiveRevision.textCharDiffLength == 0) {
       //   return;
       // }
@@ -6451,13 +6461,45 @@ var SFItemHistory = exports.SFItemHistory = function () {
     value: function optimize() {
       var _this21 = this;
 
-      var SmallRevisionLength = 15;
+      var keepEntries = [];
+
+      var isEntrySignificant = function isEntrySignificant(entry) {
+        return entry.deltaSize() > SFItemHistory.LargeEntryDeltaThreshold;
+      };
+
+      var processEntry = function processEntry(entry, index, keep) {
+        // Entries may be processed retrospectively, meaning it can be decided to be deleted, then an upcoming processing can change that.
+        if (keep) {
+          keepEntries.push(entry);
+        } else {
+          // Remove if in keep
+          var index = keepEntries.indexOf(entry);
+          if (index !== -1) {
+            keepEntries.splice(index, 1);
+          }
+        }
+
+        if (keep && isEntrySignificant(entry) && entry.operationVector() == -1) {
+          // This is a large negative change. Hang on to the previous entry.
+          var previousEntry = _this21.entries[index - 1];
+          if (previousEntry) {
+            keepEntries.push(previousEntry);
+          }
+        }
+      };
+
+      this.entries.forEach(function (entry, index) {
+        if (index == 0 || index == _this21.entries.length - 1) {
+          // Keep the first and last
+          processEntry(entry, index, true);
+        } else {
+          var significant = isEntrySignificant(entry);
+          processEntry(entry, index, significant);
+        }
+      });
+
       this.entries = this.entries.filter(function (entry, index) {
-        // Keep only first and last item and items whos diff length is greater than the small revision length.
-        var isFirst = index == 0;
-        var isLast = index == _this21.entries.length - 1;
-        var isSmallRevision = Math.abs(entry.textCharDiffLength) < SmallRevisionLength;
-        return isFirst || isLast || !isSmallRevision;
+        return keepEntries.indexOf(entry) !== -1;
       });
     }
   }]);
@@ -6465,6 +6507,10 @@ var SFItemHistory = exports.SFItemHistory = function () {
   return SFItemHistory;
 }();
 
+// The amount of characters added or removed that constitute a keepable entry after optimization.
+
+
+SFItemHistory.LargeEntryDeltaThreshold = 15;
 ;
 var SFItemHistoryEntry = exports.SFItemHistoryEntry = function () {
   function SFItemHistoryEntry(item) {
@@ -6472,6 +6518,9 @@ var SFItemHistoryEntry = exports.SFItemHistoryEntry = function () {
 
     // Whatever values `item` has will be persisted, so be sure that the values are picked beforehand.
     this.item = SFItem.deepMerge({}, item);
+
+    // We'll assume a `text` content value to diff on. If it doesn't exist, no problem.
+    this.defaultContentKeyToDiffOn = "text";
 
     if (typeof this.item.updated_at == 'string') {
       this.item.updated_at = new Date(this.item.updated_at);
@@ -6482,6 +6531,47 @@ var SFItemHistoryEntry = exports.SFItemHistoryEntry = function () {
     key: "setPreviousEntry",
     value: function setPreviousEntry(previousEntry) {
       this.hasPreviousEntry = previousEntry != null;
+
+      // we'll try to compute the delta based on an assumed content property of `text`, if it exists.
+      if (this.item.content[this.defaultContentKeyToDiffOn]) {
+        if (previousEntry) {
+          this.textCharDiffLength = this.item.content[this.defaultContentKeyToDiffOn].length - previousEntry.item.content[this.defaultContentKeyToDiffOn].length;
+        } else {
+          this.textCharDiffLength = this.item.content[this.defaultContentKeyToDiffOn].length;
+        }
+      }
+    }
+  }, {
+    key: "operationVector",
+    value: function operationVector() {
+      // We'll try to use the value of `textCharDiffLength` to help determine this, if it's set
+      if (this.textCharDiffLength != undefined) {
+        if (!this.hasPreviousEntry || this.textCharDiffLength == 0) {
+          return 0;
+        } else if (this.textCharDiffLength < 0) {
+          return -1;
+        } else {
+          return 1;
+        }
+      }
+
+      // Otherwise use a default value of 1
+      return 1;
+    }
+  }, {
+    key: "deltaSize",
+    value: function deltaSize() {
+      // Up to the subclass to determine how large the delta was, i.e number of characters changed.
+      // But this general class won't be able to determine which property it should diff on, or even its format.
+
+      // We can return the `textCharDiffLength` if it's set, otherwise, just return 1;
+      if (this.textCharDiffLength != undefined) {
+        return Math.abs(this.textCharDiffLength);
+      }
+
+      // Otherwise return 1 here to constitute a basic positive delta.
+      // The value returned should always be positive. override `operationVector` to return the direction of the delta.
+      return 1;
     }
   }, {
     key: "isSameAsEntry",
@@ -7090,7 +7180,7 @@ var SFCryptoJS = exports.SFCryptoJS = function (_SFAbstractCrypto) {
   return SFCryptoJS;
 }(SFAbstractCrypto);
 
-;var subtleCrypto = window.crypto ? window.crypto.subtle : null;
+;var subtleCrypto = typeof window !== 'undefined' && window.crypto ? window.crypto.subtle : null;
 
 var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
   _inherits(SFCryptoWeb, _SFAbstractCrypto2);
@@ -43444,7 +43534,9 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
 
             try {
               _this11.addHistoryEntryForItem(item);
-            } catch (e) {}
+            } catch (e) {
+              console.log("Caught exception while trying to add item history entry", e);
+            }
           }
         } catch (err) {
           _didIteratorError22 = true;
@@ -46552,6 +46644,8 @@ var SFPredicate = exports.SFPredicate = function () {
    `SFItemHistory.HistoryEntryClassMapping` class property value is set.)
   */
 
+// See default class values at bottom of this file, including `SFHistorySession.LargeItemEntryAmountThreshold`.
+
 var SFHistorySession = exports.SFHistorySession = function (_SFItem) {
   _inherits(SFHistorySession, _SFItem);
 
@@ -46609,10 +46703,11 @@ var SFHistorySession = exports.SFHistorySession = function (_SFItem) {
   }, {
     key: "optimizeHistoryForItem",
     value: function optimizeHistoryForItem(item) {
-      // Clean up if there are too many revisions
-      var LargeRevisionAmount = 40;
+      // Clean up if there are too many revisions. Note SFHistorySession.LargeItemEntryAmountThreshold is the amount of revisions which above, call
+      // for an optimization. An optimization may not remove entries above this threshold. It will determine what it should keep and what it shouldn't.
+      // So, it is possible to have a threshold of 60 but have 600 entries, if the item history deems those worth keeping.
       var itemHistory = this.historyForItem(item);
-      if (itemHistory.entries.length > LargeRevisionAmount) {
+      if (itemHistory.entries.length > SFHistorySession.LargeItemEntryAmountThreshold) {
         itemHistory.optimize();
       }
     }
@@ -46621,7 +46716,12 @@ var SFHistorySession = exports.SFHistorySession = function (_SFItem) {
   return SFHistorySession;
 }(SFItem);
 
-;
+// See comment in `this.optimizeHistoryForItem`
+
+
+SFHistorySession.LargeItemEntryAmountThreshold = 60;
+; // See default class values at bottom of this file, including `SFItemHistory.LargeEntryDeltaThreshold`.
+
 var SFItemHistory = exports.SFItemHistory = function () {
   function SFItemHistory() {
     var params = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -46687,8 +46787,8 @@ var SFItemHistory = exports.SFItemHistory = function () {
       prospectiveEntry.setPreviousEntry(previousEntry);
 
       // Don't add first revision if text length is 0, as this means it's a new note.
-      // Actually, we'll skip this. If we do this, the first character added to a new note
-      // will be displayed as "1 characters loaded"
+      // Actually, nevermind. If we do this, the first character added to a new note
+      // will be displayed as "1 characters loaded".
       // if(!previousRevision && prospectiveRevision.textCharDiffLength == 0) {
       //   return;
       // }
@@ -46711,13 +46811,45 @@ var SFItemHistory = exports.SFItemHistory = function () {
     value: function optimize() {
       var _this21 = this;
 
-      var SmallRevisionLength = 15;
+      var keepEntries = [];
+
+      var isEntrySignificant = function isEntrySignificant(entry) {
+        return entry.deltaSize() > SFItemHistory.LargeEntryDeltaThreshold;
+      };
+
+      var processEntry = function processEntry(entry, index, keep) {
+        // Entries may be processed retrospectively, meaning it can be decided to be deleted, then an upcoming processing can change that.
+        if (keep) {
+          keepEntries.push(entry);
+        } else {
+          // Remove if in keep
+          var index = keepEntries.indexOf(entry);
+          if (index !== -1) {
+            keepEntries.splice(index, 1);
+          }
+        }
+
+        if (keep && isEntrySignificant(entry) && entry.operationVector() == -1) {
+          // This is a large negative change. Hang on to the previous entry.
+          var previousEntry = _this21.entries[index - 1];
+          if (previousEntry) {
+            keepEntries.push(previousEntry);
+          }
+        }
+      };
+
+      this.entries.forEach(function (entry, index) {
+        if (index == 0 || index == _this21.entries.length - 1) {
+          // Keep the first and last
+          processEntry(entry, index, true);
+        } else {
+          var significant = isEntrySignificant(entry);
+          processEntry(entry, index, significant);
+        }
+      });
+
       this.entries = this.entries.filter(function (entry, index) {
-        // Keep only first and last item and items whos diff length is greater than the small revision length.
-        var isFirst = index == 0;
-        var isLast = index == _this21.entries.length - 1;
-        var isSmallRevision = Math.abs(entry.textCharDiffLength) < SmallRevisionLength;
-        return isFirst || isLast || !isSmallRevision;
+        return keepEntries.indexOf(entry) !== -1;
       });
     }
   }]);
@@ -46725,6 +46857,10 @@ var SFItemHistory = exports.SFItemHistory = function () {
   return SFItemHistory;
 }();
 
+// The amount of characters added or removed that constitute a keepable entry after optimization.
+
+
+SFItemHistory.LargeEntryDeltaThreshold = 15;
 ;
 var SFItemHistoryEntry = exports.SFItemHistoryEntry = function () {
   function SFItemHistoryEntry(item) {
@@ -46732,6 +46868,9 @@ var SFItemHistoryEntry = exports.SFItemHistoryEntry = function () {
 
     // Whatever values `item` has will be persisted, so be sure that the values are picked beforehand.
     this.item = SFItem.deepMerge({}, item);
+
+    // We'll assume a `text` content value to diff on. If it doesn't exist, no problem.
+    this.defaultContentKeyToDiffOn = "text";
 
     if (typeof this.item.updated_at == 'string') {
       this.item.updated_at = new Date(this.item.updated_at);
@@ -46742,6 +46881,47 @@ var SFItemHistoryEntry = exports.SFItemHistoryEntry = function () {
     key: "setPreviousEntry",
     value: function setPreviousEntry(previousEntry) {
       this.hasPreviousEntry = previousEntry != null;
+
+      // we'll try to compute the delta based on an assumed content property of `text`, if it exists.
+      if (this.item.content[this.defaultContentKeyToDiffOn]) {
+        if (previousEntry) {
+          this.textCharDiffLength = this.item.content[this.defaultContentKeyToDiffOn].length - previousEntry.item.content[this.defaultContentKeyToDiffOn].length;
+        } else {
+          this.textCharDiffLength = this.item.content[this.defaultContentKeyToDiffOn].length;
+        }
+      }
+    }
+  }, {
+    key: "operationVector",
+    value: function operationVector() {
+      // We'll try to use the value of `textCharDiffLength` to help determine this, if it's set
+      if (this.textCharDiffLength != undefined) {
+        if (!this.hasPreviousEntry || this.textCharDiffLength == 0) {
+          return 0;
+        } else if (this.textCharDiffLength < 0) {
+          return -1;
+        } else {
+          return 1;
+        }
+      }
+
+      // Otherwise use a default value of 1
+      return 1;
+    }
+  }, {
+    key: "deltaSize",
+    value: function deltaSize() {
+      // Up to the subclass to determine how large the delta was, i.e number of characters changed.
+      // But this general class won't be able to determine which property it should diff on, or even its format.
+
+      // We can return the `textCharDiffLength` if it's set, otherwise, just return 1;
+      if (this.textCharDiffLength != undefined) {
+        return Math.abs(this.textCharDiffLength);
+      }
+
+      // Otherwise return 1 here to constitute a basic positive delta.
+      // The value returned should always be positive. override `operationVector` to return the direction of the delta.
+      return 1;
     }
   }, {
     key: "isSameAsEntry",
@@ -47350,7 +47530,7 @@ var SFCryptoJS = exports.SFCryptoJS = function (_SFAbstractCrypto) {
   return SFCryptoJS;
 }(SFAbstractCrypto);
 
-;var subtleCrypto = window.crypto ? window.crypto.subtle : null;
+;var subtleCrypto = typeof window !== 'undefined' && window.crypto ? window.crypto.subtle : null;
 
 var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
   _inherits(SFCryptoWeb, _SFAbstractCrypto2);
@@ -51059,6 +51239,10 @@ if (hadRuntime) {
 },{}],117:[function(require,module,exports){
 "use strict";
 
+var _get3 = require("babel-runtime/helpers/get");
+
+var _get4 = _interopRequireDefault(_get3);
+
 var _regenerator = require("babel-runtime/regenerator");
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
@@ -51078,10 +51262,6 @@ var _createClass4 = _interopRequireDefault(_createClass3);
 var _possibleConstructorReturn3 = require("babel-runtime/helpers/possibleConstructorReturn");
 
 var _possibleConstructorReturn4 = _interopRequireDefault(_possibleConstructorReturn3);
-
-var _get3 = require("babel-runtime/helpers/get");
-
-var _get4 = _interopRequireDefault(_get3);
 
 var _inherits3 = require("babel-runtime/helpers/inherits");
 
@@ -52204,30 +52384,9 @@ var NoteHistoryEntry = function (_SFItemHistoryEntry) {
   }
 
   (0, _createClass4.default)(NoteHistoryEntry, [{
-    key: "setPreviousEntry",
-    value: function setPreviousEntry(previousEntry) {
-      (0, _get4.default)(NoteHistoryEntry.prototype.__proto__ || Object.getPrototypeOf(NoteHistoryEntry.prototype), "setPreviousEntry", this).call(this, previousEntry);
-      if (previousEntry) {
-        this.textCharDiffLength = this.item.content.text.length - previousEntry.item.content.text.length;
-      } else {
-        this.textCharDiffLength = this.item.content.text.length;
-      }
-    }
-  }, {
     key: "previewTitle",
     value: function previewTitle() {
       return this.item.updated_at.toLocaleString();
-    }
-  }, {
-    key: "operationVector",
-    value: function operationVector() {
-      if (!this.hasPreviousEntry || this.textCharDiffLength == 0) {
-        return 0;
-      } else if (this.textCharDiffLength < 0) {
-        return -1;
-      } else {
-        return 1;
-      }
     }
   }, {
     key: "previewSubTitle",
