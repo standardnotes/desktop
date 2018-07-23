@@ -1129,9 +1129,21 @@ var SFAuthManager = exports.SFAuthManager = function () {
                 this._authParams = JSON.parse(data);
 
               case 5:
+                if (this._authParams.version) {
+                  _context6.next = 9;
+                  break;
+                }
+
+                _context6.next = 8;
+                return this.defaultProtocolVersion();
+
+              case 8:
+                this._authParams.version = _context6.sent;
+
+              case 9:
                 return _context6.abrupt("return", this._authParams);
 
-              case 6:
+              case 10:
               case "end":
                 return _context6.stop();
             }
@@ -1146,16 +1158,94 @@ var SFAuthManager = exports.SFAuthManager = function () {
       return getAuthParams;
     }()
   }, {
-    key: "getAuthParamsForEmail",
+    key: "defaultProtocolVersion",
     value: function () {
-      var _ref7 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee7(url, email, extraParams) {
-        var _this2 = this;
-
+      var _ref7 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee7() {
+        var keys;
         return regeneratorRuntime.wrap(function _callee7$(_context7) {
           while (1) {
             switch (_context7.prev = _context7.next) {
               case 0:
-                return _context7.abrupt("return", new Promise(function (resolve, reject) {
+                _context7.next = 2;
+                return this.keys();
+
+              case 2:
+                keys = _context7.sent;
+
+                if (!(keys && keys.ak)) {
+                  _context7.next = 7;
+                  break;
+                }
+
+                return _context7.abrupt("return", "002");
+
+              case 7:
+                return _context7.abrupt("return", "001");
+
+              case 8:
+              case "end":
+                return _context7.stop();
+            }
+          }
+        }, _callee7, this);
+      }));
+
+      function defaultProtocolVersion() {
+        return _ref7.apply(this, arguments);
+      }
+
+      return defaultProtocolVersion;
+    }()
+  }, {
+    key: "protocolVersion",
+    value: function () {
+      var _ref8 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee8() {
+        var authParams;
+        return regeneratorRuntime.wrap(function _callee8$(_context8) {
+          while (1) {
+            switch (_context8.prev = _context8.next) {
+              case 0:
+                _context8.next = 2;
+                return this.getAuthParams();
+
+              case 2:
+                authParams = _context8.sent;
+
+                if (!(authParams && authParams.version)) {
+                  _context8.next = 5;
+                  break;
+                }
+
+                return _context8.abrupt("return", authParams.version);
+
+              case 5:
+                return _context8.abrupt("return", this.defaultProtocolVersion());
+
+              case 6:
+              case "end":
+                return _context8.stop();
+            }
+          }
+        }, _callee8, this);
+      }));
+
+      function protocolVersion() {
+        return _ref8.apply(this, arguments);
+      }
+
+      return protocolVersion;
+    }()
+  }, {
+    key: "getAuthParamsForEmail",
+    value: function () {
+      var _ref9 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee9(url, email, extraParams) {
+        var _this2 = this;
+
+        return regeneratorRuntime.wrap(function _callee9$(_context9) {
+          while (1) {
+            switch (_context9.prev = _context9.next) {
+              case 0:
+                return _context9.abrupt("return", new Promise(function (resolve, reject) {
                   var requestUrl = url + "/auth/params";
                   _this2.httpManager.getAbsolute(requestUrl, _.merge({ email: email }, extraParams), function (response) {
                     resolve(response);
@@ -1170,14 +1260,14 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
               case 1:
               case "end":
-                return _context7.stop();
+                return _context9.stop();
             }
           }
-        }, _callee7, this);
+        }, _callee9, this);
       }));
 
       function getAuthParamsForEmail(_x5, _x6, _x7) {
-        return _ref7.apply(this, arguments);
+        return _ref9.apply(this, arguments);
       }
 
       return getAuthParamsForEmail;
@@ -1185,54 +1275,54 @@ var SFAuthManager = exports.SFAuthManager = function () {
   }, {
     key: "login",
     value: function () {
-      var _ref8 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee10(url, email, password, strictSignin, extraParams) {
+      var _ref10 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee12(url, email, password, strictSignin, extraParams) {
         var _this3 = this;
 
-        return regeneratorRuntime.wrap(function _callee10$(_context10) {
+        return regeneratorRuntime.wrap(function _callee12$(_context12) {
           while (1) {
-            switch (_context10.prev = _context10.next) {
+            switch (_context12.prev = _context12.next) {
               case 0:
-                return _context10.abrupt("return", new Promise(function () {
-                  var _ref9 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee9(resolve, reject) {
+                return _context12.abrupt("return", new Promise(function () {
+                  var _ref11 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee11(resolve, reject) {
                     var authParams, message, _message, abort, _message2, minimum, _message3, latestVersion, _message4, keys, requestUrl, params;
 
-                    return regeneratorRuntime.wrap(function _callee9$(_context9) {
+                    return regeneratorRuntime.wrap(function _callee11$(_context11) {
                       while (1) {
-                        switch (_context9.prev = _context9.next) {
+                        switch (_context11.prev = _context11.next) {
                           case 0:
 
                             _this3.notifyEvent(SFAuthManager.WillSignInEvent);
 
-                            _context9.next = 3;
+                            _context11.next = 3;
                             return _this3.getAuthParamsForEmail(url, email, extraParams);
 
                           case 3:
-                            authParams = _context9.sent;
+                            authParams = _context11.sent;
 
 
                             // SF3 requires a unique identifier in the auth params
                             authParams.identifier = email;
 
                             if (!authParams.error) {
-                              _context9.next = 8;
+                              _context11.next = 8;
                               break;
                             }
 
                             resolve(authParams);
-                            return _context9.abrupt("return");
+                            return _context11.abrupt("return");
 
                           case 8:
                             if (!(!authParams || !authParams.pw_cost)) {
-                              _context9.next = 11;
+                              _context11.next = 11;
                               break;
                             }
 
                             resolve({ error: { message: "Invalid email or password." } });
-                            return _context9.abrupt("return");
+                            return _context11.abrupt("return");
 
                           case 11:
                             if (SFJS.supportedVersions().includes(authParams.version)) {
-                              _context9.next = 15;
+                              _context11.next = 15;
                               break;
                             }
 
@@ -1244,17 +1334,17 @@ var SFAuthManager = exports.SFAuthManager = function () {
                               message = "The protocol version associated with your account is outdated and no longer supported by this application. Please visit standardnotes.org/help/security for more information.";
                             }
                             resolve({ error: { message: message } });
-                            return _context9.abrupt("return");
+                            return _context11.abrupt("return");
 
                           case 15:
                             if (!SFJS.isProtocolVersionOutdated(authParams.version)) {
-                              _context9.next = 22;
+                              _context11.next = 22;
                               break;
                             }
 
                             _message = "The encryption version for your account, " + authParams.version + ", is outdated and requires upgrade. You may proceed with login, but are advised to perform a security update using the web or desktop application. Please visit standardnotes.org/help/security for more information.";
                             abort = false;
-                            _context9.next = 20;
+                            _context11.next = 20;
                             return _this3.alertManager.confirm({
                               title: "Update Needed",
                               text: _message,
@@ -1266,39 +1356,39 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
                           case 20:
                             if (!abort) {
-                              _context9.next = 22;
+                              _context11.next = 22;
                               break;
                             }
 
-                            return _context9.abrupt("return");
+                            return _context11.abrupt("return");
 
                           case 22:
                             if (SFJS.supportsPasswordDerivationCost(authParams.pw_cost)) {
-                              _context9.next = 26;
+                              _context11.next = 26;
                               break;
                             }
 
                             _message2 = "Your account was created on a platform with higher security capabilities than this browser supports. " + "If we attempted to generate your login keys here, it would take hours. " + "Please use a browser with more up to date security capabilities, like Google Chrome or Firefox, to log in.";
 
                             resolve({ error: { message: _message2 } });
-                            return _context9.abrupt("return");
+                            return _context11.abrupt("return");
 
                           case 26:
                             minimum = SFJS.costMinimumForVersion(authParams.version);
 
                             if (!(authParams.pw_cost < minimum)) {
-                              _context9.next = 31;
+                              _context11.next = 31;
                               break;
                             }
 
                             _message3 = "Unable to login due to insecure password parameters. Please visit standardnotes.org/help/security for more information.";
 
                             resolve({ error: { message: _message3 } });
-                            return _context9.abrupt("return");
+                            return _context11.abrupt("return");
 
                           case 31:
                             if (!strictSignin) {
-                              _context9.next = 37;
+                              _context11.next = 37;
                               break;
                             }
 
@@ -1306,33 +1396,33 @@ var SFAuthManager = exports.SFAuthManager = function () {
                             latestVersion = SFJS.version();
 
                             if (!(authParams.version !== latestVersion)) {
-                              _context9.next = 37;
+                              _context11.next = 37;
                               break;
                             }
 
                             _message4 = "Strict sign in refused server sign in parameters. The latest security version is " + latestVersion + ", but your account is reported to have version " + authParams.version + ". If you'd like to proceed with sign in anyway, please disable strict sign in and try again.";
 
                             resolve({ error: { message: _message4 } });
-                            return _context9.abrupt("return");
+                            return _context11.abrupt("return");
 
                           case 37:
-                            _context9.next = 39;
+                            _context11.next = 39;
                             return SFJS.crypto.computeEncryptionKeysForUser(password, authParams);
 
                           case 39:
-                            keys = _context9.sent;
+                            keys = _context11.sent;
                             requestUrl = url + "/auth/sign_in";
                             params = _.merge({ password: keys.pw, email: email }, extraParams);
 
 
                             _this3.httpManager.postAbsolute(requestUrl, params, function () {
-                              var _ref10 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee8(response) {
-                                return regeneratorRuntime.wrap(function _callee8$(_context8) {
+                              var _ref12 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee10(response) {
+                                return regeneratorRuntime.wrap(function _callee10$(_context10) {
                                   while (1) {
-                                    switch (_context8.prev = _context8.next) {
+                                    switch (_context10.prev = _context10.next) {
                                       case 0:
                                         _this3.notifyEvent(SFAuthManager.DidSignInEvent);
-                                        _context8.next = 3;
+                                        _context10.next = 3;
                                         return _this3.handleAuthResponse(response, email, url, authParams, keys);
 
                                       case 3:
@@ -1342,14 +1432,14 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
                                       case 4:
                                       case "end":
-                                        return _context8.stop();
+                                        return _context10.stop();
                                     }
                                   }
-                                }, _callee8, _this3);
+                                }, _callee10, _this3);
                               }));
 
                               return function (_x15) {
-                                return _ref10.apply(this, arguments);
+                                return _ref12.apply(this, arguments);
                               };
                             }(), function (response) {
                               console.error("Error logging in", response);
@@ -1363,27 +1453,27 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
                           case 43:
                           case "end":
-                            return _context9.stop();
+                            return _context11.stop();
                         }
                       }
-                    }, _callee9, _this3);
+                    }, _callee11, _this3);
                   }));
 
                   return function (_x13, _x14) {
-                    return _ref9.apply(this, arguments);
+                    return _ref11.apply(this, arguments);
                   };
                 }()));
 
               case 1:
               case "end":
-                return _context10.stop();
+                return _context12.stop();
             }
           }
-        }, _callee10, this);
+        }, _callee12, this);
       }));
 
       function login(_x8, _x9, _x10, _x11, _x12) {
-        return _ref8.apply(this, arguments);
+        return _ref10.apply(this, arguments);
       }
 
       return login;
@@ -1394,17 +1484,17 @@ var SFAuthManager = exports.SFAuthManager = function () {
       var _this4 = this;
 
       return new Promise(function () {
-        var _ref11 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee12(resolve, reject) {
+        var _ref13 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee14(resolve, reject) {
           var results, keys, authParams, requestUrl, params;
-          return regeneratorRuntime.wrap(function _callee12$(_context12) {
+          return regeneratorRuntime.wrap(function _callee14$(_context14) {
             while (1) {
-              switch (_context12.prev = _context12.next) {
+              switch (_context14.prev = _context14.next) {
                 case 0:
-                  _context12.next = 2;
+                  _context14.next = 2;
                   return SFJS.crypto.generateInitialKeysAndAuthParamsForUser(email, password);
 
                 case 2:
-                  results = _context12.sent;
+                  results = _context14.sent;
                   keys = results.keys;
                   authParams = results.authParams;
                   requestUrl = url + "/auth";
@@ -1412,12 +1502,12 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
 
                   _this4.httpManager.postAbsolute(requestUrl, params, function () {
-                    var _ref12 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee11(response) {
-                      return regeneratorRuntime.wrap(function _callee11$(_context11) {
+                    var _ref14 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee13(response) {
+                      return regeneratorRuntime.wrap(function _callee13$(_context13) {
                         while (1) {
-                          switch (_context11.prev = _context11.next) {
+                          switch (_context13.prev = _context13.next) {
                             case 0:
-                              _context11.next = 2;
+                              _context13.next = 2;
                               return _this4.handleAuthResponse(response, email, url, authParams, keys);
 
                             case 2:
@@ -1425,14 +1515,14 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
                             case 3:
                             case "end":
-                              return _context11.stop();
+                              return _context13.stop();
                           }
                         }
-                      }, _callee11, _this4);
+                      }, _callee13, _this4);
                     }));
 
                     return function (_x18) {
-                      return _ref12.apply(this, arguments);
+                      return _ref14.apply(this, arguments);
                     };
                   }(), function (response) {
                     console.error("Registration error", response);
@@ -1444,33 +1534,33 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
                 case 8:
                 case "end":
-                  return _context12.stop();
+                  return _context14.stop();
               }
             }
-          }, _callee12, _this4);
+          }, _callee14, _this4);
         }));
 
         return function (_x16, _x17) {
-          return _ref11.apply(this, arguments);
+          return _ref13.apply(this, arguments);
         };
       }());
     }
   }, {
     key: "changePassword",
     value: function () {
-      var _ref13 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee15(url, email, current_server_pw, newKeys, newAuthParams) {
+      var _ref15 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee17(url, email, current_server_pw, newKeys, newAuthParams) {
         var _this5 = this;
 
-        return regeneratorRuntime.wrap(function _callee15$(_context15) {
+        return regeneratorRuntime.wrap(function _callee17$(_context17) {
           while (1) {
-            switch (_context15.prev = _context15.next) {
+            switch (_context17.prev = _context17.next) {
               case 0:
-                return _context15.abrupt("return", new Promise(function () {
-                  var _ref14 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee14(resolve, reject) {
+                return _context17.abrupt("return", new Promise(function () {
+                  var _ref16 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee16(resolve, reject) {
                     var newServerPw, requestUrl, params;
-                    return regeneratorRuntime.wrap(function _callee14$(_context14) {
+                    return regeneratorRuntime.wrap(function _callee16$(_context16) {
                       while (1) {
-                        switch (_context14.prev = _context14.next) {
+                        switch (_context16.prev = _context16.next) {
                           case 0:
                             newServerPw = newKeys.pw;
                             requestUrl = url + "/auth/change_pw";
@@ -1478,12 +1568,12 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
 
                             _this5.httpManager.postAbsolute(requestUrl, params, function () {
-                              var _ref15 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee13(response) {
-                                return regeneratorRuntime.wrap(function _callee13$(_context13) {
+                              var _ref17 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee15(response) {
+                                return regeneratorRuntime.wrap(function _callee15$(_context15) {
                                   while (1) {
-                                    switch (_context13.prev = _context13.next) {
+                                    switch (_context15.prev = _context15.next) {
                                       case 0:
-                                        _context13.next = 2;
+                                        _context15.next = 2;
                                         return _this5.handleAuthResponse(response, email, null, newAuthParams, newKeys);
 
                                       case 2:
@@ -1491,14 +1581,14 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
                                       case 3:
                                       case "end":
-                                        return _context13.stop();
+                                        return _context15.stop();
                                     }
                                   }
-                                }, _callee13, _this5);
+                                }, _callee15, _this5);
                               }));
 
                               return function (_x26) {
-                                return _ref15.apply(this, arguments);
+                                return _ref17.apply(this, arguments);
                               };
                             }(), function (response) {
                               if ((typeof response === "undefined" ? "undefined" : _typeof(response)) !== 'object') {
@@ -1509,27 +1599,27 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
                           case 4:
                           case "end":
-                            return _context14.stop();
+                            return _context16.stop();
                         }
                       }
-                    }, _callee14, _this5);
+                    }, _callee16, _this5);
                   }));
 
                   return function (_x24, _x25) {
-                    return _ref14.apply(this, arguments);
+                    return _ref16.apply(this, arguments);
                   };
                 }()));
 
               case 1:
               case "end":
-                return _context15.stop();
+                return _context17.stop();
             }
           }
-        }, _callee15, this);
+        }, _callee17, this);
       }));
 
       function changePassword(_x19, _x20, _x21, _x22, _x23) {
-        return _ref13.apply(this, arguments);
+        return _ref15.apply(this, arguments);
       }
 
       return changePassword;
@@ -1537,41 +1627,41 @@ var SFAuthManager = exports.SFAuthManager = function () {
   }, {
     key: "handleAuthResponse",
     value: function () {
-      var _ref16 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee16(response, email, url, authParams, keys) {
-        return regeneratorRuntime.wrap(function _callee16$(_context16) {
+      var _ref18 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee18(response, email, url, authParams, keys) {
+        return regeneratorRuntime.wrap(function _callee18$(_context18) {
           while (1) {
-            switch (_context16.prev = _context16.next) {
+            switch (_context18.prev = _context18.next) {
               case 0:
                 if (!url) {
-                  _context16.next = 3;
+                  _context18.next = 3;
                   break;
                 }
 
-                _context16.next = 3;
+                _context18.next = 3;
                 return this.storageManager.setItem("server", url);
 
               case 3:
                 this._authParams = authParams;
-                _context16.next = 6;
+                _context18.next = 6;
                 return this.storageManager.setItem("auth_params", JSON.stringify(authParams));
 
               case 6:
-                _context16.next = 8;
+                _context18.next = 8;
                 return this.storageManager.setItem("jwt", response.token);
 
               case 8:
-                return _context16.abrupt("return", this.saveKeys(keys));
+                return _context18.abrupt("return", this.saveKeys(keys));
 
               case 9:
               case "end":
-                return _context16.stop();
+                return _context18.stop();
             }
           }
-        }, _callee16, this);
+        }, _callee18, this);
       }));
 
       function handleAuthResponse(_x27, _x28, _x29, _x30, _x31) {
-        return _ref16.apply(this, arguments);
+        return _ref18.apply(this, arguments);
       }
 
       return handleAuthResponse;
@@ -1598,17 +1688,17 @@ var SFHttpManager = exports.SFHttpManager = function () {
   }, {
     key: "setAuthHeadersForRequest",
     value: function () {
-      var _ref17 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee17(request) {
+      var _ref19 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee19(request) {
         var token;
-        return regeneratorRuntime.wrap(function _callee17$(_context17) {
+        return regeneratorRuntime.wrap(function _callee19$(_context19) {
           while (1) {
-            switch (_context17.prev = _context17.next) {
+            switch (_context19.prev = _context19.next) {
               case 0:
-                _context17.next = 2;
+                _context19.next = 2;
                 return this.jwtRequestHandler();
 
               case 2:
-                token = _context17.sent;
+                token = _context19.sent;
 
                 if (token) {
                   request.setRequestHeader('Authorization', 'Bearer ' + token);
@@ -1616,14 +1706,14 @@ var SFHttpManager = exports.SFHttpManager = function () {
 
               case 4:
               case "end":
-                return _context17.stop();
+                return _context19.stop();
             }
           }
-        }, _callee17, this);
+        }, _callee19, this);
       }));
 
       function setAuthHeadersForRequest(_x32) {
-        return _ref17.apply(this, arguments);
+        return _ref19.apply(this, arguments);
       }
 
       return setAuthHeadersForRequest;
@@ -1646,11 +1736,11 @@ var SFHttpManager = exports.SFHttpManager = function () {
   }, {
     key: "httpRequest",
     value: function () {
-      var _ref18 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee18(verb, url, params, onsuccess, onerror) {
+      var _ref20 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee20(verb, url, params, onsuccess, onerror) {
         var xmlhttp;
-        return regeneratorRuntime.wrap(function _callee18$(_context18) {
+        return regeneratorRuntime.wrap(function _callee20$(_context20) {
           while (1) {
-            switch (_context18.prev = _context18.next) {
+            switch (_context20.prev = _context20.next) {
               case 0:
                 xmlhttp = new XMLHttpRequest();
 
@@ -1682,7 +1772,7 @@ var SFHttpManager = exports.SFHttpManager = function () {
                 }
 
                 xmlhttp.open(verb, url, true);
-                _context18.next = 6;
+                _context20.next = 6;
                 return this.setAuthHeadersForRequest(xmlhttp);
 
               case 6:
@@ -1696,14 +1786,14 @@ var SFHttpManager = exports.SFHttpManager = function () {
 
               case 8:
               case "end":
-                return _context18.stop();
+                return _context20.stop();
             }
           }
-        }, _callee18, this);
+        }, _callee20, this);
       }));
 
       function httpRequest(_x33, _x34, _x35, _x36, _x37) {
-        return _ref18.apply(this, arguments);
+        return _ref20.apply(this, arguments);
       }
 
       return httpRequest;
@@ -1734,17 +1824,17 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
     this.loadMigrations();
 
     this.syncManager.addEventHandler(function () {
-      var _ref19 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee19(event, data) {
+      var _ref21 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee21(event, data) {
         var dataLoadedEvent, syncCompleteEvent;
-        return regeneratorRuntime.wrap(function _callee19$(_context19) {
+        return regeneratorRuntime.wrap(function _callee21$(_context21) {
           while (1) {
-            switch (_context19.prev = _context19.next) {
+            switch (_context21.prev = _context21.next) {
               case 0:
                 dataLoadedEvent = event == "local-data-loaded";
                 syncCompleteEvent = event == "sync:completed";
 
                 if (!(dataLoadedEvent || syncCompleteEvent)) {
-                  _context19.next = 9;
+                  _context21.next = 9;
                   break;
                 }
 
@@ -1757,16 +1847,16 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
                 // We want to run pending migrations only after local data has been loaded, and a sync has been completed.
 
                 if (!(_this6.receivedLocalDataEvent && _this6.receivedSyncCompletedEvent)) {
-                  _context19.next = 9;
+                  _context21.next = 9;
                   break;
                 }
 
                 if (!(data && data.initialSync)) {
-                  _context19.next = 8;
+                  _context21.next = 8;
                   break;
                 }
 
-                _context19.next = 8;
+                _context21.next = 8;
                 return _this6.clearCompletedMigrations();
 
               case 8:
@@ -1774,14 +1864,14 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
 
               case 9:
               case "end":
-                return _context19.stop();
+                return _context21.stop();
             }
           }
-        }, _callee19, _this6);
+        }, _callee21, _this6);
       }));
 
       return function (_x38, _x39) {
-        return _ref19.apply(this, arguments);
+        return _ref21.apply(this, arguments);
       };
     }());
   }
@@ -1789,30 +1879,30 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
   _createClass(SFMigrationManager, [{
     key: "clearCompletedMigrations",
     value: function () {
-      var _ref20 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee20() {
+      var _ref22 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee22() {
         var completed;
-        return regeneratorRuntime.wrap(function _callee20$(_context20) {
+        return regeneratorRuntime.wrap(function _callee22$(_context22) {
           while (1) {
-            switch (_context20.prev = _context20.next) {
+            switch (_context22.prev = _context22.next) {
               case 0:
-                _context20.next = 2;
+                _context22.next = 2;
                 return this.getCompletedMigrations();
 
               case 2:
-                completed = _context20.sent;
+                completed = _context22.sent;
 
                 completed.length = 0;
 
               case 4:
               case "end":
-                return _context20.stop();
+                return _context22.stop();
             }
           }
-        }, _callee20, this);
+        }, _callee22, this);
       }));
 
       function clearCompletedMigrations() {
-        return _ref20.apply(this, arguments);
+        return _ref22.apply(this, arguments);
       }
 
       return clearCompletedMigrations;
@@ -1832,18 +1922,18 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
   }, {
     key: "runPendingMigrations",
     value: function () {
-      var _ref21 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee21() {
+      var _ref23 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee23() {
         var pending, _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, migration, _iteratorNormalCompletion3, _didIteratorError3, _iteratorError3, _iterator3, _step3, item, _iteratorNormalCompletion5, _didIteratorError5, _iteratorError5, _iterator5, _step5, _iteratorNormalCompletion4, _didIteratorError4, _iteratorError4, _iterator4, _step4;
 
-        return regeneratorRuntime.wrap(function _callee21$(_context21) {
+        return regeneratorRuntime.wrap(function _callee23$(_context23) {
           while (1) {
-            switch (_context21.prev = _context21.next) {
+            switch (_context23.prev = _context23.next) {
               case 0:
-                _context21.next = 2;
+                _context23.next = 2;
                 return this.getPendingMigrations();
 
               case 2:
-                pending = _context21.sent;
+                pending = _context23.sent;
 
 
                 // run in pre loop, keeping in mind that a migration may be run twice: when offline then again when signing in.
@@ -1851,55 +1941,55 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
                 _iteratorNormalCompletion2 = true;
                 _didIteratorError2 = false;
                 _iteratorError2 = undefined;
-                _context21.prev = 6;
+                _context23.prev = 6;
                 for (_iterator2 = pending[Symbol.iterator](); !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
                   migration = _step2.value;
 
                   migration.items = [];
                 }
-                _context21.next = 14;
+                _context23.next = 14;
                 break;
 
               case 10:
-                _context21.prev = 10;
-                _context21.t0 = _context21["catch"](6);
+                _context23.prev = 10;
+                _context23.t0 = _context23["catch"](6);
                 _didIteratorError2 = true;
-                _iteratorError2 = _context21.t0;
+                _iteratorError2 = _context23.t0;
 
               case 14:
-                _context21.prev = 14;
-                _context21.prev = 15;
+                _context23.prev = 14;
+                _context23.prev = 15;
 
                 if (!_iteratorNormalCompletion2 && _iterator2.return) {
                   _iterator2.return();
                 }
 
               case 17:
-                _context21.prev = 17;
+                _context23.prev = 17;
 
                 if (!_didIteratorError2) {
-                  _context21.next = 20;
+                  _context23.next = 20;
                   break;
                 }
 
                 throw _iteratorError2;
 
               case 20:
-                return _context21.finish(17);
+                return _context23.finish(17);
 
               case 21:
-                return _context21.finish(14);
+                return _context23.finish(14);
 
               case 22:
                 _iteratorNormalCompletion3 = true;
                 _didIteratorError3 = false;
                 _iteratorError3 = undefined;
-                _context21.prev = 25;
+                _context23.prev = 25;
                 _iterator3 = this.modelManager.allItems[Symbol.iterator]();
 
               case 27:
                 if (_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done) {
-                  _context21.next = 51;
+                  _context23.next = 51;
                   break;
                 }
 
@@ -1907,7 +1997,7 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
                 _iteratorNormalCompletion5 = true;
                 _didIteratorError5 = false;
                 _iteratorError5 = undefined;
-                _context21.prev = 32;
+                _context23.prev = 32;
 
                 for (_iterator5 = pending[Symbol.iterator](); !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
                   migration = _step5.value;
@@ -1916,83 +2006,83 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
                     migration.items.push(item);
                   }
                 }
-                _context21.next = 40;
+                _context23.next = 40;
                 break;
 
               case 36:
-                _context21.prev = 36;
-                _context21.t1 = _context21["catch"](32);
+                _context23.prev = 36;
+                _context23.t1 = _context23["catch"](32);
                 _didIteratorError5 = true;
-                _iteratorError5 = _context21.t1;
+                _iteratorError5 = _context23.t1;
 
               case 40:
-                _context21.prev = 40;
-                _context21.prev = 41;
+                _context23.prev = 40;
+                _context23.prev = 41;
 
                 if (!_iteratorNormalCompletion5 && _iterator5.return) {
                   _iterator5.return();
                 }
 
               case 43:
-                _context21.prev = 43;
+                _context23.prev = 43;
 
                 if (!_didIteratorError5) {
-                  _context21.next = 46;
+                  _context23.next = 46;
                   break;
                 }
 
                 throw _iteratorError5;
 
               case 46:
-                return _context21.finish(43);
+                return _context23.finish(43);
 
               case 47:
-                return _context21.finish(40);
+                return _context23.finish(40);
 
               case 48:
                 _iteratorNormalCompletion3 = true;
-                _context21.next = 27;
+                _context23.next = 27;
                 break;
 
               case 51:
-                _context21.next = 57;
+                _context23.next = 57;
                 break;
 
               case 53:
-                _context21.prev = 53;
-                _context21.t2 = _context21["catch"](25);
+                _context23.prev = 53;
+                _context23.t2 = _context23["catch"](25);
                 _didIteratorError3 = true;
-                _iteratorError3 = _context21.t2;
+                _iteratorError3 = _context23.t2;
 
               case 57:
-                _context21.prev = 57;
-                _context21.prev = 58;
+                _context23.prev = 57;
+                _context23.prev = 58;
 
                 if (!_iteratorNormalCompletion3 && _iterator3.return) {
                   _iterator3.return();
                 }
 
               case 60:
-                _context21.prev = 60;
+                _context23.prev = 60;
 
                 if (!_didIteratorError3) {
-                  _context21.next = 63;
+                  _context23.next = 63;
                   break;
                 }
 
                 throw _iteratorError3;
 
               case 63:
-                return _context21.finish(60);
+                return _context23.finish(60);
 
               case 64:
-                return _context21.finish(57);
+                return _context23.finish(57);
 
               case 65:
                 _iteratorNormalCompletion4 = true;
                 _didIteratorError4 = false;
                 _iteratorError4 = undefined;
-                _context21.prev = 68;
+                _context23.prev = 68;
 
 
                 for (_iterator4 = pending[Symbol.iterator](); !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
@@ -2004,49 +2094,49 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
                     this.markMigrationCompleted(migration);
                   }
                 }
-                _context21.next = 76;
+                _context23.next = 76;
                 break;
 
               case 72:
-                _context21.prev = 72;
-                _context21.t3 = _context21["catch"](68);
+                _context23.prev = 72;
+                _context23.t3 = _context23["catch"](68);
                 _didIteratorError4 = true;
-                _iteratorError4 = _context21.t3;
+                _iteratorError4 = _context23.t3;
 
               case 76:
-                _context21.prev = 76;
-                _context21.prev = 77;
+                _context23.prev = 76;
+                _context23.prev = 77;
 
                 if (!_iteratorNormalCompletion4 && _iterator4.return) {
                   _iterator4.return();
                 }
 
               case 79:
-                _context21.prev = 79;
+                _context23.prev = 79;
 
                 if (!_didIteratorError4) {
-                  _context21.next = 82;
+                  _context23.next = 82;
                   break;
                 }
 
                 throw _iteratorError4;
 
               case 82:
-                return _context21.finish(79);
+                return _context23.finish(79);
 
               case 83:
-                return _context21.finish(76);
+                return _context23.finish(76);
 
               case 84:
               case "end":
-                return _context21.stop();
+                return _context23.stop();
             }
           }
-        }, _callee21, this, [[6, 10, 14, 22], [15,, 17, 21], [25, 53, 57, 65], [32, 36, 40, 48], [41,, 43, 47], [58,, 60, 64], [68, 72, 76, 84], [77,, 79, 83]]);
+        }, _callee23, this, [[6, 10, 14, 22], [15,, 17, 21], [25, 53, 57, 65], [32, 36, 40, 48], [41,, 43, 47], [58,, 60, 64], [68, 72, 76, 84], [77,, 79, 83]]);
       }));
 
       function runPendingMigrations() {
-        return _ref21.apply(this, arguments);
+        return _ref23.apply(this, arguments);
       }
 
       return runPendingMigrations;
@@ -2064,22 +2154,22 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
   }, {
     key: "getCompletedMigrations",
     value: function () {
-      var _ref22 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee22() {
+      var _ref24 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee24() {
         var rawCompleted;
-        return regeneratorRuntime.wrap(function _callee22$(_context22) {
+        return regeneratorRuntime.wrap(function _callee24$(_context24) {
           while (1) {
-            switch (_context22.prev = _context22.next) {
+            switch (_context24.prev = _context24.next) {
               case 0:
                 if (this._completed) {
-                  _context22.next = 5;
+                  _context24.next = 5;
                   break;
                 }
 
-                _context22.next = 3;
+                _context24.next = 3;
                 return this.storageManager.getItem("migrations");
 
               case 3:
-                rawCompleted = _context22.sent;
+                rawCompleted = _context24.sent;
 
                 if (rawCompleted) {
                   this._completed = JSON.parse(rawCompleted);
@@ -2088,76 +2178,9 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
                 }
 
               case 5:
-                return _context22.abrupt("return", this._completed);
+                return _context24.abrupt("return", this._completed);
 
               case 6:
-              case "end":
-                return _context22.stop();
-            }
-          }
-        }, _callee22, this);
-      }));
-
-      function getCompletedMigrations() {
-        return _ref22.apply(this, arguments);
-      }
-
-      return getCompletedMigrations;
-    }()
-  }, {
-    key: "getPendingMigrations",
-    value: function () {
-      var _ref23 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee23() {
-        var _this7 = this;
-
-        var completed;
-        return regeneratorRuntime.wrap(function _callee23$(_context23) {
-          while (1) {
-            switch (_context23.prev = _context23.next) {
-              case 0:
-                _context23.next = 2;
-                return this.getCompletedMigrations();
-
-              case 2:
-                completed = _context23.sent;
-                return _context23.abrupt("return", this.migrations.filter(function (migration) {
-                  // if the name is not found in completed, then it is pending.
-                  return completed.indexOf(_this7.encode(migration.name)) == -1;
-                }));
-
-              case 4:
-              case "end":
-                return _context23.stop();
-            }
-          }
-        }, _callee23, this);
-      }));
-
-      function getPendingMigrations() {
-        return _ref23.apply(this, arguments);
-      }
-
-      return getPendingMigrations;
-    }()
-  }, {
-    key: "markMigrationCompleted",
-    value: function () {
-      var _ref24 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee24(migration) {
-        var completed;
-        return regeneratorRuntime.wrap(function _callee24$(_context24) {
-          while (1) {
-            switch (_context24.prev = _context24.next) {
-              case 0:
-                _context24.next = 2;
-                return this.getCompletedMigrations();
-
-              case 2:
-                completed = _context24.sent;
-
-                completed.push(this.encode(migration.name));
-                this.storageManager.setItem("migrations", JSON.stringify(completed));
-
-              case 5:
               case "end":
                 return _context24.stop();
             }
@@ -2165,25 +2188,34 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
         }, _callee24, this);
       }));
 
-      function markMigrationCompleted(_x40) {
+      function getCompletedMigrations() {
         return _ref24.apply(this, arguments);
       }
 
-      return markMigrationCompleted;
+      return getCompletedMigrations;
     }()
   }, {
-    key: "runMigration",
+    key: "getPendingMigrations",
     value: function () {
-      var _ref25 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee25(migration, items) {
+      var _ref25 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee25() {
+        var _this7 = this;
+
+        var completed;
         return regeneratorRuntime.wrap(function _callee25$(_context25) {
           while (1) {
             switch (_context25.prev = _context25.next) {
               case 0:
-                console.log("Running migration:", migration.name);
-                migration.handler(items);
-                this.markMigrationCompleted(migration);
+                _context25.next = 2;
+                return this.getCompletedMigrations();
 
-              case 3:
+              case 2:
+                completed = _context25.sent;
+                return _context25.abrupt("return", this.migrations.filter(function (migration) {
+                  // if the name is not found in completed, then it is pending.
+                  return completed.indexOf(_this7.encode(migration.name)) == -1;
+                }));
+
+              case 4:
               case "end":
                 return _context25.stop();
             }
@@ -2191,8 +2223,66 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
         }, _callee25, this);
       }));
 
-      function runMigration(_x41, _x42) {
+      function getPendingMigrations() {
         return _ref25.apply(this, arguments);
+      }
+
+      return getPendingMigrations;
+    }()
+  }, {
+    key: "markMigrationCompleted",
+    value: function () {
+      var _ref26 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee26(migration) {
+        var completed;
+        return regeneratorRuntime.wrap(function _callee26$(_context26) {
+          while (1) {
+            switch (_context26.prev = _context26.next) {
+              case 0:
+                _context26.next = 2;
+                return this.getCompletedMigrations();
+
+              case 2:
+                completed = _context26.sent;
+
+                completed.push(this.encode(migration.name));
+                this.storageManager.setItem("migrations", JSON.stringify(completed));
+
+              case 5:
+              case "end":
+                return _context26.stop();
+            }
+          }
+        }, _callee26, this);
+      }));
+
+      function markMigrationCompleted(_x40) {
+        return _ref26.apply(this, arguments);
+      }
+
+      return markMigrationCompleted;
+    }()
+  }, {
+    key: "runMigration",
+    value: function () {
+      var _ref27 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee27(migration, items) {
+        return regeneratorRuntime.wrap(function _callee27$(_context27) {
+          while (1) {
+            switch (_context27.prev = _context27.next) {
+              case 0:
+                console.log("Running migration:", migration.name);
+                migration.handler(items);
+                this.markMigrationCompleted(migration);
+
+              case 3:
+              case "end":
+                return _context27.stop();
+            }
+          }
+        }, _callee27, this);
+      }));
+
+      function runMigration(_x41, _x42) {
+        return _ref27.apply(this, arguments);
       }
 
       return runMigration;
@@ -2238,19 +2328,19 @@ var SFModelManager = exports.SFModelManager = function () {
   }, {
     key: "alternateUUIDForItem",
     value: function () {
-      var _ref26 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee26(item) {
+      var _ref28 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee28(item) {
         var newItem;
-        return regeneratorRuntime.wrap(function _callee26$(_context26) {
+        return regeneratorRuntime.wrap(function _callee28$(_context28) {
           while (1) {
-            switch (_context26.prev = _context26.next) {
+            switch (_context28.prev = _context28.next) {
               case 0:
                 // We need to clone this item and give it a new uuid, then delete item with old uuid from db (you can't modify uuid's in our indexeddb setup)
                 newItem = this.createItem(item);
-                _context26.next = 3;
+                _context28.next = 3;
                 return SFJS.crypto.generateUUID();
 
               case 3:
-                newItem.uuid = _context26.sent;
+                newItem.uuid = _context28.sent;
 
 
                 // Update uuids of relationships
@@ -2275,18 +2365,18 @@ var SFModelManager = exports.SFModelManager = function () {
                 newItem.setDirty(true);
                 this.resolveReferencesForItem(newItem);
 
-                return _context26.abrupt("return", newItem);
+                return _context28.abrupt("return", newItem);
 
               case 15:
               case "end":
-                return _context26.stop();
+                return _context28.stop();
             }
           }
-        }, _callee26, this);
+        }, _callee28, this);
       }));
 
       function alternateUUIDForItem(_x43) {
-        return _ref26.apply(this, arguments);
+        return _ref28.apply(this, arguments);
       }
 
       return alternateUUIDForItem;
@@ -2500,12 +2590,12 @@ var SFModelManager = exports.SFModelManager = function () {
 
       try {
         for (var _iterator8 = processedObjects.entries()[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-          var _ref27 = _step8.value;
+          var _ref29 = _step8.value;
 
-          var _ref28 = _slicedToArray(_ref27, 2);
+          var _ref30 = _slicedToArray(_ref29, 2);
 
-          var index = _ref28[0];
-          var _json_obj = _ref28[1];
+          var index = _ref30[0];
+          var _json_obj = _ref30[1];
           var model;
           var missedRefs;
           var ref;
@@ -3106,12 +3196,12 @@ var SFModelManager = exports.SFModelManager = function () {
   }, {
     key: "getAllItemsJSONData",
     value: function () {
-      var _ref29 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee27(keys, authParams, returnNullIfEmpty) {
-        return regeneratorRuntime.wrap(function _callee27$(_context27) {
+      var _ref31 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee29(keys, authParams, returnNullIfEmpty) {
+        return regeneratorRuntime.wrap(function _callee29$(_context29) {
           while (1) {
-            switch (_context27.prev = _context27.next) {
+            switch (_context29.prev = _context29.next) {
               case 0:
-                return _context27.abrupt("return", Promise.all(this.allItems.map(function (item) {
+                return _context29.abrupt("return", Promise.all(this.allItems.map(function (item) {
                   var itemParams = new SFItemParams(item, keys, authParams);
                   return itemParams.paramsForExportFile();
                 })).then(function (items) {
@@ -3131,14 +3221,14 @@ var SFModelManager = exports.SFModelManager = function () {
 
               case 1:
               case "end":
-                return _context27.stop();
+                return _context29.stop();
             }
           }
-        }, _callee27, this);
+        }, _callee29, this);
       }));
 
       function getAllItemsJSONData(_x48, _x49, _x50) {
-        return _ref29.apply(this, arguments);
+        return _ref31.apply(this, arguments);
       }
 
       return getAllItemsJSONData;
@@ -3209,23 +3299,23 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
   _createClass(SFSessionHistoryManager, [{
     key: "encryptionParams",
     value: function () {
-      var _ref30 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee28() {
-        return regeneratorRuntime.wrap(function _callee28$(_context28) {
+      var _ref32 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee30() {
+        return regeneratorRuntime.wrap(function _callee30$(_context30) {
           while (1) {
-            switch (_context28.prev = _context28.next) {
+            switch (_context30.prev = _context30.next) {
               case 0:
-                return _context28.abrupt("return", this.keyRequestHandler());
+                return _context30.abrupt("return", this.keyRequestHandler());
 
               case 1:
               case "end":
-                return _context28.stop();
+                return _context30.stop();
             }
           }
-        }, _callee28, this);
+        }, _callee30, this);
       }));
 
       function encryptionParams() {
-        return _ref30.apply(this, arguments);
+        return _ref32.apply(this, arguments);
       }
 
       return encryptionParams;
@@ -3270,78 +3360,15 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
   }, {
     key: "clearHistoryForItem",
     value: function () {
-      var _ref31 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee29(item) {
-        return regeneratorRuntime.wrap(function _callee29$(_context29) {
-          while (1) {
-            switch (_context29.prev = _context29.next) {
-              case 0:
-                this.historySession.clearItemHistory(item);
-                return _context29.abrupt("return", this.saveToDisk());
-
-              case 2:
-              case "end":
-                return _context29.stop();
-            }
-          }
-        }, _callee29, this);
-      }));
-
-      function clearHistoryForItem(_x51) {
-        return _ref31.apply(this, arguments);
-      }
-
-      return clearHistoryForItem;
-    }()
-  }, {
-    key: "clearAllHistory",
-    value: function () {
-      var _ref32 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee30() {
-        return regeneratorRuntime.wrap(function _callee30$(_context30) {
-          while (1) {
-            switch (_context30.prev = _context30.next) {
-              case 0:
-                this.historySession.clearAllHistory();
-                return _context30.abrupt("return", this.storageManager.removeItem(SessionHistoryRevisionsKey));
-
-              case 2:
-              case "end":
-                return _context30.stop();
-            }
-          }
-        }, _callee30, this);
-      }));
-
-      function clearAllHistory() {
-        return _ref32.apply(this, arguments);
-      }
-
-      return clearAllHistory;
-    }()
-  }, {
-    key: "toggleDiskSaving",
-    value: function () {
-      var _ref33 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee31() {
+      var _ref33 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee31(item) {
         return regeneratorRuntime.wrap(function _callee31$(_context31) {
           while (1) {
             switch (_context31.prev = _context31.next) {
               case 0:
-                this.diskEnabled = !this.diskEnabled;
+                this.historySession.clearItemHistory(item);
+                return _context31.abrupt("return", this.saveToDisk());
 
-                if (!this.diskEnabled) {
-                  _context31.next = 6;
-                  break;
-                }
-
-                this.storageManager.setItem(SessionHistoryPersistKey, JSON.stringify(true));
-                this.saveToDisk();
-                _context31.next = 8;
-                break;
-
-              case 6:
-                this.storageManager.setItem(SessionHistoryPersistKey, JSON.stringify(false));
-                return _context31.abrupt("return", this.storageManager.removeItem(SessionHistoryRevisionsKey));
-
-              case 8:
+              case 2:
               case "end":
                 return _context31.stop();
             }
@@ -3349,8 +3376,71 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
         }, _callee31, this);
       }));
 
-      function toggleDiskSaving() {
+      function clearHistoryForItem(_x51) {
         return _ref33.apply(this, arguments);
+      }
+
+      return clearHistoryForItem;
+    }()
+  }, {
+    key: "clearAllHistory",
+    value: function () {
+      var _ref34 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee32() {
+        return regeneratorRuntime.wrap(function _callee32$(_context32) {
+          while (1) {
+            switch (_context32.prev = _context32.next) {
+              case 0:
+                this.historySession.clearAllHistory();
+                return _context32.abrupt("return", this.storageManager.removeItem(SessionHistoryRevisionsKey));
+
+              case 2:
+              case "end":
+                return _context32.stop();
+            }
+          }
+        }, _callee32, this);
+      }));
+
+      function clearAllHistory() {
+        return _ref34.apply(this, arguments);
+      }
+
+      return clearAllHistory;
+    }()
+  }, {
+    key: "toggleDiskSaving",
+    value: function () {
+      var _ref35 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee33() {
+        return regeneratorRuntime.wrap(function _callee33$(_context33) {
+          while (1) {
+            switch (_context33.prev = _context33.next) {
+              case 0:
+                this.diskEnabled = !this.diskEnabled;
+
+                if (!this.diskEnabled) {
+                  _context33.next = 6;
+                  break;
+                }
+
+                this.storageManager.setItem(SessionHistoryPersistKey, JSON.stringify(true));
+                this.saveToDisk();
+                _context33.next = 8;
+                break;
+
+              case 6:
+                this.storageManager.setItem(SessionHistoryPersistKey, JSON.stringify(false));
+                return _context33.abrupt("return", this.storageManager.removeItem(SessionHistoryRevisionsKey));
+
+              case 8:
+              case "end":
+                return _context33.stop();
+            }
+          }
+        }, _callee33, this);
+      }));
+
+      function toggleDiskSaving() {
+        return _ref35.apply(this, arguments);
       }
 
       return toggleDiskSaving;
@@ -3358,27 +3448,27 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
   }, {
     key: "saveToDisk",
     value: function () {
-      var _ref34 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee32() {
+      var _ref36 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee34() {
         var _this13 = this;
 
         var encryptionParams, itemParams;
-        return regeneratorRuntime.wrap(function _callee32$(_context32) {
+        return regeneratorRuntime.wrap(function _callee34$(_context34) {
           while (1) {
-            switch (_context32.prev = _context32.next) {
+            switch (_context34.prev = _context34.next) {
               case 0:
                 if (this.diskEnabled) {
-                  _context32.next = 2;
+                  _context34.next = 2;
                   break;
                 }
 
-                return _context32.abrupt("return");
+                return _context34.abrupt("return");
 
               case 2:
-                _context32.next = 4;
+                _context34.next = 4;
                 return this.encryptionParams();
 
               case 4:
-                encryptionParams = _context32.sent;
+                encryptionParams = _context34.sent;
                 itemParams = new SFItemParams(this.historySession, encryptionParams.keys, encryptionParams.auth_params);
 
                 itemParams.paramsForSync().then(function (syncParams) {
@@ -3388,14 +3478,14 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
 
               case 7:
               case "end":
-                return _context32.stop();
+                return _context34.stop();
             }
           }
-        }, _callee32, this);
+        }, _callee34, this);
       }));
 
       function saveToDisk() {
-        return _ref34.apply(this, arguments);
+        return _ref36.apply(this, arguments);
       }
 
       return saveToDisk;
@@ -3403,58 +3493,58 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
   }, {
     key: "loadFromDisk",
     value: function () {
-      var _ref35 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee33() {
+      var _ref37 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee35() {
         var diskValue, historyValue, encryptionParams, historySession, autoOptimizeValue;
-        return regeneratorRuntime.wrap(function _callee33$(_context33) {
+        return regeneratorRuntime.wrap(function _callee35$(_context35) {
           while (1) {
-            switch (_context33.prev = _context33.next) {
+            switch (_context35.prev = _context35.next) {
               case 0:
-                _context33.next = 2;
+                _context35.next = 2;
                 return this.storageManager.getItem(SessionHistoryPersistKey);
 
               case 2:
-                diskValue = _context33.sent;
+                diskValue = _context35.sent;
 
                 if (diskValue) {
                   this.diskEnabled = JSON.parse(diskValue);
                 }
 
-                _context33.next = 6;
+                _context35.next = 6;
                 return this.storageManager.getItem(SessionHistoryRevisionsKey);
 
               case 6:
-                historyValue = _context33.sent;
+                historyValue = _context35.sent;
 
                 if (!historyValue) {
-                  _context33.next = 18;
+                  _context35.next = 18;
                   break;
                 }
 
                 historyValue = JSON.parse(historyValue);
-                _context33.next = 11;
+                _context35.next = 11;
                 return this.encryptionParams();
 
               case 11:
-                encryptionParams = _context33.sent;
-                _context33.next = 14;
+                encryptionParams = _context35.sent;
+                _context35.next = 14;
                 return SFJS.itemTransformer.decryptItem(historyValue, encryptionParams.keys);
 
               case 14:
                 historySession = new SFHistorySession(historyValue);
 
                 this.historySession = historySession;
-                _context33.next = 19;
+                _context35.next = 19;
                 break;
 
               case 18:
                 this.historySession = new SFHistorySession();
 
               case 19:
-                _context33.next = 21;
+                _context35.next = 21;
                 return this.storageManager.getItem(SessionHistoryAutoOptimizeKey);
 
               case 21:
-                autoOptimizeValue = _context33.sent;
+                autoOptimizeValue = _context35.sent;
 
                 if (autoOptimizeValue) {
                   this.autoOptimize = JSON.parse(autoOptimizeValue);
@@ -3465,14 +3555,14 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
 
               case 23:
               case "end":
-                return _context33.stop();
+                return _context35.stop();
             }
           }
-        }, _callee33, this);
+        }, _callee35, this);
       }));
 
       function loadFromDisk() {
-        return _ref35.apply(this, arguments);
+        return _ref37.apply(this, arguments);
       }
 
       return loadFromDisk;
@@ -3480,10 +3570,10 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
   }, {
     key: "toggleAutoOptimize",
     value: function () {
-      var _ref36 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee34() {
-        return regeneratorRuntime.wrap(function _callee34$(_context34) {
+      var _ref38 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee36() {
+        return regeneratorRuntime.wrap(function _callee36$(_context36) {
           while (1) {
-            switch (_context34.prev = _context34.next) {
+            switch (_context36.prev = _context36.next) {
               case 0:
                 this.autoOptimize = !this.autoOptimize;
 
@@ -3495,14 +3585,14 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
 
               case 2:
               case "end":
-                return _context34.stop();
+                return _context36.stop();
             }
           }
-        }, _callee34, this);
+        }, _callee36, this);
       }));
 
       function toggleAutoOptimize() {
-        return _ref36.apply(this, arguments);
+        return _ref38.apply(this, arguments);
       }
 
       return toggleAutoOptimize;
@@ -3526,49 +3616,7 @@ var SFStorageManager = exports.SFStorageManager = function () {
     /* Simple Key/Value Storage */
 
     value: function () {
-      var _ref37 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee35(key, value) {
-        return regeneratorRuntime.wrap(function _callee35$(_context35) {
-          while (1) {
-            switch (_context35.prev = _context35.next) {
-              case 0:
-              case "end":
-                return _context35.stop();
-            }
-          }
-        }, _callee35, this);
-      }));
-
-      function setItem(_x52, _x53) {
-        return _ref37.apply(this, arguments);
-      }
-
-      return setItem;
-    }()
-  }, {
-    key: "getItem",
-    value: function () {
-      var _ref38 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee36(key) {
-        return regeneratorRuntime.wrap(function _callee36$(_context36) {
-          while (1) {
-            switch (_context36.prev = _context36.next) {
-              case 0:
-              case "end":
-                return _context36.stop();
-            }
-          }
-        }, _callee36, this);
-      }));
-
-      function getItem(_x54) {
-        return _ref38.apply(this, arguments);
-      }
-
-      return getItem;
-    }()
-  }, {
-    key: "removeItem",
-    value: function () {
-      var _ref39 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee37(key) {
+      var _ref39 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee37(key, value) {
         return regeneratorRuntime.wrap(function _callee37$(_context37) {
           while (1) {
             switch (_context37.prev = _context37.next) {
@@ -3580,16 +3628,16 @@ var SFStorageManager = exports.SFStorageManager = function () {
         }, _callee37, this);
       }));
 
-      function removeItem(_x55) {
+      function setItem(_x52, _x53) {
         return _ref39.apply(this, arguments);
       }
 
-      return removeItem;
+      return setItem;
     }()
   }, {
-    key: "clear",
+    key: "getItem",
     value: function () {
-      var _ref40 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee38() {
+      var _ref40 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee38(key) {
         return regeneratorRuntime.wrap(function _callee38$(_context38) {
           while (1) {
             switch (_context38.prev = _context38.next) {
@@ -3601,8 +3649,50 @@ var SFStorageManager = exports.SFStorageManager = function () {
         }, _callee38, this);
       }));
 
-      function clear() {
+      function getItem(_x54) {
         return _ref40.apply(this, arguments);
+      }
+
+      return getItem;
+    }()
+  }, {
+    key: "removeItem",
+    value: function () {
+      var _ref41 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee39(key) {
+        return regeneratorRuntime.wrap(function _callee39$(_context39) {
+          while (1) {
+            switch (_context39.prev = _context39.next) {
+              case 0:
+              case "end":
+                return _context39.stop();
+            }
+          }
+        }, _callee39, this);
+      }));
+
+      function removeItem(_x55) {
+        return _ref41.apply(this, arguments);
+      }
+
+      return removeItem;
+    }()
+  }, {
+    key: "clear",
+    value: function () {
+      var _ref42 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee40() {
+        return regeneratorRuntime.wrap(function _callee40$(_context40) {
+          while (1) {
+            switch (_context40.prev = _context40.next) {
+              case 0:
+              case "end":
+                return _context40.stop();
+            }
+          }
+        }, _callee40, this);
+      }));
+
+      function clear() {
+        return _ref42.apply(this, arguments);
       }
 
       return clear;
@@ -3616,52 +3706,7 @@ var SFStorageManager = exports.SFStorageManager = function () {
     */
 
     value: function () {
-      var _ref41 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee39() {
-        return regeneratorRuntime.wrap(function _callee39$(_context39) {
-          while (1) {
-            switch (_context39.prev = _context39.next) {
-              case 0:
-              case "end":
-                return _context39.stop();
-            }
-          }
-        }, _callee39, this);
-      }));
-
-      function getAllModels() {
-        return _ref41.apply(this, arguments);
-      }
-
-      return getAllModels;
-    }()
-  }, {
-    key: "saveModel",
-    value: function () {
-      var _ref42 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee40(item) {
-        return regeneratorRuntime.wrap(function _callee40$(_context40) {
-          while (1) {
-            switch (_context40.prev = _context40.next) {
-              case 0:
-                return _context40.abrupt("return", this.saveModels([item]));
-
-              case 1:
-              case "end":
-                return _context40.stop();
-            }
-          }
-        }, _callee40, this);
-      }));
-
-      function saveModel(_x56) {
-        return _ref42.apply(this, arguments);
-      }
-
-      return saveModel;
-    }()
-  }, {
-    key: "saveModels",
-    value: function () {
-      var _ref43 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee41(items) {
+      var _ref43 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee41() {
         return regeneratorRuntime.wrap(function _callee41$(_context41) {
           while (1) {
             switch (_context41.prev = _context41.next) {
@@ -3673,20 +3718,23 @@ var SFStorageManager = exports.SFStorageManager = function () {
         }, _callee41, this);
       }));
 
-      function saveModels(_x57) {
+      function getAllModels() {
         return _ref43.apply(this, arguments);
       }
 
-      return saveModels;
+      return getAllModels;
     }()
   }, {
-    key: "deleteModel",
+    key: "saveModel",
     value: function () {
       var _ref44 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee42(item) {
         return regeneratorRuntime.wrap(function _callee42$(_context42) {
           while (1) {
             switch (_context42.prev = _context42.next) {
               case 0:
+                return _context42.abrupt("return", this.saveModels([item]));
+
+              case 1:
               case "end":
                 return _context42.stop();
             }
@@ -3694,16 +3742,16 @@ var SFStorageManager = exports.SFStorageManager = function () {
         }, _callee42, this);
       }));
 
-      function deleteModel(_x58) {
+      function saveModel(_x56) {
         return _ref44.apply(this, arguments);
       }
 
-      return deleteModel;
+      return saveModel;
     }()
   }, {
-    key: "clearAllModels",
+    key: "saveModels",
     value: function () {
-      var _ref45 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee43() {
+      var _ref45 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee43(items) {
         return regeneratorRuntime.wrap(function _callee43$(_context43) {
           while (1) {
             switch (_context43.prev = _context43.next) {
@@ -3715,8 +3763,50 @@ var SFStorageManager = exports.SFStorageManager = function () {
         }, _callee43, this);
       }));
 
-      function clearAllModels() {
+      function saveModels(_x57) {
         return _ref45.apply(this, arguments);
+      }
+
+      return saveModels;
+    }()
+  }, {
+    key: "deleteModel",
+    value: function () {
+      var _ref46 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee44(item) {
+        return regeneratorRuntime.wrap(function _callee44$(_context44) {
+          while (1) {
+            switch (_context44.prev = _context44.next) {
+              case 0:
+              case "end":
+                return _context44.stop();
+            }
+          }
+        }, _callee44, this);
+      }));
+
+      function deleteModel(_x58) {
+        return _ref46.apply(this, arguments);
+      }
+
+      return deleteModel;
+    }()
+  }, {
+    key: "clearAllModels",
+    value: function () {
+      var _ref47 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee45() {
+        return regeneratorRuntime.wrap(function _callee45$(_context45) {
+          while (1) {
+            switch (_context45.prev = _context45.next) {
+              case 0:
+              case "end":
+                return _context45.stop();
+            }
+          }
+        }, _callee45, this);
+      }));
+
+      function clearAllModels() {
+        return _ref47.apply(this, arguments);
       }
 
       return clearAllModels;
@@ -3728,23 +3818,23 @@ var SFStorageManager = exports.SFStorageManager = function () {
     /* General */
 
     value: function () {
-      var _ref46 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee44() {
-        return regeneratorRuntime.wrap(function _callee44$(_context44) {
+      var _ref48 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee46() {
+        return regeneratorRuntime.wrap(function _callee46$(_context46) {
           while (1) {
-            switch (_context44.prev = _context44.next) {
+            switch (_context46.prev = _context46.next) {
               case 0:
-                return _context44.abrupt("return", Promise.all([this.clear(), this.clearAllModels()]));
+                return _context46.abrupt("return", Promise.all([this.clear(), this.clearAllModels()]));
 
               case 1:
               case "end":
-                return _context44.stop();
+                return _context46.stop();
             }
           }
-        }, _callee44, this);
+        }, _callee46, this);
       }));
 
       function clearAllData() {
-        return _ref46.apply(this, arguments);
+        return _ref48.apply(this, arguments);
       }
 
       return clearAllData;
@@ -3779,37 +3869,37 @@ var SFSyncManager = exports.SFSyncManager = function () {
   _createClass(SFSyncManager, [{
     key: "getServerURL",
     value: function () {
-      var _ref47 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee45() {
-        return regeneratorRuntime.wrap(function _callee45$(_context45) {
+      var _ref49 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee47() {
+        return regeneratorRuntime.wrap(function _callee47$(_context47) {
           while (1) {
-            switch (_context45.prev = _context45.next) {
+            switch (_context47.prev = _context47.next) {
               case 0:
-                _context45.next = 2;
+                _context47.next = 2;
                 return this.storageManager.getItem("server");
 
               case 2:
-                _context45.t0 = _context45.sent;
+                _context47.t0 = _context47.sent;
 
-                if (_context45.t0) {
-                  _context45.next = 5;
+                if (_context47.t0) {
+                  _context47.next = 5;
                   break;
                 }
 
-                _context45.t0 = window._default_sf_server;
+                _context47.t0 = window._default_sf_server;
 
               case 5:
-                return _context45.abrupt("return", _context45.t0);
+                return _context47.abrupt("return", _context47.t0);
 
               case 6:
               case "end":
-                return _context45.stop();
+                return _context47.stop();
             }
           }
-        }, _callee45, this);
+        }, _callee47, this);
       }));
 
       function getServerURL() {
-        return _ref47.apply(this, arguments);
+        return _ref49.apply(this, arguments);
       }
 
       return getServerURL;
@@ -3817,28 +3907,28 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "getSyncURL",
     value: function () {
-      var _ref48 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee46() {
-        return regeneratorRuntime.wrap(function _callee46$(_context46) {
+      var _ref50 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee48() {
+        return regeneratorRuntime.wrap(function _callee48$(_context48) {
           while (1) {
-            switch (_context46.prev = _context46.next) {
+            switch (_context48.prev = _context48.next) {
               case 0:
-                _context46.next = 2;
+                _context48.next = 2;
                 return this.getServerURL();
 
               case 2:
-                _context46.t0 = _context46.sent;
-                return _context46.abrupt("return", _context46.t0 + "/items/sync");
+                _context48.t0 = _context48.sent;
+                return _context48.abrupt("return", _context48.t0 + "/items/sync");
 
               case 4:
               case "end":
-                return _context46.stop();
+                return _context48.stop();
             }
           }
-        }, _callee46, this);
+        }, _callee48, this);
       }));
 
       function getSyncURL() {
-        return _ref48.apply(this, arguments);
+        return _ref50.apply(this, arguments);
       }
 
       return getSyncURL;
@@ -3876,6 +3966,7 @@ var SFSyncManager = exports.SFSyncManager = function () {
       major-data-change
       local-data-loaded
       sync-session-invalid
+      sync-exception
        */
       this.eventHandlers.push(handler);
       return handler;
@@ -3921,23 +4012,23 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "getActiveKeyInfo",
     value: function () {
-      var _ref49 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee47(request) {
-        return regeneratorRuntime.wrap(function _callee47$(_context47) {
+      var _ref51 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee49(request) {
+        return regeneratorRuntime.wrap(function _callee49$(_context49) {
           while (1) {
-            switch (_context47.prev = _context47.next) {
+            switch (_context49.prev = _context49.next) {
               case 0:
-                return _context47.abrupt("return", this.keyRequestHandler(request));
+                return _context49.abrupt("return", this.keyRequestHandler(request));
 
               case 1:
               case "end":
-                return _context47.stop();
+                return _context49.stop();
             }
           }
-        }, _callee47, this);
+        }, _callee49, this);
       }));
 
       function getActiveKeyInfo(_x59) {
-        return _ref49.apply(this, arguments);
+        return _ref51.apply(this, arguments);
       }
 
       return getActiveKeyInfo;
@@ -3950,44 +4041,44 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "loadLocalItems",
     value: function () {
-      var _ref50 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee49(incrementalCallback) {
+      var _ref52 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee51(incrementalCallback) {
         var _this15 = this;
 
         var batchSize = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 50;
-        return regeneratorRuntime.wrap(function _callee49$(_context49) {
+        return regeneratorRuntime.wrap(function _callee51$(_context51) {
           while (1) {
-            switch (_context49.prev = _context49.next) {
+            switch (_context51.prev = _context51.next) {
               case 0:
-                return _context49.abrupt("return", this.storageManager.getAllModels().then(function (items) {
+                return _context51.abrupt("return", this.storageManager.getAllModels().then(function (items) {
                   // break it up into chunks to make interface more responsive for large item counts
                   var total = items.length;
                   var current = 0;
                   var processed = [];
 
                   var decryptNext = function () {
-                    var _ref51 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee48() {
+                    var _ref53 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee50() {
                       var subitems, processedSubitems;
-                      return regeneratorRuntime.wrap(function _callee48$(_context48) {
+                      return regeneratorRuntime.wrap(function _callee50$(_context50) {
                         while (1) {
-                          switch (_context48.prev = _context48.next) {
+                          switch (_context50.prev = _context50.next) {
                             case 0:
                               subitems = items.slice(current, current + batchSize);
-                              _context48.next = 3;
+                              _context50.next = 3;
                               return _this15.handleItemsResponse(subitems, null, SFModelManager.MappingSourceLocalRetrieved, SFSyncManager.KeyRequestLoadLocal);
 
                             case 3:
-                              processedSubitems = _context48.sent;
+                              processedSubitems = _context50.sent;
 
                               processed.push(processedSubitems);
 
                               current += subitems.length;
 
                               if (!(current < total)) {
-                                _context48.next = 10;
+                                _context50.next = 10;
                                 break;
                               }
 
-                              return _context48.abrupt("return", new Promise(function (innerResolve, innerReject) {
+                              return _context50.abrupt("return", new Promise(function (innerResolve, innerReject) {
                                 _this15.$timeout(function () {
                                   incrementalCallback && incrementalCallback(current, total);
                                   decryptNext().then(innerResolve);
@@ -4001,14 +4092,14 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                             case 12:
                             case "end":
-                              return _context48.stop();
+                              return _context50.stop();
                           }
                         }
-                      }, _callee48, _this15);
+                      }, _callee50, _this15);
                     }));
 
                     return function decryptNext() {
-                      return _ref51.apply(this, arguments);
+                      return _ref53.apply(this, arguments);
                     };
                   }();
 
@@ -4017,14 +4108,14 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
               case 1:
               case "end":
-                return _context49.stop();
+                return _context51.stop();
             }
           }
-        }, _callee49, this);
+        }, _callee51, this);
       }));
 
       function loadLocalItems(_x61) {
-        return _ref50.apply(this, arguments);
+        return _ref52.apply(this, arguments);
       }
 
       return loadLocalItems;
@@ -4032,65 +4123,65 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "writeItemsToLocalStorage",
     value: function () {
-      var _ref52 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee52(items, offlineOnly) {
+      var _ref54 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee54(items, offlineOnly) {
         var _this16 = this;
 
-        return regeneratorRuntime.wrap(function _callee52$(_context52) {
+        return regeneratorRuntime.wrap(function _callee54$(_context54) {
           while (1) {
-            switch (_context52.prev = _context52.next) {
+            switch (_context54.prev = _context54.next) {
               case 0:
-                return _context52.abrupt("return", new Promise(function () {
-                  var _ref53 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee51(resolve, reject) {
+                return _context54.abrupt("return", new Promise(function () {
+                  var _ref55 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee53(resolve, reject) {
                     var info;
-                    return regeneratorRuntime.wrap(function _callee51$(_context51) {
+                    return regeneratorRuntime.wrap(function _callee53$(_context53) {
                       while (1) {
-                        switch (_context51.prev = _context51.next) {
+                        switch (_context53.prev = _context53.next) {
                           case 0:
                             if (!(items.length == 0)) {
-                              _context51.next = 3;
+                              _context53.next = 3;
                               break;
                             }
 
                             resolve();
-                            return _context51.abrupt("return");
+                            return _context53.abrupt("return");
 
                           case 3:
-                            _context51.next = 5;
+                            _context53.next = 5;
                             return _this16.getActiveKeyInfo(SFSyncManager.KeyRequestSaveLocal);
 
                           case 5:
-                            info = _context51.sent;
+                            info = _context53.sent;
 
 
                             Promise.all(items.map(function () {
-                              var _ref54 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee50(item) {
+                              var _ref56 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee52(item) {
                                 var itemParams;
-                                return regeneratorRuntime.wrap(function _callee50$(_context50) {
+                                return regeneratorRuntime.wrap(function _callee52$(_context52) {
                                   while (1) {
-                                    switch (_context50.prev = _context50.next) {
+                                    switch (_context52.prev = _context52.next) {
                                       case 0:
                                         itemParams = new SFItemParams(item, info.keys, info.auth_params);
-                                        _context50.next = 3;
+                                        _context52.next = 3;
                                         return itemParams.paramsForLocalStorage();
 
                                       case 3:
-                                        itemParams = _context50.sent;
+                                        itemParams = _context52.sent;
 
                                         if (offlineOnly) {
                                           delete itemParams.dirty;
                                         }
-                                        return _context50.abrupt("return", itemParams);
+                                        return _context52.abrupt("return", itemParams);
 
                                       case 6:
                                       case "end":
-                                        return _context50.stop();
+                                        return _context52.stop();
                                     }
                                   }
-                                }, _callee50, _this16);
+                                }, _callee52, _this16);
                               }));
 
                               return function (_x66) {
-                                return _ref54.apply(this, arguments);
+                                return _ref56.apply(this, arguments);
                               };
                             }())).then(function (params) {
                               _this16.storageManager.saveModels(params).then(function () {
@@ -4111,27 +4202,27 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                           case 7:
                           case "end":
-                            return _context51.stop();
+                            return _context53.stop();
                         }
                       }
-                    }, _callee51, _this16);
+                    }, _callee53, _this16);
                   }));
 
                   return function (_x64, _x65) {
-                    return _ref53.apply(this, arguments);
+                    return _ref55.apply(this, arguments);
                   };
                 }()));
 
               case 1:
               case "end":
-                return _context52.stop();
+                return _context54.stop();
             }
           }
-        }, _callee52, this);
+        }, _callee54, this);
       }));
 
       function writeItemsToLocalStorage(_x62, _x63) {
-        return _ref52.apply(this, arguments);
+        return _ref54.apply(this, arguments);
       }
 
       return writeItemsToLocalStorage;
@@ -4139,59 +4230,59 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "syncOffline",
     value: function () {
-      var _ref55 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee53(items) {
+      var _ref57 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee55(items) {
         var _this17 = this;
 
         var _iteratorNormalCompletion24, _didIteratorError24, _iteratorError24, _iterator24, _step24, item;
 
-        return regeneratorRuntime.wrap(function _callee53$(_context53) {
+        return regeneratorRuntime.wrap(function _callee55$(_context55) {
           while (1) {
-            switch (_context53.prev = _context53.next) {
+            switch (_context55.prev = _context55.next) {
               case 0:
                 // Update all items updated_at to now
                 _iteratorNormalCompletion24 = true;
                 _didIteratorError24 = false;
                 _iteratorError24 = undefined;
-                _context53.prev = 3;
+                _context55.prev = 3;
                 for (_iterator24 = items[Symbol.iterator](); !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
                   item = _step24.value;
                   item.updated_at = new Date();
                 }
-                _context53.next = 11;
+                _context55.next = 11;
                 break;
 
               case 7:
-                _context53.prev = 7;
-                _context53.t0 = _context53["catch"](3);
+                _context55.prev = 7;
+                _context55.t0 = _context55["catch"](3);
                 _didIteratorError24 = true;
-                _iteratorError24 = _context53.t0;
+                _iteratorError24 = _context55.t0;
 
               case 11:
-                _context53.prev = 11;
-                _context53.prev = 12;
+                _context55.prev = 11;
+                _context55.prev = 12;
 
                 if (!_iteratorNormalCompletion24 && _iterator24.return) {
                   _iterator24.return();
                 }
 
               case 14:
-                _context53.prev = 14;
+                _context55.prev = 14;
 
                 if (!_didIteratorError24) {
-                  _context53.next = 17;
+                  _context55.next = 17;
                   break;
                 }
 
                 throw _iteratorError24;
 
               case 17:
-                return _context53.finish(14);
+                return _context55.finish(14);
 
               case 18:
-                return _context53.finish(11);
+                return _context55.finish(11);
 
               case 19:
-                return _context53.abrupt("return", this.writeItemsToLocalStorage(items, true).then(function (responseItems) {
+                return _context55.abrupt("return", this.writeItemsToLocalStorage(items, true).then(function (responseItems) {
                   // delete anything needing to be deleted
                   var _iteratorNormalCompletion25 = true;
                   var _didIteratorError25 = false;
@@ -4223,18 +4314,20 @@ var SFSyncManager = exports.SFSyncManager = function () {
                   _this17.notifyEvent("sync:completed");
                   // Required in order for modelManager to notify sync observers
                   _this17.modelManager.didSyncModelsOffline(items);
+
+                  return { saved_items: items };
                 }));
 
               case 20:
               case "end":
-                return _context53.stop();
+                return _context55.stop();
             }
           }
-        }, _callee53, this, [[3, 7, 11, 19], [12,, 14, 18]]);
+        }, _callee55, this, [[3, 7, 11, 19], [12,, 14, 18]]);
       }));
 
       function syncOffline(_x67) {
-        return _ref55.apply(this, arguments);
+        return _ref57.apply(this, arguments);
       }
 
       return syncOffline;
@@ -4249,12 +4342,12 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "markAllItemsDirtyAndSaveOffline",
     value: function () {
-      var _ref56 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee54(alternateUUIDs) {
+      var _ref58 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee56(alternateUUIDs) {
         var originalItems, _iteratorNormalCompletion26, _didIteratorError26, _iteratorError26, _iterator26, _step26, item, allItems, _iteratorNormalCompletion27, _didIteratorError27, _iteratorError27, _iterator27, _step27;
 
-        return regeneratorRuntime.wrap(function _callee54$(_context54) {
+        return regeneratorRuntime.wrap(function _callee56$(_context56) {
           while (1) {
-            switch (_context54.prev = _context54.next) {
+            switch (_context56.prev = _context56.next) {
               case 0:
 
                 // use a copy, as alternating uuid will affect array
@@ -4263,122 +4356,122 @@ var SFSyncManager = exports.SFSyncManager = function () {
                 }).slice();
 
                 if (!alternateUUIDs) {
-                  _context54.next = 28;
+                  _context56.next = 28;
                   break;
                 }
 
                 _iteratorNormalCompletion26 = true;
                 _didIteratorError26 = false;
                 _iteratorError26 = undefined;
-                _context54.prev = 5;
+                _context56.prev = 5;
                 _iterator26 = originalItems[Symbol.iterator]();
 
               case 7:
                 if (_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done) {
-                  _context54.next = 14;
+                  _context56.next = 14;
                   break;
                 }
 
                 item = _step26.value;
-                _context54.next = 11;
+                _context56.next = 11;
                 return this.modelManager.alternateUUIDForItem(item);
 
               case 11:
                 _iteratorNormalCompletion26 = true;
-                _context54.next = 7;
+                _context56.next = 7;
                 break;
 
               case 14:
-                _context54.next = 20;
+                _context56.next = 20;
                 break;
 
               case 16:
-                _context54.prev = 16;
-                _context54.t0 = _context54["catch"](5);
+                _context56.prev = 16;
+                _context56.t0 = _context56["catch"](5);
                 _didIteratorError26 = true;
-                _iteratorError26 = _context54.t0;
+                _iteratorError26 = _context56.t0;
 
               case 20:
-                _context54.prev = 20;
-                _context54.prev = 21;
+                _context56.prev = 20;
+                _context56.prev = 21;
 
                 if (!_iteratorNormalCompletion26 && _iterator26.return) {
                   _iterator26.return();
                 }
 
               case 23:
-                _context54.prev = 23;
+                _context56.prev = 23;
 
                 if (!_didIteratorError26) {
-                  _context54.next = 26;
+                  _context56.next = 26;
                   break;
                 }
 
                 throw _iteratorError26;
 
               case 26:
-                return _context54.finish(23);
+                return _context56.finish(23);
 
               case 27:
-                return _context54.finish(20);
+                return _context56.finish(20);
 
               case 28:
                 allItems = this.modelManager.allItems;
                 _iteratorNormalCompletion27 = true;
                 _didIteratorError27 = false;
                 _iteratorError27 = undefined;
-                _context54.prev = 32;
+                _context56.prev = 32;
 
                 for (_iterator27 = allItems[Symbol.iterator](); !(_iteratorNormalCompletion27 = (_step27 = _iterator27.next()).done); _iteratorNormalCompletion27 = true) {
                   item = _step27.value;
                   item.setDirty(true);
                 }
-                _context54.next = 40;
+                _context56.next = 40;
                 break;
 
               case 36:
-                _context54.prev = 36;
-                _context54.t1 = _context54["catch"](32);
+                _context56.prev = 36;
+                _context56.t1 = _context56["catch"](32);
                 _didIteratorError27 = true;
-                _iteratorError27 = _context54.t1;
+                _iteratorError27 = _context56.t1;
 
               case 40:
-                _context54.prev = 40;
-                _context54.prev = 41;
+                _context56.prev = 40;
+                _context56.prev = 41;
 
                 if (!_iteratorNormalCompletion27 && _iterator27.return) {
                   _iterator27.return();
                 }
 
               case 43:
-                _context54.prev = 43;
+                _context56.prev = 43;
 
                 if (!_didIteratorError27) {
-                  _context54.next = 46;
+                  _context56.next = 46;
                   break;
                 }
 
                 throw _iteratorError27;
 
               case 46:
-                return _context54.finish(43);
+                return _context56.finish(43);
 
               case 47:
-                return _context54.finish(40);
+                return _context56.finish(40);
 
               case 48:
-                return _context54.abrupt("return", this.writeItemsToLocalStorage(allItems, false));
+                return _context56.abrupt("return", this.writeItemsToLocalStorage(allItems, false));
 
               case 49:
               case "end":
-                return _context54.stop();
+                return _context56.stop();
             }
           }
-        }, _callee54, this, [[5, 16, 20, 28], [21,, 23, 27], [32, 36, 40, 48], [41,, 43, 47]]);
+        }, _callee56, this, [[5, 16, 20, 28], [21,, 23, 27], [32, 36, 40, 48], [41,, 43, 47]]);
       }));
 
       function markAllItemsDirtyAndSaveOffline(_x68) {
-        return _ref56.apply(this, arguments);
+        return _ref58.apply(this, arguments);
       }
 
       return markAllItemsDirtyAndSaveOffline;
@@ -4386,92 +4479,16 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "setSyncToken",
     value: function () {
-      var _ref57 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee55(token) {
-        return regeneratorRuntime.wrap(function _callee55$(_context55) {
-          while (1) {
-            switch (_context55.prev = _context55.next) {
-              case 0:
-                this._syncToken = token;
-                _context55.next = 3;
-                return this.storageManager.setItem("syncToken", token);
-
-              case 3:
-              case "end":
-                return _context55.stop();
-            }
-          }
-        }, _callee55, this);
-      }));
-
-      function setSyncToken(_x69) {
-        return _ref57.apply(this, arguments);
-      }
-
-      return setSyncToken;
-    }()
-  }, {
-    key: "getSyncToken",
-    value: function () {
-      var _ref58 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee56() {
-        return regeneratorRuntime.wrap(function _callee56$(_context56) {
-          while (1) {
-            switch (_context56.prev = _context56.next) {
-              case 0:
-                if (this._syncToken) {
-                  _context56.next = 4;
-                  break;
-                }
-
-                _context56.next = 3;
-                return this.storageManager.getItem("syncToken");
-
-              case 3:
-                this._syncToken = _context56.sent;
-
-              case 4:
-                return _context56.abrupt("return", this._syncToken);
-
-              case 5:
-              case "end":
-                return _context56.stop();
-            }
-          }
-        }, _callee56, this);
-      }));
-
-      function getSyncToken() {
-        return _ref58.apply(this, arguments);
-      }
-
-      return getSyncToken;
-    }()
-  }, {
-    key: "setCursorToken",
-    value: function () {
       var _ref59 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee57(token) {
         return regeneratorRuntime.wrap(function _callee57$(_context57) {
           while (1) {
             switch (_context57.prev = _context57.next) {
               case 0:
-                this._cursorToken = token;
+                this._syncToken = token;
+                _context57.next = 3;
+                return this.storageManager.setItem("syncToken", token);
 
-                if (!token) {
-                  _context57.next = 6;
-                  break;
-                }
-
-                _context57.next = 4;
-                return this.storageManager.setItem("cursorToken", token);
-
-              case 4:
-                _context57.next = 8;
-                break;
-
-              case 6:
-                _context57.next = 8;
-                return this.storageManager.removeItem("cursorToken");
-
-              case 8:
+              case 3:
               case "end":
                 return _context57.stop();
             }
@@ -4479,33 +4496,33 @@ var SFSyncManager = exports.SFSyncManager = function () {
         }, _callee57, this);
       }));
 
-      function setCursorToken(_x70) {
+      function setSyncToken(_x69) {
         return _ref59.apply(this, arguments);
       }
 
-      return setCursorToken;
+      return setSyncToken;
     }()
   }, {
-    key: "getCursorToken",
+    key: "getSyncToken",
     value: function () {
       var _ref60 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee58() {
         return regeneratorRuntime.wrap(function _callee58$(_context58) {
           while (1) {
             switch (_context58.prev = _context58.next) {
               case 0:
-                if (this._cursorToken) {
+                if (this._syncToken) {
                   _context58.next = 4;
                   break;
                 }
 
                 _context58.next = 3;
-                return this.storageManager.getItem("cursorToken");
+                return this.storageManager.getItem("syncToken");
 
               case 3:
-                this._cursorToken = _context58.sent;
+                this._syncToken = _context58.sent;
 
               case 4:
-                return _context58.abrupt("return", this._cursorToken);
+                return _context58.abrupt("return", this._syncToken);
 
               case 5:
               case "end":
@@ -4515,8 +4532,84 @@ var SFSyncManager = exports.SFSyncManager = function () {
         }, _callee58, this);
       }));
 
-      function getCursorToken() {
+      function getSyncToken() {
         return _ref60.apply(this, arguments);
+      }
+
+      return getSyncToken;
+    }()
+  }, {
+    key: "setCursorToken",
+    value: function () {
+      var _ref61 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee59(token) {
+        return regeneratorRuntime.wrap(function _callee59$(_context59) {
+          while (1) {
+            switch (_context59.prev = _context59.next) {
+              case 0:
+                this._cursorToken = token;
+
+                if (!token) {
+                  _context59.next = 6;
+                  break;
+                }
+
+                _context59.next = 4;
+                return this.storageManager.setItem("cursorToken", token);
+
+              case 4:
+                _context59.next = 8;
+                break;
+
+              case 6:
+                _context59.next = 8;
+                return this.storageManager.removeItem("cursorToken");
+
+              case 8:
+              case "end":
+                return _context59.stop();
+            }
+          }
+        }, _callee59, this);
+      }));
+
+      function setCursorToken(_x70) {
+        return _ref61.apply(this, arguments);
+      }
+
+      return setCursorToken;
+    }()
+  }, {
+    key: "getCursorToken",
+    value: function () {
+      var _ref62 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee60() {
+        return regeneratorRuntime.wrap(function _callee60$(_context60) {
+          while (1) {
+            switch (_context60.prev = _context60.next) {
+              case 0:
+                if (this._cursorToken) {
+                  _context60.next = 4;
+                  break;
+                }
+
+                _context60.next = 3;
+                return this.storageManager.getItem("cursorToken");
+
+              case 3:
+                this._cursorToken = _context60.sent;
+
+              case 4:
+                return _context60.abrupt("return", this._cursorToken);
+
+              case 5:
+              case "end":
+                return _context60.stop();
+            }
+          }
+        }, _callee60, this);
+      }));
+
+      function getCursorToken() {
+        return _ref62.apply(this, arguments);
       }
 
       return getCursorToken;
@@ -4598,30 +4691,30 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "sync",
     value: function () {
-      var _ref61 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee60() {
+      var _ref63 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee62() {
         var _this18 = this;
 
         var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-        return regeneratorRuntime.wrap(function _callee60$(_context60) {
+        return regeneratorRuntime.wrap(function _callee62$(_context62) {
           while (1) {
-            switch (_context60.prev = _context60.next) {
+            switch (_context62.prev = _context62.next) {
               case 0:
-                return _context60.abrupt("return", new Promise(function () {
-                  var _ref62 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee59(resolve, reject) {
+                return _context62.abrupt("return", new Promise(function () {
+                  var _ref64 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee61(resolve, reject) {
                     var allDirtyItems, info, isContinuationSync, submitLimit, subItems, params, _iteratorNormalCompletion29, _didIteratorError29, _iteratorError29, _iterator29, _step29, item;
 
-                    return regeneratorRuntime.wrap(function _callee59$(_context59) {
+                    return regeneratorRuntime.wrap(function _callee61$(_context61) {
                       while (1) {
-                        switch (_context59.prev = _context59.next) {
+                        switch (_context61.prev = _context61.next) {
                           case 0:
                             if (!_this18.syncLocked) {
-                              _context59.next = 4;
+                              _context61.next = 4;
                               break;
                             }
 
                             console.log("Sync Locked, Returning;");
                             resolve();
-                            return _context59.abrupt("return");
+                            return _context61.abrupt("return");
 
                           case 4:
 
@@ -4633,7 +4726,7 @@ var SFSyncManager = exports.SFSyncManager = function () {
                             // the sync engine is stuck in some inProgress loop.
 
                             if (!(_this18.syncStatus.syncOpInProgress && !options.force)) {
-                              _context59.next = 12;
+                              _context61.next = 12;
                               break;
                             }
 
@@ -4645,25 +4738,31 @@ var SFSyncManager = exports.SFSyncManager = function () {
                             _this18.writeItemsToLocalStorage(allDirtyItems, false);
 
                             console.log("Sync op in progress; returning.");
-                            return _context59.abrupt("return");
+                            return _context61.abrupt("return");
 
                           case 12:
-                            _context59.next = 14;
+                            _context61.next = 14;
                             return _this18.getActiveKeyInfo(SFSyncManager.KeyRequestLoadSaveAccount);
 
                           case 14:
-                            info = _context59.sent;
+                            info = _context61.sent;
 
                             if (!info.offline) {
-                              _context59.next = 19;
+                              _context61.next = 18;
                               break;
                             }
 
-                            _this18.syncOffline(allDirtyItems).then(resolve);
-                            _this18.modelManager.clearDirtyItems(allDirtyItems);
-                            return _context59.abrupt("return");
+                            try {
+                              _this18.syncOffline(allDirtyItems).then(function (response) {
+                                resolve(response);
+                              });
+                              _this18.modelManager.clearDirtyItems(allDirtyItems);
+                            } catch (e) {
+                              _this18.notifyEvent("sync-exception", e);
+                            }
+                            return _context61.abrupt("return");
 
-                          case 19:
+                          case 18:
                             isContinuationSync = _this18.syncStatus.needsMoreSync;
 
 
@@ -4710,7 +4809,8 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                             params.limit = 150;
 
-                            _context59.next = 35;
+                            _context61.prev = 32;
+                            _context61.next = 35;
                             return Promise.all(subItems.map(function (item) {
                               var itemParams = new SFItemParams(item, info.keys, info.auth_params);
                               itemParams.additionalFields = options.additionalFields;
@@ -4720,10 +4820,20 @@ var SFSyncManager = exports.SFSyncManager = function () {
                             });
 
                           case 35:
+                            _context61.next = 40;
+                            break;
+
+                          case 37:
+                            _context61.prev = 37;
+                            _context61.t0 = _context61["catch"](32);
+
+                            _this18.notifyEvent("sync-exception", _context61.t0);
+
+                          case 40:
                             _iteratorNormalCompletion29 = true;
                             _didIteratorError29 = false;
                             _iteratorError29 = undefined;
-                            _context59.prev = 38;
+                            _context61.prev = 43;
 
 
                             for (_iterator29 = subItems[Symbol.iterator](); !(_iteratorNormalCompletion29 = (_step29 = _iterator29.next()).done); _iteratorNormalCompletion29 = true) {
@@ -4734,60 +4844,60 @@ var SFSyncManager = exports.SFSyncManager = function () {
                               item.dirtyCount = 0;
                             }
 
-                            _context59.next = 46;
+                            _context61.next = 51;
                             break;
 
-                          case 42:
-                            _context59.prev = 42;
-                            _context59.t0 = _context59["catch"](38);
+                          case 47:
+                            _context61.prev = 47;
+                            _context61.t1 = _context61["catch"](43);
                             _didIteratorError29 = true;
-                            _iteratorError29 = _context59.t0;
+                            _iteratorError29 = _context61.t1;
 
-                          case 46:
-                            _context59.prev = 46;
-                            _context59.prev = 47;
+                          case 51:
+                            _context61.prev = 51;
+                            _context61.prev = 52;
 
                             if (!_iteratorNormalCompletion29 && _iterator29.return) {
                               _iterator29.return();
                             }
 
-                          case 49:
-                            _context59.prev = 49;
+                          case 54:
+                            _context61.prev = 54;
 
                             if (!_didIteratorError29) {
-                              _context59.next = 52;
+                              _context61.next = 57;
                               break;
                             }
 
                             throw _iteratorError29;
 
-                          case 52:
-                            return _context59.finish(49);
+                          case 57:
+                            return _context61.finish(54);
 
-                          case 53:
-                            return _context59.finish(46);
-
-                          case 54:
-                            _context59.next = 56;
-                            return _this18.getSyncToken();
-
-                          case 56:
-                            params.sync_token = _context59.sent;
-                            _context59.next = 59;
-                            return _this18.getCursorToken();
+                          case 58:
+                            return _context61.finish(51);
 
                           case 59:
-                            params.cursor_token = _context59.sent;
-                            _context59.prev = 60;
-                            _context59.t1 = _this18.httpManager;
-                            _context59.next = 64;
-                            return _this18.getSyncURL();
+                            _context61.next = 61;
+                            return _this18.getSyncToken();
+
+                          case 61:
+                            params.sync_token = _context61.sent;
+                            _context61.next = 64;
+                            return _this18.getCursorToken();
 
                           case 64:
-                            _context59.t2 = _context59.sent;
-                            _context59.t3 = params;
+                            params.cursor_token = _context61.sent;
+                            _context61.prev = 65;
+                            _context61.t2 = _this18.httpManager;
+                            _context61.next = 69;
+                            return _this18.getSyncURL();
 
-                            _context59.t4 = function (response) {
+                          case 69:
+                            _context61.t3 = _context61.sent;
+                            _context61.t4 = params;
+
+                            _context61.t5 = function (response) {
                               try {
                                 _this18.handleSyncSuccess(subItems, response, options).then(function () {
                                   resolve(response);
@@ -4797,46 +4907,46 @@ var SFSyncManager = exports.SFSyncManager = function () {
                               }
                             };
 
-                            _context59.t5 = function (response, statusCode) {
+                            _context61.t6 = function (response, statusCode) {
                               _this18.handleSyncError(response, statusCode, allDirtyItems).then(function (errorResponse) {
                                 resolve(errorResponse);
                               });
                             };
 
-                            _context59.t1.postAbsolute.call(_context59.t1, _context59.t2, _context59.t3, _context59.t4, _context59.t5);
+                            _context61.t2.postAbsolute.call(_context61.t2, _context61.t3, _context61.t4, _context61.t5, _context61.t6);
 
-                            _context59.next = 74;
+                            _context61.next = 79;
                             break;
 
-                          case 71:
-                            _context59.prev = 71;
-                            _context59.t6 = _context59["catch"](60);
+                          case 76:
+                            _context61.prev = 76;
+                            _context61.t7 = _context61["catch"](65);
 
-                            console.log("Sync exception caught:", _context59.t6);
+                            console.log("Sync exception caught:", _context61.t7);
 
-                          case 74:
+                          case 79:
                           case "end":
-                            return _context59.stop();
+                            return _context61.stop();
                         }
                       }
-                    }, _callee59, _this18, [[38, 42, 46, 54], [47,, 49, 53], [60, 71]]);
+                    }, _callee61, _this18, [[32, 37], [43, 47, 51, 59], [52,, 54, 58], [65, 76]]);
                   }));
 
                   return function (_x72, _x73) {
-                    return _ref62.apply(this, arguments);
+                    return _ref64.apply(this, arguments);
                   };
                 }()));
 
               case 1:
               case "end":
-                return _context60.stop();
+                return _context62.stop();
             }
           }
-        }, _callee60, this);
+        }, _callee62, this);
       }));
 
       function sync() {
-        return _ref61.apply(this, arguments);
+        return _ref63.apply(this, arguments);
       }
 
       return sync;
@@ -4844,21 +4954,21 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "handleSyncSuccess",
     value: function () {
-      var _ref63 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee61(syncedItems, response, options) {
+      var _ref65 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee63(syncedItems, response, options) {
         var _this19 = this;
 
         var itemsToClearAsDirty, _iteratorNormalCompletion30, _didIteratorError30, _iteratorError30, _iterator30, _step30, item, allSavedUUIDs, retrieved, omitFields, saved, unsaved, isInitialSync, majorDataChangeThreshold;
 
-        return regeneratorRuntime.wrap(function _callee61$(_context61) {
+        return regeneratorRuntime.wrap(function _callee63$(_context63) {
           while (1) {
-            switch (_context61.prev = _context61.next) {
+            switch (_context63.prev = _context63.next) {
               case 0:
                 // Check to make sure any subItem hasn't been marked as dirty again while a sync was ongoing
                 itemsToClearAsDirty = [];
                 _iteratorNormalCompletion30 = true;
                 _didIteratorError30 = false;
                 _iteratorError30 = undefined;
-                _context61.prev = 4;
+                _context63.prev = 4;
 
                 for (_iterator30 = syncedItems[Symbol.iterator](); !(_iteratorNormalCompletion30 = (_step30 = _iterator30.next()).done); _iteratorNormalCompletion30 = true) {
                   item = _step30.value;
@@ -4868,38 +4978,38 @@ var SFSyncManager = exports.SFSyncManager = function () {
                     itemsToClearAsDirty.push(item);
                   }
                 }
-                _context61.next = 12;
+                _context63.next = 12;
                 break;
 
               case 8:
-                _context61.prev = 8;
-                _context61.t0 = _context61["catch"](4);
+                _context63.prev = 8;
+                _context63.t0 = _context63["catch"](4);
                 _didIteratorError30 = true;
-                _iteratorError30 = _context61.t0;
+                _iteratorError30 = _context63.t0;
 
               case 12:
-                _context61.prev = 12;
-                _context61.prev = 13;
+                _context63.prev = 12;
+                _context63.prev = 13;
 
                 if (!_iteratorNormalCompletion30 && _iterator30.return) {
                   _iterator30.return();
                 }
 
               case 15:
-                _context61.prev = 15;
+                _context63.prev = 15;
 
                 if (!_didIteratorError30) {
-                  _context61.next = 18;
+                  _context63.next = 18;
                   break;
                 }
 
                 throw _iteratorError30;
 
               case 18:
-                return _context61.finish(15);
+                return _context63.finish(15);
 
               case 19:
-                return _context61.finish(12);
+                return _context63.finish(12);
 
               case 20:
                 this.modelManager.clearDirtyItems(itemsToClearAsDirty);
@@ -4921,11 +5031,11 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                 // Map retrieved items to local data
                 // Note that deleted items will not be returned
-                _context61.next = 26;
+                _context63.next = 26;
                 return this.handleItemsResponse(response.retrieved_items, null, SFModelManager.MappingSourceRemoteRetrieved, SFSyncManager.KeyRequestLoadSaveAccount);
 
               case 26:
-                retrieved = _context61.sent;
+                retrieved = _context63.sent;
 
 
                 // Append items to master list of retrieved items for this ongoing sync operation
@@ -4939,11 +5049,11 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                 // Map saved items to local data
 
-                _context61.next = 32;
+                _context63.next = 32;
                 return this.handleItemsResponse(response.saved_items, omitFields, SFModelManager.MappingSourceRemoteSaved, SFSyncManager.KeyRequestLoadSaveAccount);
 
               case 32:
-                saved = _context61.sent;
+                saved = _context63.sent;
 
 
                 // Append items to master list of saved items for this ongoing sync operation
@@ -4955,7 +5065,7 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                 this.handleUnsavedItemsResponse(unsaved);
 
-                _context61.next = 38;
+                _context63.next = 38;
                 return this.writeItemsToLocalStorage(saved, false);
 
               case 38:
@@ -4965,12 +5075,12 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                 this.syncStatusDidChange();
 
-                _context61.next = 43;
+                _context63.next = 43;
                 return this.getSyncToken();
 
               case 43:
-                _context61.t1 = _context61.sent;
-                isInitialSync = _context61.t1 == null;
+                _context63.t1 = _context63.sent;
+                isInitialSync = _context63.t1 == null;
 
 
                 // set the sync token at the end, so that if any errors happen above, you can resync
@@ -4979,26 +5089,26 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                 this.stopCheckingIfSyncIsTakingTooLong();
 
-                _context61.next = 50;
+                _context63.next = 50;
                 return this.getCursorToken();
 
               case 50:
-                _context61.t2 = _context61.sent;
+                _context63.t2 = _context63.sent;
 
-                if (_context61.t2) {
-                  _context61.next = 53;
+                if (_context63.t2) {
+                  _context63.next = 53;
                   break;
                 }
 
-                _context61.t2 = this.syncStatus.needsMoreSync;
+                _context63.t2 = this.syncStatus.needsMoreSync;
 
               case 53:
-                if (!_context61.t2) {
-                  _context61.next = 57;
+                if (!_context63.t2) {
+                  _context63.next = 57;
                   break;
                 }
 
-                return _context61.abrupt("return", new Promise(function (resolve, reject) {
+                return _context63.abrupt("return", new Promise(function (resolve, reject) {
                   setTimeout(function () {
                     this.sync(options).then(resolve);
                   }.bind(_this19), 10); // wait 10ms to allow UI to update
@@ -5006,19 +5116,19 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
               case 57:
                 if (!this.repeatOnCompletion) {
-                  _context61.next = 62;
+                  _context63.next = 62;
                   break;
                 }
 
                 this.repeatOnCompletion = false;
-                return _context61.abrupt("return", new Promise(function (resolve, reject) {
+                return _context63.abrupt("return", new Promise(function (resolve, reject) {
                   setTimeout(function () {
                     this.sync(options).then(resolve);
                   }.bind(_this19), 10); // wait 10ms to allow UI to update
                 }));
 
               case 62:
-                _context61.next = 64;
+                _context63.next = 64;
                 return this.writeItemsToLocalStorage(this.allRetreivedItems, false);
 
               case 64:
@@ -5039,18 +5149,18 @@ var SFSyncManager = exports.SFSyncManager = function () {
                 this.allRetreivedItems = [];
                 this.allSavedItems = [];
 
-                return _context61.abrupt("return", response);
+                return _context63.abrupt("return", response);
 
               case 73:
               case "end":
-                return _context61.stop();
+                return _context63.stop();
             }
           }
-        }, _callee61, this, [[4, 8, 12, 20], [13,, 15, 19]]);
+        }, _callee63, this, [[4, 8, 12, 20], [13,, 15, 19]]);
       }));
 
       function handleSyncSuccess(_x74, _x75, _x76) {
-        return _ref63.apply(this, arguments);
+        return _ref65.apply(this, arguments);
       }
 
       return handleSyncSuccess;
@@ -5058,10 +5168,10 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "handleSyncError",
     value: function () {
-      var _ref64 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee62(response, statusCode, allDirtyItems) {
-        return regeneratorRuntime.wrap(function _callee62$(_context62) {
+      var _ref66 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64(response, statusCode, allDirtyItems) {
+        return regeneratorRuntime.wrap(function _callee64$(_context64) {
           while (1) {
-            switch (_context62.prev = _context62.next) {
+            switch (_context64.prev = _context64.next) {
               case 0:
                 console.log("Sync error", response);
                 if (statusCode == 401) {
@@ -5087,18 +5197,18 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                 this.callQueuedCallbacks({ error: "Sync error" });
 
-                return _context62.abrupt("return", response);
+                return _context64.abrupt("return", response);
 
               case 13:
               case "end":
-                return _context62.stop();
+                return _context64.stop();
             }
           }
-        }, _callee62, this);
+        }, _callee64, this);
       }));
 
       function handleSyncError(_x77, _x78, _x79) {
-        return _ref64.apply(this, arguments);
+        return _ref66.apply(this, arguments);
       }
 
       return handleSyncError;
@@ -5106,18 +5216,18 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "handleItemsResponse",
     value: function () {
-      var _ref65 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee63(responseItems, omitFields, source, keyRequest) {
+      var _ref67 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65(responseItems, omitFields, source, keyRequest) {
         var keys, items, itemsWithErrorStatusChange;
-        return regeneratorRuntime.wrap(function _callee63$(_context63) {
+        return regeneratorRuntime.wrap(function _callee65$(_context65) {
           while (1) {
-            switch (_context63.prev = _context63.next) {
+            switch (_context65.prev = _context65.next) {
               case 0:
-                _context63.next = 2;
+                _context65.next = 2;
                 return this.getActiveKeyInfo(keyRequest);
 
               case 2:
-                keys = _context63.sent.keys;
-                _context63.next = 5;
+                keys = _context65.sent.keys;
+                _context65.next = 5;
                 return SFJS.itemTransformer.decryptMultipleItems(responseItems, keys);
 
               case 5:
@@ -5138,18 +5248,18 @@ var SFSyncManager = exports.SFSyncManager = function () {
                   this.writeItemsToLocalStorage(itemsWithErrorStatusChange, false);
                 }
 
-                return _context63.abrupt("return", items);
+                return _context65.abrupt("return", items);
 
               case 9:
               case "end":
-                return _context63.stop();
+                return _context65.stop();
             }
           }
-        }, _callee63, this);
+        }, _callee65, this);
       }));
 
       function handleItemsResponse(_x80, _x81, _x82, _x83) {
-        return _ref65.apply(this, arguments);
+        return _ref67.apply(this, arguments);
       }
 
       return handleItemsResponse;
@@ -5157,33 +5267,33 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "refreshErroredItems",
     value: function () {
-      var _ref66 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64() {
+      var _ref68 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66() {
         var erroredItems;
-        return regeneratorRuntime.wrap(function _callee64$(_context64) {
+        return regeneratorRuntime.wrap(function _callee66$(_context66) {
           while (1) {
-            switch (_context64.prev = _context64.next) {
+            switch (_context66.prev = _context66.next) {
               case 0:
                 erroredItems = this.modelManager.allItems.filter(function (item) {
                   return item.errorDecrypting == true;
                 });
 
                 if (!(erroredItems.length > 0)) {
-                  _context64.next = 3;
+                  _context66.next = 3;
                   break;
                 }
 
-                return _context64.abrupt("return", this.handleItemsResponse(erroredItems, null, SFModelManager.MappingSourceLocalRetrieved, SFSyncManager.KeyRequestLoadSaveAccount));
+                return _context66.abrupt("return", this.handleItemsResponse(erroredItems, null, SFModelManager.MappingSourceLocalRetrieved, SFSyncManager.KeyRequestLoadSaveAccount));
 
               case 3:
               case "end":
-                return _context64.stop();
+                return _context66.stop();
             }
           }
-        }, _callee64, this);
+        }, _callee66, this);
       }));
 
       function refreshErroredItems() {
-        return _ref66.apply(this, arguments);
+        return _ref68.apply(this, arguments);
       }
 
       return refreshErroredItems;
@@ -5191,19 +5301,19 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "handleUnsavedItemsResponse",
     value: function () {
-      var _ref67 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65(unsaved) {
+      var _ref69 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67(unsaved) {
         var _iteratorNormalCompletion31, _didIteratorError31, _iteratorError31, _iterator31, _step31, mapping, itemResponse, item, error, dup;
 
-        return regeneratorRuntime.wrap(function _callee65$(_context65) {
+        return regeneratorRuntime.wrap(function _callee67$(_context67) {
           while (1) {
-            switch (_context65.prev = _context65.next) {
+            switch (_context67.prev = _context67.next) {
               case 0:
                 if (!(unsaved.length == 0)) {
-                  _context65.next = 2;
+                  _context67.next = 2;
                   break;
                 }
 
-                return _context65.abrupt("return");
+                return _context67.abrupt("return");
 
               case 2:
 
@@ -5212,26 +5322,26 @@ var SFSyncManager = exports.SFSyncManager = function () {
                 _iteratorNormalCompletion31 = true;
                 _didIteratorError31 = false;
                 _iteratorError31 = undefined;
-                _context65.prev = 6;
+                _context67.prev = 6;
                 _iterator31 = unsaved[Symbol.iterator]();
 
               case 8:
                 if (_iteratorNormalCompletion31 = (_step31 = _iterator31.next()).done) {
-                  _context65.next = 31;
+                  _context67.next = 31;
                   break;
                 }
 
                 mapping = _step31.value;
                 itemResponse = mapping.item;
-                _context65.t0 = SFJS.itemTransformer;
-                _context65.t1 = [itemResponse];
-                _context65.next = 15;
+                _context67.t0 = SFJS.itemTransformer;
+                _context67.t1 = [itemResponse];
+                _context67.next = 15;
                 return this.getActiveKeyInfo(SFSyncManager.KeyRequestLoadSaveAccount);
 
               case 15:
-                _context65.t2 = _context65.sent.keys;
-                _context65.next = 18;
-                return _context65.t0.decryptMultipleItems.call(_context65.t0, _context65.t1, _context65.t2);
+                _context67.t2 = _context67.sent.keys;
+                _context67.next = 18;
+                return _context67.t0.decryptMultipleItems.call(_context67.t0, _context67.t1, _context67.t2);
 
               case 18:
                 item = this.modelManager.findItem(itemResponse.uuid);
@@ -5239,25 +5349,25 @@ var SFSyncManager = exports.SFSyncManager = function () {
                 // Could be deleted
 
                 if (item) {
-                  _context65.next = 21;
+                  _context67.next = 21;
                   break;
                 }
 
-                return _context65.abrupt("continue", 28);
+                return _context67.abrupt("continue", 28);
 
               case 21:
                 error = mapping.error;
 
                 if (!(error.tag === "uuid_conflict")) {
-                  _context65.next = 27;
+                  _context67.next = 27;
                   break;
                 }
 
-                _context65.next = 25;
+                _context67.next = 25;
                 return this.modelManager.alternateUUIDForItem(item);
 
               case 25:
-                _context65.next = 28;
+                _context67.next = 28;
                 break;
 
               case 27:
@@ -5275,42 +5385,42 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
               case 28:
                 _iteratorNormalCompletion31 = true;
-                _context65.next = 8;
+                _context67.next = 8;
                 break;
 
               case 31:
-                _context65.next = 37;
+                _context67.next = 37;
                 break;
 
               case 33:
-                _context65.prev = 33;
-                _context65.t3 = _context65["catch"](6);
+                _context67.prev = 33;
+                _context67.t3 = _context67["catch"](6);
                 _didIteratorError31 = true;
-                _iteratorError31 = _context65.t3;
+                _iteratorError31 = _context67.t3;
 
               case 37:
-                _context65.prev = 37;
-                _context65.prev = 38;
+                _context67.prev = 37;
+                _context67.prev = 38;
 
                 if (!_iteratorNormalCompletion31 && _iterator31.return) {
                   _iterator31.return();
                 }
 
               case 40:
-                _context65.prev = 40;
+                _context67.prev = 40;
 
                 if (!_didIteratorError31) {
-                  _context65.next = 43;
+                  _context67.next = 43;
                   break;
                 }
 
                 throw _iteratorError31;
 
               case 43:
-                return _context65.finish(40);
+                return _context67.finish(40);
 
               case 44:
-                return _context65.finish(37);
+                return _context67.finish(37);
 
               case 45:
 
@@ -5324,14 +5434,14 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
               case 46:
               case "end":
-                return _context65.stop();
+                return _context67.stop();
             }
           }
-        }, _callee65, this, [[6, 33, 37, 45], [38,, 40, 44]]);
+        }, _callee67, this, [[6, 33, 37, 45], [38,, 40, 44]]);
       }));
 
       function handleUnsavedItemsResponse(_x84) {
-        return _ref67.apply(this, arguments);
+        return _ref69.apply(this, arguments);
       }
 
       return handleUnsavedItemsResponse;
@@ -5339,10 +5449,10 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "handleSignout",
     value: function () {
-      var _ref68 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66() {
-        return regeneratorRuntime.wrap(function _callee66$(_context66) {
+      var _ref70 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee68() {
+        return regeneratorRuntime.wrap(function _callee68$(_context68) {
           while (1) {
-            switch (_context66.prev = _context66.next) {
+            switch (_context68.prev = _context68.next) {
               case 0:
                 this._syncToken = null;
                 this._cursorToken = null;
@@ -5351,14 +5461,14 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
               case 4:
               case "end":
-                return _context66.stop();
+                return _context68.stop();
             }
           }
-        }, _callee66, this);
+        }, _callee68, this);
       }));
 
       function handleSignout() {
-        return _ref68.apply(this, arguments);
+        return _ref70.apply(this, arguments);
       }
 
       return handleSignout;
@@ -5366,25 +5476,25 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "clearSyncToken",
     value: function () {
-      var _ref69 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67() {
-        return regeneratorRuntime.wrap(function _callee67$(_context67) {
+      var _ref71 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69() {
+        return regeneratorRuntime.wrap(function _callee69$(_context69) {
           while (1) {
-            switch (_context67.prev = _context67.next) {
+            switch (_context69.prev = _context69.next) {
               case 0:
                 this._syncToken = null;
                 this._cursorToken = null;
-                return _context67.abrupt("return", this.storageManager.removeItem("syncToken"));
+                return _context69.abrupt("return", this.storageManager.removeItem("syncToken"));
 
               case 3:
               case "end":
-                return _context67.stop();
+                return _context69.stop();
             }
           }
-        }, _callee67, this);
+        }, _callee69, this);
       }));
 
       function clearSyncToken() {
-        return _ref69.apply(this, arguments);
+        return _ref71.apply(this, arguments);
       }
 
       return clearSyncToken;
@@ -5926,89 +6036,42 @@ var SFItemParams = exports.SFItemParams = function () {
     this.auth_params = auth_params;
 
     if (this.keys && !this.auth_params) {
-      console.error("SFItemParams.auth_params must be supplied if supplying keys.");
+      throw "SFItemParams.auth_params must be supplied if supplying keys.";
     }
-    // this.version = version || SFJS.version();
+
+    if (this.auth_params && !this.auth_params.version) {
+      throw "SFItemParams.auth_params is missing version";
+    }
   }
 
   _createClass(SFItemParams, [{
     key: "paramsForExportFile",
     value: function () {
-      var _ref70 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee68(includeDeleted) {
+      var _ref72 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee70(includeDeleted) {
         var result;
-        return regeneratorRuntime.wrap(function _callee68$(_context68) {
+        return regeneratorRuntime.wrap(function _callee70$(_context70) {
           while (1) {
-            switch (_context68.prev = _context68.next) {
+            switch (_context70.prev = _context70.next) {
               case 0:
                 this.additionalFields = ["updated_at"];
                 this.forExportFile = true;
 
                 if (!includeDeleted) {
-                  _context68.next = 6;
+                  _context70.next = 6;
                   break;
                 }
 
-                return _context68.abrupt("return", this.__params());
+                return _context70.abrupt("return", this.__params());
 
               case 6:
-                _context68.next = 8;
+                _context70.next = 8;
                 return this.__params();
 
               case 8:
-                result = _context68.sent;
-                return _context68.abrupt("return", _.omit(result, ["deleted"]));
+                result = _context70.sent;
+                return _context70.abrupt("return", _.omit(result, ["deleted"]));
 
               case 10:
-              case "end":
-                return _context68.stop();
-            }
-          }
-        }, _callee68, this);
-      }));
-
-      function paramsForExportFile(_x86) {
-        return _ref70.apply(this, arguments);
-      }
-
-      return paramsForExportFile;
-    }()
-  }, {
-    key: "paramsForExtension",
-    value: function () {
-      var _ref71 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69() {
-        return regeneratorRuntime.wrap(function _callee69$(_context69) {
-          while (1) {
-            switch (_context69.prev = _context69.next) {
-              case 0:
-                return _context69.abrupt("return", this.paramsForExportFile());
-
-              case 1:
-              case "end":
-                return _context69.stop();
-            }
-          }
-        }, _callee69, this);
-      }));
-
-      function paramsForExtension() {
-        return _ref71.apply(this, arguments);
-      }
-
-      return paramsForExtension;
-    }()
-  }, {
-    key: "paramsForLocalStorage",
-    value: function () {
-      var _ref72 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee70() {
-        return regeneratorRuntime.wrap(function _callee70$(_context70) {
-          while (1) {
-            switch (_context70.prev = _context70.next) {
-              case 0:
-                this.additionalFields = ["updated_at", "dirty", "errorDecrypting"];
-                this.forExportFile = true;
-                return _context70.abrupt("return", this.__params());
-
-              case 3:
               case "end":
                 return _context70.stop();
             }
@@ -6016,21 +6079,21 @@ var SFItemParams = exports.SFItemParams = function () {
         }, _callee70, this);
       }));
 
-      function paramsForLocalStorage() {
+      function paramsForExportFile(_x86) {
         return _ref72.apply(this, arguments);
       }
 
-      return paramsForLocalStorage;
+      return paramsForExportFile;
     }()
   }, {
-    key: "paramsForSync",
+    key: "paramsForExtension",
     value: function () {
       var _ref73 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee71() {
         return regeneratorRuntime.wrap(function _callee71$(_context71) {
           while (1) {
             switch (_context71.prev = _context71.next) {
               case 0:
-                return _context71.abrupt("return", this.__params());
+                return _context71.abrupt("return", this.paramsForExportFile());
 
               case 1:
               case "end":
@@ -6040,8 +6103,58 @@ var SFItemParams = exports.SFItemParams = function () {
         }, _callee71, this);
       }));
 
-      function paramsForSync() {
+      function paramsForExtension() {
         return _ref73.apply(this, arguments);
+      }
+
+      return paramsForExtension;
+    }()
+  }, {
+    key: "paramsForLocalStorage",
+    value: function () {
+      var _ref74 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee72() {
+        return regeneratorRuntime.wrap(function _callee72$(_context72) {
+          while (1) {
+            switch (_context72.prev = _context72.next) {
+              case 0:
+                this.additionalFields = ["updated_at", "dirty", "errorDecrypting"];
+                this.forExportFile = true;
+                return _context72.abrupt("return", this.__params());
+
+              case 3:
+              case "end":
+                return _context72.stop();
+            }
+          }
+        }, _callee72, this);
+      }));
+
+      function paramsForLocalStorage() {
+        return _ref74.apply(this, arguments);
+      }
+
+      return paramsForLocalStorage;
+    }()
+  }, {
+    key: "paramsForSync",
+    value: function () {
+      var _ref75 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee73() {
+        return regeneratorRuntime.wrap(function _callee73$(_context73) {
+          while (1) {
+            switch (_context73.prev = _context73.next) {
+              case 0:
+                return _context73.abrupt("return", this.__params());
+
+              case 1:
+              case "end":
+                return _context73.stop();
+            }
+          }
+        }, _callee73, this);
+      }));
+
+      function paramsForSync() {
+        return _ref75.apply(this, arguments);
       }
 
       return paramsForSync;
@@ -6049,16 +6162,16 @@ var SFItemParams = exports.SFItemParams = function () {
   }, {
     key: "__params",
     value: function () {
-      var _ref74 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee72() {
+      var _ref76 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee74() {
         var params, doNotEncrypt, encryptedParams;
-        return regeneratorRuntime.wrap(function _callee72$(_context72) {
+        return regeneratorRuntime.wrap(function _callee74$(_context74) {
           while (1) {
-            switch (_context72.prev = _context72.next) {
+            switch (_context74.prev = _context74.next) {
               case 0:
                 params = { uuid: this.item.uuid, content_type: this.item.content_type, deleted: this.item.deleted, created_at: this.item.created_at };
 
                 if (this.item.errorDecrypting) {
-                  _context72.next = 23;
+                  _context74.next = 23;
                   break;
                 }
 
@@ -6066,44 +6179,44 @@ var SFItemParams = exports.SFItemParams = function () {
                 doNotEncrypt = this.item.doNotEncrypt() && !this.forExportFile;
 
                 if (!(this.keys && !doNotEncrypt)) {
-                  _context72.next = 11;
+                  _context74.next = 11;
                   break;
                 }
 
-                _context72.next = 6;
+                _context74.next = 6;
                 return SFJS.itemTransformer.encryptItem(this.item, this.keys, this.auth_params);
 
               case 6:
-                encryptedParams = _context72.sent;
+                encryptedParams = _context74.sent;
 
                 _.merge(params, encryptedParams);
 
                 if (this.auth_params.version !== "001") {
                   params.auth_hash = null;
                 }
-                _context72.next = 21;
+                _context74.next = 21;
                 break;
 
               case 11:
                 if (!this.forExportFile) {
-                  _context72.next = 15;
+                  _context74.next = 15;
                   break;
                 }
 
-                _context72.t0 = this.item.createContentJSONFromProperties();
-                _context72.next = 19;
+                _context74.t0 = this.item.createContentJSONFromProperties();
+                _context74.next = 19;
                 break;
 
               case 15:
-                _context72.next = 17;
+                _context74.next = 17;
                 return SFJS.crypto.base64(JSON.stringify(this.item.createContentJSONFromProperties()));
 
               case 17:
-                _context72.t1 = _context72.sent;
-                _context72.t0 = "000" + _context72.t1;
+                _context74.t1 = _context74.sent;
+                _context74.t0 = "000" + _context74.t1;
 
               case 19:
-                params.content = _context72.t0;
+                params.content = _context74.t0;
 
                 if (!this.forExportFile) {
                   params.enc_item_key = null;
@@ -6111,7 +6224,7 @@ var SFItemParams = exports.SFItemParams = function () {
                 }
 
               case 21:
-                _context72.next = 26;
+                _context74.next = 26;
                 break;
 
               case 23:
@@ -6126,18 +6239,18 @@ var SFItemParams = exports.SFItemParams = function () {
                   _.merge(params, _.pick(this.item, this.additionalFields));
                 }
 
-                return _context72.abrupt("return", params);
+                return _context74.abrupt("return", params);
 
               case 28:
               case "end":
-                return _context72.stop();
+                return _context74.stop();
             }
           }
-        }, _callee72, this);
+        }, _callee74, this);
       }));
 
       function __params() {
-        return _ref74.apply(this, arguments);
+        return _ref76.apply(this, arguments);
       }
 
       return __params;
@@ -6636,108 +6749,14 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
   }, {
     key: "generateUUID",
     value: function () {
-      var _ref75 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee73() {
-        return regeneratorRuntime.wrap(function _callee73$(_context73) {
-          while (1) {
-            switch (_context73.prev = _context73.next) {
-              case 0:
-                return _context73.abrupt("return", this.generateUUIDSync());
-
-              case 1:
-              case "end":
-                return _context73.stop();
-            }
-          }
-        }, _callee73, this);
-      }));
-
-      function generateUUID() {
-        return _ref75.apply(this, arguments);
-      }
-
-      return generateUUID;
-    }()
-  }, {
-    key: "decryptText",
-    value: function () {
-      var _ref76 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee74() {
-        var _ref77 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-            ciphertextToAuth = _ref77.ciphertextToAuth,
-            contentCiphertext = _ref77.contentCiphertext,
-            encryptionKey = _ref77.encryptionKey,
-            iv = _ref77.iv,
-            authHash = _ref77.authHash,
-            authKey = _ref77.authKey;
-
-        var requiresAuth = arguments[1];
-        var localAuthHash, keyData, ivData, decrypted;
-        return regeneratorRuntime.wrap(function _callee74$(_context74) {
-          while (1) {
-            switch (_context74.prev = _context74.next) {
-              case 0:
-                if (!(requiresAuth && !authHash)) {
-                  _context74.next = 3;
-                  break;
-                }
-
-                console.error("Auth hash is required.");
-                return _context74.abrupt("return");
-
-              case 3:
-                if (!authHash) {
-                  _context74.next = 10;
-                  break;
-                }
-
-                _context74.next = 6;
-                return this.hmac256(ciphertextToAuth, authKey);
-
-              case 6:
-                localAuthHash = _context74.sent;
-
-                if (!(authHash !== localAuthHash)) {
-                  _context74.next = 10;
-                  break;
-                }
-
-                console.error("Auth hash does not match, returning null.");
-                return _context74.abrupt("return", null);
-
-              case 10:
-                keyData = CryptoJS.enc.Hex.parse(encryptionKey);
-                ivData = CryptoJS.enc.Hex.parse(iv || "");
-                decrypted = CryptoJS.AES.decrypt(contentCiphertext, keyData, { iv: ivData, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
-                return _context74.abrupt("return", decrypted.toString(CryptoJS.enc.Utf8));
-
-              case 14:
-              case "end":
-                return _context74.stop();
-            }
-          }
-        }, _callee74, this);
-      }));
-
-      function decryptText() {
-        return _ref76.apply(this, arguments);
-      }
-
-      return decryptText;
-    }()
-  }, {
-    key: "encryptText",
-    value: function () {
-      var _ref78 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee75(text, key, iv) {
-        var keyData, ivData, encrypted;
+      var _ref77 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee75() {
         return regeneratorRuntime.wrap(function _callee75$(_context75) {
           while (1) {
             switch (_context75.prev = _context75.next) {
               case 0:
-                keyData = CryptoJS.enc.Hex.parse(key);
-                ivData = CryptoJS.enc.Hex.parse(iv || "");
-                encrypted = CryptoJS.AES.encrypt(text, keyData, { iv: ivData, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
-                return _context75.abrupt("return", encrypted.toString());
+                return _context75.abrupt("return", this.generateUUIDSync());
 
-              case 4:
+              case 1:
               case "end":
                 return _context75.stop();
             }
@@ -6745,23 +6764,65 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee75, this);
       }));
 
-      function encryptText(_x89, _x90, _x91) {
-        return _ref78.apply(this, arguments);
+      function generateUUID() {
+        return _ref77.apply(this, arguments);
       }
 
-      return encryptText;
+      return generateUUID;
     }()
   }, {
-    key: "generateRandomKey",
+    key: "decryptText",
     value: function () {
-      var _ref79 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee76(bits) {
+      var _ref78 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee76() {
+        var _ref79 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+            ciphertextToAuth = _ref79.ciphertextToAuth,
+            contentCiphertext = _ref79.contentCiphertext,
+            encryptionKey = _ref79.encryptionKey,
+            iv = _ref79.iv,
+            authHash = _ref79.authHash,
+            authKey = _ref79.authKey;
+
+        var requiresAuth = arguments[1];
+        var localAuthHash, keyData, ivData, decrypted;
         return regeneratorRuntime.wrap(function _callee76$(_context76) {
           while (1) {
             switch (_context76.prev = _context76.next) {
               case 0:
-                return _context76.abrupt("return", CryptoJS.lib.WordArray.random(bits / 8).toString());
+                if (!(requiresAuth && !authHash)) {
+                  _context76.next = 3;
+                  break;
+                }
 
-              case 1:
+                console.error("Auth hash is required.");
+                return _context76.abrupt("return");
+
+              case 3:
+                if (!authHash) {
+                  _context76.next = 10;
+                  break;
+                }
+
+                _context76.next = 6;
+                return this.hmac256(ciphertextToAuth, authKey);
+
+              case 6:
+                localAuthHash = _context76.sent;
+
+                if (!(authHash !== localAuthHash)) {
+                  _context76.next = 10;
+                  break;
+                }
+
+                console.error("Auth hash does not match, returning null.");
+                return _context76.abrupt("return", null);
+
+              case 10:
+                keyData = CryptoJS.enc.Hex.parse(encryptionKey);
+                ivData = CryptoJS.enc.Hex.parse(iv || "");
+                decrypted = CryptoJS.AES.decrypt(contentCiphertext, keyData, { iv: ivData, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+                return _context76.abrupt("return", decrypted.toString(CryptoJS.enc.Utf8));
+
+              case 14:
               case "end":
                 return _context76.stop();
             }
@@ -6769,37 +6830,27 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee76, this);
       }));
 
-      function generateRandomKey(_x92) {
-        return _ref79.apply(this, arguments);
+      function decryptText() {
+        return _ref78.apply(this, arguments);
       }
 
-      return generateRandomKey;
+      return decryptText;
     }()
   }, {
-    key: "generateItemEncryptionKey",
+    key: "encryptText",
     value: function () {
-      var _ref80 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee77() {
-        var length, cost, salt, passphrase;
+      var _ref80 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee77(text, key, iv) {
+        var keyData, ivData, encrypted;
         return regeneratorRuntime.wrap(function _callee77$(_context77) {
           while (1) {
             switch (_context77.prev = _context77.next) {
               case 0:
-                // Generates a key that will be split in half, each being 256 bits. So total length will need to be 512.
-                length = 512;
-                cost = 1;
-                _context77.next = 4;
-                return this.generateRandomKey(length);
+                keyData = CryptoJS.enc.Hex.parse(key);
+                ivData = CryptoJS.enc.Hex.parse(iv || "");
+                encrypted = CryptoJS.AES.encrypt(text, keyData, { iv: ivData, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+                return _context77.abrupt("return", encrypted.toString());
 
               case 4:
-                salt = _context77.sent;
-                _context77.next = 7;
-                return this.generateRandomKey(length);
-
-              case 7:
-                passphrase = _context77.sent;
-                return _context77.abrupt("return", this.pbkdf2(passphrase, salt, cost, length));
-
-              case 9:
               case "end":
                 return _context77.stop();
             }
@@ -6807,21 +6858,21 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee77, this);
       }));
 
-      function generateItemEncryptionKey() {
+      function encryptText(_x89, _x90, _x91) {
         return _ref80.apply(this, arguments);
       }
 
-      return generateItemEncryptionKey;
+      return encryptText;
     }()
   }, {
-    key: "firstHalfOfKey",
+    key: "generateRandomKey",
     value: function () {
-      var _ref81 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee78(key) {
+      var _ref81 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee78(bits) {
         return regeneratorRuntime.wrap(function _callee78$(_context78) {
           while (1) {
             switch (_context78.prev = _context78.next) {
               case 0:
-                return _context78.abrupt("return", key.substring(0, key.length / 2));
+                return _context78.abrupt("return", CryptoJS.lib.WordArray.random(bits / 8).toString());
 
               case 1:
               case "end":
@@ -6831,23 +6882,37 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee78, this);
       }));
 
-      function firstHalfOfKey(_x93) {
+      function generateRandomKey(_x92) {
         return _ref81.apply(this, arguments);
       }
 
-      return firstHalfOfKey;
+      return generateRandomKey;
     }()
   }, {
-    key: "secondHalfOfKey",
+    key: "generateItemEncryptionKey",
     value: function () {
-      var _ref82 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee79(key) {
+      var _ref82 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee79() {
+        var length, cost, salt, passphrase;
         return regeneratorRuntime.wrap(function _callee79$(_context79) {
           while (1) {
             switch (_context79.prev = _context79.next) {
               case 0:
-                return _context79.abrupt("return", key.substring(key.length / 2, key.length));
+                // Generates a key that will be split in half, each being 256 bits. So total length will need to be 512.
+                length = 512;
+                cost = 1;
+                _context79.next = 4;
+                return this.generateRandomKey(length);
 
-              case 1:
+              case 4:
+                salt = _context79.sent;
+                _context79.next = 7;
+                return this.generateRandomKey(length);
+
+              case 7:
+                passphrase = _context79.sent;
+                return _context79.abrupt("return", this.pbkdf2(passphrase, salt, cost, length));
+
+              case 9:
               case "end":
                 return _context79.stop();
             }
@@ -6855,21 +6920,21 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee79, this);
       }));
 
-      function secondHalfOfKey(_x94) {
+      function generateItemEncryptionKey() {
         return _ref82.apply(this, arguments);
       }
 
-      return secondHalfOfKey;
+      return generateItemEncryptionKey;
     }()
   }, {
-    key: "base64",
+    key: "firstHalfOfKey",
     value: function () {
-      var _ref83 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee80(text) {
+      var _ref83 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee80(key) {
         return regeneratorRuntime.wrap(function _callee80$(_context80) {
           while (1) {
             switch (_context80.prev = _context80.next) {
               case 0:
-                return _context80.abrupt("return", window.btoa(text));
+                return _context80.abrupt("return", key.substring(0, key.length / 2));
 
               case 1:
               case "end":
@@ -6879,21 +6944,21 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee80, this);
       }));
 
-      function base64(_x95) {
+      function firstHalfOfKey(_x93) {
         return _ref83.apply(this, arguments);
       }
 
-      return base64;
+      return firstHalfOfKey;
     }()
   }, {
-    key: "base64Decode",
+    key: "secondHalfOfKey",
     value: function () {
-      var _ref84 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee81(base64String) {
+      var _ref84 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee81(key) {
         return regeneratorRuntime.wrap(function _callee81$(_context81) {
           while (1) {
             switch (_context81.prev = _context81.next) {
               case 0:
-                return _context81.abrupt("return", window.atob(base64String));
+                return _context81.abrupt("return", key.substring(key.length / 2, key.length));
 
               case 1:
               case "end":
@@ -6903,21 +6968,21 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee81, this);
       }));
 
-      function base64Decode(_x96) {
+      function secondHalfOfKey(_x94) {
         return _ref84.apply(this, arguments);
       }
 
-      return base64Decode;
+      return secondHalfOfKey;
     }()
   }, {
-    key: "sha256",
+    key: "base64",
     value: function () {
       var _ref85 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee82(text) {
         return regeneratorRuntime.wrap(function _callee82$(_context82) {
           while (1) {
             switch (_context82.prev = _context82.next) {
               case 0:
-                return _context82.abrupt("return", CryptoJS.SHA256(text).toString());
+                return _context82.abrupt("return", window.btoa(text));
 
               case 1:
               case "end":
@@ -6927,27 +6992,23 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee82, this);
       }));
 
-      function sha256(_x97) {
+      function base64(_x95) {
         return _ref85.apply(this, arguments);
       }
 
-      return sha256;
+      return base64;
     }()
   }, {
-    key: "hmac256",
+    key: "base64Decode",
     value: function () {
-      var _ref86 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee83(message, key) {
-        var keyData, messageData, result;
+      var _ref86 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee83(base64String) {
         return regeneratorRuntime.wrap(function _callee83$(_context83) {
           while (1) {
             switch (_context83.prev = _context83.next) {
               case 0:
-                keyData = CryptoJS.enc.Hex.parse(key);
-                messageData = CryptoJS.enc.Utf8.parse(message);
-                result = CryptoJS.HmacSHA256(messageData, keyData).toString();
-                return _context83.abrupt("return", result);
+                return _context83.abrupt("return", window.atob(base64String));
 
-              case 4:
+              case 1:
               case "end":
                 return _context83.stop();
             }
@@ -6955,29 +7016,23 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee83, this);
       }));
 
-      function hmac256(_x98, _x99) {
+      function base64Decode(_x96) {
         return _ref86.apply(this, arguments);
       }
 
-      return hmac256;
+      return base64Decode;
     }()
   }, {
-    key: "generateSalt",
+    key: "sha256",
     value: function () {
-      var _ref87 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee84(identifier, version, cost, nonce) {
-        var result;
+      var _ref87 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee84(text) {
         return regeneratorRuntime.wrap(function _callee84$(_context84) {
           while (1) {
             switch (_context84.prev = _context84.next) {
               case 0:
-                _context84.next = 2;
-                return this.sha256([identifier, "SF", version, cost, nonce].join(":"));
+                return _context84.abrupt("return", CryptoJS.SHA256(text).toString());
 
-              case 2:
-                result = _context84.sent;
-                return _context84.abrupt("return", result);
-
-              case 4:
+              case 1:
               case "end":
                 return _context84.stop();
             }
@@ -6985,8 +7040,66 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee84, this);
       }));
 
-      function generateSalt(_x100, _x101, _x102, _x103) {
+      function sha256(_x97) {
         return _ref87.apply(this, arguments);
+      }
+
+      return sha256;
+    }()
+  }, {
+    key: "hmac256",
+    value: function () {
+      var _ref88 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee85(message, key) {
+        var keyData, messageData, result;
+        return regeneratorRuntime.wrap(function _callee85$(_context85) {
+          while (1) {
+            switch (_context85.prev = _context85.next) {
+              case 0:
+                keyData = CryptoJS.enc.Hex.parse(key);
+                messageData = CryptoJS.enc.Utf8.parse(message);
+                result = CryptoJS.HmacSHA256(messageData, keyData).toString();
+                return _context85.abrupt("return", result);
+
+              case 4:
+              case "end":
+                return _context85.stop();
+            }
+          }
+        }, _callee85, this);
+      }));
+
+      function hmac256(_x98, _x99) {
+        return _ref88.apply(this, arguments);
+      }
+
+      return hmac256;
+    }()
+  }, {
+    key: "generateSalt",
+    value: function () {
+      var _ref89 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee86(identifier, version, cost, nonce) {
+        var result;
+        return regeneratorRuntime.wrap(function _callee86$(_context86) {
+          while (1) {
+            switch (_context86.prev = _context86.next) {
+              case 0:
+                _context86.next = 2;
+                return this.sha256([identifier, "SF", version, cost, nonce].join(":"));
+
+              case 2:
+                result = _context86.sent;
+                return _context86.abrupt("return", result);
+
+              case 4:
+              case "end":
+                return _context86.stop();
+            }
+          }
+        }, _callee86, this);
+      }));
+
+      function generateSalt(_x100, _x101, _x102, _x103) {
+        return _ref89.apply(this, arguments);
       }
 
       return generateSalt;
@@ -6997,39 +7110,39 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
   }, {
     key: "generateSymmetricKeyPair",
     value: function () {
-      var _ref88 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee85() {
-        var _ref89 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-            password = _ref89.password,
-            pw_salt = _ref89.pw_salt,
-            pw_cost = _ref89.pw_cost;
+      var _ref90 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee87() {
+        var _ref91 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+            password = _ref91.password,
+            pw_salt = _ref91.pw_salt,
+            pw_cost = _ref91.pw_cost;
 
         var output, outputLength, splitLength, firstThird, secondThird, thirdThird;
-        return regeneratorRuntime.wrap(function _callee85$(_context85) {
+        return regeneratorRuntime.wrap(function _callee87$(_context87) {
           while (1) {
-            switch (_context85.prev = _context85.next) {
+            switch (_context87.prev = _context87.next) {
               case 0:
-                _context85.next = 2;
+                _context87.next = 2;
                 return this.pbkdf2(password, pw_salt, pw_cost, this.DefaultPBKDF2Length);
 
               case 2:
-                output = _context85.sent;
+                output = _context87.sent;
                 outputLength = output.length;
                 splitLength = outputLength / 3;
                 firstThird = output.slice(0, splitLength);
                 secondThird = output.slice(splitLength, splitLength * 2);
                 thirdThird = output.slice(splitLength * 2, splitLength * 3);
-                return _context85.abrupt("return", [firstThird, secondThird, thirdThird]);
+                return _context87.abrupt("return", [firstThird, secondThird, thirdThird]);
 
               case 9:
               case "end":
-                return _context85.stop();
+                return _context87.stop();
             }
           }
-        }, _callee85, this);
+        }, _callee87, this);
       }));
 
       function generateSymmetricKeyPair() {
-        return _ref88.apply(this, arguments);
+        return _ref90.apply(this, arguments);
       }
 
       return generateSymmetricKeyPair;
@@ -7037,32 +7150,32 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
   }, {
     key: "computeEncryptionKeysForUser",
     value: function () {
-      var _ref90 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee86(password, authParams) {
+      var _ref92 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee88(password, authParams) {
         var pw_salt;
-        return regeneratorRuntime.wrap(function _callee86$(_context86) {
+        return regeneratorRuntime.wrap(function _callee88$(_context88) {
           while (1) {
-            switch (_context86.prev = _context86.next) {
+            switch (_context88.prev = _context88.next) {
               case 0:
                 if (!(authParams.version == "003")) {
-                  _context86.next = 9;
+                  _context88.next = 9;
                   break;
                 }
 
                 if (authParams.identifier) {
-                  _context86.next = 4;
+                  _context88.next = 4;
                   break;
                 }
 
                 console.error("authParams is missing identifier.");
-                return _context86.abrupt("return");
+                return _context88.abrupt("return");
 
               case 4:
-                _context86.next = 6;
+                _context88.next = 6;
                 return this.generateSalt(authParams.identifier, authParams.version, authParams.pw_cost, authParams.pw_nonce);
 
               case 6:
-                pw_salt = _context86.sent;
-                _context86.next = 10;
+                pw_salt = _context88.sent;
+                _context88.next = 10;
                 break;
 
               case 9:
@@ -7070,21 +7183,21 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
                 pw_salt = authParams.pw_salt;
 
               case 10:
-                return _context86.abrupt("return", this.generateSymmetricKeyPair({ password: password, pw_salt: pw_salt, pw_cost: authParams.pw_cost }).then(function (keys) {
+                return _context88.abrupt("return", this.generateSymmetricKeyPair({ password: password, pw_salt: pw_salt, pw_cost: authParams.pw_cost }).then(function (keys) {
                   var userKeys = { pw: keys[0], mk: keys[1], ak: keys[2] };
                   return userKeys;
                 }));
 
               case 11:
               case "end":
-                return _context86.stop();
+                return _context88.stop();
             }
           }
-        }, _callee86, this);
+        }, _callee88, this);
       }));
 
       function computeEncryptionKeysForUser(_x105, _x106) {
-        return _ref90.apply(this, arguments);
+        return _ref92.apply(this, arguments);
       }
 
       return computeEncryptionKeysForUser;
@@ -7095,25 +7208,25 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
   }, {
     key: "generateInitialKeysAndAuthParamsForUser",
     value: function () {
-      var _ref91 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee87(identifier, password) {
+      var _ref93 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee89(identifier, password) {
         var version, pw_cost, pw_nonce, pw_salt;
-        return regeneratorRuntime.wrap(function _callee87$(_context87) {
+        return regeneratorRuntime.wrap(function _callee89$(_context89) {
           while (1) {
-            switch (_context87.prev = _context87.next) {
+            switch (_context89.prev = _context89.next) {
               case 0:
                 version = this.SFJS.version;
                 pw_cost = this.SFJS.defaultPasswordGenerationCost;
-                _context87.next = 4;
+                _context89.next = 4;
                 return this.generateRandomKey(256);
 
               case 4:
-                pw_nonce = _context87.sent;
-                _context87.next = 7;
+                pw_nonce = _context89.sent;
+                _context89.next = 7;
                 return this.generateSalt(identifier, version, pw_cost, pw_nonce);
 
               case 7:
-                pw_salt = _context87.sent;
-                return _context87.abrupt("return", this.generateSymmetricKeyPair({ password: password, pw_salt: pw_salt, pw_cost: pw_cost }).then(function (keys) {
+                pw_salt = _context89.sent;
+                return _context89.abrupt("return", this.generateSymmetricKeyPair({ password: password, pw_salt: pw_salt, pw_cost: pw_cost }).then(function (keys) {
                   var authParams = { pw_nonce: pw_nonce, pw_cost: pw_cost, identifier: identifier, version: version };
                   var userKeys = { pw: keys[0], mk: keys[1], ak: keys[2] };
                   return { keys: userKeys, authParams: authParams };
@@ -7121,14 +7234,14 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
 
               case 9:
               case "end":
-                return _context87.stop();
+                return _context89.stop();
             }
           }
-        }, _callee87, this);
+        }, _callee89, this);
       }));
 
       function generateInitialKeysAndAuthParamsForUser(_x107, _x108) {
-        return _ref91.apply(this, arguments);
+        return _ref93.apply(this, arguments);
       }
 
       return generateInitialKeysAndAuthParamsForUser;
@@ -7151,29 +7264,29 @@ var SFCryptoJS = exports.SFCryptoJS = function (_SFAbstractCrypto) {
   _createClass(SFCryptoJS, [{
     key: "pbkdf2",
     value: function () {
-      var _ref92 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee88(password, pw_salt, pw_cost, length) {
+      var _ref94 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee90(password, pw_salt, pw_cost, length) {
         var params;
-        return regeneratorRuntime.wrap(function _callee88$(_context88) {
+        return regeneratorRuntime.wrap(function _callee90$(_context90) {
           while (1) {
-            switch (_context88.prev = _context88.next) {
+            switch (_context90.prev = _context90.next) {
               case 0:
                 params = {
                   keySize: length / 32,
                   hasher: CryptoJS.algo.SHA512,
                   iterations: pw_cost
                 };
-                return _context88.abrupt("return", CryptoJS.PBKDF2(password, pw_salt, params).toString());
+                return _context90.abrupt("return", CryptoJS.PBKDF2(password, pw_salt, params).toString());
 
               case 2:
               case "end":
-                return _context88.stop();
+                return _context90.stop();
             }
           }
-        }, _callee88, this);
+        }, _callee90, this);
       }));
 
       function pbkdf2(_x109, _x110, _x111, _x112) {
-        return _ref92.apply(this, arguments);
+        return _ref94.apply(this, arguments);
       }
 
       return pbkdf2;
@@ -7203,39 +7316,39 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
     */
 
     value: function () {
-      var _ref93 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee89(password, pw_salt, pw_cost, length) {
+      var _ref95 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee91(password, pw_salt, pw_cost, length) {
         var key;
-        return regeneratorRuntime.wrap(function _callee89$(_context89) {
+        return regeneratorRuntime.wrap(function _callee91$(_context91) {
           while (1) {
-            switch (_context89.prev = _context89.next) {
+            switch (_context91.prev = _context91.next) {
               case 0:
-                _context89.next = 2;
+                _context91.next = 2;
                 return this.webCryptoImportKey(password, "PBKDF2", "deriveBits");
 
               case 2:
-                key = _context89.sent;
+                key = _context91.sent;
 
                 if (key) {
-                  _context89.next = 6;
+                  _context91.next = 6;
                   break;
                 }
 
                 console.log("Key is null, unable to continue");
-                return _context89.abrupt("return", null);
+                return _context91.abrupt("return", null);
 
               case 6:
-                return _context89.abrupt("return", this.webCryptoDeriveBits(key, pw_salt, pw_cost, length));
+                return _context91.abrupt("return", this.webCryptoDeriveBits(key, pw_salt, pw_cost, length));
 
               case 7:
               case "end":
-                return _context89.stop();
+                return _context91.stop();
             }
           }
-        }, _callee89, this);
+        }, _callee91, this);
       }));
 
       function pbkdf2(_x113, _x114, _x115, _x116) {
-        return _ref93.apply(this, arguments);
+        return _ref95.apply(this, arguments);
       }
 
       return pbkdf2;
@@ -7243,16 +7356,16 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
   }, {
     key: "generateRandomKey",
     value: function () {
-      var _ref94 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee90(bits) {
+      var _ref96 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee92(bits) {
         var _this24 = this;
 
         var extractable;
-        return regeneratorRuntime.wrap(function _callee90$(_context90) {
+        return regeneratorRuntime.wrap(function _callee92$(_context92) {
           while (1) {
-            switch (_context90.prev = _context90.next) {
+            switch (_context92.prev = _context92.next) {
               case 0:
                 extractable = true;
-                return _context90.abrupt("return", subtleCrypto.generateKey({ name: "AES-CBC", length: bits }, extractable, ["encrypt", "decrypt"]).then(function (keyObject) {
+                return _context92.abrupt("return", subtleCrypto.generateKey({ name: "AES-CBC", length: bits }, extractable, ["encrypt", "decrypt"]).then(function (keyObject) {
                   return subtleCrypto.exportKey("raw", keyObject).then(function (keyData) {
                     var key = _this24.arrayBufferToHexString(new Uint8Array(keyData));
                     return key;
@@ -7265,14 +7378,14 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
 
               case 2:
               case "end":
-                return _context90.stop();
+                return _context92.stop();
             }
           }
-        }, _callee90, this);
+        }, _callee92, this);
       }));
 
       function generateRandomKey(_x117) {
-        return _ref94.apply(this, arguments);
+        return _ref96.apply(this, arguments);
       }
 
       return generateRandomKey;
@@ -7280,28 +7393,28 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
   }, {
     key: "generateItemEncryptionKey",
     value: function () {
-      var _ref95 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee91() {
+      var _ref97 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee93() {
         var length;
-        return regeneratorRuntime.wrap(function _callee91$(_context91) {
+        return regeneratorRuntime.wrap(function _callee93$(_context93) {
           while (1) {
-            switch (_context91.prev = _context91.next) {
+            switch (_context93.prev = _context93.next) {
               case 0:
                 // Generates a key that will be split in half, each being 256 bits. So total length will need to be 512.
                 length = 256;
-                return _context91.abrupt("return", Promise.all([this.generateRandomKey(length), this.generateRandomKey(length)]).then(function (values) {
+                return _context93.abrupt("return", Promise.all([this.generateRandomKey(length), this.generateRandomKey(length)]).then(function (values) {
                   return values.join("");
                 }));
 
               case 2:
               case "end":
-                return _context91.stop();
+                return _context93.stop();
             }
           }
-        }, _callee91, this);
+        }, _callee93, this);
       }));
 
       function generateItemEncryptionKey() {
-        return _ref95.apply(this, arguments);
+        return _ref97.apply(this, arguments);
       }
 
       return generateItemEncryptionKey;
@@ -7329,14 +7442,14 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
   }, {
     key: "webCryptoImportKey",
     value: function () {
-      var _ref96 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee92(input, alg, action) {
+      var _ref98 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee94(input, alg, action) {
         var text;
-        return regeneratorRuntime.wrap(function _callee92$(_context92) {
+        return regeneratorRuntime.wrap(function _callee94$(_context94) {
           while (1) {
-            switch (_context92.prev = _context92.next) {
+            switch (_context94.prev = _context94.next) {
               case 0:
                 text = typeof input === "string" ? this.stringToArrayBuffer(input) : input;
-                return _context92.abrupt("return", subtleCrypto.importKey("raw", text, { name: alg }, false, [action]).then(function (key) {
+                return _context94.abrupt("return", subtleCrypto.importKey("raw", text, { name: alg }, false, [action]).then(function (key) {
                   return key;
                 }).catch(function (err) {
                   console.error(err);
@@ -7345,14 +7458,14 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
 
               case 2:
               case "end":
-                return _context92.stop();
+                return _context94.stop();
             }
           }
-        }, _callee92, this);
+        }, _callee94, this);
       }));
 
       function webCryptoImportKey(_x118, _x119, _x120) {
-        return _ref96.apply(this, arguments);
+        return _ref98.apply(this, arguments);
       }
 
       return webCryptoImportKey;
@@ -7360,13 +7473,13 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
   }, {
     key: "webCryptoDeriveBits",
     value: function () {
-      var _ref97 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee93(key, pw_salt, pw_cost, length) {
+      var _ref99 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee95(key, pw_salt, pw_cost, length) {
         var _this25 = this;
 
         var params;
-        return regeneratorRuntime.wrap(function _callee93$(_context93) {
+        return regeneratorRuntime.wrap(function _callee95$(_context95) {
           while (1) {
-            switch (_context93.prev = _context93.next) {
+            switch (_context95.prev = _context95.next) {
               case 0:
                 params = {
                   "name": "PBKDF2",
@@ -7374,7 +7487,7 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
                   iterations: pw_cost,
                   hash: { name: "SHA-512" }
                 };
-                return _context93.abrupt("return", subtleCrypto.deriveBits(params, key, length).then(function (bits) {
+                return _context95.abrupt("return", subtleCrypto.deriveBits(params, key, length).then(function (bits) {
                   var key = _this25.arrayBufferToHexString(new Uint8Array(bits));
                   return key;
                 }).catch(function (err) {
@@ -7384,14 +7497,14 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
 
               case 2:
               case "end":
-                return _context93.stop();
+                return _context95.stop();
             }
           }
-        }, _callee93, this);
+        }, _callee95, this);
       }));
 
       function webCryptoDeriveBits(_x121, _x122, _x123, _x124) {
-        return _ref97.apply(this, arguments);
+        return _ref99.apply(this, arguments);
       }
 
       return webCryptoDeriveBits;
@@ -7465,65 +7578,65 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
   _createClass(SFItemTransformer, [{
     key: "_private_encryptString",
     value: function () {
-      var _ref98 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee94(string, encryptionKey, authKey, uuid, auth_params) {
+      var _ref100 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee96(string, encryptionKey, authKey, uuid, auth_params) {
         var fullCiphertext, contentCiphertext, iv, ciphertextToAuth, authHash, authParamsString;
-        return regeneratorRuntime.wrap(function _callee94$(_context94) {
+        return regeneratorRuntime.wrap(function _callee96$(_context96) {
           while (1) {
-            switch (_context94.prev = _context94.next) {
+            switch (_context96.prev = _context96.next) {
               case 0:
                 if (!(auth_params.version === "001")) {
-                  _context94.next = 7;
+                  _context96.next = 7;
                   break;
                 }
 
-                _context94.next = 3;
+                _context96.next = 3;
                 return this.crypto.encryptText(string, encryptionKey, null);
 
               case 3:
-                contentCiphertext = _context94.sent;
+                contentCiphertext = _context96.sent;
 
                 fullCiphertext = auth_params.version + contentCiphertext;
-                _context94.next = 21;
+                _context96.next = 21;
                 break;
 
               case 7:
-                _context94.next = 9;
+                _context96.next = 9;
                 return this.crypto.generateRandomKey(128);
 
               case 9:
-                iv = _context94.sent;
-                _context94.next = 12;
+                iv = _context96.sent;
+                _context96.next = 12;
                 return this.crypto.encryptText(string, encryptionKey, iv);
 
               case 12:
-                contentCiphertext = _context94.sent;
+                contentCiphertext = _context96.sent;
                 ciphertextToAuth = [auth_params.version, uuid, iv, contentCiphertext].join(":");
-                _context94.next = 16;
+                _context96.next = 16;
                 return this.crypto.hmac256(ciphertextToAuth, authKey);
 
               case 16:
-                authHash = _context94.sent;
-                _context94.next = 19;
+                authHash = _context96.sent;
+                _context96.next = 19;
                 return this.crypto.base64(JSON.stringify(auth_params));
 
               case 19:
-                authParamsString = _context94.sent;
+                authParamsString = _context96.sent;
 
                 fullCiphertext = [auth_params.version, authHash, uuid, iv, contentCiphertext, authParamsString].join(":");
 
               case 21:
-                return _context94.abrupt("return", fullCiphertext);
+                return _context96.abrupt("return", fullCiphertext);
 
               case 22:
               case "end":
-                return _context94.stop();
+                return _context96.stop();
             }
           }
-        }, _callee94, this);
+        }, _callee96, this);
       }));
 
       function _private_encryptString(_x125, _x126, _x127, _x128, _x129) {
-        return _ref98.apply(this, arguments);
+        return _ref100.apply(this, arguments);
       }
 
       return _private_encryptString;
@@ -7531,86 +7644,86 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
   }, {
     key: "encryptItem",
     value: function () {
-      var _ref99 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee95(item, keys, auth_params) {
+      var _ref101 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee97(item, keys, auth_params) {
         var params, item_key, ek, ak, ciphertext, authHash;
-        return regeneratorRuntime.wrap(function _callee95$(_context95) {
+        return regeneratorRuntime.wrap(function _callee97$(_context97) {
           while (1) {
-            switch (_context95.prev = _context95.next) {
+            switch (_context97.prev = _context97.next) {
               case 0:
                 params = {};
                 // encrypt item key
 
-                _context95.next = 3;
+                _context97.next = 3;
                 return this.crypto.generateItemEncryptionKey();
 
               case 3:
-                item_key = _context95.sent;
+                item_key = _context97.sent;
 
                 if (!(auth_params.version === "001")) {
-                  _context95.next = 10;
+                  _context97.next = 10;
                   break;
                 }
 
-                _context95.next = 7;
+                _context97.next = 7;
                 return this.crypto.encryptText(item_key, keys.mk, null);
 
               case 7:
-                params.enc_item_key = _context95.sent;
-                _context95.next = 13;
+                params.enc_item_key = _context97.sent;
+                _context97.next = 13;
                 break;
 
               case 10:
-                _context95.next = 12;
+                _context97.next = 12;
                 return this._private_encryptString(item_key, keys.mk, keys.ak, item.uuid, auth_params);
 
               case 12:
-                params.enc_item_key = _context95.sent;
+                params.enc_item_key = _context97.sent;
 
               case 13:
-                _context95.next = 15;
+                _context97.next = 15;
                 return this.crypto.firstHalfOfKey(item_key);
 
               case 15:
-                ek = _context95.sent;
-                _context95.next = 18;
+                ek = _context97.sent;
+                _context97.next = 18;
                 return this.crypto.secondHalfOfKey(item_key);
 
               case 18:
-                ak = _context95.sent;
-                _context95.next = 21;
+                ak = _context97.sent;
+                _context97.next = 21;
                 return this._private_encryptString(JSON.stringify(item.createContentJSONFromProperties()), ek, ak, item.uuid, auth_params);
 
               case 21:
-                ciphertext = _context95.sent;
+                ciphertext = _context97.sent;
 
                 if (!(auth_params.version === "001")) {
-                  _context95.next = 27;
+                  _context97.next = 27;
                   break;
                 }
 
-                _context95.next = 25;
+                _context97.next = 25;
                 return this.crypto.hmac256(ciphertext, ak);
 
               case 25:
-                authHash = _context95.sent;
+                authHash = _context97.sent;
 
                 params.auth_hash = authHash;
 
               case 27:
 
                 params.content = ciphertext;
-                return _context95.abrupt("return", params);
+                return _context97.abrupt("return", params);
 
               case 29:
               case "end":
-                return _context95.stop();
+                return _context97.stop();
             }
           }
-        }, _callee95, this);
+        }, _callee97, this);
       }));
 
       function encryptItem(_x130, _x131, _x132) {
-        return _ref99.apply(this, arguments);
+        return _ref101.apply(this, arguments);
       }
 
       return encryptItem;
@@ -7647,52 +7760,52 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
   }, {
     key: "decryptItem",
     value: function () {
-      var _ref100 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee96(item, keys) {
+      var _ref102 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee98(item, keys) {
         var encryptedItemKey, requiresAuth, keyParams, item_key, ek, ak, itemParams, content;
-        return regeneratorRuntime.wrap(function _callee96$(_context96) {
+        return regeneratorRuntime.wrap(function _callee98$(_context98) {
           while (1) {
-            switch (_context96.prev = _context96.next) {
+            switch (_context98.prev = _context98.next) {
               case 0:
                 if (!(typeof item.content != "string")) {
-                  _context96.next = 2;
+                  _context98.next = 2;
                   break;
                 }
 
-                return _context96.abrupt("return");
+                return _context98.abrupt("return");
 
               case 2:
                 if (!item.content.startsWith("000")) {
-                  _context96.next = 14;
+                  _context98.next = 14;
                   break;
                 }
 
-                _context96.prev = 3;
-                _context96.t0 = JSON;
-                _context96.next = 7;
+                _context98.prev = 3;
+                _context98.t0 = JSON;
+                _context98.next = 7;
                 return this.crypto.base64Decode(item.content.substring(3, item.content.length));
 
               case 7:
-                _context96.t1 = _context96.sent;
-                item.content = _context96.t0.parse.call(_context96.t0, _context96.t1);
-                _context96.next = 13;
+                _context98.t1 = _context98.sent;
+                item.content = _context98.t0.parse.call(_context98.t0, _context98.t1);
+                _context98.next = 13;
                 break;
 
               case 11:
-                _context96.prev = 11;
-                _context96.t2 = _context96["catch"](3);
+                _context98.prev = 11;
+                _context98.t2 = _context98["catch"](3);
 
               case 13:
-                return _context96.abrupt("return");
+                return _context98.abrupt("return");
 
               case 14:
                 if (item.enc_item_key) {
-                  _context96.next = 17;
+                  _context98.next = 17;
                   break;
                 }
 
                 // This needs to be here to continue, return otherwise
                 console.log("Missing item encryption key, skipping decryption.");
-                return _context96.abrupt("return");
+                return _context98.abrupt("return");
 
               case 17:
 
@@ -7710,7 +7823,7 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
                 // return if uuid in auth hash does not match item uuid. Signs of tampering.
 
                 if (!(keyParams.uuid && keyParams.uuid !== item.uuid)) {
-                  _context96.next = 26;
+                  _context98.next = 26;
                   break;
                 }
 
@@ -7719,17 +7832,17 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
                   item.errorDecryptingValueChanged = true;
                 }
                 item.errorDecrypting = true;
-                return _context96.abrupt("return");
+                return _context98.abrupt("return");
 
               case 26:
-                _context96.next = 28;
+                _context98.next = 28;
                 return this.crypto.decryptText(keyParams, requiresAuth);
 
               case 28:
-                item_key = _context96.sent;
+                item_key = _context98.sent;
 
                 if (item_key) {
-                  _context96.next = 33;
+                  _context98.next = 33;
                   break;
                 }
 
@@ -7737,38 +7850,38 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
                   item.errorDecryptingValueChanged = true;
                 }
                 item.errorDecrypting = true;
-                return _context96.abrupt("return");
+                return _context98.abrupt("return");
 
               case 33:
-                _context96.next = 35;
+                _context98.next = 35;
                 return this.crypto.firstHalfOfKey(item_key);
 
               case 35:
-                ek = _context96.sent;
-                _context96.next = 38;
+                ek = _context98.sent;
+                _context98.next = 38;
                 return this.crypto.secondHalfOfKey(item_key);
 
               case 38:
-                ak = _context96.sent;
+                ak = _context98.sent;
                 itemParams = this.encryptionComponentsFromString(item.content, ek, ak);
-                _context96.prev = 40;
-                _context96.t3 = JSON;
-                _context96.next = 44;
+                _context98.prev = 40;
+                _context98.t3 = JSON;
+                _context98.next = 44;
                 return this.crypto.base64Decode(itemParams.authParams);
 
               case 44:
-                _context96.t4 = _context96.sent;
-                item.auth_params = _context96.t3.parse.call(_context96.t3, _context96.t4);
-                _context96.next = 50;
+                _context98.t4 = _context98.sent;
+                item.auth_params = _context98.t3.parse.call(_context98.t3, _context98.t4);
+                _context98.next = 50;
                 break;
 
               case 48:
-                _context96.prev = 48;
-                _context96.t5 = _context96["catch"](40);
+                _context98.prev = 48;
+                _context98.t5 = _context98["catch"](40);
 
               case 50:
                 if (!(itemParams.uuid && itemParams.uuid !== item.uuid)) {
-                  _context96.next = 54;
+                  _context98.next = 54;
                   break;
                 }
 
@@ -7776,7 +7889,7 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
                   item.errorDecryptingValueChanged = true;
                 }
                 item.errorDecrypting = true;
-                return _context96.abrupt("return");
+                return _context98.abrupt("return");
 
               case 54:
 
@@ -7785,11 +7898,11 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
                   itemParams.authHash = item.auth_hash;
                 }
 
-                _context96.next = 57;
+                _context98.next = 57;
                 return this.crypto.decryptText(itemParams, true);
 
               case 57:
-                content = _context96.sent;
+                content = _context98.sent;
 
                 if (!content) {
                   if (!item.errorDecrypting) {
@@ -7807,14 +7920,14 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
 
               case 59:
               case "end":
-                return _context96.stop();
+                return _context98.stop();
             }
           }
-        }, _callee96, this, [[3, 11], [40, 48]]);
+        }, _callee98, this, [[3, 11], [40, 48]]);
       }));
 
       function decryptItem(_x133, _x134) {
-        return _ref100.apply(this, arguments);
+        return _ref102.apply(this, arguments);
       }
 
       return decryptItem;
@@ -7822,47 +7935,47 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
   }, {
     key: "decryptMultipleItems",
     value: function () {
-      var _ref101 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee98(items, keys, throws) {
+      var _ref103 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee100(items, keys, throws) {
         var _this26 = this;
 
         var decrypt;
-        return regeneratorRuntime.wrap(function _callee98$(_context98) {
+        return regeneratorRuntime.wrap(function _callee100$(_context100) {
           while (1) {
-            switch (_context98.prev = _context98.next) {
+            switch (_context100.prev = _context100.next) {
               case 0:
                 decrypt = function () {
-                  var _ref102 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee97(item) {
+                  var _ref104 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee99(item) {
                     var isString;
-                    return regeneratorRuntime.wrap(function _callee97$(_context97) {
+                    return regeneratorRuntime.wrap(function _callee99$(_context99) {
                       while (1) {
-                        switch (_context97.prev = _context97.next) {
+                        switch (_context99.prev = _context99.next) {
                           case 0:
                             if (!(item.deleted == true && item.content == null)) {
-                              _context97.next = 2;
+                              _context99.next = 2;
                               break;
                             }
 
-                            return _context97.abrupt("return");
+                            return _context99.abrupt("return");
 
                           case 2:
                             isString = typeof item.content === 'string' || item.content instanceof String;
 
                             if (!isString) {
-                              _context97.next = 17;
+                              _context99.next = 17;
                               break;
                             }
 
-                            _context97.prev = 4;
-                            _context97.next = 7;
+                            _context99.prev = 4;
+                            _context99.next = 7;
                             return _this26.decryptItem(item, keys);
 
                           case 7:
-                            _context97.next = 17;
+                            _context99.next = 17;
                             break;
 
                           case 9:
-                            _context97.prev = 9;
-                            _context97.t0 = _context97["catch"](4);
+                            _context99.prev = 9;
+                            _context99.t0 = _context99["catch"](4);
 
                             if (!item.errorDecrypting) {
                               item.errorDecryptingValueChanged = true;
@@ -7870,43 +7983,43 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
                             item.errorDecrypting = true;
 
                             if (!throws) {
-                              _context97.next = 15;
+                              _context99.next = 15;
                               break;
                             }
 
-                            throw _context97.t0;
+                            throw _context99.t0;
 
                           case 15:
-                            console.error("Error decrypting item", item, _context97.t0);
-                            return _context97.abrupt("return");
+                            console.error("Error decrypting item", item, _context99.t0);
+                            return _context99.abrupt("return");
 
                           case 17:
                           case "end":
-                            return _context97.stop();
+                            return _context99.stop();
                         }
                       }
-                    }, _callee97, _this26, [[4, 9]]);
+                    }, _callee99, _this26, [[4, 9]]);
                   }));
 
                   return function decrypt(_x138) {
-                    return _ref102.apply(this, arguments);
+                    return _ref104.apply(this, arguments);
                   };
                 }();
 
-                return _context98.abrupt("return", Promise.all(items.map(function (item) {
+                return _context100.abrupt("return", Promise.all(items.map(function (item) {
                   return decrypt(item);
                 })));
 
               case 2:
               case "end":
-                return _context98.stop();
+                return _context100.stop();
             }
           }
-        }, _callee98, this);
+        }, _callee100, this);
       }));
 
       function decryptMultipleItems(_x135, _x136, _x137) {
-        return _ref101.apply(this, arguments);
+        return _ref103.apply(this, arguments);
       }
 
       return decryptMultipleItems;
@@ -44324,9 +44437,21 @@ var SFAuthManager = exports.SFAuthManager = function () {
                 this._authParams = JSON.parse(data);
 
               case 5:
+                if (this._authParams.version) {
+                  _context6.next = 9;
+                  break;
+                }
+
+                _context6.next = 8;
+                return this.defaultProtocolVersion();
+
+              case 8:
+                this._authParams.version = _context6.sent;
+
+              case 9:
                 return _context6.abrupt("return", this._authParams);
 
-              case 6:
+              case 10:
               case "end":
                 return _context6.stop();
             }
@@ -44341,16 +44466,94 @@ var SFAuthManager = exports.SFAuthManager = function () {
       return getAuthParams;
     }()
   }, {
-    key: "getAuthParamsForEmail",
+    key: "defaultProtocolVersion",
     value: function () {
-      var _ref7 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee7(url, email, extraParams) {
-        var _this2 = this;
-
+      var _ref7 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee7() {
+        var keys;
         return regeneratorRuntime.wrap(function _callee7$(_context7) {
           while (1) {
             switch (_context7.prev = _context7.next) {
               case 0:
-                return _context7.abrupt("return", new Promise(function (resolve, reject) {
+                _context7.next = 2;
+                return this.keys();
+
+              case 2:
+                keys = _context7.sent;
+
+                if (!(keys && keys.ak)) {
+                  _context7.next = 7;
+                  break;
+                }
+
+                return _context7.abrupt("return", "002");
+
+              case 7:
+                return _context7.abrupt("return", "001");
+
+              case 8:
+              case "end":
+                return _context7.stop();
+            }
+          }
+        }, _callee7, this);
+      }));
+
+      function defaultProtocolVersion() {
+        return _ref7.apply(this, arguments);
+      }
+
+      return defaultProtocolVersion;
+    }()
+  }, {
+    key: "protocolVersion",
+    value: function () {
+      var _ref8 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee8() {
+        var authParams;
+        return regeneratorRuntime.wrap(function _callee8$(_context8) {
+          while (1) {
+            switch (_context8.prev = _context8.next) {
+              case 0:
+                _context8.next = 2;
+                return this.getAuthParams();
+
+              case 2:
+                authParams = _context8.sent;
+
+                if (!(authParams && authParams.version)) {
+                  _context8.next = 5;
+                  break;
+                }
+
+                return _context8.abrupt("return", authParams.version);
+
+              case 5:
+                return _context8.abrupt("return", this.defaultProtocolVersion());
+
+              case 6:
+              case "end":
+                return _context8.stop();
+            }
+          }
+        }, _callee8, this);
+      }));
+
+      function protocolVersion() {
+        return _ref8.apply(this, arguments);
+      }
+
+      return protocolVersion;
+    }()
+  }, {
+    key: "getAuthParamsForEmail",
+    value: function () {
+      var _ref9 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee9(url, email, extraParams) {
+        var _this2 = this;
+
+        return regeneratorRuntime.wrap(function _callee9$(_context9) {
+          while (1) {
+            switch (_context9.prev = _context9.next) {
+              case 0:
+                return _context9.abrupt("return", new Promise(function (resolve, reject) {
                   var requestUrl = url + "/auth/params";
                   _this2.httpManager.getAbsolute(requestUrl, _.merge({ email: email }, extraParams), function (response) {
                     resolve(response);
@@ -44365,14 +44568,14 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
               case 1:
               case "end":
-                return _context7.stop();
+                return _context9.stop();
             }
           }
-        }, _callee7, this);
+        }, _callee9, this);
       }));
 
       function getAuthParamsForEmail(_x5, _x6, _x7) {
-        return _ref7.apply(this, arguments);
+        return _ref9.apply(this, arguments);
       }
 
       return getAuthParamsForEmail;
@@ -44380,54 +44583,54 @@ var SFAuthManager = exports.SFAuthManager = function () {
   }, {
     key: "login",
     value: function () {
-      var _ref8 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee10(url, email, password, strictSignin, extraParams) {
+      var _ref10 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee12(url, email, password, strictSignin, extraParams) {
         var _this3 = this;
 
-        return regeneratorRuntime.wrap(function _callee10$(_context10) {
+        return regeneratorRuntime.wrap(function _callee12$(_context12) {
           while (1) {
-            switch (_context10.prev = _context10.next) {
+            switch (_context12.prev = _context12.next) {
               case 0:
-                return _context10.abrupt("return", new Promise(function () {
-                  var _ref9 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee9(resolve, reject) {
+                return _context12.abrupt("return", new Promise(function () {
+                  var _ref11 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee11(resolve, reject) {
                     var authParams, message, _message, abort, _message2, minimum, _message3, latestVersion, _message4, keys, requestUrl, params;
 
-                    return regeneratorRuntime.wrap(function _callee9$(_context9) {
+                    return regeneratorRuntime.wrap(function _callee11$(_context11) {
                       while (1) {
-                        switch (_context9.prev = _context9.next) {
+                        switch (_context11.prev = _context11.next) {
                           case 0:
 
                             _this3.notifyEvent(SFAuthManager.WillSignInEvent);
 
-                            _context9.next = 3;
+                            _context11.next = 3;
                             return _this3.getAuthParamsForEmail(url, email, extraParams);
 
                           case 3:
-                            authParams = _context9.sent;
+                            authParams = _context11.sent;
 
 
                             // SF3 requires a unique identifier in the auth params
                             authParams.identifier = email;
 
                             if (!authParams.error) {
-                              _context9.next = 8;
+                              _context11.next = 8;
                               break;
                             }
 
                             resolve(authParams);
-                            return _context9.abrupt("return");
+                            return _context11.abrupt("return");
 
                           case 8:
                             if (!(!authParams || !authParams.pw_cost)) {
-                              _context9.next = 11;
+                              _context11.next = 11;
                               break;
                             }
 
                             resolve({ error: { message: "Invalid email or password." } });
-                            return _context9.abrupt("return");
+                            return _context11.abrupt("return");
 
                           case 11:
                             if (SFJS.supportedVersions().includes(authParams.version)) {
-                              _context9.next = 15;
+                              _context11.next = 15;
                               break;
                             }
 
@@ -44439,17 +44642,17 @@ var SFAuthManager = exports.SFAuthManager = function () {
                               message = "The protocol version associated with your account is outdated and no longer supported by this application. Please visit standardnotes.org/help/security for more information.";
                             }
                             resolve({ error: { message: message } });
-                            return _context9.abrupt("return");
+                            return _context11.abrupt("return");
 
                           case 15:
                             if (!SFJS.isProtocolVersionOutdated(authParams.version)) {
-                              _context9.next = 22;
+                              _context11.next = 22;
                               break;
                             }
 
                             _message = "The encryption version for your account, " + authParams.version + ", is outdated and requires upgrade. You may proceed with login, but are advised to perform a security update using the web or desktop application. Please visit standardnotes.org/help/security for more information.";
                             abort = false;
-                            _context9.next = 20;
+                            _context11.next = 20;
                             return _this3.alertManager.confirm({
                               title: "Update Needed",
                               text: _message,
@@ -44461,39 +44664,39 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
                           case 20:
                             if (!abort) {
-                              _context9.next = 22;
+                              _context11.next = 22;
                               break;
                             }
 
-                            return _context9.abrupt("return");
+                            return _context11.abrupt("return");
 
                           case 22:
                             if (SFJS.supportsPasswordDerivationCost(authParams.pw_cost)) {
-                              _context9.next = 26;
+                              _context11.next = 26;
                               break;
                             }
 
                             _message2 = "Your account was created on a platform with higher security capabilities than this browser supports. " + "If we attempted to generate your login keys here, it would take hours. " + "Please use a browser with more up to date security capabilities, like Google Chrome or Firefox, to log in.";
 
                             resolve({ error: { message: _message2 } });
-                            return _context9.abrupt("return");
+                            return _context11.abrupt("return");
 
                           case 26:
                             minimum = SFJS.costMinimumForVersion(authParams.version);
 
                             if (!(authParams.pw_cost < minimum)) {
-                              _context9.next = 31;
+                              _context11.next = 31;
                               break;
                             }
 
                             _message3 = "Unable to login due to insecure password parameters. Please visit standardnotes.org/help/security for more information.";
 
                             resolve({ error: { message: _message3 } });
-                            return _context9.abrupt("return");
+                            return _context11.abrupt("return");
 
                           case 31:
                             if (!strictSignin) {
-                              _context9.next = 37;
+                              _context11.next = 37;
                               break;
                             }
 
@@ -44501,33 +44704,33 @@ var SFAuthManager = exports.SFAuthManager = function () {
                             latestVersion = SFJS.version();
 
                             if (!(authParams.version !== latestVersion)) {
-                              _context9.next = 37;
+                              _context11.next = 37;
                               break;
                             }
 
                             _message4 = "Strict sign in refused server sign in parameters. The latest security version is " + latestVersion + ", but your account is reported to have version " + authParams.version + ". If you'd like to proceed with sign in anyway, please disable strict sign in and try again.";
 
                             resolve({ error: { message: _message4 } });
-                            return _context9.abrupt("return");
+                            return _context11.abrupt("return");
 
                           case 37:
-                            _context9.next = 39;
+                            _context11.next = 39;
                             return SFJS.crypto.computeEncryptionKeysForUser(password, authParams);
 
                           case 39:
-                            keys = _context9.sent;
+                            keys = _context11.sent;
                             requestUrl = url + "/auth/sign_in";
                             params = _.merge({ password: keys.pw, email: email }, extraParams);
 
 
                             _this3.httpManager.postAbsolute(requestUrl, params, function () {
-                              var _ref10 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee8(response) {
-                                return regeneratorRuntime.wrap(function _callee8$(_context8) {
+                              var _ref12 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee10(response) {
+                                return regeneratorRuntime.wrap(function _callee10$(_context10) {
                                   while (1) {
-                                    switch (_context8.prev = _context8.next) {
+                                    switch (_context10.prev = _context10.next) {
                                       case 0:
                                         _this3.notifyEvent(SFAuthManager.DidSignInEvent);
-                                        _context8.next = 3;
+                                        _context10.next = 3;
                                         return _this3.handleAuthResponse(response, email, url, authParams, keys);
 
                                       case 3:
@@ -44537,14 +44740,14 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
                                       case 4:
                                       case "end":
-                                        return _context8.stop();
+                                        return _context10.stop();
                                     }
                                   }
-                                }, _callee8, _this3);
+                                }, _callee10, _this3);
                               }));
 
                               return function (_x15) {
-                                return _ref10.apply(this, arguments);
+                                return _ref12.apply(this, arguments);
                               };
                             }(), function (response) {
                               console.error("Error logging in", response);
@@ -44558,27 +44761,27 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
                           case 43:
                           case "end":
-                            return _context9.stop();
+                            return _context11.stop();
                         }
                       }
-                    }, _callee9, _this3);
+                    }, _callee11, _this3);
                   }));
 
                   return function (_x13, _x14) {
-                    return _ref9.apply(this, arguments);
+                    return _ref11.apply(this, arguments);
                   };
                 }()));
 
               case 1:
               case "end":
-                return _context10.stop();
+                return _context12.stop();
             }
           }
-        }, _callee10, this);
+        }, _callee12, this);
       }));
 
       function login(_x8, _x9, _x10, _x11, _x12) {
-        return _ref8.apply(this, arguments);
+        return _ref10.apply(this, arguments);
       }
 
       return login;
@@ -44589,17 +44792,17 @@ var SFAuthManager = exports.SFAuthManager = function () {
       var _this4 = this;
 
       return new Promise(function () {
-        var _ref11 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee12(resolve, reject) {
+        var _ref13 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee14(resolve, reject) {
           var results, keys, authParams, requestUrl, params;
-          return regeneratorRuntime.wrap(function _callee12$(_context12) {
+          return regeneratorRuntime.wrap(function _callee14$(_context14) {
             while (1) {
-              switch (_context12.prev = _context12.next) {
+              switch (_context14.prev = _context14.next) {
                 case 0:
-                  _context12.next = 2;
+                  _context14.next = 2;
                   return SFJS.crypto.generateInitialKeysAndAuthParamsForUser(email, password);
 
                 case 2:
-                  results = _context12.sent;
+                  results = _context14.sent;
                   keys = results.keys;
                   authParams = results.authParams;
                   requestUrl = url + "/auth";
@@ -44607,12 +44810,12 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
 
                   _this4.httpManager.postAbsolute(requestUrl, params, function () {
-                    var _ref12 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee11(response) {
-                      return regeneratorRuntime.wrap(function _callee11$(_context11) {
+                    var _ref14 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee13(response) {
+                      return regeneratorRuntime.wrap(function _callee13$(_context13) {
                         while (1) {
-                          switch (_context11.prev = _context11.next) {
+                          switch (_context13.prev = _context13.next) {
                             case 0:
-                              _context11.next = 2;
+                              _context13.next = 2;
                               return _this4.handleAuthResponse(response, email, url, authParams, keys);
 
                             case 2:
@@ -44620,14 +44823,14 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
                             case 3:
                             case "end":
-                              return _context11.stop();
+                              return _context13.stop();
                           }
                         }
-                      }, _callee11, _this4);
+                      }, _callee13, _this4);
                     }));
 
                     return function (_x18) {
-                      return _ref12.apply(this, arguments);
+                      return _ref14.apply(this, arguments);
                     };
                   }(), function (response) {
                     console.error("Registration error", response);
@@ -44639,33 +44842,33 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
                 case 8:
                 case "end":
-                  return _context12.stop();
+                  return _context14.stop();
               }
             }
-          }, _callee12, _this4);
+          }, _callee14, _this4);
         }));
 
         return function (_x16, _x17) {
-          return _ref11.apply(this, arguments);
+          return _ref13.apply(this, arguments);
         };
       }());
     }
   }, {
     key: "changePassword",
     value: function () {
-      var _ref13 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee15(url, email, current_server_pw, newKeys, newAuthParams) {
+      var _ref15 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee17(url, email, current_server_pw, newKeys, newAuthParams) {
         var _this5 = this;
 
-        return regeneratorRuntime.wrap(function _callee15$(_context15) {
+        return regeneratorRuntime.wrap(function _callee17$(_context17) {
           while (1) {
-            switch (_context15.prev = _context15.next) {
+            switch (_context17.prev = _context17.next) {
               case 0:
-                return _context15.abrupt("return", new Promise(function () {
-                  var _ref14 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee14(resolve, reject) {
+                return _context17.abrupt("return", new Promise(function () {
+                  var _ref16 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee16(resolve, reject) {
                     var newServerPw, requestUrl, params;
-                    return regeneratorRuntime.wrap(function _callee14$(_context14) {
+                    return regeneratorRuntime.wrap(function _callee16$(_context16) {
                       while (1) {
-                        switch (_context14.prev = _context14.next) {
+                        switch (_context16.prev = _context16.next) {
                           case 0:
                             newServerPw = newKeys.pw;
                             requestUrl = url + "/auth/change_pw";
@@ -44673,12 +44876,12 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
 
                             _this5.httpManager.postAbsolute(requestUrl, params, function () {
-                              var _ref15 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee13(response) {
-                                return regeneratorRuntime.wrap(function _callee13$(_context13) {
+                              var _ref17 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee15(response) {
+                                return regeneratorRuntime.wrap(function _callee15$(_context15) {
                                   while (1) {
-                                    switch (_context13.prev = _context13.next) {
+                                    switch (_context15.prev = _context15.next) {
                                       case 0:
-                                        _context13.next = 2;
+                                        _context15.next = 2;
                                         return _this5.handleAuthResponse(response, email, null, newAuthParams, newKeys);
 
                                       case 2:
@@ -44686,14 +44889,14 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
                                       case 3:
                                       case "end":
-                                        return _context13.stop();
+                                        return _context15.stop();
                                     }
                                   }
-                                }, _callee13, _this5);
+                                }, _callee15, _this5);
                               }));
 
                               return function (_x26) {
-                                return _ref15.apply(this, arguments);
+                                return _ref17.apply(this, arguments);
                               };
                             }(), function (response) {
                               if ((typeof response === "undefined" ? "undefined" : _typeof(response)) !== 'object') {
@@ -44704,27 +44907,27 @@ var SFAuthManager = exports.SFAuthManager = function () {
 
                           case 4:
                           case "end":
-                            return _context14.stop();
+                            return _context16.stop();
                         }
                       }
-                    }, _callee14, _this5);
+                    }, _callee16, _this5);
                   }));
 
                   return function (_x24, _x25) {
-                    return _ref14.apply(this, arguments);
+                    return _ref16.apply(this, arguments);
                   };
                 }()));
 
               case 1:
               case "end":
-                return _context15.stop();
+                return _context17.stop();
             }
           }
-        }, _callee15, this);
+        }, _callee17, this);
       }));
 
       function changePassword(_x19, _x20, _x21, _x22, _x23) {
-        return _ref13.apply(this, arguments);
+        return _ref15.apply(this, arguments);
       }
 
       return changePassword;
@@ -44732,41 +44935,41 @@ var SFAuthManager = exports.SFAuthManager = function () {
   }, {
     key: "handleAuthResponse",
     value: function () {
-      var _ref16 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee16(response, email, url, authParams, keys) {
-        return regeneratorRuntime.wrap(function _callee16$(_context16) {
+      var _ref18 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee18(response, email, url, authParams, keys) {
+        return regeneratorRuntime.wrap(function _callee18$(_context18) {
           while (1) {
-            switch (_context16.prev = _context16.next) {
+            switch (_context18.prev = _context18.next) {
               case 0:
                 if (!url) {
-                  _context16.next = 3;
+                  _context18.next = 3;
                   break;
                 }
 
-                _context16.next = 3;
+                _context18.next = 3;
                 return this.storageManager.setItem("server", url);
 
               case 3:
                 this._authParams = authParams;
-                _context16.next = 6;
+                _context18.next = 6;
                 return this.storageManager.setItem("auth_params", JSON.stringify(authParams));
 
               case 6:
-                _context16.next = 8;
+                _context18.next = 8;
                 return this.storageManager.setItem("jwt", response.token);
 
               case 8:
-                return _context16.abrupt("return", this.saveKeys(keys));
+                return _context18.abrupt("return", this.saveKeys(keys));
 
               case 9:
               case "end":
-                return _context16.stop();
+                return _context18.stop();
             }
           }
-        }, _callee16, this);
+        }, _callee18, this);
       }));
 
       function handleAuthResponse(_x27, _x28, _x29, _x30, _x31) {
-        return _ref16.apply(this, arguments);
+        return _ref18.apply(this, arguments);
       }
 
       return handleAuthResponse;
@@ -44793,17 +44996,17 @@ var SFHttpManager = exports.SFHttpManager = function () {
   }, {
     key: "setAuthHeadersForRequest",
     value: function () {
-      var _ref17 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee17(request) {
+      var _ref19 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee19(request) {
         var token;
-        return regeneratorRuntime.wrap(function _callee17$(_context17) {
+        return regeneratorRuntime.wrap(function _callee19$(_context19) {
           while (1) {
-            switch (_context17.prev = _context17.next) {
+            switch (_context19.prev = _context19.next) {
               case 0:
-                _context17.next = 2;
+                _context19.next = 2;
                 return this.jwtRequestHandler();
 
               case 2:
-                token = _context17.sent;
+                token = _context19.sent;
 
                 if (token) {
                   request.setRequestHeader('Authorization', 'Bearer ' + token);
@@ -44811,14 +45014,14 @@ var SFHttpManager = exports.SFHttpManager = function () {
 
               case 4:
               case "end":
-                return _context17.stop();
+                return _context19.stop();
             }
           }
-        }, _callee17, this);
+        }, _callee19, this);
       }));
 
       function setAuthHeadersForRequest(_x32) {
-        return _ref17.apply(this, arguments);
+        return _ref19.apply(this, arguments);
       }
 
       return setAuthHeadersForRequest;
@@ -44841,11 +45044,11 @@ var SFHttpManager = exports.SFHttpManager = function () {
   }, {
     key: "httpRequest",
     value: function () {
-      var _ref18 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee18(verb, url, params, onsuccess, onerror) {
+      var _ref20 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee20(verb, url, params, onsuccess, onerror) {
         var xmlhttp;
-        return regeneratorRuntime.wrap(function _callee18$(_context18) {
+        return regeneratorRuntime.wrap(function _callee20$(_context20) {
           while (1) {
-            switch (_context18.prev = _context18.next) {
+            switch (_context20.prev = _context20.next) {
               case 0:
                 xmlhttp = new XMLHttpRequest();
 
@@ -44877,7 +45080,7 @@ var SFHttpManager = exports.SFHttpManager = function () {
                 }
 
                 xmlhttp.open(verb, url, true);
-                _context18.next = 6;
+                _context20.next = 6;
                 return this.setAuthHeadersForRequest(xmlhttp);
 
               case 6:
@@ -44891,14 +45094,14 @@ var SFHttpManager = exports.SFHttpManager = function () {
 
               case 8:
               case "end":
-                return _context18.stop();
+                return _context20.stop();
             }
           }
-        }, _callee18, this);
+        }, _callee20, this);
       }));
 
       function httpRequest(_x33, _x34, _x35, _x36, _x37) {
-        return _ref18.apply(this, arguments);
+        return _ref20.apply(this, arguments);
       }
 
       return httpRequest;
@@ -44929,17 +45132,17 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
     this.loadMigrations();
 
     this.syncManager.addEventHandler(function () {
-      var _ref19 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee19(event, data) {
+      var _ref21 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee21(event, data) {
         var dataLoadedEvent, syncCompleteEvent;
-        return regeneratorRuntime.wrap(function _callee19$(_context19) {
+        return regeneratorRuntime.wrap(function _callee21$(_context21) {
           while (1) {
-            switch (_context19.prev = _context19.next) {
+            switch (_context21.prev = _context21.next) {
               case 0:
                 dataLoadedEvent = event == "local-data-loaded";
                 syncCompleteEvent = event == "sync:completed";
 
                 if (!(dataLoadedEvent || syncCompleteEvent)) {
-                  _context19.next = 9;
+                  _context21.next = 9;
                   break;
                 }
 
@@ -44952,16 +45155,16 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
                 // We want to run pending migrations only after local data has been loaded, and a sync has been completed.
 
                 if (!(_this6.receivedLocalDataEvent && _this6.receivedSyncCompletedEvent)) {
-                  _context19.next = 9;
+                  _context21.next = 9;
                   break;
                 }
 
                 if (!(data && data.initialSync)) {
-                  _context19.next = 8;
+                  _context21.next = 8;
                   break;
                 }
 
-                _context19.next = 8;
+                _context21.next = 8;
                 return _this6.clearCompletedMigrations();
 
               case 8:
@@ -44969,14 +45172,14 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
 
               case 9:
               case "end":
-                return _context19.stop();
+                return _context21.stop();
             }
           }
-        }, _callee19, _this6);
+        }, _callee21, _this6);
       }));
 
       return function (_x38, _x39) {
-        return _ref19.apply(this, arguments);
+        return _ref21.apply(this, arguments);
       };
     }());
   }
@@ -44984,30 +45187,30 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
   _createClass(SFMigrationManager, [{
     key: "clearCompletedMigrations",
     value: function () {
-      var _ref20 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee20() {
+      var _ref22 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee22() {
         var completed;
-        return regeneratorRuntime.wrap(function _callee20$(_context20) {
+        return regeneratorRuntime.wrap(function _callee22$(_context22) {
           while (1) {
-            switch (_context20.prev = _context20.next) {
+            switch (_context22.prev = _context22.next) {
               case 0:
-                _context20.next = 2;
+                _context22.next = 2;
                 return this.getCompletedMigrations();
 
               case 2:
-                completed = _context20.sent;
+                completed = _context22.sent;
 
                 completed.length = 0;
 
               case 4:
               case "end":
-                return _context20.stop();
+                return _context22.stop();
             }
           }
-        }, _callee20, this);
+        }, _callee22, this);
       }));
 
       function clearCompletedMigrations() {
-        return _ref20.apply(this, arguments);
+        return _ref22.apply(this, arguments);
       }
 
       return clearCompletedMigrations;
@@ -45027,18 +45230,18 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
   }, {
     key: "runPendingMigrations",
     value: function () {
-      var _ref21 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee21() {
+      var _ref23 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee23() {
         var pending, _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, migration, _iteratorNormalCompletion3, _didIteratorError3, _iteratorError3, _iterator3, _step3, item, _iteratorNormalCompletion5, _didIteratorError5, _iteratorError5, _iterator5, _step5, _iteratorNormalCompletion4, _didIteratorError4, _iteratorError4, _iterator4, _step4;
 
-        return regeneratorRuntime.wrap(function _callee21$(_context21) {
+        return regeneratorRuntime.wrap(function _callee23$(_context23) {
           while (1) {
-            switch (_context21.prev = _context21.next) {
+            switch (_context23.prev = _context23.next) {
               case 0:
-                _context21.next = 2;
+                _context23.next = 2;
                 return this.getPendingMigrations();
 
               case 2:
-                pending = _context21.sent;
+                pending = _context23.sent;
 
 
                 // run in pre loop, keeping in mind that a migration may be run twice: when offline then again when signing in.
@@ -45046,55 +45249,55 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
                 _iteratorNormalCompletion2 = true;
                 _didIteratorError2 = false;
                 _iteratorError2 = undefined;
-                _context21.prev = 6;
+                _context23.prev = 6;
                 for (_iterator2 = pending[Symbol.iterator](); !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
                   migration = _step2.value;
 
                   migration.items = [];
                 }
-                _context21.next = 14;
+                _context23.next = 14;
                 break;
 
               case 10:
-                _context21.prev = 10;
-                _context21.t0 = _context21["catch"](6);
+                _context23.prev = 10;
+                _context23.t0 = _context23["catch"](6);
                 _didIteratorError2 = true;
-                _iteratorError2 = _context21.t0;
+                _iteratorError2 = _context23.t0;
 
               case 14:
-                _context21.prev = 14;
-                _context21.prev = 15;
+                _context23.prev = 14;
+                _context23.prev = 15;
 
                 if (!_iteratorNormalCompletion2 && _iterator2.return) {
                   _iterator2.return();
                 }
 
               case 17:
-                _context21.prev = 17;
+                _context23.prev = 17;
 
                 if (!_didIteratorError2) {
-                  _context21.next = 20;
+                  _context23.next = 20;
                   break;
                 }
 
                 throw _iteratorError2;
 
               case 20:
-                return _context21.finish(17);
+                return _context23.finish(17);
 
               case 21:
-                return _context21.finish(14);
+                return _context23.finish(14);
 
               case 22:
                 _iteratorNormalCompletion3 = true;
                 _didIteratorError3 = false;
                 _iteratorError3 = undefined;
-                _context21.prev = 25;
+                _context23.prev = 25;
                 _iterator3 = this.modelManager.allItems[Symbol.iterator]();
 
               case 27:
                 if (_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done) {
-                  _context21.next = 51;
+                  _context23.next = 51;
                   break;
                 }
 
@@ -45102,7 +45305,7 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
                 _iteratorNormalCompletion5 = true;
                 _didIteratorError5 = false;
                 _iteratorError5 = undefined;
-                _context21.prev = 32;
+                _context23.prev = 32;
 
                 for (_iterator5 = pending[Symbol.iterator](); !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
                   migration = _step5.value;
@@ -45111,83 +45314,83 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
                     migration.items.push(item);
                   }
                 }
-                _context21.next = 40;
+                _context23.next = 40;
                 break;
 
               case 36:
-                _context21.prev = 36;
-                _context21.t1 = _context21["catch"](32);
+                _context23.prev = 36;
+                _context23.t1 = _context23["catch"](32);
                 _didIteratorError5 = true;
-                _iteratorError5 = _context21.t1;
+                _iteratorError5 = _context23.t1;
 
               case 40:
-                _context21.prev = 40;
-                _context21.prev = 41;
+                _context23.prev = 40;
+                _context23.prev = 41;
 
                 if (!_iteratorNormalCompletion5 && _iterator5.return) {
                   _iterator5.return();
                 }
 
               case 43:
-                _context21.prev = 43;
+                _context23.prev = 43;
 
                 if (!_didIteratorError5) {
-                  _context21.next = 46;
+                  _context23.next = 46;
                   break;
                 }
 
                 throw _iteratorError5;
 
               case 46:
-                return _context21.finish(43);
+                return _context23.finish(43);
 
               case 47:
-                return _context21.finish(40);
+                return _context23.finish(40);
 
               case 48:
                 _iteratorNormalCompletion3 = true;
-                _context21.next = 27;
+                _context23.next = 27;
                 break;
 
               case 51:
-                _context21.next = 57;
+                _context23.next = 57;
                 break;
 
               case 53:
-                _context21.prev = 53;
-                _context21.t2 = _context21["catch"](25);
+                _context23.prev = 53;
+                _context23.t2 = _context23["catch"](25);
                 _didIteratorError3 = true;
-                _iteratorError3 = _context21.t2;
+                _iteratorError3 = _context23.t2;
 
               case 57:
-                _context21.prev = 57;
-                _context21.prev = 58;
+                _context23.prev = 57;
+                _context23.prev = 58;
 
                 if (!_iteratorNormalCompletion3 && _iterator3.return) {
                   _iterator3.return();
                 }
 
               case 60:
-                _context21.prev = 60;
+                _context23.prev = 60;
 
                 if (!_didIteratorError3) {
-                  _context21.next = 63;
+                  _context23.next = 63;
                   break;
                 }
 
                 throw _iteratorError3;
 
               case 63:
-                return _context21.finish(60);
+                return _context23.finish(60);
 
               case 64:
-                return _context21.finish(57);
+                return _context23.finish(57);
 
               case 65:
                 _iteratorNormalCompletion4 = true;
                 _didIteratorError4 = false;
                 _iteratorError4 = undefined;
-                _context21.prev = 68;
+                _context23.prev = 68;
 
 
                 for (_iterator4 = pending[Symbol.iterator](); !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
@@ -45199,49 +45402,49 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
                     this.markMigrationCompleted(migration);
                   }
                 }
-                _context21.next = 76;
+                _context23.next = 76;
                 break;
 
               case 72:
-                _context21.prev = 72;
-                _context21.t3 = _context21["catch"](68);
+                _context23.prev = 72;
+                _context23.t3 = _context23["catch"](68);
                 _didIteratorError4 = true;
-                _iteratorError4 = _context21.t3;
+                _iteratorError4 = _context23.t3;
 
               case 76:
-                _context21.prev = 76;
-                _context21.prev = 77;
+                _context23.prev = 76;
+                _context23.prev = 77;
 
                 if (!_iteratorNormalCompletion4 && _iterator4.return) {
                   _iterator4.return();
                 }
 
               case 79:
-                _context21.prev = 79;
+                _context23.prev = 79;
 
                 if (!_didIteratorError4) {
-                  _context21.next = 82;
+                  _context23.next = 82;
                   break;
                 }
 
                 throw _iteratorError4;
 
               case 82:
-                return _context21.finish(79);
+                return _context23.finish(79);
 
               case 83:
-                return _context21.finish(76);
+                return _context23.finish(76);
 
               case 84:
               case "end":
-                return _context21.stop();
+                return _context23.stop();
             }
           }
-        }, _callee21, this, [[6, 10, 14, 22], [15,, 17, 21], [25, 53, 57, 65], [32, 36, 40, 48], [41,, 43, 47], [58,, 60, 64], [68, 72, 76, 84], [77,, 79, 83]]);
+        }, _callee23, this, [[6, 10, 14, 22], [15,, 17, 21], [25, 53, 57, 65], [32, 36, 40, 48], [41,, 43, 47], [58,, 60, 64], [68, 72, 76, 84], [77,, 79, 83]]);
       }));
 
       function runPendingMigrations() {
-        return _ref21.apply(this, arguments);
+        return _ref23.apply(this, arguments);
       }
 
       return runPendingMigrations;
@@ -45259,22 +45462,22 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
   }, {
     key: "getCompletedMigrations",
     value: function () {
-      var _ref22 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee22() {
+      var _ref24 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee24() {
         var rawCompleted;
-        return regeneratorRuntime.wrap(function _callee22$(_context22) {
+        return regeneratorRuntime.wrap(function _callee24$(_context24) {
           while (1) {
-            switch (_context22.prev = _context22.next) {
+            switch (_context24.prev = _context24.next) {
               case 0:
                 if (this._completed) {
-                  _context22.next = 5;
+                  _context24.next = 5;
                   break;
                 }
 
-                _context22.next = 3;
+                _context24.next = 3;
                 return this.storageManager.getItem("migrations");
 
               case 3:
-                rawCompleted = _context22.sent;
+                rawCompleted = _context24.sent;
 
                 if (rawCompleted) {
                   this._completed = JSON.parse(rawCompleted);
@@ -45283,76 +45486,9 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
                 }
 
               case 5:
-                return _context22.abrupt("return", this._completed);
+                return _context24.abrupt("return", this._completed);
 
               case 6:
-              case "end":
-                return _context22.stop();
-            }
-          }
-        }, _callee22, this);
-      }));
-
-      function getCompletedMigrations() {
-        return _ref22.apply(this, arguments);
-      }
-
-      return getCompletedMigrations;
-    }()
-  }, {
-    key: "getPendingMigrations",
-    value: function () {
-      var _ref23 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee23() {
-        var _this7 = this;
-
-        var completed;
-        return regeneratorRuntime.wrap(function _callee23$(_context23) {
-          while (1) {
-            switch (_context23.prev = _context23.next) {
-              case 0:
-                _context23.next = 2;
-                return this.getCompletedMigrations();
-
-              case 2:
-                completed = _context23.sent;
-                return _context23.abrupt("return", this.migrations.filter(function (migration) {
-                  // if the name is not found in completed, then it is pending.
-                  return completed.indexOf(_this7.encode(migration.name)) == -1;
-                }));
-
-              case 4:
-              case "end":
-                return _context23.stop();
-            }
-          }
-        }, _callee23, this);
-      }));
-
-      function getPendingMigrations() {
-        return _ref23.apply(this, arguments);
-      }
-
-      return getPendingMigrations;
-    }()
-  }, {
-    key: "markMigrationCompleted",
-    value: function () {
-      var _ref24 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee24(migration) {
-        var completed;
-        return regeneratorRuntime.wrap(function _callee24$(_context24) {
-          while (1) {
-            switch (_context24.prev = _context24.next) {
-              case 0:
-                _context24.next = 2;
-                return this.getCompletedMigrations();
-
-              case 2:
-                completed = _context24.sent;
-
-                completed.push(this.encode(migration.name));
-                this.storageManager.setItem("migrations", JSON.stringify(completed));
-
-              case 5:
               case "end":
                 return _context24.stop();
             }
@@ -45360,25 +45496,34 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
         }, _callee24, this);
       }));
 
-      function markMigrationCompleted(_x40) {
+      function getCompletedMigrations() {
         return _ref24.apply(this, arguments);
       }
 
-      return markMigrationCompleted;
+      return getCompletedMigrations;
     }()
   }, {
-    key: "runMigration",
+    key: "getPendingMigrations",
     value: function () {
-      var _ref25 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee25(migration, items) {
+      var _ref25 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee25() {
+        var _this7 = this;
+
+        var completed;
         return regeneratorRuntime.wrap(function _callee25$(_context25) {
           while (1) {
             switch (_context25.prev = _context25.next) {
               case 0:
-                console.log("Running migration:", migration.name);
-                migration.handler(items);
-                this.markMigrationCompleted(migration);
+                _context25.next = 2;
+                return this.getCompletedMigrations();
 
-              case 3:
+              case 2:
+                completed = _context25.sent;
+                return _context25.abrupt("return", this.migrations.filter(function (migration) {
+                  // if the name is not found in completed, then it is pending.
+                  return completed.indexOf(_this7.encode(migration.name)) == -1;
+                }));
+
+              case 4:
               case "end":
                 return _context25.stop();
             }
@@ -45386,8 +45531,66 @@ var SFMigrationManager = exports.SFMigrationManager = function () {
         }, _callee25, this);
       }));
 
-      function runMigration(_x41, _x42) {
+      function getPendingMigrations() {
         return _ref25.apply(this, arguments);
+      }
+
+      return getPendingMigrations;
+    }()
+  }, {
+    key: "markMigrationCompleted",
+    value: function () {
+      var _ref26 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee26(migration) {
+        var completed;
+        return regeneratorRuntime.wrap(function _callee26$(_context26) {
+          while (1) {
+            switch (_context26.prev = _context26.next) {
+              case 0:
+                _context26.next = 2;
+                return this.getCompletedMigrations();
+
+              case 2:
+                completed = _context26.sent;
+
+                completed.push(this.encode(migration.name));
+                this.storageManager.setItem("migrations", JSON.stringify(completed));
+
+              case 5:
+              case "end":
+                return _context26.stop();
+            }
+          }
+        }, _callee26, this);
+      }));
+
+      function markMigrationCompleted(_x40) {
+        return _ref26.apply(this, arguments);
+      }
+
+      return markMigrationCompleted;
+    }()
+  }, {
+    key: "runMigration",
+    value: function () {
+      var _ref27 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee27(migration, items) {
+        return regeneratorRuntime.wrap(function _callee27$(_context27) {
+          while (1) {
+            switch (_context27.prev = _context27.next) {
+              case 0:
+                console.log("Running migration:", migration.name);
+                migration.handler(items);
+                this.markMigrationCompleted(migration);
+
+              case 3:
+              case "end":
+                return _context27.stop();
+            }
+          }
+        }, _callee27, this);
+      }));
+
+      function runMigration(_x41, _x42) {
+        return _ref27.apply(this, arguments);
       }
 
       return runMigration;
@@ -45433,19 +45636,19 @@ var SFModelManager = exports.SFModelManager = function () {
   }, {
     key: "alternateUUIDForItem",
     value: function () {
-      var _ref26 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee26(item) {
+      var _ref28 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee28(item) {
         var newItem;
-        return regeneratorRuntime.wrap(function _callee26$(_context26) {
+        return regeneratorRuntime.wrap(function _callee28$(_context28) {
           while (1) {
-            switch (_context26.prev = _context26.next) {
+            switch (_context28.prev = _context28.next) {
               case 0:
                 // We need to clone this item and give it a new uuid, then delete item with old uuid from db (you can't modify uuid's in our indexeddb setup)
                 newItem = this.createItem(item);
-                _context26.next = 3;
+                _context28.next = 3;
                 return SFJS.crypto.generateUUID();
 
               case 3:
-                newItem.uuid = _context26.sent;
+                newItem.uuid = _context28.sent;
 
 
                 // Update uuids of relationships
@@ -45470,18 +45673,18 @@ var SFModelManager = exports.SFModelManager = function () {
                 newItem.setDirty(true);
                 this.resolveReferencesForItem(newItem);
 
-                return _context26.abrupt("return", newItem);
+                return _context28.abrupt("return", newItem);
 
               case 15:
               case "end":
-                return _context26.stop();
+                return _context28.stop();
             }
           }
-        }, _callee26, this);
+        }, _callee28, this);
       }));
 
       function alternateUUIDForItem(_x43) {
-        return _ref26.apply(this, arguments);
+        return _ref28.apply(this, arguments);
       }
 
       return alternateUUIDForItem;
@@ -45695,12 +45898,12 @@ var SFModelManager = exports.SFModelManager = function () {
 
       try {
         for (var _iterator8 = processedObjects.entries()[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-          var _ref27 = _step8.value;
+          var _ref29 = _step8.value;
 
-          var _ref28 = _slicedToArray(_ref27, 2);
+          var _ref30 = _slicedToArray(_ref29, 2);
 
-          var index = _ref28[0];
-          var _json_obj = _ref28[1];
+          var index = _ref30[0];
+          var _json_obj = _ref30[1];
           var model;
           var missedRefs;
           var ref;
@@ -46301,12 +46504,12 @@ var SFModelManager = exports.SFModelManager = function () {
   }, {
     key: "getAllItemsJSONData",
     value: function () {
-      var _ref29 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee27(keys, authParams, returnNullIfEmpty) {
-        return regeneratorRuntime.wrap(function _callee27$(_context27) {
+      var _ref31 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee29(keys, authParams, returnNullIfEmpty) {
+        return regeneratorRuntime.wrap(function _callee29$(_context29) {
           while (1) {
-            switch (_context27.prev = _context27.next) {
+            switch (_context29.prev = _context29.next) {
               case 0:
-                return _context27.abrupt("return", Promise.all(this.allItems.map(function (item) {
+                return _context29.abrupt("return", Promise.all(this.allItems.map(function (item) {
                   var itemParams = new SFItemParams(item, keys, authParams);
                   return itemParams.paramsForExportFile();
                 })).then(function (items) {
@@ -46326,14 +46529,14 @@ var SFModelManager = exports.SFModelManager = function () {
 
               case 1:
               case "end":
-                return _context27.stop();
+                return _context29.stop();
             }
           }
-        }, _callee27, this);
+        }, _callee29, this);
       }));
 
       function getAllItemsJSONData(_x48, _x49, _x50) {
-        return _ref29.apply(this, arguments);
+        return _ref31.apply(this, arguments);
       }
 
       return getAllItemsJSONData;
@@ -46404,23 +46607,23 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
   _createClass(SFSessionHistoryManager, [{
     key: "encryptionParams",
     value: function () {
-      var _ref30 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee28() {
-        return regeneratorRuntime.wrap(function _callee28$(_context28) {
+      var _ref32 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee30() {
+        return regeneratorRuntime.wrap(function _callee30$(_context30) {
           while (1) {
-            switch (_context28.prev = _context28.next) {
+            switch (_context30.prev = _context30.next) {
               case 0:
-                return _context28.abrupt("return", this.keyRequestHandler());
+                return _context30.abrupt("return", this.keyRequestHandler());
 
               case 1:
               case "end":
-                return _context28.stop();
+                return _context30.stop();
             }
           }
-        }, _callee28, this);
+        }, _callee30, this);
       }));
 
       function encryptionParams() {
-        return _ref30.apply(this, arguments);
+        return _ref32.apply(this, arguments);
       }
 
       return encryptionParams;
@@ -46465,78 +46668,15 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
   }, {
     key: "clearHistoryForItem",
     value: function () {
-      var _ref31 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee29(item) {
-        return regeneratorRuntime.wrap(function _callee29$(_context29) {
-          while (1) {
-            switch (_context29.prev = _context29.next) {
-              case 0:
-                this.historySession.clearItemHistory(item);
-                return _context29.abrupt("return", this.saveToDisk());
-
-              case 2:
-              case "end":
-                return _context29.stop();
-            }
-          }
-        }, _callee29, this);
-      }));
-
-      function clearHistoryForItem(_x51) {
-        return _ref31.apply(this, arguments);
-      }
-
-      return clearHistoryForItem;
-    }()
-  }, {
-    key: "clearAllHistory",
-    value: function () {
-      var _ref32 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee30() {
-        return regeneratorRuntime.wrap(function _callee30$(_context30) {
-          while (1) {
-            switch (_context30.prev = _context30.next) {
-              case 0:
-                this.historySession.clearAllHistory();
-                return _context30.abrupt("return", this.storageManager.removeItem(SessionHistoryRevisionsKey));
-
-              case 2:
-              case "end":
-                return _context30.stop();
-            }
-          }
-        }, _callee30, this);
-      }));
-
-      function clearAllHistory() {
-        return _ref32.apply(this, arguments);
-      }
-
-      return clearAllHistory;
-    }()
-  }, {
-    key: "toggleDiskSaving",
-    value: function () {
-      var _ref33 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee31() {
+      var _ref33 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee31(item) {
         return regeneratorRuntime.wrap(function _callee31$(_context31) {
           while (1) {
             switch (_context31.prev = _context31.next) {
               case 0:
-                this.diskEnabled = !this.diskEnabled;
+                this.historySession.clearItemHistory(item);
+                return _context31.abrupt("return", this.saveToDisk());
 
-                if (!this.diskEnabled) {
-                  _context31.next = 6;
-                  break;
-                }
-
-                this.storageManager.setItem(SessionHistoryPersistKey, JSON.stringify(true));
-                this.saveToDisk();
-                _context31.next = 8;
-                break;
-
-              case 6:
-                this.storageManager.setItem(SessionHistoryPersistKey, JSON.stringify(false));
-                return _context31.abrupt("return", this.storageManager.removeItem(SessionHistoryRevisionsKey));
-
-              case 8:
+              case 2:
               case "end":
                 return _context31.stop();
             }
@@ -46544,8 +46684,71 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
         }, _callee31, this);
       }));
 
-      function toggleDiskSaving() {
+      function clearHistoryForItem(_x51) {
         return _ref33.apply(this, arguments);
+      }
+
+      return clearHistoryForItem;
+    }()
+  }, {
+    key: "clearAllHistory",
+    value: function () {
+      var _ref34 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee32() {
+        return regeneratorRuntime.wrap(function _callee32$(_context32) {
+          while (1) {
+            switch (_context32.prev = _context32.next) {
+              case 0:
+                this.historySession.clearAllHistory();
+                return _context32.abrupt("return", this.storageManager.removeItem(SessionHistoryRevisionsKey));
+
+              case 2:
+              case "end":
+                return _context32.stop();
+            }
+          }
+        }, _callee32, this);
+      }));
+
+      function clearAllHistory() {
+        return _ref34.apply(this, arguments);
+      }
+
+      return clearAllHistory;
+    }()
+  }, {
+    key: "toggleDiskSaving",
+    value: function () {
+      var _ref35 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee33() {
+        return regeneratorRuntime.wrap(function _callee33$(_context33) {
+          while (1) {
+            switch (_context33.prev = _context33.next) {
+              case 0:
+                this.diskEnabled = !this.diskEnabled;
+
+                if (!this.diskEnabled) {
+                  _context33.next = 6;
+                  break;
+                }
+
+                this.storageManager.setItem(SessionHistoryPersistKey, JSON.stringify(true));
+                this.saveToDisk();
+                _context33.next = 8;
+                break;
+
+              case 6:
+                this.storageManager.setItem(SessionHistoryPersistKey, JSON.stringify(false));
+                return _context33.abrupt("return", this.storageManager.removeItem(SessionHistoryRevisionsKey));
+
+              case 8:
+              case "end":
+                return _context33.stop();
+            }
+          }
+        }, _callee33, this);
+      }));
+
+      function toggleDiskSaving() {
+        return _ref35.apply(this, arguments);
       }
 
       return toggleDiskSaving;
@@ -46553,27 +46756,27 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
   }, {
     key: "saveToDisk",
     value: function () {
-      var _ref34 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee32() {
+      var _ref36 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee34() {
         var _this13 = this;
 
         var encryptionParams, itemParams;
-        return regeneratorRuntime.wrap(function _callee32$(_context32) {
+        return regeneratorRuntime.wrap(function _callee34$(_context34) {
           while (1) {
-            switch (_context32.prev = _context32.next) {
+            switch (_context34.prev = _context34.next) {
               case 0:
                 if (this.diskEnabled) {
-                  _context32.next = 2;
+                  _context34.next = 2;
                   break;
                 }
 
-                return _context32.abrupt("return");
+                return _context34.abrupt("return");
 
               case 2:
-                _context32.next = 4;
+                _context34.next = 4;
                 return this.encryptionParams();
 
               case 4:
-                encryptionParams = _context32.sent;
+                encryptionParams = _context34.sent;
                 itemParams = new SFItemParams(this.historySession, encryptionParams.keys, encryptionParams.auth_params);
 
                 itemParams.paramsForSync().then(function (syncParams) {
@@ -46583,14 +46786,14 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
 
               case 7:
               case "end":
-                return _context32.stop();
+                return _context34.stop();
             }
           }
-        }, _callee32, this);
+        }, _callee34, this);
       }));
 
       function saveToDisk() {
-        return _ref34.apply(this, arguments);
+        return _ref36.apply(this, arguments);
       }
 
       return saveToDisk;
@@ -46598,58 +46801,58 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
   }, {
     key: "loadFromDisk",
     value: function () {
-      var _ref35 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee33() {
+      var _ref37 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee35() {
         var diskValue, historyValue, encryptionParams, historySession, autoOptimizeValue;
-        return regeneratorRuntime.wrap(function _callee33$(_context33) {
+        return regeneratorRuntime.wrap(function _callee35$(_context35) {
           while (1) {
-            switch (_context33.prev = _context33.next) {
+            switch (_context35.prev = _context35.next) {
               case 0:
-                _context33.next = 2;
+                _context35.next = 2;
                 return this.storageManager.getItem(SessionHistoryPersistKey);
 
               case 2:
-                diskValue = _context33.sent;
+                diskValue = _context35.sent;
 
                 if (diskValue) {
                   this.diskEnabled = JSON.parse(diskValue);
                 }
 
-                _context33.next = 6;
+                _context35.next = 6;
                 return this.storageManager.getItem(SessionHistoryRevisionsKey);
 
               case 6:
-                historyValue = _context33.sent;
+                historyValue = _context35.sent;
 
                 if (!historyValue) {
-                  _context33.next = 18;
+                  _context35.next = 18;
                   break;
                 }
 
                 historyValue = JSON.parse(historyValue);
-                _context33.next = 11;
+                _context35.next = 11;
                 return this.encryptionParams();
 
               case 11:
-                encryptionParams = _context33.sent;
-                _context33.next = 14;
+                encryptionParams = _context35.sent;
+                _context35.next = 14;
                 return SFJS.itemTransformer.decryptItem(historyValue, encryptionParams.keys);
 
               case 14:
                 historySession = new SFHistorySession(historyValue);
 
                 this.historySession = historySession;
-                _context33.next = 19;
+                _context35.next = 19;
                 break;
 
               case 18:
                 this.historySession = new SFHistorySession();
 
               case 19:
-                _context33.next = 21;
+                _context35.next = 21;
                 return this.storageManager.getItem(SessionHistoryAutoOptimizeKey);
 
               case 21:
-                autoOptimizeValue = _context33.sent;
+                autoOptimizeValue = _context35.sent;
 
                 if (autoOptimizeValue) {
                   this.autoOptimize = JSON.parse(autoOptimizeValue);
@@ -46660,14 +46863,14 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
 
               case 23:
               case "end":
-                return _context33.stop();
+                return _context35.stop();
             }
           }
-        }, _callee33, this);
+        }, _callee35, this);
       }));
 
       function loadFromDisk() {
-        return _ref35.apply(this, arguments);
+        return _ref37.apply(this, arguments);
       }
 
       return loadFromDisk;
@@ -46675,10 +46878,10 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
   }, {
     key: "toggleAutoOptimize",
     value: function () {
-      var _ref36 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee34() {
-        return regeneratorRuntime.wrap(function _callee34$(_context34) {
+      var _ref38 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee36() {
+        return regeneratorRuntime.wrap(function _callee36$(_context36) {
           while (1) {
-            switch (_context34.prev = _context34.next) {
+            switch (_context36.prev = _context36.next) {
               case 0:
                 this.autoOptimize = !this.autoOptimize;
 
@@ -46690,14 +46893,14 @@ var SFSessionHistoryManager = exports.SFSessionHistoryManager = function () {
 
               case 2:
               case "end":
-                return _context34.stop();
+                return _context36.stop();
             }
           }
-        }, _callee34, this);
+        }, _callee36, this);
       }));
 
       function toggleAutoOptimize() {
-        return _ref36.apply(this, arguments);
+        return _ref38.apply(this, arguments);
       }
 
       return toggleAutoOptimize;
@@ -46721,49 +46924,7 @@ var SFStorageManager = exports.SFStorageManager = function () {
     /* Simple Key/Value Storage */
 
     value: function () {
-      var _ref37 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee35(key, value) {
-        return regeneratorRuntime.wrap(function _callee35$(_context35) {
-          while (1) {
-            switch (_context35.prev = _context35.next) {
-              case 0:
-              case "end":
-                return _context35.stop();
-            }
-          }
-        }, _callee35, this);
-      }));
-
-      function setItem(_x52, _x53) {
-        return _ref37.apply(this, arguments);
-      }
-
-      return setItem;
-    }()
-  }, {
-    key: "getItem",
-    value: function () {
-      var _ref38 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee36(key) {
-        return regeneratorRuntime.wrap(function _callee36$(_context36) {
-          while (1) {
-            switch (_context36.prev = _context36.next) {
-              case 0:
-              case "end":
-                return _context36.stop();
-            }
-          }
-        }, _callee36, this);
-      }));
-
-      function getItem(_x54) {
-        return _ref38.apply(this, arguments);
-      }
-
-      return getItem;
-    }()
-  }, {
-    key: "removeItem",
-    value: function () {
-      var _ref39 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee37(key) {
+      var _ref39 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee37(key, value) {
         return regeneratorRuntime.wrap(function _callee37$(_context37) {
           while (1) {
             switch (_context37.prev = _context37.next) {
@@ -46775,16 +46936,16 @@ var SFStorageManager = exports.SFStorageManager = function () {
         }, _callee37, this);
       }));
 
-      function removeItem(_x55) {
+      function setItem(_x52, _x53) {
         return _ref39.apply(this, arguments);
       }
 
-      return removeItem;
+      return setItem;
     }()
   }, {
-    key: "clear",
+    key: "getItem",
     value: function () {
-      var _ref40 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee38() {
+      var _ref40 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee38(key) {
         return regeneratorRuntime.wrap(function _callee38$(_context38) {
           while (1) {
             switch (_context38.prev = _context38.next) {
@@ -46796,8 +46957,50 @@ var SFStorageManager = exports.SFStorageManager = function () {
         }, _callee38, this);
       }));
 
-      function clear() {
+      function getItem(_x54) {
         return _ref40.apply(this, arguments);
+      }
+
+      return getItem;
+    }()
+  }, {
+    key: "removeItem",
+    value: function () {
+      var _ref41 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee39(key) {
+        return regeneratorRuntime.wrap(function _callee39$(_context39) {
+          while (1) {
+            switch (_context39.prev = _context39.next) {
+              case 0:
+              case "end":
+                return _context39.stop();
+            }
+          }
+        }, _callee39, this);
+      }));
+
+      function removeItem(_x55) {
+        return _ref41.apply(this, arguments);
+      }
+
+      return removeItem;
+    }()
+  }, {
+    key: "clear",
+    value: function () {
+      var _ref42 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee40() {
+        return regeneratorRuntime.wrap(function _callee40$(_context40) {
+          while (1) {
+            switch (_context40.prev = _context40.next) {
+              case 0:
+              case "end":
+                return _context40.stop();
+            }
+          }
+        }, _callee40, this);
+      }));
+
+      function clear() {
+        return _ref42.apply(this, arguments);
       }
 
       return clear;
@@ -46811,52 +47014,7 @@ var SFStorageManager = exports.SFStorageManager = function () {
     */
 
     value: function () {
-      var _ref41 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee39() {
-        return regeneratorRuntime.wrap(function _callee39$(_context39) {
-          while (1) {
-            switch (_context39.prev = _context39.next) {
-              case 0:
-              case "end":
-                return _context39.stop();
-            }
-          }
-        }, _callee39, this);
-      }));
-
-      function getAllModels() {
-        return _ref41.apply(this, arguments);
-      }
-
-      return getAllModels;
-    }()
-  }, {
-    key: "saveModel",
-    value: function () {
-      var _ref42 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee40(item) {
-        return regeneratorRuntime.wrap(function _callee40$(_context40) {
-          while (1) {
-            switch (_context40.prev = _context40.next) {
-              case 0:
-                return _context40.abrupt("return", this.saveModels([item]));
-
-              case 1:
-              case "end":
-                return _context40.stop();
-            }
-          }
-        }, _callee40, this);
-      }));
-
-      function saveModel(_x56) {
-        return _ref42.apply(this, arguments);
-      }
-
-      return saveModel;
-    }()
-  }, {
-    key: "saveModels",
-    value: function () {
-      var _ref43 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee41(items) {
+      var _ref43 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee41() {
         return regeneratorRuntime.wrap(function _callee41$(_context41) {
           while (1) {
             switch (_context41.prev = _context41.next) {
@@ -46868,20 +47026,23 @@ var SFStorageManager = exports.SFStorageManager = function () {
         }, _callee41, this);
       }));
 
-      function saveModels(_x57) {
+      function getAllModels() {
         return _ref43.apply(this, arguments);
       }
 
-      return saveModels;
+      return getAllModels;
     }()
   }, {
-    key: "deleteModel",
+    key: "saveModel",
     value: function () {
       var _ref44 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee42(item) {
         return regeneratorRuntime.wrap(function _callee42$(_context42) {
           while (1) {
             switch (_context42.prev = _context42.next) {
               case 0:
+                return _context42.abrupt("return", this.saveModels([item]));
+
+              case 1:
               case "end":
                 return _context42.stop();
             }
@@ -46889,16 +47050,16 @@ var SFStorageManager = exports.SFStorageManager = function () {
         }, _callee42, this);
       }));
 
-      function deleteModel(_x58) {
+      function saveModel(_x56) {
         return _ref44.apply(this, arguments);
       }
 
-      return deleteModel;
+      return saveModel;
     }()
   }, {
-    key: "clearAllModels",
+    key: "saveModels",
     value: function () {
-      var _ref45 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee43() {
+      var _ref45 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee43(items) {
         return regeneratorRuntime.wrap(function _callee43$(_context43) {
           while (1) {
             switch (_context43.prev = _context43.next) {
@@ -46910,8 +47071,50 @@ var SFStorageManager = exports.SFStorageManager = function () {
         }, _callee43, this);
       }));
 
-      function clearAllModels() {
+      function saveModels(_x57) {
         return _ref45.apply(this, arguments);
+      }
+
+      return saveModels;
+    }()
+  }, {
+    key: "deleteModel",
+    value: function () {
+      var _ref46 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee44(item) {
+        return regeneratorRuntime.wrap(function _callee44$(_context44) {
+          while (1) {
+            switch (_context44.prev = _context44.next) {
+              case 0:
+              case "end":
+                return _context44.stop();
+            }
+          }
+        }, _callee44, this);
+      }));
+
+      function deleteModel(_x58) {
+        return _ref46.apply(this, arguments);
+      }
+
+      return deleteModel;
+    }()
+  }, {
+    key: "clearAllModels",
+    value: function () {
+      var _ref47 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee45() {
+        return regeneratorRuntime.wrap(function _callee45$(_context45) {
+          while (1) {
+            switch (_context45.prev = _context45.next) {
+              case 0:
+              case "end":
+                return _context45.stop();
+            }
+          }
+        }, _callee45, this);
+      }));
+
+      function clearAllModels() {
+        return _ref47.apply(this, arguments);
       }
 
       return clearAllModels;
@@ -46923,23 +47126,23 @@ var SFStorageManager = exports.SFStorageManager = function () {
     /* General */
 
     value: function () {
-      var _ref46 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee44() {
-        return regeneratorRuntime.wrap(function _callee44$(_context44) {
+      var _ref48 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee46() {
+        return regeneratorRuntime.wrap(function _callee46$(_context46) {
           while (1) {
-            switch (_context44.prev = _context44.next) {
+            switch (_context46.prev = _context46.next) {
               case 0:
-                return _context44.abrupt("return", Promise.all([this.clear(), this.clearAllModels()]));
+                return _context46.abrupt("return", Promise.all([this.clear(), this.clearAllModels()]));
 
               case 1:
               case "end":
-                return _context44.stop();
+                return _context46.stop();
             }
           }
-        }, _callee44, this);
+        }, _callee46, this);
       }));
 
       function clearAllData() {
-        return _ref46.apply(this, arguments);
+        return _ref48.apply(this, arguments);
       }
 
       return clearAllData;
@@ -46974,37 +47177,37 @@ var SFSyncManager = exports.SFSyncManager = function () {
   _createClass(SFSyncManager, [{
     key: "getServerURL",
     value: function () {
-      var _ref47 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee45() {
-        return regeneratorRuntime.wrap(function _callee45$(_context45) {
+      var _ref49 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee47() {
+        return regeneratorRuntime.wrap(function _callee47$(_context47) {
           while (1) {
-            switch (_context45.prev = _context45.next) {
+            switch (_context47.prev = _context47.next) {
               case 0:
-                _context45.next = 2;
+                _context47.next = 2;
                 return this.storageManager.getItem("server");
 
               case 2:
-                _context45.t0 = _context45.sent;
+                _context47.t0 = _context47.sent;
 
-                if (_context45.t0) {
-                  _context45.next = 5;
+                if (_context47.t0) {
+                  _context47.next = 5;
                   break;
                 }
 
-                _context45.t0 = window._default_sf_server;
+                _context47.t0 = window._default_sf_server;
 
               case 5:
-                return _context45.abrupt("return", _context45.t0);
+                return _context47.abrupt("return", _context47.t0);
 
               case 6:
               case "end":
-                return _context45.stop();
+                return _context47.stop();
             }
           }
-        }, _callee45, this);
+        }, _callee47, this);
       }));
 
       function getServerURL() {
-        return _ref47.apply(this, arguments);
+        return _ref49.apply(this, arguments);
       }
 
       return getServerURL;
@@ -47012,28 +47215,28 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "getSyncURL",
     value: function () {
-      var _ref48 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee46() {
-        return regeneratorRuntime.wrap(function _callee46$(_context46) {
+      var _ref50 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee48() {
+        return regeneratorRuntime.wrap(function _callee48$(_context48) {
           while (1) {
-            switch (_context46.prev = _context46.next) {
+            switch (_context48.prev = _context48.next) {
               case 0:
-                _context46.next = 2;
+                _context48.next = 2;
                 return this.getServerURL();
 
               case 2:
-                _context46.t0 = _context46.sent;
-                return _context46.abrupt("return", _context46.t0 + "/items/sync");
+                _context48.t0 = _context48.sent;
+                return _context48.abrupt("return", _context48.t0 + "/items/sync");
 
               case 4:
               case "end":
-                return _context46.stop();
+                return _context48.stop();
             }
           }
-        }, _callee46, this);
+        }, _callee48, this);
       }));
 
       function getSyncURL() {
-        return _ref48.apply(this, arguments);
+        return _ref50.apply(this, arguments);
       }
 
       return getSyncURL;
@@ -47071,6 +47274,7 @@ var SFSyncManager = exports.SFSyncManager = function () {
       major-data-change
       local-data-loaded
       sync-session-invalid
+      sync-exception
        */
       this.eventHandlers.push(handler);
       return handler;
@@ -47116,23 +47320,23 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "getActiveKeyInfo",
     value: function () {
-      var _ref49 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee47(request) {
-        return regeneratorRuntime.wrap(function _callee47$(_context47) {
+      var _ref51 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee49(request) {
+        return regeneratorRuntime.wrap(function _callee49$(_context49) {
           while (1) {
-            switch (_context47.prev = _context47.next) {
+            switch (_context49.prev = _context49.next) {
               case 0:
-                return _context47.abrupt("return", this.keyRequestHandler(request));
+                return _context49.abrupt("return", this.keyRequestHandler(request));
 
               case 1:
               case "end":
-                return _context47.stop();
+                return _context49.stop();
             }
           }
-        }, _callee47, this);
+        }, _callee49, this);
       }));
 
       function getActiveKeyInfo(_x59) {
-        return _ref49.apply(this, arguments);
+        return _ref51.apply(this, arguments);
       }
 
       return getActiveKeyInfo;
@@ -47145,44 +47349,44 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "loadLocalItems",
     value: function () {
-      var _ref50 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee49(incrementalCallback) {
+      var _ref52 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee51(incrementalCallback) {
         var _this15 = this;
 
         var batchSize = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 50;
-        return regeneratorRuntime.wrap(function _callee49$(_context49) {
+        return regeneratorRuntime.wrap(function _callee51$(_context51) {
           while (1) {
-            switch (_context49.prev = _context49.next) {
+            switch (_context51.prev = _context51.next) {
               case 0:
-                return _context49.abrupt("return", this.storageManager.getAllModels().then(function (items) {
+                return _context51.abrupt("return", this.storageManager.getAllModels().then(function (items) {
                   // break it up into chunks to make interface more responsive for large item counts
                   var total = items.length;
                   var current = 0;
                   var processed = [];
 
                   var decryptNext = function () {
-                    var _ref51 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee48() {
+                    var _ref53 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee50() {
                       var subitems, processedSubitems;
-                      return regeneratorRuntime.wrap(function _callee48$(_context48) {
+                      return regeneratorRuntime.wrap(function _callee50$(_context50) {
                         while (1) {
-                          switch (_context48.prev = _context48.next) {
+                          switch (_context50.prev = _context50.next) {
                             case 0:
                               subitems = items.slice(current, current + batchSize);
-                              _context48.next = 3;
+                              _context50.next = 3;
                               return _this15.handleItemsResponse(subitems, null, SFModelManager.MappingSourceLocalRetrieved, SFSyncManager.KeyRequestLoadLocal);
 
                             case 3:
-                              processedSubitems = _context48.sent;
+                              processedSubitems = _context50.sent;
 
                               processed.push(processedSubitems);
 
                               current += subitems.length;
 
                               if (!(current < total)) {
-                                _context48.next = 10;
+                                _context50.next = 10;
                                 break;
                               }
 
-                              return _context48.abrupt("return", new Promise(function (innerResolve, innerReject) {
+                              return _context50.abrupt("return", new Promise(function (innerResolve, innerReject) {
                                 _this15.$timeout(function () {
                                   incrementalCallback && incrementalCallback(current, total);
                                   decryptNext().then(innerResolve);
@@ -47196,14 +47400,14 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                             case 12:
                             case "end":
-                              return _context48.stop();
+                              return _context50.stop();
                           }
                         }
-                      }, _callee48, _this15);
+                      }, _callee50, _this15);
                     }));
 
                     return function decryptNext() {
-                      return _ref51.apply(this, arguments);
+                      return _ref53.apply(this, arguments);
                     };
                   }();
 
@@ -47212,14 +47416,14 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
               case 1:
               case "end":
-                return _context49.stop();
+                return _context51.stop();
             }
           }
-        }, _callee49, this);
+        }, _callee51, this);
       }));
 
       function loadLocalItems(_x61) {
-        return _ref50.apply(this, arguments);
+        return _ref52.apply(this, arguments);
       }
 
       return loadLocalItems;
@@ -47227,65 +47431,65 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "writeItemsToLocalStorage",
     value: function () {
-      var _ref52 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee52(items, offlineOnly) {
+      var _ref54 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee54(items, offlineOnly) {
         var _this16 = this;
 
-        return regeneratorRuntime.wrap(function _callee52$(_context52) {
+        return regeneratorRuntime.wrap(function _callee54$(_context54) {
           while (1) {
-            switch (_context52.prev = _context52.next) {
+            switch (_context54.prev = _context54.next) {
               case 0:
-                return _context52.abrupt("return", new Promise(function () {
-                  var _ref53 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee51(resolve, reject) {
+                return _context54.abrupt("return", new Promise(function () {
+                  var _ref55 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee53(resolve, reject) {
                     var info;
-                    return regeneratorRuntime.wrap(function _callee51$(_context51) {
+                    return regeneratorRuntime.wrap(function _callee53$(_context53) {
                       while (1) {
-                        switch (_context51.prev = _context51.next) {
+                        switch (_context53.prev = _context53.next) {
                           case 0:
                             if (!(items.length == 0)) {
-                              _context51.next = 3;
+                              _context53.next = 3;
                               break;
                             }
 
                             resolve();
-                            return _context51.abrupt("return");
+                            return _context53.abrupt("return");
 
                           case 3:
-                            _context51.next = 5;
+                            _context53.next = 5;
                             return _this16.getActiveKeyInfo(SFSyncManager.KeyRequestSaveLocal);
 
                           case 5:
-                            info = _context51.sent;
+                            info = _context53.sent;
 
 
                             Promise.all(items.map(function () {
-                              var _ref54 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee50(item) {
+                              var _ref56 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee52(item) {
                                 var itemParams;
-                                return regeneratorRuntime.wrap(function _callee50$(_context50) {
+                                return regeneratorRuntime.wrap(function _callee52$(_context52) {
                                   while (1) {
-                                    switch (_context50.prev = _context50.next) {
+                                    switch (_context52.prev = _context52.next) {
                                       case 0:
                                         itemParams = new SFItemParams(item, info.keys, info.auth_params);
-                                        _context50.next = 3;
+                                        _context52.next = 3;
                                         return itemParams.paramsForLocalStorage();
 
                                       case 3:
-                                        itemParams = _context50.sent;
+                                        itemParams = _context52.sent;
 
                                         if (offlineOnly) {
                                           delete itemParams.dirty;
                                         }
-                                        return _context50.abrupt("return", itemParams);
+                                        return _context52.abrupt("return", itemParams);
 
                                       case 6:
                                       case "end":
-                                        return _context50.stop();
+                                        return _context52.stop();
                                     }
                                   }
-                                }, _callee50, _this16);
+                                }, _callee52, _this16);
                               }));
 
                               return function (_x66) {
-                                return _ref54.apply(this, arguments);
+                                return _ref56.apply(this, arguments);
                               };
                             }())).then(function (params) {
                               _this16.storageManager.saveModels(params).then(function () {
@@ -47306,27 +47510,27 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                           case 7:
                           case "end":
-                            return _context51.stop();
+                            return _context53.stop();
                         }
                       }
-                    }, _callee51, _this16);
+                    }, _callee53, _this16);
                   }));
 
                   return function (_x64, _x65) {
-                    return _ref53.apply(this, arguments);
+                    return _ref55.apply(this, arguments);
                   };
                 }()));
 
               case 1:
               case "end":
-                return _context52.stop();
+                return _context54.stop();
             }
           }
-        }, _callee52, this);
+        }, _callee54, this);
       }));
 
       function writeItemsToLocalStorage(_x62, _x63) {
-        return _ref52.apply(this, arguments);
+        return _ref54.apply(this, arguments);
       }
 
       return writeItemsToLocalStorage;
@@ -47334,59 +47538,59 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "syncOffline",
     value: function () {
-      var _ref55 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee53(items) {
+      var _ref57 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee55(items) {
         var _this17 = this;
 
         var _iteratorNormalCompletion24, _didIteratorError24, _iteratorError24, _iterator24, _step24, item;
 
-        return regeneratorRuntime.wrap(function _callee53$(_context53) {
+        return regeneratorRuntime.wrap(function _callee55$(_context55) {
           while (1) {
-            switch (_context53.prev = _context53.next) {
+            switch (_context55.prev = _context55.next) {
               case 0:
                 // Update all items updated_at to now
                 _iteratorNormalCompletion24 = true;
                 _didIteratorError24 = false;
                 _iteratorError24 = undefined;
-                _context53.prev = 3;
+                _context55.prev = 3;
                 for (_iterator24 = items[Symbol.iterator](); !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
                   item = _step24.value;
                   item.updated_at = new Date();
                 }
-                _context53.next = 11;
+                _context55.next = 11;
                 break;
 
               case 7:
-                _context53.prev = 7;
-                _context53.t0 = _context53["catch"](3);
+                _context55.prev = 7;
+                _context55.t0 = _context55["catch"](3);
                 _didIteratorError24 = true;
-                _iteratorError24 = _context53.t0;
+                _iteratorError24 = _context55.t0;
 
               case 11:
-                _context53.prev = 11;
-                _context53.prev = 12;
+                _context55.prev = 11;
+                _context55.prev = 12;
 
                 if (!_iteratorNormalCompletion24 && _iterator24.return) {
                   _iterator24.return();
                 }
 
               case 14:
-                _context53.prev = 14;
+                _context55.prev = 14;
 
                 if (!_didIteratorError24) {
-                  _context53.next = 17;
+                  _context55.next = 17;
                   break;
                 }
 
                 throw _iteratorError24;
 
               case 17:
-                return _context53.finish(14);
+                return _context55.finish(14);
 
               case 18:
-                return _context53.finish(11);
+                return _context55.finish(11);
 
               case 19:
-                return _context53.abrupt("return", this.writeItemsToLocalStorage(items, true).then(function (responseItems) {
+                return _context55.abrupt("return", this.writeItemsToLocalStorage(items, true).then(function (responseItems) {
                   // delete anything needing to be deleted
                   var _iteratorNormalCompletion25 = true;
                   var _didIteratorError25 = false;
@@ -47418,18 +47622,20 @@ var SFSyncManager = exports.SFSyncManager = function () {
                   _this17.notifyEvent("sync:completed");
                   // Required in order for modelManager to notify sync observers
                   _this17.modelManager.didSyncModelsOffline(items);
+
+                  return { saved_items: items };
                 }));
 
               case 20:
               case "end":
-                return _context53.stop();
+                return _context55.stop();
             }
           }
-        }, _callee53, this, [[3, 7, 11, 19], [12,, 14, 18]]);
+        }, _callee55, this, [[3, 7, 11, 19], [12,, 14, 18]]);
       }));
 
       function syncOffline(_x67) {
-        return _ref55.apply(this, arguments);
+        return _ref57.apply(this, arguments);
       }
 
       return syncOffline;
@@ -47444,12 +47650,12 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "markAllItemsDirtyAndSaveOffline",
     value: function () {
-      var _ref56 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee54(alternateUUIDs) {
+      var _ref58 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee56(alternateUUIDs) {
         var originalItems, _iteratorNormalCompletion26, _didIteratorError26, _iteratorError26, _iterator26, _step26, item, allItems, _iteratorNormalCompletion27, _didIteratorError27, _iteratorError27, _iterator27, _step27;
 
-        return regeneratorRuntime.wrap(function _callee54$(_context54) {
+        return regeneratorRuntime.wrap(function _callee56$(_context56) {
           while (1) {
-            switch (_context54.prev = _context54.next) {
+            switch (_context56.prev = _context56.next) {
               case 0:
 
                 // use a copy, as alternating uuid will affect array
@@ -47458,122 +47664,122 @@ var SFSyncManager = exports.SFSyncManager = function () {
                 }).slice();
 
                 if (!alternateUUIDs) {
-                  _context54.next = 28;
+                  _context56.next = 28;
                   break;
                 }
 
                 _iteratorNormalCompletion26 = true;
                 _didIteratorError26 = false;
                 _iteratorError26 = undefined;
-                _context54.prev = 5;
+                _context56.prev = 5;
                 _iterator26 = originalItems[Symbol.iterator]();
 
               case 7:
                 if (_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done) {
-                  _context54.next = 14;
+                  _context56.next = 14;
                   break;
                 }
 
                 item = _step26.value;
-                _context54.next = 11;
+                _context56.next = 11;
                 return this.modelManager.alternateUUIDForItem(item);
 
               case 11:
                 _iteratorNormalCompletion26 = true;
-                _context54.next = 7;
+                _context56.next = 7;
                 break;
 
               case 14:
-                _context54.next = 20;
+                _context56.next = 20;
                 break;
 
               case 16:
-                _context54.prev = 16;
-                _context54.t0 = _context54["catch"](5);
+                _context56.prev = 16;
+                _context56.t0 = _context56["catch"](5);
                 _didIteratorError26 = true;
-                _iteratorError26 = _context54.t0;
+                _iteratorError26 = _context56.t0;
 
               case 20:
-                _context54.prev = 20;
-                _context54.prev = 21;
+                _context56.prev = 20;
+                _context56.prev = 21;
 
                 if (!_iteratorNormalCompletion26 && _iterator26.return) {
                   _iterator26.return();
                 }
 
               case 23:
-                _context54.prev = 23;
+                _context56.prev = 23;
 
                 if (!_didIteratorError26) {
-                  _context54.next = 26;
+                  _context56.next = 26;
                   break;
                 }
 
                 throw _iteratorError26;
 
               case 26:
-                return _context54.finish(23);
+                return _context56.finish(23);
 
               case 27:
-                return _context54.finish(20);
+                return _context56.finish(20);
 
               case 28:
                 allItems = this.modelManager.allItems;
                 _iteratorNormalCompletion27 = true;
                 _didIteratorError27 = false;
                 _iteratorError27 = undefined;
-                _context54.prev = 32;
+                _context56.prev = 32;
 
                 for (_iterator27 = allItems[Symbol.iterator](); !(_iteratorNormalCompletion27 = (_step27 = _iterator27.next()).done); _iteratorNormalCompletion27 = true) {
                   item = _step27.value;
                   item.setDirty(true);
                 }
-                _context54.next = 40;
+                _context56.next = 40;
                 break;
 
               case 36:
-                _context54.prev = 36;
-                _context54.t1 = _context54["catch"](32);
+                _context56.prev = 36;
+                _context56.t1 = _context56["catch"](32);
                 _didIteratorError27 = true;
-                _iteratorError27 = _context54.t1;
+                _iteratorError27 = _context56.t1;
 
               case 40:
-                _context54.prev = 40;
-                _context54.prev = 41;
+                _context56.prev = 40;
+                _context56.prev = 41;
 
                 if (!_iteratorNormalCompletion27 && _iterator27.return) {
                   _iterator27.return();
                 }
 
               case 43:
-                _context54.prev = 43;
+                _context56.prev = 43;
 
                 if (!_didIteratorError27) {
-                  _context54.next = 46;
+                  _context56.next = 46;
                   break;
                 }
 
                 throw _iteratorError27;
 
               case 46:
-                return _context54.finish(43);
+                return _context56.finish(43);
 
               case 47:
-                return _context54.finish(40);
+                return _context56.finish(40);
 
               case 48:
-                return _context54.abrupt("return", this.writeItemsToLocalStorage(allItems, false));
+                return _context56.abrupt("return", this.writeItemsToLocalStorage(allItems, false));
 
               case 49:
               case "end":
-                return _context54.stop();
+                return _context56.stop();
             }
           }
-        }, _callee54, this, [[5, 16, 20, 28], [21,, 23, 27], [32, 36, 40, 48], [41,, 43, 47]]);
+        }, _callee56, this, [[5, 16, 20, 28], [21,, 23, 27], [32, 36, 40, 48], [41,, 43, 47]]);
       }));
 
       function markAllItemsDirtyAndSaveOffline(_x68) {
-        return _ref56.apply(this, arguments);
+        return _ref58.apply(this, arguments);
       }
 
       return markAllItemsDirtyAndSaveOffline;
@@ -47581,92 +47787,16 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "setSyncToken",
     value: function () {
-      var _ref57 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee55(token) {
-        return regeneratorRuntime.wrap(function _callee55$(_context55) {
-          while (1) {
-            switch (_context55.prev = _context55.next) {
-              case 0:
-                this._syncToken = token;
-                _context55.next = 3;
-                return this.storageManager.setItem("syncToken", token);
-
-              case 3:
-              case "end":
-                return _context55.stop();
-            }
-          }
-        }, _callee55, this);
-      }));
-
-      function setSyncToken(_x69) {
-        return _ref57.apply(this, arguments);
-      }
-
-      return setSyncToken;
-    }()
-  }, {
-    key: "getSyncToken",
-    value: function () {
-      var _ref58 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee56() {
-        return regeneratorRuntime.wrap(function _callee56$(_context56) {
-          while (1) {
-            switch (_context56.prev = _context56.next) {
-              case 0:
-                if (this._syncToken) {
-                  _context56.next = 4;
-                  break;
-                }
-
-                _context56.next = 3;
-                return this.storageManager.getItem("syncToken");
-
-              case 3:
-                this._syncToken = _context56.sent;
-
-              case 4:
-                return _context56.abrupt("return", this._syncToken);
-
-              case 5:
-              case "end":
-                return _context56.stop();
-            }
-          }
-        }, _callee56, this);
-      }));
-
-      function getSyncToken() {
-        return _ref58.apply(this, arguments);
-      }
-
-      return getSyncToken;
-    }()
-  }, {
-    key: "setCursorToken",
-    value: function () {
       var _ref59 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee57(token) {
         return regeneratorRuntime.wrap(function _callee57$(_context57) {
           while (1) {
             switch (_context57.prev = _context57.next) {
               case 0:
-                this._cursorToken = token;
+                this._syncToken = token;
+                _context57.next = 3;
+                return this.storageManager.setItem("syncToken", token);
 
-                if (!token) {
-                  _context57.next = 6;
-                  break;
-                }
-
-                _context57.next = 4;
-                return this.storageManager.setItem("cursorToken", token);
-
-              case 4:
-                _context57.next = 8;
-                break;
-
-              case 6:
-                _context57.next = 8;
-                return this.storageManager.removeItem("cursorToken");
-
-              case 8:
+              case 3:
               case "end":
                 return _context57.stop();
             }
@@ -47674,33 +47804,33 @@ var SFSyncManager = exports.SFSyncManager = function () {
         }, _callee57, this);
       }));
 
-      function setCursorToken(_x70) {
+      function setSyncToken(_x69) {
         return _ref59.apply(this, arguments);
       }
 
-      return setCursorToken;
+      return setSyncToken;
     }()
   }, {
-    key: "getCursorToken",
+    key: "getSyncToken",
     value: function () {
       var _ref60 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee58() {
         return regeneratorRuntime.wrap(function _callee58$(_context58) {
           while (1) {
             switch (_context58.prev = _context58.next) {
               case 0:
-                if (this._cursorToken) {
+                if (this._syncToken) {
                   _context58.next = 4;
                   break;
                 }
 
                 _context58.next = 3;
-                return this.storageManager.getItem("cursorToken");
+                return this.storageManager.getItem("syncToken");
 
               case 3:
-                this._cursorToken = _context58.sent;
+                this._syncToken = _context58.sent;
 
               case 4:
-                return _context58.abrupt("return", this._cursorToken);
+                return _context58.abrupt("return", this._syncToken);
 
               case 5:
               case "end":
@@ -47710,8 +47840,84 @@ var SFSyncManager = exports.SFSyncManager = function () {
         }, _callee58, this);
       }));
 
-      function getCursorToken() {
+      function getSyncToken() {
         return _ref60.apply(this, arguments);
+      }
+
+      return getSyncToken;
+    }()
+  }, {
+    key: "setCursorToken",
+    value: function () {
+      var _ref61 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee59(token) {
+        return regeneratorRuntime.wrap(function _callee59$(_context59) {
+          while (1) {
+            switch (_context59.prev = _context59.next) {
+              case 0:
+                this._cursorToken = token;
+
+                if (!token) {
+                  _context59.next = 6;
+                  break;
+                }
+
+                _context59.next = 4;
+                return this.storageManager.setItem("cursorToken", token);
+
+              case 4:
+                _context59.next = 8;
+                break;
+
+              case 6:
+                _context59.next = 8;
+                return this.storageManager.removeItem("cursorToken");
+
+              case 8:
+              case "end":
+                return _context59.stop();
+            }
+          }
+        }, _callee59, this);
+      }));
+
+      function setCursorToken(_x70) {
+        return _ref61.apply(this, arguments);
+      }
+
+      return setCursorToken;
+    }()
+  }, {
+    key: "getCursorToken",
+    value: function () {
+      var _ref62 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee60() {
+        return regeneratorRuntime.wrap(function _callee60$(_context60) {
+          while (1) {
+            switch (_context60.prev = _context60.next) {
+              case 0:
+                if (this._cursorToken) {
+                  _context60.next = 4;
+                  break;
+                }
+
+                _context60.next = 3;
+                return this.storageManager.getItem("cursorToken");
+
+              case 3:
+                this._cursorToken = _context60.sent;
+
+              case 4:
+                return _context60.abrupt("return", this._cursorToken);
+
+              case 5:
+              case "end":
+                return _context60.stop();
+            }
+          }
+        }, _callee60, this);
+      }));
+
+      function getCursorToken() {
+        return _ref62.apply(this, arguments);
       }
 
       return getCursorToken;
@@ -47793,30 +47999,30 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "sync",
     value: function () {
-      var _ref61 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee60() {
+      var _ref63 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee62() {
         var _this18 = this;
 
         var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-        return regeneratorRuntime.wrap(function _callee60$(_context60) {
+        return regeneratorRuntime.wrap(function _callee62$(_context62) {
           while (1) {
-            switch (_context60.prev = _context60.next) {
+            switch (_context62.prev = _context62.next) {
               case 0:
-                return _context60.abrupt("return", new Promise(function () {
-                  var _ref62 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee59(resolve, reject) {
+                return _context62.abrupt("return", new Promise(function () {
+                  var _ref64 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee61(resolve, reject) {
                     var allDirtyItems, info, isContinuationSync, submitLimit, subItems, params, _iteratorNormalCompletion29, _didIteratorError29, _iteratorError29, _iterator29, _step29, item;
 
-                    return regeneratorRuntime.wrap(function _callee59$(_context59) {
+                    return regeneratorRuntime.wrap(function _callee61$(_context61) {
                       while (1) {
-                        switch (_context59.prev = _context59.next) {
+                        switch (_context61.prev = _context61.next) {
                           case 0:
                             if (!_this18.syncLocked) {
-                              _context59.next = 4;
+                              _context61.next = 4;
                               break;
                             }
 
                             console.log("Sync Locked, Returning;");
                             resolve();
-                            return _context59.abrupt("return");
+                            return _context61.abrupt("return");
 
                           case 4:
 
@@ -47828,7 +48034,7 @@ var SFSyncManager = exports.SFSyncManager = function () {
                             // the sync engine is stuck in some inProgress loop.
 
                             if (!(_this18.syncStatus.syncOpInProgress && !options.force)) {
-                              _context59.next = 12;
+                              _context61.next = 12;
                               break;
                             }
 
@@ -47840,25 +48046,31 @@ var SFSyncManager = exports.SFSyncManager = function () {
                             _this18.writeItemsToLocalStorage(allDirtyItems, false);
 
                             console.log("Sync op in progress; returning.");
-                            return _context59.abrupt("return");
+                            return _context61.abrupt("return");
 
                           case 12:
-                            _context59.next = 14;
+                            _context61.next = 14;
                             return _this18.getActiveKeyInfo(SFSyncManager.KeyRequestLoadSaveAccount);
 
                           case 14:
-                            info = _context59.sent;
+                            info = _context61.sent;
 
                             if (!info.offline) {
-                              _context59.next = 19;
+                              _context61.next = 18;
                               break;
                             }
 
-                            _this18.syncOffline(allDirtyItems).then(resolve);
-                            _this18.modelManager.clearDirtyItems(allDirtyItems);
-                            return _context59.abrupt("return");
+                            try {
+                              _this18.syncOffline(allDirtyItems).then(function (response) {
+                                resolve(response);
+                              });
+                              _this18.modelManager.clearDirtyItems(allDirtyItems);
+                            } catch (e) {
+                              _this18.notifyEvent("sync-exception", e);
+                            }
+                            return _context61.abrupt("return");
 
-                          case 19:
+                          case 18:
                             isContinuationSync = _this18.syncStatus.needsMoreSync;
 
 
@@ -47905,7 +48117,8 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                             params.limit = 150;
 
-                            _context59.next = 35;
+                            _context61.prev = 32;
+                            _context61.next = 35;
                             return Promise.all(subItems.map(function (item) {
                               var itemParams = new SFItemParams(item, info.keys, info.auth_params);
                               itemParams.additionalFields = options.additionalFields;
@@ -47915,10 +48128,20 @@ var SFSyncManager = exports.SFSyncManager = function () {
                             });
 
                           case 35:
+                            _context61.next = 40;
+                            break;
+
+                          case 37:
+                            _context61.prev = 37;
+                            _context61.t0 = _context61["catch"](32);
+
+                            _this18.notifyEvent("sync-exception", _context61.t0);
+
+                          case 40:
                             _iteratorNormalCompletion29 = true;
                             _didIteratorError29 = false;
                             _iteratorError29 = undefined;
-                            _context59.prev = 38;
+                            _context61.prev = 43;
 
 
                             for (_iterator29 = subItems[Symbol.iterator](); !(_iteratorNormalCompletion29 = (_step29 = _iterator29.next()).done); _iteratorNormalCompletion29 = true) {
@@ -47929,60 +48152,60 @@ var SFSyncManager = exports.SFSyncManager = function () {
                               item.dirtyCount = 0;
                             }
 
-                            _context59.next = 46;
+                            _context61.next = 51;
                             break;
 
-                          case 42:
-                            _context59.prev = 42;
-                            _context59.t0 = _context59["catch"](38);
+                          case 47:
+                            _context61.prev = 47;
+                            _context61.t1 = _context61["catch"](43);
                             _didIteratorError29 = true;
-                            _iteratorError29 = _context59.t0;
+                            _iteratorError29 = _context61.t1;
 
-                          case 46:
-                            _context59.prev = 46;
-                            _context59.prev = 47;
+                          case 51:
+                            _context61.prev = 51;
+                            _context61.prev = 52;
 
                             if (!_iteratorNormalCompletion29 && _iterator29.return) {
                               _iterator29.return();
                             }
 
-                          case 49:
-                            _context59.prev = 49;
+                          case 54:
+                            _context61.prev = 54;
 
                             if (!_didIteratorError29) {
-                              _context59.next = 52;
+                              _context61.next = 57;
                               break;
                             }
 
                             throw _iteratorError29;
 
-                          case 52:
-                            return _context59.finish(49);
+                          case 57:
+                            return _context61.finish(54);
 
-                          case 53:
-                            return _context59.finish(46);
-
-                          case 54:
-                            _context59.next = 56;
-                            return _this18.getSyncToken();
-
-                          case 56:
-                            params.sync_token = _context59.sent;
-                            _context59.next = 59;
-                            return _this18.getCursorToken();
+                          case 58:
+                            return _context61.finish(51);
 
                           case 59:
-                            params.cursor_token = _context59.sent;
-                            _context59.prev = 60;
-                            _context59.t1 = _this18.httpManager;
-                            _context59.next = 64;
-                            return _this18.getSyncURL();
+                            _context61.next = 61;
+                            return _this18.getSyncToken();
+
+                          case 61:
+                            params.sync_token = _context61.sent;
+                            _context61.next = 64;
+                            return _this18.getCursorToken();
 
                           case 64:
-                            _context59.t2 = _context59.sent;
-                            _context59.t3 = params;
+                            params.cursor_token = _context61.sent;
+                            _context61.prev = 65;
+                            _context61.t2 = _this18.httpManager;
+                            _context61.next = 69;
+                            return _this18.getSyncURL();
 
-                            _context59.t4 = function (response) {
+                          case 69:
+                            _context61.t3 = _context61.sent;
+                            _context61.t4 = params;
+
+                            _context61.t5 = function (response) {
                               try {
                                 _this18.handleSyncSuccess(subItems, response, options).then(function () {
                                   resolve(response);
@@ -47992,46 +48215,46 @@ var SFSyncManager = exports.SFSyncManager = function () {
                               }
                             };
 
-                            _context59.t5 = function (response, statusCode) {
+                            _context61.t6 = function (response, statusCode) {
                               _this18.handleSyncError(response, statusCode, allDirtyItems).then(function (errorResponse) {
                                 resolve(errorResponse);
                               });
                             };
 
-                            _context59.t1.postAbsolute.call(_context59.t1, _context59.t2, _context59.t3, _context59.t4, _context59.t5);
+                            _context61.t2.postAbsolute.call(_context61.t2, _context61.t3, _context61.t4, _context61.t5, _context61.t6);
 
-                            _context59.next = 74;
+                            _context61.next = 79;
                             break;
 
-                          case 71:
-                            _context59.prev = 71;
-                            _context59.t6 = _context59["catch"](60);
+                          case 76:
+                            _context61.prev = 76;
+                            _context61.t7 = _context61["catch"](65);
 
-                            console.log("Sync exception caught:", _context59.t6);
+                            console.log("Sync exception caught:", _context61.t7);
 
-                          case 74:
+                          case 79:
                           case "end":
-                            return _context59.stop();
+                            return _context61.stop();
                         }
                       }
-                    }, _callee59, _this18, [[38, 42, 46, 54], [47,, 49, 53], [60, 71]]);
+                    }, _callee61, _this18, [[32, 37], [43, 47, 51, 59], [52,, 54, 58], [65, 76]]);
                   }));
 
                   return function (_x72, _x73) {
-                    return _ref62.apply(this, arguments);
+                    return _ref64.apply(this, arguments);
                   };
                 }()));
 
               case 1:
               case "end":
-                return _context60.stop();
+                return _context62.stop();
             }
           }
-        }, _callee60, this);
+        }, _callee62, this);
       }));
 
       function sync() {
-        return _ref61.apply(this, arguments);
+        return _ref63.apply(this, arguments);
       }
 
       return sync;
@@ -48039,21 +48262,21 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "handleSyncSuccess",
     value: function () {
-      var _ref63 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee61(syncedItems, response, options) {
+      var _ref65 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee63(syncedItems, response, options) {
         var _this19 = this;
 
         var itemsToClearAsDirty, _iteratorNormalCompletion30, _didIteratorError30, _iteratorError30, _iterator30, _step30, item, allSavedUUIDs, retrieved, omitFields, saved, unsaved, isInitialSync, majorDataChangeThreshold;
 
-        return regeneratorRuntime.wrap(function _callee61$(_context61) {
+        return regeneratorRuntime.wrap(function _callee63$(_context63) {
           while (1) {
-            switch (_context61.prev = _context61.next) {
+            switch (_context63.prev = _context63.next) {
               case 0:
                 // Check to make sure any subItem hasn't been marked as dirty again while a sync was ongoing
                 itemsToClearAsDirty = [];
                 _iteratorNormalCompletion30 = true;
                 _didIteratorError30 = false;
                 _iteratorError30 = undefined;
-                _context61.prev = 4;
+                _context63.prev = 4;
 
                 for (_iterator30 = syncedItems[Symbol.iterator](); !(_iteratorNormalCompletion30 = (_step30 = _iterator30.next()).done); _iteratorNormalCompletion30 = true) {
                   item = _step30.value;
@@ -48063,38 +48286,38 @@ var SFSyncManager = exports.SFSyncManager = function () {
                     itemsToClearAsDirty.push(item);
                   }
                 }
-                _context61.next = 12;
+                _context63.next = 12;
                 break;
 
               case 8:
-                _context61.prev = 8;
-                _context61.t0 = _context61["catch"](4);
+                _context63.prev = 8;
+                _context63.t0 = _context63["catch"](4);
                 _didIteratorError30 = true;
-                _iteratorError30 = _context61.t0;
+                _iteratorError30 = _context63.t0;
 
               case 12:
-                _context61.prev = 12;
-                _context61.prev = 13;
+                _context63.prev = 12;
+                _context63.prev = 13;
 
                 if (!_iteratorNormalCompletion30 && _iterator30.return) {
                   _iterator30.return();
                 }
 
               case 15:
-                _context61.prev = 15;
+                _context63.prev = 15;
 
                 if (!_didIteratorError30) {
-                  _context61.next = 18;
+                  _context63.next = 18;
                   break;
                 }
 
                 throw _iteratorError30;
 
               case 18:
-                return _context61.finish(15);
+                return _context63.finish(15);
 
               case 19:
-                return _context61.finish(12);
+                return _context63.finish(12);
 
               case 20:
                 this.modelManager.clearDirtyItems(itemsToClearAsDirty);
@@ -48116,11 +48339,11 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                 // Map retrieved items to local data
                 // Note that deleted items will not be returned
-                _context61.next = 26;
+                _context63.next = 26;
                 return this.handleItemsResponse(response.retrieved_items, null, SFModelManager.MappingSourceRemoteRetrieved, SFSyncManager.KeyRequestLoadSaveAccount);
 
               case 26:
-                retrieved = _context61.sent;
+                retrieved = _context63.sent;
 
 
                 // Append items to master list of retrieved items for this ongoing sync operation
@@ -48134,11 +48357,11 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                 // Map saved items to local data
 
-                _context61.next = 32;
+                _context63.next = 32;
                 return this.handleItemsResponse(response.saved_items, omitFields, SFModelManager.MappingSourceRemoteSaved, SFSyncManager.KeyRequestLoadSaveAccount);
 
               case 32:
-                saved = _context61.sent;
+                saved = _context63.sent;
 
 
                 // Append items to master list of saved items for this ongoing sync operation
@@ -48150,7 +48373,7 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                 this.handleUnsavedItemsResponse(unsaved);
 
-                _context61.next = 38;
+                _context63.next = 38;
                 return this.writeItemsToLocalStorage(saved, false);
 
               case 38:
@@ -48160,12 +48383,12 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                 this.syncStatusDidChange();
 
-                _context61.next = 43;
+                _context63.next = 43;
                 return this.getSyncToken();
 
               case 43:
-                _context61.t1 = _context61.sent;
-                isInitialSync = _context61.t1 == null;
+                _context63.t1 = _context63.sent;
+                isInitialSync = _context63.t1 == null;
 
 
                 // set the sync token at the end, so that if any errors happen above, you can resync
@@ -48174,26 +48397,26 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                 this.stopCheckingIfSyncIsTakingTooLong();
 
-                _context61.next = 50;
+                _context63.next = 50;
                 return this.getCursorToken();
 
               case 50:
-                _context61.t2 = _context61.sent;
+                _context63.t2 = _context63.sent;
 
-                if (_context61.t2) {
-                  _context61.next = 53;
+                if (_context63.t2) {
+                  _context63.next = 53;
                   break;
                 }
 
-                _context61.t2 = this.syncStatus.needsMoreSync;
+                _context63.t2 = this.syncStatus.needsMoreSync;
 
               case 53:
-                if (!_context61.t2) {
-                  _context61.next = 57;
+                if (!_context63.t2) {
+                  _context63.next = 57;
                   break;
                 }
 
-                return _context61.abrupt("return", new Promise(function (resolve, reject) {
+                return _context63.abrupt("return", new Promise(function (resolve, reject) {
                   setTimeout(function () {
                     this.sync(options).then(resolve);
                   }.bind(_this19), 10); // wait 10ms to allow UI to update
@@ -48201,19 +48424,19 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
               case 57:
                 if (!this.repeatOnCompletion) {
-                  _context61.next = 62;
+                  _context63.next = 62;
                   break;
                 }
 
                 this.repeatOnCompletion = false;
-                return _context61.abrupt("return", new Promise(function (resolve, reject) {
+                return _context63.abrupt("return", new Promise(function (resolve, reject) {
                   setTimeout(function () {
                     this.sync(options).then(resolve);
                   }.bind(_this19), 10); // wait 10ms to allow UI to update
                 }));
 
               case 62:
-                _context61.next = 64;
+                _context63.next = 64;
                 return this.writeItemsToLocalStorage(this.allRetreivedItems, false);
 
               case 64:
@@ -48234,18 +48457,18 @@ var SFSyncManager = exports.SFSyncManager = function () {
                 this.allRetreivedItems = [];
                 this.allSavedItems = [];
 
-                return _context61.abrupt("return", response);
+                return _context63.abrupt("return", response);
 
               case 73:
               case "end":
-                return _context61.stop();
+                return _context63.stop();
             }
           }
-        }, _callee61, this, [[4, 8, 12, 20], [13,, 15, 19]]);
+        }, _callee63, this, [[4, 8, 12, 20], [13,, 15, 19]]);
       }));
 
       function handleSyncSuccess(_x74, _x75, _x76) {
-        return _ref63.apply(this, arguments);
+        return _ref65.apply(this, arguments);
       }
 
       return handleSyncSuccess;
@@ -48253,10 +48476,10 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "handleSyncError",
     value: function () {
-      var _ref64 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee62(response, statusCode, allDirtyItems) {
-        return regeneratorRuntime.wrap(function _callee62$(_context62) {
+      var _ref66 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64(response, statusCode, allDirtyItems) {
+        return regeneratorRuntime.wrap(function _callee64$(_context64) {
           while (1) {
-            switch (_context62.prev = _context62.next) {
+            switch (_context64.prev = _context64.next) {
               case 0:
                 console.log("Sync error", response);
                 if (statusCode == 401) {
@@ -48282,18 +48505,18 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
                 this.callQueuedCallbacks({ error: "Sync error" });
 
-                return _context62.abrupt("return", response);
+                return _context64.abrupt("return", response);
 
               case 13:
               case "end":
-                return _context62.stop();
+                return _context64.stop();
             }
           }
-        }, _callee62, this);
+        }, _callee64, this);
       }));
 
       function handleSyncError(_x77, _x78, _x79) {
-        return _ref64.apply(this, arguments);
+        return _ref66.apply(this, arguments);
       }
 
       return handleSyncError;
@@ -48301,18 +48524,18 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "handleItemsResponse",
     value: function () {
-      var _ref65 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee63(responseItems, omitFields, source, keyRequest) {
+      var _ref67 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65(responseItems, omitFields, source, keyRequest) {
         var keys, items, itemsWithErrorStatusChange;
-        return regeneratorRuntime.wrap(function _callee63$(_context63) {
+        return regeneratorRuntime.wrap(function _callee65$(_context65) {
           while (1) {
-            switch (_context63.prev = _context63.next) {
+            switch (_context65.prev = _context65.next) {
               case 0:
-                _context63.next = 2;
+                _context65.next = 2;
                 return this.getActiveKeyInfo(keyRequest);
 
               case 2:
-                keys = _context63.sent.keys;
-                _context63.next = 5;
+                keys = _context65.sent.keys;
+                _context65.next = 5;
                 return SFJS.itemTransformer.decryptMultipleItems(responseItems, keys);
 
               case 5:
@@ -48333,18 +48556,18 @@ var SFSyncManager = exports.SFSyncManager = function () {
                   this.writeItemsToLocalStorage(itemsWithErrorStatusChange, false);
                 }
 
-                return _context63.abrupt("return", items);
+                return _context65.abrupt("return", items);
 
               case 9:
               case "end":
-                return _context63.stop();
+                return _context65.stop();
             }
           }
-        }, _callee63, this);
+        }, _callee65, this);
       }));
 
       function handleItemsResponse(_x80, _x81, _x82, _x83) {
-        return _ref65.apply(this, arguments);
+        return _ref67.apply(this, arguments);
       }
 
       return handleItemsResponse;
@@ -48352,33 +48575,33 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "refreshErroredItems",
     value: function () {
-      var _ref66 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64() {
+      var _ref68 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66() {
         var erroredItems;
-        return regeneratorRuntime.wrap(function _callee64$(_context64) {
+        return regeneratorRuntime.wrap(function _callee66$(_context66) {
           while (1) {
-            switch (_context64.prev = _context64.next) {
+            switch (_context66.prev = _context66.next) {
               case 0:
                 erroredItems = this.modelManager.allItems.filter(function (item) {
                   return item.errorDecrypting == true;
                 });
 
                 if (!(erroredItems.length > 0)) {
-                  _context64.next = 3;
+                  _context66.next = 3;
                   break;
                 }
 
-                return _context64.abrupt("return", this.handleItemsResponse(erroredItems, null, SFModelManager.MappingSourceLocalRetrieved, SFSyncManager.KeyRequestLoadSaveAccount));
+                return _context66.abrupt("return", this.handleItemsResponse(erroredItems, null, SFModelManager.MappingSourceLocalRetrieved, SFSyncManager.KeyRequestLoadSaveAccount));
 
               case 3:
               case "end":
-                return _context64.stop();
+                return _context66.stop();
             }
           }
-        }, _callee64, this);
+        }, _callee66, this);
       }));
 
       function refreshErroredItems() {
-        return _ref66.apply(this, arguments);
+        return _ref68.apply(this, arguments);
       }
 
       return refreshErroredItems;
@@ -48386,19 +48609,19 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "handleUnsavedItemsResponse",
     value: function () {
-      var _ref67 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65(unsaved) {
+      var _ref69 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67(unsaved) {
         var _iteratorNormalCompletion31, _didIteratorError31, _iteratorError31, _iterator31, _step31, mapping, itemResponse, item, error, dup;
 
-        return regeneratorRuntime.wrap(function _callee65$(_context65) {
+        return regeneratorRuntime.wrap(function _callee67$(_context67) {
           while (1) {
-            switch (_context65.prev = _context65.next) {
+            switch (_context67.prev = _context67.next) {
               case 0:
                 if (!(unsaved.length == 0)) {
-                  _context65.next = 2;
+                  _context67.next = 2;
                   break;
                 }
 
-                return _context65.abrupt("return");
+                return _context67.abrupt("return");
 
               case 2:
 
@@ -48407,26 +48630,26 @@ var SFSyncManager = exports.SFSyncManager = function () {
                 _iteratorNormalCompletion31 = true;
                 _didIteratorError31 = false;
                 _iteratorError31 = undefined;
-                _context65.prev = 6;
+                _context67.prev = 6;
                 _iterator31 = unsaved[Symbol.iterator]();
 
               case 8:
                 if (_iteratorNormalCompletion31 = (_step31 = _iterator31.next()).done) {
-                  _context65.next = 31;
+                  _context67.next = 31;
                   break;
                 }
 
                 mapping = _step31.value;
                 itemResponse = mapping.item;
-                _context65.t0 = SFJS.itemTransformer;
-                _context65.t1 = [itemResponse];
-                _context65.next = 15;
+                _context67.t0 = SFJS.itemTransformer;
+                _context67.t1 = [itemResponse];
+                _context67.next = 15;
                 return this.getActiveKeyInfo(SFSyncManager.KeyRequestLoadSaveAccount);
 
               case 15:
-                _context65.t2 = _context65.sent.keys;
-                _context65.next = 18;
-                return _context65.t0.decryptMultipleItems.call(_context65.t0, _context65.t1, _context65.t2);
+                _context67.t2 = _context67.sent.keys;
+                _context67.next = 18;
+                return _context67.t0.decryptMultipleItems.call(_context67.t0, _context67.t1, _context67.t2);
 
               case 18:
                 item = this.modelManager.findItem(itemResponse.uuid);
@@ -48434,25 +48657,25 @@ var SFSyncManager = exports.SFSyncManager = function () {
                 // Could be deleted
 
                 if (item) {
-                  _context65.next = 21;
+                  _context67.next = 21;
                   break;
                 }
 
-                return _context65.abrupt("continue", 28);
+                return _context67.abrupt("continue", 28);
 
               case 21:
                 error = mapping.error;
 
                 if (!(error.tag === "uuid_conflict")) {
-                  _context65.next = 27;
+                  _context67.next = 27;
                   break;
                 }
 
-                _context65.next = 25;
+                _context67.next = 25;
                 return this.modelManager.alternateUUIDForItem(item);
 
               case 25:
-                _context65.next = 28;
+                _context67.next = 28;
                 break;
 
               case 27:
@@ -48470,42 +48693,42 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
               case 28:
                 _iteratorNormalCompletion31 = true;
-                _context65.next = 8;
+                _context67.next = 8;
                 break;
 
               case 31:
-                _context65.next = 37;
+                _context67.next = 37;
                 break;
 
               case 33:
-                _context65.prev = 33;
-                _context65.t3 = _context65["catch"](6);
+                _context67.prev = 33;
+                _context67.t3 = _context67["catch"](6);
                 _didIteratorError31 = true;
-                _iteratorError31 = _context65.t3;
+                _iteratorError31 = _context67.t3;
 
               case 37:
-                _context65.prev = 37;
-                _context65.prev = 38;
+                _context67.prev = 37;
+                _context67.prev = 38;
 
                 if (!_iteratorNormalCompletion31 && _iterator31.return) {
                   _iterator31.return();
                 }
 
               case 40:
-                _context65.prev = 40;
+                _context67.prev = 40;
 
                 if (!_didIteratorError31) {
-                  _context65.next = 43;
+                  _context67.next = 43;
                   break;
                 }
 
                 throw _iteratorError31;
 
               case 43:
-                return _context65.finish(40);
+                return _context67.finish(40);
 
               case 44:
-                return _context65.finish(37);
+                return _context67.finish(37);
 
               case 45:
 
@@ -48519,14 +48742,14 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
               case 46:
               case "end":
-                return _context65.stop();
+                return _context67.stop();
             }
           }
-        }, _callee65, this, [[6, 33, 37, 45], [38,, 40, 44]]);
+        }, _callee67, this, [[6, 33, 37, 45], [38,, 40, 44]]);
       }));
 
       function handleUnsavedItemsResponse(_x84) {
-        return _ref67.apply(this, arguments);
+        return _ref69.apply(this, arguments);
       }
 
       return handleUnsavedItemsResponse;
@@ -48534,10 +48757,10 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "handleSignout",
     value: function () {
-      var _ref68 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66() {
-        return regeneratorRuntime.wrap(function _callee66$(_context66) {
+      var _ref70 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee68() {
+        return regeneratorRuntime.wrap(function _callee68$(_context68) {
           while (1) {
-            switch (_context66.prev = _context66.next) {
+            switch (_context68.prev = _context68.next) {
               case 0:
                 this._syncToken = null;
                 this._cursorToken = null;
@@ -48546,14 +48769,14 @@ var SFSyncManager = exports.SFSyncManager = function () {
 
               case 4:
               case "end":
-                return _context66.stop();
+                return _context68.stop();
             }
           }
-        }, _callee66, this);
+        }, _callee68, this);
       }));
 
       function handleSignout() {
-        return _ref68.apply(this, arguments);
+        return _ref70.apply(this, arguments);
       }
 
       return handleSignout;
@@ -48561,25 +48784,25 @@ var SFSyncManager = exports.SFSyncManager = function () {
   }, {
     key: "clearSyncToken",
     value: function () {
-      var _ref69 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67() {
-        return regeneratorRuntime.wrap(function _callee67$(_context67) {
+      var _ref71 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69() {
+        return regeneratorRuntime.wrap(function _callee69$(_context69) {
           while (1) {
-            switch (_context67.prev = _context67.next) {
+            switch (_context69.prev = _context69.next) {
               case 0:
                 this._syncToken = null;
                 this._cursorToken = null;
-                return _context67.abrupt("return", this.storageManager.removeItem("syncToken"));
+                return _context69.abrupt("return", this.storageManager.removeItem("syncToken"));
 
               case 3:
               case "end":
-                return _context67.stop();
+                return _context69.stop();
             }
           }
-        }, _callee67, this);
+        }, _callee69, this);
       }));
 
       function clearSyncToken() {
-        return _ref69.apply(this, arguments);
+        return _ref71.apply(this, arguments);
       }
 
       return clearSyncToken;
@@ -49121,89 +49344,42 @@ var SFItemParams = exports.SFItemParams = function () {
     this.auth_params = auth_params;
 
     if (this.keys && !this.auth_params) {
-      console.error("SFItemParams.auth_params must be supplied if supplying keys.");
+      throw "SFItemParams.auth_params must be supplied if supplying keys.";
     }
-    // this.version = version || SFJS.version();
+
+    if (this.auth_params && !this.auth_params.version) {
+      throw "SFItemParams.auth_params is missing version";
+    }
   }
 
   _createClass(SFItemParams, [{
     key: "paramsForExportFile",
     value: function () {
-      var _ref70 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee68(includeDeleted) {
+      var _ref72 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee70(includeDeleted) {
         var result;
-        return regeneratorRuntime.wrap(function _callee68$(_context68) {
+        return regeneratorRuntime.wrap(function _callee70$(_context70) {
           while (1) {
-            switch (_context68.prev = _context68.next) {
+            switch (_context70.prev = _context70.next) {
               case 0:
                 this.additionalFields = ["updated_at"];
                 this.forExportFile = true;
 
                 if (!includeDeleted) {
-                  _context68.next = 6;
+                  _context70.next = 6;
                   break;
                 }
 
-                return _context68.abrupt("return", this.__params());
+                return _context70.abrupt("return", this.__params());
 
               case 6:
-                _context68.next = 8;
+                _context70.next = 8;
                 return this.__params();
 
               case 8:
-                result = _context68.sent;
-                return _context68.abrupt("return", _.omit(result, ["deleted"]));
+                result = _context70.sent;
+                return _context70.abrupt("return", _.omit(result, ["deleted"]));
 
               case 10:
-              case "end":
-                return _context68.stop();
-            }
-          }
-        }, _callee68, this);
-      }));
-
-      function paramsForExportFile(_x86) {
-        return _ref70.apply(this, arguments);
-      }
-
-      return paramsForExportFile;
-    }()
-  }, {
-    key: "paramsForExtension",
-    value: function () {
-      var _ref71 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69() {
-        return regeneratorRuntime.wrap(function _callee69$(_context69) {
-          while (1) {
-            switch (_context69.prev = _context69.next) {
-              case 0:
-                return _context69.abrupt("return", this.paramsForExportFile());
-
-              case 1:
-              case "end":
-                return _context69.stop();
-            }
-          }
-        }, _callee69, this);
-      }));
-
-      function paramsForExtension() {
-        return _ref71.apply(this, arguments);
-      }
-
-      return paramsForExtension;
-    }()
-  }, {
-    key: "paramsForLocalStorage",
-    value: function () {
-      var _ref72 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee70() {
-        return regeneratorRuntime.wrap(function _callee70$(_context70) {
-          while (1) {
-            switch (_context70.prev = _context70.next) {
-              case 0:
-                this.additionalFields = ["updated_at", "dirty", "errorDecrypting"];
-                this.forExportFile = true;
-                return _context70.abrupt("return", this.__params());
-
-              case 3:
               case "end":
                 return _context70.stop();
             }
@@ -49211,21 +49387,21 @@ var SFItemParams = exports.SFItemParams = function () {
         }, _callee70, this);
       }));
 
-      function paramsForLocalStorage() {
+      function paramsForExportFile(_x86) {
         return _ref72.apply(this, arguments);
       }
 
-      return paramsForLocalStorage;
+      return paramsForExportFile;
     }()
   }, {
-    key: "paramsForSync",
+    key: "paramsForExtension",
     value: function () {
       var _ref73 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee71() {
         return regeneratorRuntime.wrap(function _callee71$(_context71) {
           while (1) {
             switch (_context71.prev = _context71.next) {
               case 0:
-                return _context71.abrupt("return", this.__params());
+                return _context71.abrupt("return", this.paramsForExportFile());
 
               case 1:
               case "end":
@@ -49235,8 +49411,58 @@ var SFItemParams = exports.SFItemParams = function () {
         }, _callee71, this);
       }));
 
-      function paramsForSync() {
+      function paramsForExtension() {
         return _ref73.apply(this, arguments);
+      }
+
+      return paramsForExtension;
+    }()
+  }, {
+    key: "paramsForLocalStorage",
+    value: function () {
+      var _ref74 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee72() {
+        return regeneratorRuntime.wrap(function _callee72$(_context72) {
+          while (1) {
+            switch (_context72.prev = _context72.next) {
+              case 0:
+                this.additionalFields = ["updated_at", "dirty", "errorDecrypting"];
+                this.forExportFile = true;
+                return _context72.abrupt("return", this.__params());
+
+              case 3:
+              case "end":
+                return _context72.stop();
+            }
+          }
+        }, _callee72, this);
+      }));
+
+      function paramsForLocalStorage() {
+        return _ref74.apply(this, arguments);
+      }
+
+      return paramsForLocalStorage;
+    }()
+  }, {
+    key: "paramsForSync",
+    value: function () {
+      var _ref75 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee73() {
+        return regeneratorRuntime.wrap(function _callee73$(_context73) {
+          while (1) {
+            switch (_context73.prev = _context73.next) {
+              case 0:
+                return _context73.abrupt("return", this.__params());
+
+              case 1:
+              case "end":
+                return _context73.stop();
+            }
+          }
+        }, _callee73, this);
+      }));
+
+      function paramsForSync() {
+        return _ref75.apply(this, arguments);
       }
 
       return paramsForSync;
@@ -49244,16 +49470,16 @@ var SFItemParams = exports.SFItemParams = function () {
   }, {
     key: "__params",
     value: function () {
-      var _ref74 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee72() {
+      var _ref76 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee74() {
         var params, doNotEncrypt, encryptedParams;
-        return regeneratorRuntime.wrap(function _callee72$(_context72) {
+        return regeneratorRuntime.wrap(function _callee74$(_context74) {
           while (1) {
-            switch (_context72.prev = _context72.next) {
+            switch (_context74.prev = _context74.next) {
               case 0:
                 params = { uuid: this.item.uuid, content_type: this.item.content_type, deleted: this.item.deleted, created_at: this.item.created_at };
 
                 if (this.item.errorDecrypting) {
-                  _context72.next = 23;
+                  _context74.next = 23;
                   break;
                 }
 
@@ -49261,44 +49487,44 @@ var SFItemParams = exports.SFItemParams = function () {
                 doNotEncrypt = this.item.doNotEncrypt() && !this.forExportFile;
 
                 if (!(this.keys && !doNotEncrypt)) {
-                  _context72.next = 11;
+                  _context74.next = 11;
                   break;
                 }
 
-                _context72.next = 6;
+                _context74.next = 6;
                 return SFJS.itemTransformer.encryptItem(this.item, this.keys, this.auth_params);
 
               case 6:
-                encryptedParams = _context72.sent;
+                encryptedParams = _context74.sent;
 
                 _.merge(params, encryptedParams);
 
                 if (this.auth_params.version !== "001") {
                   params.auth_hash = null;
                 }
-                _context72.next = 21;
+                _context74.next = 21;
                 break;
 
               case 11:
                 if (!this.forExportFile) {
-                  _context72.next = 15;
+                  _context74.next = 15;
                   break;
                 }
 
-                _context72.t0 = this.item.createContentJSONFromProperties();
-                _context72.next = 19;
+                _context74.t0 = this.item.createContentJSONFromProperties();
+                _context74.next = 19;
                 break;
 
               case 15:
-                _context72.next = 17;
+                _context74.next = 17;
                 return SFJS.crypto.base64(JSON.stringify(this.item.createContentJSONFromProperties()));
 
               case 17:
-                _context72.t1 = _context72.sent;
-                _context72.t0 = "000" + _context72.t1;
+                _context74.t1 = _context74.sent;
+                _context74.t0 = "000" + _context74.t1;
 
               case 19:
-                params.content = _context72.t0;
+                params.content = _context74.t0;
 
                 if (!this.forExportFile) {
                   params.enc_item_key = null;
@@ -49306,7 +49532,7 @@ var SFItemParams = exports.SFItemParams = function () {
                 }
 
               case 21:
-                _context72.next = 26;
+                _context74.next = 26;
                 break;
 
               case 23:
@@ -49321,18 +49547,18 @@ var SFItemParams = exports.SFItemParams = function () {
                   _.merge(params, _.pick(this.item, this.additionalFields));
                 }
 
-                return _context72.abrupt("return", params);
+                return _context74.abrupt("return", params);
 
               case 28:
               case "end":
-                return _context72.stop();
+                return _context74.stop();
             }
           }
-        }, _callee72, this);
+        }, _callee74, this);
       }));
 
       function __params() {
-        return _ref74.apply(this, arguments);
+        return _ref76.apply(this, arguments);
       }
 
       return __params;
@@ -49831,108 +50057,14 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
   }, {
     key: "generateUUID",
     value: function () {
-      var _ref75 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee73() {
-        return regeneratorRuntime.wrap(function _callee73$(_context73) {
-          while (1) {
-            switch (_context73.prev = _context73.next) {
-              case 0:
-                return _context73.abrupt("return", this.generateUUIDSync());
-
-              case 1:
-              case "end":
-                return _context73.stop();
-            }
-          }
-        }, _callee73, this);
-      }));
-
-      function generateUUID() {
-        return _ref75.apply(this, arguments);
-      }
-
-      return generateUUID;
-    }()
-  }, {
-    key: "decryptText",
-    value: function () {
-      var _ref76 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee74() {
-        var _ref77 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-            ciphertextToAuth = _ref77.ciphertextToAuth,
-            contentCiphertext = _ref77.contentCiphertext,
-            encryptionKey = _ref77.encryptionKey,
-            iv = _ref77.iv,
-            authHash = _ref77.authHash,
-            authKey = _ref77.authKey;
-
-        var requiresAuth = arguments[1];
-        var localAuthHash, keyData, ivData, decrypted;
-        return regeneratorRuntime.wrap(function _callee74$(_context74) {
-          while (1) {
-            switch (_context74.prev = _context74.next) {
-              case 0:
-                if (!(requiresAuth && !authHash)) {
-                  _context74.next = 3;
-                  break;
-                }
-
-                console.error("Auth hash is required.");
-                return _context74.abrupt("return");
-
-              case 3:
-                if (!authHash) {
-                  _context74.next = 10;
-                  break;
-                }
-
-                _context74.next = 6;
-                return this.hmac256(ciphertextToAuth, authKey);
-
-              case 6:
-                localAuthHash = _context74.sent;
-
-                if (!(authHash !== localAuthHash)) {
-                  _context74.next = 10;
-                  break;
-                }
-
-                console.error("Auth hash does not match, returning null.");
-                return _context74.abrupt("return", null);
-
-              case 10:
-                keyData = CryptoJS.enc.Hex.parse(encryptionKey);
-                ivData = CryptoJS.enc.Hex.parse(iv || "");
-                decrypted = CryptoJS.AES.decrypt(contentCiphertext, keyData, { iv: ivData, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
-                return _context74.abrupt("return", decrypted.toString(CryptoJS.enc.Utf8));
-
-              case 14:
-              case "end":
-                return _context74.stop();
-            }
-          }
-        }, _callee74, this);
-      }));
-
-      function decryptText() {
-        return _ref76.apply(this, arguments);
-      }
-
-      return decryptText;
-    }()
-  }, {
-    key: "encryptText",
-    value: function () {
-      var _ref78 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee75(text, key, iv) {
-        var keyData, ivData, encrypted;
+      var _ref77 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee75() {
         return regeneratorRuntime.wrap(function _callee75$(_context75) {
           while (1) {
             switch (_context75.prev = _context75.next) {
               case 0:
-                keyData = CryptoJS.enc.Hex.parse(key);
-                ivData = CryptoJS.enc.Hex.parse(iv || "");
-                encrypted = CryptoJS.AES.encrypt(text, keyData, { iv: ivData, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
-                return _context75.abrupt("return", encrypted.toString());
+                return _context75.abrupt("return", this.generateUUIDSync());
 
-              case 4:
+              case 1:
               case "end":
                 return _context75.stop();
             }
@@ -49940,23 +50072,65 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee75, this);
       }));
 
-      function encryptText(_x89, _x90, _x91) {
-        return _ref78.apply(this, arguments);
+      function generateUUID() {
+        return _ref77.apply(this, arguments);
       }
 
-      return encryptText;
+      return generateUUID;
     }()
   }, {
-    key: "generateRandomKey",
+    key: "decryptText",
     value: function () {
-      var _ref79 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee76(bits) {
+      var _ref78 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee76() {
+        var _ref79 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+            ciphertextToAuth = _ref79.ciphertextToAuth,
+            contentCiphertext = _ref79.contentCiphertext,
+            encryptionKey = _ref79.encryptionKey,
+            iv = _ref79.iv,
+            authHash = _ref79.authHash,
+            authKey = _ref79.authKey;
+
+        var requiresAuth = arguments[1];
+        var localAuthHash, keyData, ivData, decrypted;
         return regeneratorRuntime.wrap(function _callee76$(_context76) {
           while (1) {
             switch (_context76.prev = _context76.next) {
               case 0:
-                return _context76.abrupt("return", CryptoJS.lib.WordArray.random(bits / 8).toString());
+                if (!(requiresAuth && !authHash)) {
+                  _context76.next = 3;
+                  break;
+                }
 
-              case 1:
+                console.error("Auth hash is required.");
+                return _context76.abrupt("return");
+
+              case 3:
+                if (!authHash) {
+                  _context76.next = 10;
+                  break;
+                }
+
+                _context76.next = 6;
+                return this.hmac256(ciphertextToAuth, authKey);
+
+              case 6:
+                localAuthHash = _context76.sent;
+
+                if (!(authHash !== localAuthHash)) {
+                  _context76.next = 10;
+                  break;
+                }
+
+                console.error("Auth hash does not match, returning null.");
+                return _context76.abrupt("return", null);
+
+              case 10:
+                keyData = CryptoJS.enc.Hex.parse(encryptionKey);
+                ivData = CryptoJS.enc.Hex.parse(iv || "");
+                decrypted = CryptoJS.AES.decrypt(contentCiphertext, keyData, { iv: ivData, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+                return _context76.abrupt("return", decrypted.toString(CryptoJS.enc.Utf8));
+
+              case 14:
               case "end":
                 return _context76.stop();
             }
@@ -49964,37 +50138,27 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee76, this);
       }));
 
-      function generateRandomKey(_x92) {
-        return _ref79.apply(this, arguments);
+      function decryptText() {
+        return _ref78.apply(this, arguments);
       }
 
-      return generateRandomKey;
+      return decryptText;
     }()
   }, {
-    key: "generateItemEncryptionKey",
+    key: "encryptText",
     value: function () {
-      var _ref80 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee77() {
-        var length, cost, salt, passphrase;
+      var _ref80 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee77(text, key, iv) {
+        var keyData, ivData, encrypted;
         return regeneratorRuntime.wrap(function _callee77$(_context77) {
           while (1) {
             switch (_context77.prev = _context77.next) {
               case 0:
-                // Generates a key that will be split in half, each being 256 bits. So total length will need to be 512.
-                length = 512;
-                cost = 1;
-                _context77.next = 4;
-                return this.generateRandomKey(length);
+                keyData = CryptoJS.enc.Hex.parse(key);
+                ivData = CryptoJS.enc.Hex.parse(iv || "");
+                encrypted = CryptoJS.AES.encrypt(text, keyData, { iv: ivData, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+                return _context77.abrupt("return", encrypted.toString());
 
               case 4:
-                salt = _context77.sent;
-                _context77.next = 7;
-                return this.generateRandomKey(length);
-
-              case 7:
-                passphrase = _context77.sent;
-                return _context77.abrupt("return", this.pbkdf2(passphrase, salt, cost, length));
-
-              case 9:
               case "end":
                 return _context77.stop();
             }
@@ -50002,21 +50166,21 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee77, this);
       }));
 
-      function generateItemEncryptionKey() {
+      function encryptText(_x89, _x90, _x91) {
         return _ref80.apply(this, arguments);
       }
 
-      return generateItemEncryptionKey;
+      return encryptText;
     }()
   }, {
-    key: "firstHalfOfKey",
+    key: "generateRandomKey",
     value: function () {
-      var _ref81 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee78(key) {
+      var _ref81 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee78(bits) {
         return regeneratorRuntime.wrap(function _callee78$(_context78) {
           while (1) {
             switch (_context78.prev = _context78.next) {
               case 0:
-                return _context78.abrupt("return", key.substring(0, key.length / 2));
+                return _context78.abrupt("return", CryptoJS.lib.WordArray.random(bits / 8).toString());
 
               case 1:
               case "end":
@@ -50026,23 +50190,37 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee78, this);
       }));
 
-      function firstHalfOfKey(_x93) {
+      function generateRandomKey(_x92) {
         return _ref81.apply(this, arguments);
       }
 
-      return firstHalfOfKey;
+      return generateRandomKey;
     }()
   }, {
-    key: "secondHalfOfKey",
+    key: "generateItemEncryptionKey",
     value: function () {
-      var _ref82 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee79(key) {
+      var _ref82 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee79() {
+        var length, cost, salt, passphrase;
         return regeneratorRuntime.wrap(function _callee79$(_context79) {
           while (1) {
             switch (_context79.prev = _context79.next) {
               case 0:
-                return _context79.abrupt("return", key.substring(key.length / 2, key.length));
+                // Generates a key that will be split in half, each being 256 bits. So total length will need to be 512.
+                length = 512;
+                cost = 1;
+                _context79.next = 4;
+                return this.generateRandomKey(length);
 
-              case 1:
+              case 4:
+                salt = _context79.sent;
+                _context79.next = 7;
+                return this.generateRandomKey(length);
+
+              case 7:
+                passphrase = _context79.sent;
+                return _context79.abrupt("return", this.pbkdf2(passphrase, salt, cost, length));
+
+              case 9:
               case "end":
                 return _context79.stop();
             }
@@ -50050,21 +50228,21 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee79, this);
       }));
 
-      function secondHalfOfKey(_x94) {
+      function generateItemEncryptionKey() {
         return _ref82.apply(this, arguments);
       }
 
-      return secondHalfOfKey;
+      return generateItemEncryptionKey;
     }()
   }, {
-    key: "base64",
+    key: "firstHalfOfKey",
     value: function () {
-      var _ref83 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee80(text) {
+      var _ref83 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee80(key) {
         return regeneratorRuntime.wrap(function _callee80$(_context80) {
           while (1) {
             switch (_context80.prev = _context80.next) {
               case 0:
-                return _context80.abrupt("return", window.btoa(text));
+                return _context80.abrupt("return", key.substring(0, key.length / 2));
 
               case 1:
               case "end":
@@ -50074,21 +50252,21 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee80, this);
       }));
 
-      function base64(_x95) {
+      function firstHalfOfKey(_x93) {
         return _ref83.apply(this, arguments);
       }
 
-      return base64;
+      return firstHalfOfKey;
     }()
   }, {
-    key: "base64Decode",
+    key: "secondHalfOfKey",
     value: function () {
-      var _ref84 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee81(base64String) {
+      var _ref84 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee81(key) {
         return regeneratorRuntime.wrap(function _callee81$(_context81) {
           while (1) {
             switch (_context81.prev = _context81.next) {
               case 0:
-                return _context81.abrupt("return", window.atob(base64String));
+                return _context81.abrupt("return", key.substring(key.length / 2, key.length));
 
               case 1:
               case "end":
@@ -50098,21 +50276,21 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee81, this);
       }));
 
-      function base64Decode(_x96) {
+      function secondHalfOfKey(_x94) {
         return _ref84.apply(this, arguments);
       }
 
-      return base64Decode;
+      return secondHalfOfKey;
     }()
   }, {
-    key: "sha256",
+    key: "base64",
     value: function () {
       var _ref85 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee82(text) {
         return regeneratorRuntime.wrap(function _callee82$(_context82) {
           while (1) {
             switch (_context82.prev = _context82.next) {
               case 0:
-                return _context82.abrupt("return", CryptoJS.SHA256(text).toString());
+                return _context82.abrupt("return", window.btoa(text));
 
               case 1:
               case "end":
@@ -50122,27 +50300,23 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee82, this);
       }));
 
-      function sha256(_x97) {
+      function base64(_x95) {
         return _ref85.apply(this, arguments);
       }
 
-      return sha256;
+      return base64;
     }()
   }, {
-    key: "hmac256",
+    key: "base64Decode",
     value: function () {
-      var _ref86 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee83(message, key) {
-        var keyData, messageData, result;
+      var _ref86 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee83(base64String) {
         return regeneratorRuntime.wrap(function _callee83$(_context83) {
           while (1) {
             switch (_context83.prev = _context83.next) {
               case 0:
-                keyData = CryptoJS.enc.Hex.parse(key);
-                messageData = CryptoJS.enc.Utf8.parse(message);
-                result = CryptoJS.HmacSHA256(messageData, keyData).toString();
-                return _context83.abrupt("return", result);
+                return _context83.abrupt("return", window.atob(base64String));
 
-              case 4:
+              case 1:
               case "end":
                 return _context83.stop();
             }
@@ -50150,29 +50324,23 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee83, this);
       }));
 
-      function hmac256(_x98, _x99) {
+      function base64Decode(_x96) {
         return _ref86.apply(this, arguments);
       }
 
-      return hmac256;
+      return base64Decode;
     }()
   }, {
-    key: "generateSalt",
+    key: "sha256",
     value: function () {
-      var _ref87 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee84(identifier, version, cost, nonce) {
-        var result;
+      var _ref87 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee84(text) {
         return regeneratorRuntime.wrap(function _callee84$(_context84) {
           while (1) {
             switch (_context84.prev = _context84.next) {
               case 0:
-                _context84.next = 2;
-                return this.sha256([identifier, "SF", version, cost, nonce].join(":"));
+                return _context84.abrupt("return", CryptoJS.SHA256(text).toString());
 
-              case 2:
-                result = _context84.sent;
-                return _context84.abrupt("return", result);
-
-              case 4:
+              case 1:
               case "end":
                 return _context84.stop();
             }
@@ -50180,8 +50348,66 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
         }, _callee84, this);
       }));
 
-      function generateSalt(_x100, _x101, _x102, _x103) {
+      function sha256(_x97) {
         return _ref87.apply(this, arguments);
+      }
+
+      return sha256;
+    }()
+  }, {
+    key: "hmac256",
+    value: function () {
+      var _ref88 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee85(message, key) {
+        var keyData, messageData, result;
+        return regeneratorRuntime.wrap(function _callee85$(_context85) {
+          while (1) {
+            switch (_context85.prev = _context85.next) {
+              case 0:
+                keyData = CryptoJS.enc.Hex.parse(key);
+                messageData = CryptoJS.enc.Utf8.parse(message);
+                result = CryptoJS.HmacSHA256(messageData, keyData).toString();
+                return _context85.abrupt("return", result);
+
+              case 4:
+              case "end":
+                return _context85.stop();
+            }
+          }
+        }, _callee85, this);
+      }));
+
+      function hmac256(_x98, _x99) {
+        return _ref88.apply(this, arguments);
+      }
+
+      return hmac256;
+    }()
+  }, {
+    key: "generateSalt",
+    value: function () {
+      var _ref89 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee86(identifier, version, cost, nonce) {
+        var result;
+        return regeneratorRuntime.wrap(function _callee86$(_context86) {
+          while (1) {
+            switch (_context86.prev = _context86.next) {
+              case 0:
+                _context86.next = 2;
+                return this.sha256([identifier, "SF", version, cost, nonce].join(":"));
+
+              case 2:
+                result = _context86.sent;
+                return _context86.abrupt("return", result);
+
+              case 4:
+              case "end":
+                return _context86.stop();
+            }
+          }
+        }, _callee86, this);
+      }));
+
+      function generateSalt(_x100, _x101, _x102, _x103) {
+        return _ref89.apply(this, arguments);
       }
 
       return generateSalt;
@@ -50192,39 +50418,39 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
   }, {
     key: "generateSymmetricKeyPair",
     value: function () {
-      var _ref88 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee85() {
-        var _ref89 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-            password = _ref89.password,
-            pw_salt = _ref89.pw_salt,
-            pw_cost = _ref89.pw_cost;
+      var _ref90 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee87() {
+        var _ref91 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+            password = _ref91.password,
+            pw_salt = _ref91.pw_salt,
+            pw_cost = _ref91.pw_cost;
 
         var output, outputLength, splitLength, firstThird, secondThird, thirdThird;
-        return regeneratorRuntime.wrap(function _callee85$(_context85) {
+        return regeneratorRuntime.wrap(function _callee87$(_context87) {
           while (1) {
-            switch (_context85.prev = _context85.next) {
+            switch (_context87.prev = _context87.next) {
               case 0:
-                _context85.next = 2;
+                _context87.next = 2;
                 return this.pbkdf2(password, pw_salt, pw_cost, this.DefaultPBKDF2Length);
 
               case 2:
-                output = _context85.sent;
+                output = _context87.sent;
                 outputLength = output.length;
                 splitLength = outputLength / 3;
                 firstThird = output.slice(0, splitLength);
                 secondThird = output.slice(splitLength, splitLength * 2);
                 thirdThird = output.slice(splitLength * 2, splitLength * 3);
-                return _context85.abrupt("return", [firstThird, secondThird, thirdThird]);
+                return _context87.abrupt("return", [firstThird, secondThird, thirdThird]);
 
               case 9:
               case "end":
-                return _context85.stop();
+                return _context87.stop();
             }
           }
-        }, _callee85, this);
+        }, _callee87, this);
       }));
 
       function generateSymmetricKeyPair() {
-        return _ref88.apply(this, arguments);
+        return _ref90.apply(this, arguments);
       }
 
       return generateSymmetricKeyPair;
@@ -50232,32 +50458,32 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
   }, {
     key: "computeEncryptionKeysForUser",
     value: function () {
-      var _ref90 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee86(password, authParams) {
+      var _ref92 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee88(password, authParams) {
         var pw_salt;
-        return regeneratorRuntime.wrap(function _callee86$(_context86) {
+        return regeneratorRuntime.wrap(function _callee88$(_context88) {
           while (1) {
-            switch (_context86.prev = _context86.next) {
+            switch (_context88.prev = _context88.next) {
               case 0:
                 if (!(authParams.version == "003")) {
-                  _context86.next = 9;
+                  _context88.next = 9;
                   break;
                 }
 
                 if (authParams.identifier) {
-                  _context86.next = 4;
+                  _context88.next = 4;
                   break;
                 }
 
                 console.error("authParams is missing identifier.");
-                return _context86.abrupt("return");
+                return _context88.abrupt("return");
 
               case 4:
-                _context86.next = 6;
+                _context88.next = 6;
                 return this.generateSalt(authParams.identifier, authParams.version, authParams.pw_cost, authParams.pw_nonce);
 
               case 6:
-                pw_salt = _context86.sent;
-                _context86.next = 10;
+                pw_salt = _context88.sent;
+                _context88.next = 10;
                 break;
 
               case 9:
@@ -50265,21 +50491,21 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
                 pw_salt = authParams.pw_salt;
 
               case 10:
-                return _context86.abrupt("return", this.generateSymmetricKeyPair({ password: password, pw_salt: pw_salt, pw_cost: authParams.pw_cost }).then(function (keys) {
+                return _context88.abrupt("return", this.generateSymmetricKeyPair({ password: password, pw_salt: pw_salt, pw_cost: authParams.pw_cost }).then(function (keys) {
                   var userKeys = { pw: keys[0], mk: keys[1], ak: keys[2] };
                   return userKeys;
                 }));
 
               case 11:
               case "end":
-                return _context86.stop();
+                return _context88.stop();
             }
           }
-        }, _callee86, this);
+        }, _callee88, this);
       }));
 
       function computeEncryptionKeysForUser(_x105, _x106) {
-        return _ref90.apply(this, arguments);
+        return _ref92.apply(this, arguments);
       }
 
       return computeEncryptionKeysForUser;
@@ -50290,25 +50516,25 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
   }, {
     key: "generateInitialKeysAndAuthParamsForUser",
     value: function () {
-      var _ref91 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee87(identifier, password) {
+      var _ref93 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee89(identifier, password) {
         var version, pw_cost, pw_nonce, pw_salt;
-        return regeneratorRuntime.wrap(function _callee87$(_context87) {
+        return regeneratorRuntime.wrap(function _callee89$(_context89) {
           while (1) {
-            switch (_context87.prev = _context87.next) {
+            switch (_context89.prev = _context89.next) {
               case 0:
                 version = this.SFJS.version;
                 pw_cost = this.SFJS.defaultPasswordGenerationCost;
-                _context87.next = 4;
+                _context89.next = 4;
                 return this.generateRandomKey(256);
 
               case 4:
-                pw_nonce = _context87.sent;
-                _context87.next = 7;
+                pw_nonce = _context89.sent;
+                _context89.next = 7;
                 return this.generateSalt(identifier, version, pw_cost, pw_nonce);
 
               case 7:
-                pw_salt = _context87.sent;
-                return _context87.abrupt("return", this.generateSymmetricKeyPair({ password: password, pw_salt: pw_salt, pw_cost: pw_cost }).then(function (keys) {
+                pw_salt = _context89.sent;
+                return _context89.abrupt("return", this.generateSymmetricKeyPair({ password: password, pw_salt: pw_salt, pw_cost: pw_cost }).then(function (keys) {
                   var authParams = { pw_nonce: pw_nonce, pw_cost: pw_cost, identifier: identifier, version: version };
                   var userKeys = { pw: keys[0], mk: keys[1], ak: keys[2] };
                   return { keys: userKeys, authParams: authParams };
@@ -50316,14 +50542,14 @@ var SFAbstractCrypto = exports.SFAbstractCrypto = function () {
 
               case 9:
               case "end":
-                return _context87.stop();
+                return _context89.stop();
             }
           }
-        }, _callee87, this);
+        }, _callee89, this);
       }));
 
       function generateInitialKeysAndAuthParamsForUser(_x107, _x108) {
-        return _ref91.apply(this, arguments);
+        return _ref93.apply(this, arguments);
       }
 
       return generateInitialKeysAndAuthParamsForUser;
@@ -50346,29 +50572,29 @@ var SFCryptoJS = exports.SFCryptoJS = function (_SFAbstractCrypto) {
   _createClass(SFCryptoJS, [{
     key: "pbkdf2",
     value: function () {
-      var _ref92 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee88(password, pw_salt, pw_cost, length) {
+      var _ref94 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee90(password, pw_salt, pw_cost, length) {
         var params;
-        return regeneratorRuntime.wrap(function _callee88$(_context88) {
+        return regeneratorRuntime.wrap(function _callee90$(_context90) {
           while (1) {
-            switch (_context88.prev = _context88.next) {
+            switch (_context90.prev = _context90.next) {
               case 0:
                 params = {
                   keySize: length / 32,
                   hasher: CryptoJS.algo.SHA512,
                   iterations: pw_cost
                 };
-                return _context88.abrupt("return", CryptoJS.PBKDF2(password, pw_salt, params).toString());
+                return _context90.abrupt("return", CryptoJS.PBKDF2(password, pw_salt, params).toString());
 
               case 2:
               case "end":
-                return _context88.stop();
+                return _context90.stop();
             }
           }
-        }, _callee88, this);
+        }, _callee90, this);
       }));
 
       function pbkdf2(_x109, _x110, _x111, _x112) {
-        return _ref92.apply(this, arguments);
+        return _ref94.apply(this, arguments);
       }
 
       return pbkdf2;
@@ -50398,39 +50624,39 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
     */
 
     value: function () {
-      var _ref93 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee89(password, pw_salt, pw_cost, length) {
+      var _ref95 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee91(password, pw_salt, pw_cost, length) {
         var key;
-        return regeneratorRuntime.wrap(function _callee89$(_context89) {
+        return regeneratorRuntime.wrap(function _callee91$(_context91) {
           while (1) {
-            switch (_context89.prev = _context89.next) {
+            switch (_context91.prev = _context91.next) {
               case 0:
-                _context89.next = 2;
+                _context91.next = 2;
                 return this.webCryptoImportKey(password, "PBKDF2", "deriveBits");
 
               case 2:
-                key = _context89.sent;
+                key = _context91.sent;
 
                 if (key) {
-                  _context89.next = 6;
+                  _context91.next = 6;
                   break;
                 }
 
                 console.log("Key is null, unable to continue");
-                return _context89.abrupt("return", null);
+                return _context91.abrupt("return", null);
 
               case 6:
-                return _context89.abrupt("return", this.webCryptoDeriveBits(key, pw_salt, pw_cost, length));
+                return _context91.abrupt("return", this.webCryptoDeriveBits(key, pw_salt, pw_cost, length));
 
               case 7:
               case "end":
-                return _context89.stop();
+                return _context91.stop();
             }
           }
-        }, _callee89, this);
+        }, _callee91, this);
       }));
 
       function pbkdf2(_x113, _x114, _x115, _x116) {
-        return _ref93.apply(this, arguments);
+        return _ref95.apply(this, arguments);
       }
 
       return pbkdf2;
@@ -50438,16 +50664,16 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
   }, {
     key: "generateRandomKey",
     value: function () {
-      var _ref94 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee90(bits) {
+      var _ref96 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee92(bits) {
         var _this24 = this;
 
         var extractable;
-        return regeneratorRuntime.wrap(function _callee90$(_context90) {
+        return regeneratorRuntime.wrap(function _callee92$(_context92) {
           while (1) {
-            switch (_context90.prev = _context90.next) {
+            switch (_context92.prev = _context92.next) {
               case 0:
                 extractable = true;
-                return _context90.abrupt("return", subtleCrypto.generateKey({ name: "AES-CBC", length: bits }, extractable, ["encrypt", "decrypt"]).then(function (keyObject) {
+                return _context92.abrupt("return", subtleCrypto.generateKey({ name: "AES-CBC", length: bits }, extractable, ["encrypt", "decrypt"]).then(function (keyObject) {
                   return subtleCrypto.exportKey("raw", keyObject).then(function (keyData) {
                     var key = _this24.arrayBufferToHexString(new Uint8Array(keyData));
                     return key;
@@ -50460,14 +50686,14 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
 
               case 2:
               case "end":
-                return _context90.stop();
+                return _context92.stop();
             }
           }
-        }, _callee90, this);
+        }, _callee92, this);
       }));
 
       function generateRandomKey(_x117) {
-        return _ref94.apply(this, arguments);
+        return _ref96.apply(this, arguments);
       }
 
       return generateRandomKey;
@@ -50475,28 +50701,28 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
   }, {
     key: "generateItemEncryptionKey",
     value: function () {
-      var _ref95 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee91() {
+      var _ref97 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee93() {
         var length;
-        return regeneratorRuntime.wrap(function _callee91$(_context91) {
+        return regeneratorRuntime.wrap(function _callee93$(_context93) {
           while (1) {
-            switch (_context91.prev = _context91.next) {
+            switch (_context93.prev = _context93.next) {
               case 0:
                 // Generates a key that will be split in half, each being 256 bits. So total length will need to be 512.
                 length = 256;
-                return _context91.abrupt("return", Promise.all([this.generateRandomKey(length), this.generateRandomKey(length)]).then(function (values) {
+                return _context93.abrupt("return", Promise.all([this.generateRandomKey(length), this.generateRandomKey(length)]).then(function (values) {
                   return values.join("");
                 }));
 
               case 2:
               case "end":
-                return _context91.stop();
+                return _context93.stop();
             }
           }
-        }, _callee91, this);
+        }, _callee93, this);
       }));
 
       function generateItemEncryptionKey() {
-        return _ref95.apply(this, arguments);
+        return _ref97.apply(this, arguments);
       }
 
       return generateItemEncryptionKey;
@@ -50524,14 +50750,14 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
   }, {
     key: "webCryptoImportKey",
     value: function () {
-      var _ref96 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee92(input, alg, action) {
+      var _ref98 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee94(input, alg, action) {
         var text;
-        return regeneratorRuntime.wrap(function _callee92$(_context92) {
+        return regeneratorRuntime.wrap(function _callee94$(_context94) {
           while (1) {
-            switch (_context92.prev = _context92.next) {
+            switch (_context94.prev = _context94.next) {
               case 0:
                 text = typeof input === "string" ? this.stringToArrayBuffer(input) : input;
-                return _context92.abrupt("return", subtleCrypto.importKey("raw", text, { name: alg }, false, [action]).then(function (key) {
+                return _context94.abrupt("return", subtleCrypto.importKey("raw", text, { name: alg }, false, [action]).then(function (key) {
                   return key;
                 }).catch(function (err) {
                   console.error(err);
@@ -50540,14 +50766,14 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
 
               case 2:
               case "end":
-                return _context92.stop();
+                return _context94.stop();
             }
           }
-        }, _callee92, this);
+        }, _callee94, this);
       }));
 
       function webCryptoImportKey(_x118, _x119, _x120) {
-        return _ref96.apply(this, arguments);
+        return _ref98.apply(this, arguments);
       }
 
       return webCryptoImportKey;
@@ -50555,13 +50781,13 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
   }, {
     key: "webCryptoDeriveBits",
     value: function () {
-      var _ref97 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee93(key, pw_salt, pw_cost, length) {
+      var _ref99 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee95(key, pw_salt, pw_cost, length) {
         var _this25 = this;
 
         var params;
-        return regeneratorRuntime.wrap(function _callee93$(_context93) {
+        return regeneratorRuntime.wrap(function _callee95$(_context95) {
           while (1) {
-            switch (_context93.prev = _context93.next) {
+            switch (_context95.prev = _context95.next) {
               case 0:
                 params = {
                   "name": "PBKDF2",
@@ -50569,7 +50795,7 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
                   iterations: pw_cost,
                   hash: { name: "SHA-512" }
                 };
-                return _context93.abrupt("return", subtleCrypto.deriveBits(params, key, length).then(function (bits) {
+                return _context95.abrupt("return", subtleCrypto.deriveBits(params, key, length).then(function (bits) {
                   var key = _this25.arrayBufferToHexString(new Uint8Array(bits));
                   return key;
                 }).catch(function (err) {
@@ -50579,14 +50805,14 @@ var SFCryptoWeb = exports.SFCryptoWeb = function (_SFAbstractCrypto2) {
 
               case 2:
               case "end":
-                return _context93.stop();
+                return _context95.stop();
             }
           }
-        }, _callee93, this);
+        }, _callee95, this);
       }));
 
       function webCryptoDeriveBits(_x121, _x122, _x123, _x124) {
-        return _ref97.apply(this, arguments);
+        return _ref99.apply(this, arguments);
       }
 
       return webCryptoDeriveBits;
@@ -50660,65 +50886,65 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
   _createClass(SFItemTransformer, [{
     key: "_private_encryptString",
     value: function () {
-      var _ref98 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee94(string, encryptionKey, authKey, uuid, auth_params) {
+      var _ref100 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee96(string, encryptionKey, authKey, uuid, auth_params) {
         var fullCiphertext, contentCiphertext, iv, ciphertextToAuth, authHash, authParamsString;
-        return regeneratorRuntime.wrap(function _callee94$(_context94) {
+        return regeneratorRuntime.wrap(function _callee96$(_context96) {
           while (1) {
-            switch (_context94.prev = _context94.next) {
+            switch (_context96.prev = _context96.next) {
               case 0:
                 if (!(auth_params.version === "001")) {
-                  _context94.next = 7;
+                  _context96.next = 7;
                   break;
                 }
 
-                _context94.next = 3;
+                _context96.next = 3;
                 return this.crypto.encryptText(string, encryptionKey, null);
 
               case 3:
-                contentCiphertext = _context94.sent;
+                contentCiphertext = _context96.sent;
 
                 fullCiphertext = auth_params.version + contentCiphertext;
-                _context94.next = 21;
+                _context96.next = 21;
                 break;
 
               case 7:
-                _context94.next = 9;
+                _context96.next = 9;
                 return this.crypto.generateRandomKey(128);
 
               case 9:
-                iv = _context94.sent;
-                _context94.next = 12;
+                iv = _context96.sent;
+                _context96.next = 12;
                 return this.crypto.encryptText(string, encryptionKey, iv);
 
               case 12:
-                contentCiphertext = _context94.sent;
+                contentCiphertext = _context96.sent;
                 ciphertextToAuth = [auth_params.version, uuid, iv, contentCiphertext].join(":");
-                _context94.next = 16;
+                _context96.next = 16;
                 return this.crypto.hmac256(ciphertextToAuth, authKey);
 
               case 16:
-                authHash = _context94.sent;
-                _context94.next = 19;
+                authHash = _context96.sent;
+                _context96.next = 19;
                 return this.crypto.base64(JSON.stringify(auth_params));
 
               case 19:
-                authParamsString = _context94.sent;
+                authParamsString = _context96.sent;
 
                 fullCiphertext = [auth_params.version, authHash, uuid, iv, contentCiphertext, authParamsString].join(":");
 
               case 21:
-                return _context94.abrupt("return", fullCiphertext);
+                return _context96.abrupt("return", fullCiphertext);
 
               case 22:
               case "end":
-                return _context94.stop();
+                return _context96.stop();
             }
           }
-        }, _callee94, this);
+        }, _callee96, this);
       }));
 
       function _private_encryptString(_x125, _x126, _x127, _x128, _x129) {
-        return _ref98.apply(this, arguments);
+        return _ref100.apply(this, arguments);
       }
 
       return _private_encryptString;
@@ -50726,86 +50952,86 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
   }, {
     key: "encryptItem",
     value: function () {
-      var _ref99 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee95(item, keys, auth_params) {
+      var _ref101 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee97(item, keys, auth_params) {
         var params, item_key, ek, ak, ciphertext, authHash;
-        return regeneratorRuntime.wrap(function _callee95$(_context95) {
+        return regeneratorRuntime.wrap(function _callee97$(_context97) {
           while (1) {
-            switch (_context95.prev = _context95.next) {
+            switch (_context97.prev = _context97.next) {
               case 0:
                 params = {};
                 // encrypt item key
 
-                _context95.next = 3;
+                _context97.next = 3;
                 return this.crypto.generateItemEncryptionKey();
 
               case 3:
-                item_key = _context95.sent;
+                item_key = _context97.sent;
 
                 if (!(auth_params.version === "001")) {
-                  _context95.next = 10;
+                  _context97.next = 10;
                   break;
                 }
 
-                _context95.next = 7;
+                _context97.next = 7;
                 return this.crypto.encryptText(item_key, keys.mk, null);
 
               case 7:
-                params.enc_item_key = _context95.sent;
-                _context95.next = 13;
+                params.enc_item_key = _context97.sent;
+                _context97.next = 13;
                 break;
 
               case 10:
-                _context95.next = 12;
+                _context97.next = 12;
                 return this._private_encryptString(item_key, keys.mk, keys.ak, item.uuid, auth_params);
 
               case 12:
-                params.enc_item_key = _context95.sent;
+                params.enc_item_key = _context97.sent;
 
               case 13:
-                _context95.next = 15;
+                _context97.next = 15;
                 return this.crypto.firstHalfOfKey(item_key);
 
               case 15:
-                ek = _context95.sent;
-                _context95.next = 18;
+                ek = _context97.sent;
+                _context97.next = 18;
                 return this.crypto.secondHalfOfKey(item_key);
 
               case 18:
-                ak = _context95.sent;
-                _context95.next = 21;
+                ak = _context97.sent;
+                _context97.next = 21;
                 return this._private_encryptString(JSON.stringify(item.createContentJSONFromProperties()), ek, ak, item.uuid, auth_params);
 
               case 21:
-                ciphertext = _context95.sent;
+                ciphertext = _context97.sent;
 
                 if (!(auth_params.version === "001")) {
-                  _context95.next = 27;
+                  _context97.next = 27;
                   break;
                 }
 
-                _context95.next = 25;
+                _context97.next = 25;
                 return this.crypto.hmac256(ciphertext, ak);
 
               case 25:
-                authHash = _context95.sent;
+                authHash = _context97.sent;
 
                 params.auth_hash = authHash;
 
               case 27:
 
                 params.content = ciphertext;
-                return _context95.abrupt("return", params);
+                return _context97.abrupt("return", params);
 
               case 29:
               case "end":
-                return _context95.stop();
+                return _context97.stop();
             }
           }
-        }, _callee95, this);
+        }, _callee97, this);
       }));
 
       function encryptItem(_x130, _x131, _x132) {
-        return _ref99.apply(this, arguments);
+        return _ref101.apply(this, arguments);
       }
 
       return encryptItem;
@@ -50842,52 +51068,52 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
   }, {
     key: "decryptItem",
     value: function () {
-      var _ref100 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee96(item, keys) {
+      var _ref102 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee98(item, keys) {
         var encryptedItemKey, requiresAuth, keyParams, item_key, ek, ak, itemParams, content;
-        return regeneratorRuntime.wrap(function _callee96$(_context96) {
+        return regeneratorRuntime.wrap(function _callee98$(_context98) {
           while (1) {
-            switch (_context96.prev = _context96.next) {
+            switch (_context98.prev = _context98.next) {
               case 0:
                 if (!(typeof item.content != "string")) {
-                  _context96.next = 2;
+                  _context98.next = 2;
                   break;
                 }
 
-                return _context96.abrupt("return");
+                return _context98.abrupt("return");
 
               case 2:
                 if (!item.content.startsWith("000")) {
-                  _context96.next = 14;
+                  _context98.next = 14;
                   break;
                 }
 
-                _context96.prev = 3;
-                _context96.t0 = JSON;
-                _context96.next = 7;
+                _context98.prev = 3;
+                _context98.t0 = JSON;
+                _context98.next = 7;
                 return this.crypto.base64Decode(item.content.substring(3, item.content.length));
 
               case 7:
-                _context96.t1 = _context96.sent;
-                item.content = _context96.t0.parse.call(_context96.t0, _context96.t1);
-                _context96.next = 13;
+                _context98.t1 = _context98.sent;
+                item.content = _context98.t0.parse.call(_context98.t0, _context98.t1);
+                _context98.next = 13;
                 break;
 
               case 11:
-                _context96.prev = 11;
-                _context96.t2 = _context96["catch"](3);
+                _context98.prev = 11;
+                _context98.t2 = _context98["catch"](3);
 
               case 13:
-                return _context96.abrupt("return");
+                return _context98.abrupt("return");
 
               case 14:
                 if (item.enc_item_key) {
-                  _context96.next = 17;
+                  _context98.next = 17;
                   break;
                 }
 
                 // This needs to be here to continue, return otherwise
                 console.log("Missing item encryption key, skipping decryption.");
-                return _context96.abrupt("return");
+                return _context98.abrupt("return");
 
               case 17:
 
@@ -50905,7 +51131,7 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
                 // return if uuid in auth hash does not match item uuid. Signs of tampering.
 
                 if (!(keyParams.uuid && keyParams.uuid !== item.uuid)) {
-                  _context96.next = 26;
+                  _context98.next = 26;
                   break;
                 }
 
@@ -50914,17 +51140,17 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
                   item.errorDecryptingValueChanged = true;
                 }
                 item.errorDecrypting = true;
-                return _context96.abrupt("return");
+                return _context98.abrupt("return");
 
               case 26:
-                _context96.next = 28;
+                _context98.next = 28;
                 return this.crypto.decryptText(keyParams, requiresAuth);
 
               case 28:
-                item_key = _context96.sent;
+                item_key = _context98.sent;
 
                 if (item_key) {
-                  _context96.next = 33;
+                  _context98.next = 33;
                   break;
                 }
 
@@ -50932,38 +51158,38 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
                   item.errorDecryptingValueChanged = true;
                 }
                 item.errorDecrypting = true;
-                return _context96.abrupt("return");
+                return _context98.abrupt("return");
 
               case 33:
-                _context96.next = 35;
+                _context98.next = 35;
                 return this.crypto.firstHalfOfKey(item_key);
 
               case 35:
-                ek = _context96.sent;
-                _context96.next = 38;
+                ek = _context98.sent;
+                _context98.next = 38;
                 return this.crypto.secondHalfOfKey(item_key);
 
               case 38:
-                ak = _context96.sent;
+                ak = _context98.sent;
                 itemParams = this.encryptionComponentsFromString(item.content, ek, ak);
-                _context96.prev = 40;
-                _context96.t3 = JSON;
-                _context96.next = 44;
+                _context98.prev = 40;
+                _context98.t3 = JSON;
+                _context98.next = 44;
                 return this.crypto.base64Decode(itemParams.authParams);
 
               case 44:
-                _context96.t4 = _context96.sent;
-                item.auth_params = _context96.t3.parse.call(_context96.t3, _context96.t4);
-                _context96.next = 50;
+                _context98.t4 = _context98.sent;
+                item.auth_params = _context98.t3.parse.call(_context98.t3, _context98.t4);
+                _context98.next = 50;
                 break;
 
               case 48:
-                _context96.prev = 48;
-                _context96.t5 = _context96["catch"](40);
+                _context98.prev = 48;
+                _context98.t5 = _context98["catch"](40);
 
               case 50:
                 if (!(itemParams.uuid && itemParams.uuid !== item.uuid)) {
-                  _context96.next = 54;
+                  _context98.next = 54;
                   break;
                 }
 
@@ -50971,7 +51197,7 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
                   item.errorDecryptingValueChanged = true;
                 }
                 item.errorDecrypting = true;
-                return _context96.abrupt("return");
+                return _context98.abrupt("return");
 
               case 54:
 
@@ -50980,11 +51206,11 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
                   itemParams.authHash = item.auth_hash;
                 }
 
-                _context96.next = 57;
+                _context98.next = 57;
                 return this.crypto.decryptText(itemParams, true);
 
               case 57:
-                content = _context96.sent;
+                content = _context98.sent;
 
                 if (!content) {
                   if (!item.errorDecrypting) {
@@ -51002,14 +51228,14 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
 
               case 59:
               case "end":
-                return _context96.stop();
+                return _context98.stop();
             }
           }
-        }, _callee96, this, [[3, 11], [40, 48]]);
+        }, _callee98, this, [[3, 11], [40, 48]]);
       }));
 
       function decryptItem(_x133, _x134) {
-        return _ref100.apply(this, arguments);
+        return _ref102.apply(this, arguments);
       }
 
       return decryptItem;
@@ -51017,47 +51243,47 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
   }, {
     key: "decryptMultipleItems",
     value: function () {
-      var _ref101 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee98(items, keys, throws) {
+      var _ref103 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee100(items, keys, throws) {
         var _this26 = this;
 
         var decrypt;
-        return regeneratorRuntime.wrap(function _callee98$(_context98) {
+        return regeneratorRuntime.wrap(function _callee100$(_context100) {
           while (1) {
-            switch (_context98.prev = _context98.next) {
+            switch (_context100.prev = _context100.next) {
               case 0:
                 decrypt = function () {
-                  var _ref102 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee97(item) {
+                  var _ref104 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee99(item) {
                     var isString;
-                    return regeneratorRuntime.wrap(function _callee97$(_context97) {
+                    return regeneratorRuntime.wrap(function _callee99$(_context99) {
                       while (1) {
-                        switch (_context97.prev = _context97.next) {
+                        switch (_context99.prev = _context99.next) {
                           case 0:
                             if (!(item.deleted == true && item.content == null)) {
-                              _context97.next = 2;
+                              _context99.next = 2;
                               break;
                             }
 
-                            return _context97.abrupt("return");
+                            return _context99.abrupt("return");
 
                           case 2:
                             isString = typeof item.content === 'string' || item.content instanceof String;
 
                             if (!isString) {
-                              _context97.next = 17;
+                              _context99.next = 17;
                               break;
                             }
 
-                            _context97.prev = 4;
-                            _context97.next = 7;
+                            _context99.prev = 4;
+                            _context99.next = 7;
                             return _this26.decryptItem(item, keys);
 
                           case 7:
-                            _context97.next = 17;
+                            _context99.next = 17;
                             break;
 
                           case 9:
-                            _context97.prev = 9;
-                            _context97.t0 = _context97["catch"](4);
+                            _context99.prev = 9;
+                            _context99.t0 = _context99["catch"](4);
 
                             if (!item.errorDecrypting) {
                               item.errorDecryptingValueChanged = true;
@@ -51065,43 +51291,43 @@ var SFItemTransformer = exports.SFItemTransformer = function () {
                             item.errorDecrypting = true;
 
                             if (!throws) {
-                              _context97.next = 15;
+                              _context99.next = 15;
                               break;
                             }
 
-                            throw _context97.t0;
+                            throw _context99.t0;
 
                           case 15:
-                            console.error("Error decrypting item", item, _context97.t0);
-                            return _context97.abrupt("return");
+                            console.error("Error decrypting item", item, _context99.t0);
+                            return _context99.abrupt("return");
 
                           case 17:
                           case "end":
-                            return _context97.stop();
+                            return _context99.stop();
                         }
                       }
-                    }, _callee97, _this26, [[4, 9]]);
+                    }, _callee99, _this26, [[4, 9]]);
                   }));
 
                   return function decrypt(_x138) {
-                    return _ref102.apply(this, arguments);
+                    return _ref104.apply(this, arguments);
                   };
                 }();
 
-                return _context98.abrupt("return", Promise.all(items.map(function (item) {
+                return _context100.abrupt("return", Promise.all(items.map(function (item) {
                   return decrypt(item);
                 })));
 
               case 2:
               case "end":
-                return _context98.stop();
+                return _context100.stop();
             }
           }
-        }, _callee98, this);
+        }, _callee100, this);
       }));
 
       function decryptMultipleItems(_x135, _x136, _x137) {
-        return _ref101.apply(this, arguments);
+        return _ref103.apply(this, arguments);
       }
 
       return decryptMultipleItems;
@@ -53625,6 +53851,8 @@ var NoteHistoryEntry = function (_SFItemHistoryEntry) {
 
       if (syncEvent == "sync-session-invalid") {
         alert("Your session has expired. New changes will not be pulled in. Please sign out and sign back in to refresh your session.");
+      } else if (syncEvent == "sync-exception") {
+        alert("There was an error while trying to save your items. Please contact support and share this message: " + data);
       }
     });
 
@@ -55203,45 +55431,16 @@ var AuthManager = function (_SFAuthManager) {
       }
     }
   }, {
-    key: "protocolVersion",
+    key: "getAuthParamsForEmail",
     value: function () {
-      var _ref11 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee10() {
-        var authParams, keys;
+      var _ref11 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee10(url, email, extraParams) {
         return _regenerator2.default.wrap(function _callee10$(_context10) {
           while (1) {
             switch (_context10.prev = _context10.next) {
               case 0:
-                _context10.next = 2;
-                return this.getAuthParams();
+                return _context10.abrupt("return", (0, _get4.default)(AuthManager.prototype.__proto__ || Object.getPrototypeOf(AuthManager.prototype), "getAuthParamsForEmail", this).call(this, url, email, extraParams));
 
-              case 2:
-                authParams = _context10.sent;
-
-                if (!(authParams && authParams.version)) {
-                  _context10.next = 5;
-                  break;
-                }
-
-                return _context10.abrupt("return", authParams.version);
-
-              case 5:
-                _context10.next = 7;
-                return this.keys();
-
-              case 7:
-                keys = _context10.sent;
-
-                if (!(keys && keys.ak)) {
-                  _context10.next = 12;
-                  break;
-                }
-
-                return _context10.abrupt("return", "002");
-
-              case 12:
-                return _context10.abrupt("return", "001");
-
-              case 13:
+              case 1:
               case "end":
                 return _context10.stop();
             }
@@ -55249,21 +55448,30 @@ var AuthManager = function (_SFAuthManager) {
         }, _callee10, this);
       }));
 
-      function protocolVersion() {
+      function getAuthParamsForEmail(_x18, _x19, _x20) {
         return _ref11.apply(this, arguments);
       }
 
-      return protocolVersion;
+      return getAuthParamsForEmail;
     }()
   }, {
-    key: "getAuthParamsForEmail",
+    key: "login",
     value: function () {
-      var _ref12 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee11(url, email, extraParams) {
+      var _ref12 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee11(url, email, password, ephemeral, strictSignin, extraParams) {
+        var _this31 = this;
+
         return _regenerator2.default.wrap(function _callee11$(_context11) {
           while (1) {
             switch (_context11.prev = _context11.next) {
               case 0:
-                return _context11.abrupt("return", (0, _get4.default)(AuthManager.prototype.__proto__ || Object.getPrototypeOf(AuthManager.prototype), "getAuthParamsForEmail", this).call(this, url, email, extraParams));
+                return _context11.abrupt("return", (0, _get4.default)(AuthManager.prototype.__proto__ || Object.getPrototypeOf(AuthManager.prototype), "login", this).call(this, url, email, password, strictSignin, extraParams).then(function (response) {
+                  if (!response.error) {
+                    _this31.setEphemeral(ephemeral);
+                    _this31.checkForSecurityUpdate();
+                  }
+
+                  return response;
+                }));
 
               case 1:
               case "end":
@@ -55273,28 +55481,26 @@ var AuthManager = function (_SFAuthManager) {
         }, _callee11, this);
       }));
 
-      function getAuthParamsForEmail(_x18, _x19, _x20) {
+      function login(_x21, _x22, _x23, _x24, _x25, _x26) {
         return _ref12.apply(this, arguments);
       }
 
-      return getAuthParamsForEmail;
+      return login;
     }()
   }, {
-    key: "login",
+    key: "register",
     value: function () {
-      var _ref13 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee12(url, email, password, ephemeral, strictSignin, extraParams) {
-        var _this31 = this;
+      var _ref13 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee12(url, email, password, ephemeral) {
+        var _this32 = this;
 
         return _regenerator2.default.wrap(function _callee12$(_context12) {
           while (1) {
             switch (_context12.prev = _context12.next) {
               case 0:
-                return _context12.abrupt("return", (0, _get4.default)(AuthManager.prototype.__proto__ || Object.getPrototypeOf(AuthManager.prototype), "login", this).call(this, url, email, password, strictSignin, extraParams).then(function (response) {
+                return _context12.abrupt("return", (0, _get4.default)(AuthManager.prototype.__proto__ || Object.getPrototypeOf(AuthManager.prototype), "register", this).call(this, url, email, password).then(function (response) {
                   if (!response.error) {
-                    _this31.setEphemeral(ephemeral);
-                    _this31.checkForSecurityUpdate();
+                    _this32.setEphemeral(ephemeral);
                   }
-
                   return response;
                 }));
 
@@ -55306,25 +55512,25 @@ var AuthManager = function (_SFAuthManager) {
         }, _callee12, this);
       }));
 
-      function login(_x21, _x22, _x23, _x24, _x25, _x26) {
+      function register(_x27, _x28, _x29, _x30) {
         return _ref13.apply(this, arguments);
       }
 
-      return login;
+      return register;
     }()
   }, {
-    key: "register",
+    key: "changePassword",
     value: function () {
-      var _ref14 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee13(url, email, password, ephemeral) {
-        var _this32 = this;
+      var _ref14 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee13(url, email, current_server_pw, newKeys, newAuthParams) {
+        var _this33 = this;
 
         return _regenerator2.default.wrap(function _callee13$(_context13) {
           while (1) {
             switch (_context13.prev = _context13.next) {
               case 0:
-                return _context13.abrupt("return", (0, _get4.default)(AuthManager.prototype.__proto__ || Object.getPrototypeOf(AuthManager.prototype), "register", this).call(this, url, email, password).then(function (response) {
+                return _context13.abrupt("return", (0, _get4.default)(AuthManager.prototype.__proto__ || Object.getPrototypeOf(AuthManager.prototype), "changePassword", this).call(this, url, email, current_server_pw, newKeys, newAuthParams).then(function (response) {
                   if (!response.error) {
-                    _this32.setEphemeral(ephemeral);
+                    _this33.checkForSecurityUpdate();
                   }
                   return response;
                 }));
@@ -55337,39 +55543,8 @@ var AuthManager = function (_SFAuthManager) {
         }, _callee13, this);
       }));
 
-      function register(_x27, _x28, _x29, _x30) {
-        return _ref14.apply(this, arguments);
-      }
-
-      return register;
-    }()
-  }, {
-    key: "changePassword",
-    value: function () {
-      var _ref15 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee14(url, email, current_server_pw, newKeys, newAuthParams) {
-        var _this33 = this;
-
-        return _regenerator2.default.wrap(function _callee14$(_context14) {
-          while (1) {
-            switch (_context14.prev = _context14.next) {
-              case 0:
-                return _context14.abrupt("return", (0, _get4.default)(AuthManager.prototype.__proto__ || Object.getPrototypeOf(AuthManager.prototype), "changePassword", this).call(this, url, email, current_server_pw, newKeys, newAuthParams).then(function (response) {
-                  if (!response.error) {
-                    _this33.checkForSecurityUpdate();
-                  }
-                  return response;
-                }));
-
-              case 1:
-              case "end":
-                return _context14.stop();
-            }
-          }
-        }, _callee14, this);
-      }));
-
       function changePassword(_x31, _x32, _x33, _x34, _x35) {
-        return _ref15.apply(this, arguments);
+        return _ref14.apply(this, arguments);
       }
 
       return changePassword;
@@ -55377,37 +55552,37 @@ var AuthManager = function (_SFAuthManager) {
   }, {
     key: "handleAuthResponse",
     value: function () {
-      var _ref16 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee15(response, email, url, authParams, keys) {
-        return _regenerator2.default.wrap(function _callee15$(_context15) {
+      var _ref15 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee14(response, email, url, authParams, keys) {
+        return _regenerator2.default.wrap(function _callee14$(_context14) {
           while (1) {
-            switch (_context15.prev = _context15.next) {
+            switch (_context14.prev = _context14.next) {
               case 0:
-                _context15.prev = 0;
-                _context15.next = 3;
+                _context14.prev = 0;
+                _context14.next = 3;
                 return (0, _get4.default)(AuthManager.prototype.__proto__ || Object.getPrototypeOf(AuthManager.prototype), "handleAuthResponse", this).call(this, response, email, url, authParams, keys);
 
               case 3:
                 this.user = response.user;
                 this.storageManager.setItem("user", JSON.stringify(response.user));
-                _context15.next = 10;
+                _context14.next = 10;
                 break;
 
               case 7:
-                _context15.prev = 7;
-                _context15.t0 = _context15["catch"](0);
+                _context14.prev = 7;
+                _context14.t0 = _context14["catch"](0);
 
                 this.dbManager.displayOfflineAlert();
 
               case 10:
               case "end":
-                return _context15.stop();
+                return _context14.stop();
             }
           }
-        }, _callee15, this, [[0, 7]]);
+        }, _callee14, this, [[0, 7]]);
       }));
 
       function handleAuthResponse(_x36, _x37, _x38, _x39, _x40) {
-        return _ref16.apply(this, arguments);
+        return _ref15.apply(this, arguments);
       }
 
       return handleAuthResponse;
@@ -55415,46 +55590,46 @@ var AuthManager = function (_SFAuthManager) {
   }, {
     key: "checkForSecurityUpdate",
     value: function () {
-      var _ref17 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee16() {
+      var _ref16 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee15() {
         var latest, updateAvailable;
-        return _regenerator2.default.wrap(function _callee16$(_context16) {
+        return _regenerator2.default.wrap(function _callee15$(_context15) {
           while (1) {
-            switch (_context16.prev = _context16.next) {
+            switch (_context15.prev = _context15.next) {
               case 0:
                 if (!this.offline()) {
-                  _context16.next = 2;
+                  _context15.next = 2;
                   break;
                 }
 
-                return _context16.abrupt("return", false);
+                return _context15.abrupt("return", false);
 
               case 2:
                 latest = SFJS.version();
-                _context16.next = 5;
+                _context15.next = 5;
                 return this.protocolVersion();
 
               case 5:
-                _context16.t0 = _context16.sent;
-                _context16.t1 = latest;
-                updateAvailable = _context16.t0 !== _context16.t1;
+                _context15.t0 = _context15.sent;
+                _context15.t1 = latest;
+                updateAvailable = _context15.t0 !== _context15.t1;
 
                 if (updateAvailable !== this.securityUpdateAvailable) {
                   this.securityUpdateAvailable = updateAvailable;
                   this.$rootScope.$broadcast("security-update-status-changed");
                 }
 
-                return _context16.abrupt("return", this.securityUpdateAvailable);
+                return _context15.abrupt("return", this.securityUpdateAvailable);
 
               case 10:
               case "end":
-                return _context16.stop();
+                return _context15.stop();
             }
           }
-        }, _callee16, this);
+        }, _callee15, this);
       }));
 
       function checkForSecurityUpdate() {
-        return _ref17.apply(this, arguments);
+        return _ref16.apply(this, arguments);
       }
 
       return checkForSecurityUpdate;
@@ -56808,14 +56983,14 @@ var ComponentManager = function () {
   }, {
     key: "waitTimeout",
     value: function () {
-      var _ref18 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee17(func) {
+      var _ref17 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee16(func) {
         var _this44 = this;
 
-        return _regenerator2.default.wrap(function _callee17$(_context17) {
+        return _regenerator2.default.wrap(function _callee16$(_context16) {
           while (1) {
-            switch (_context17.prev = _context17.next) {
+            switch (_context16.prev = _context16.next) {
               case 0:
-                return _context17.abrupt("return", new Promise(function (resolve, reject) {
+                return _context16.abrupt("return", new Promise(function (resolve, reject) {
                   _this44.timeout(function () {
                     func();
                     resolve();
@@ -56824,14 +56999,14 @@ var ComponentManager = function () {
 
               case 1:
               case "end":
-                return _context17.stop();
+                return _context16.stop();
             }
           }
-        }, _callee17, this);
+        }, _callee16, this);
       }));
 
       function waitTimeout(_x43) {
-        return _ref18.apply(this, arguments);
+        return _ref17.apply(this, arguments);
       }
 
       return waitTimeout;
@@ -56839,14 +57014,14 @@ var ComponentManager = function () {
   }, {
     key: "activateComponent",
     value: function () {
-      var _ref19 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee18(component) {
+      var _ref18 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee17(component) {
         var dontSync = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
         var didChange, _iteratorNormalCompletion34, _didIteratorError34, _iteratorError34, _iterator34, _step34, handler;
 
-        return _regenerator2.default.wrap(function _callee18$(_context18) {
+        return _regenerator2.default.wrap(function _callee17$(_context17) {
           while (1) {
-            switch (_context18.prev = _context18.next) {
+            switch (_context17.prev = _context17.next) {
               case 0:
                 didChange = component.active != true;
 
@@ -56855,65 +57030,65 @@ var ComponentManager = function () {
                 _iteratorNormalCompletion34 = true;
                 _didIteratorError34 = false;
                 _iteratorError34 = undefined;
-                _context18.prev = 5;
+                _context17.prev = 5;
                 _iterator34 = this.handlers[Symbol.iterator]();
 
               case 7:
                 if (_iteratorNormalCompletion34 = (_step34 = _iterator34.next()).done) {
-                  _context18.next = 15;
+                  _context17.next = 15;
                   break;
                 }
 
                 handler = _step34.value;
 
                 if (!(handler.areas.includes(component.area) || handler.areas.includes("*"))) {
-                  _context18.next = 12;
+                  _context17.next = 12;
                   break;
                 }
 
-                _context18.next = 12;
+                _context17.next = 12;
                 return this.waitTimeout(function () {
                   handler.activationHandler && handler.activationHandler(component);
                 });
 
               case 12:
                 _iteratorNormalCompletion34 = true;
-                _context18.next = 7;
+                _context17.next = 7;
                 break;
 
               case 15:
-                _context18.next = 21;
+                _context17.next = 21;
                 break;
 
               case 17:
-                _context18.prev = 17;
-                _context18.t0 = _context18["catch"](5);
+                _context17.prev = 17;
+                _context17.t0 = _context17["catch"](5);
                 _didIteratorError34 = true;
-                _iteratorError34 = _context18.t0;
+                _iteratorError34 = _context17.t0;
 
               case 21:
-                _context18.prev = 21;
-                _context18.prev = 22;
+                _context17.prev = 21;
+                _context17.prev = 22;
 
                 if (!_iteratorNormalCompletion34 && _iterator34.return) {
                   _iterator34.return();
                 }
 
               case 24:
-                _context18.prev = 24;
+                _context17.prev = 24;
 
                 if (!_didIteratorError34) {
-                  _context18.next = 27;
+                  _context17.next = 27;
                   break;
                 }
 
                 throw _iteratorError34;
 
               case 27:
-                return _context18.finish(24);
+                return _context17.finish(24);
 
               case 28:
-                return _context18.finish(21);
+                return _context17.finish(21);
 
               case 29:
 
@@ -56932,14 +57107,14 @@ var ComponentManager = function () {
 
               case 32:
               case "end":
-                return _context18.stop();
+                return _context17.stop();
             }
           }
-        }, _callee18, this, [[5, 17, 21, 29], [22,, 24, 28]]);
+        }, _callee17, this, [[5, 17, 21, 29], [22,, 24, 28]]);
       }));
 
       function activateComponent(_x45) {
-        return _ref19.apply(this, arguments);
+        return _ref18.apply(this, arguments);
       }
 
       return activateComponent;
@@ -56947,16 +57122,16 @@ var ComponentManager = function () {
   }, {
     key: "deactivateComponent",
     value: function () {
-      var _ref20 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee19(component) {
+      var _ref19 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee18(component) {
         var _this45 = this;
 
         var dontSync = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
         var didChange, _loop4, _iteratorNormalCompletion35, _didIteratorError35, _iteratorError35, _iterator35, _step35, handler;
 
-        return _regenerator2.default.wrap(function _callee19$(_context20) {
+        return _regenerator2.default.wrap(function _callee18$(_context19) {
           while (1) {
-            switch (_context20.prev = _context20.next) {
+            switch (_context19.prev = _context19.next) {
               case 0:
                 didChange = component.active != false;
 
@@ -56964,23 +57139,23 @@ var ComponentManager = function () {
                 component.sessionKey = null;
 
                 _loop4 = /*#__PURE__*/_regenerator2.default.mark(function _loop4(handler) {
-                  return _regenerator2.default.wrap(function _loop4$(_context19) {
+                  return _regenerator2.default.wrap(function _loop4$(_context18) {
                     while (1) {
-                      switch (_context19.prev = _context19.next) {
+                      switch (_context18.prev = _context18.next) {
                         case 0:
                           if (!(handler.areas.includes(component.area) || handler.areas.includes("*"))) {
-                            _context19.next = 3;
+                            _context18.next = 3;
                             break;
                           }
 
-                          _context19.next = 3;
+                          _context18.next = 3;
                           return _this45.waitTimeout(function () {
                             handler.activationHandler && handler.activationHandler(component);
                           });
 
                         case 3:
                         case "end":
-                          return _context19.stop();
+                          return _context18.stop();
                       }
                     }
                   }, _loop4, _this45);
@@ -56988,56 +57163,56 @@ var ComponentManager = function () {
                 _iteratorNormalCompletion35 = true;
                 _didIteratorError35 = false;
                 _iteratorError35 = undefined;
-                _context20.prev = 7;
+                _context19.prev = 7;
                 _iterator35 = this.handlers[Symbol.iterator]();
 
               case 9:
                 if (_iteratorNormalCompletion35 = (_step35 = _iterator35.next()).done) {
-                  _context20.next = 15;
+                  _context19.next = 15;
                   break;
                 }
 
                 handler = _step35.value;
-                return _context20.delegateYield(_loop4(handler), "t0", 12);
+                return _context19.delegateYield(_loop4(handler), "t0", 12);
 
               case 12:
                 _iteratorNormalCompletion35 = true;
-                _context20.next = 9;
+                _context19.next = 9;
                 break;
 
               case 15:
-                _context20.next = 21;
+                _context19.next = 21;
                 break;
 
               case 17:
-                _context20.prev = 17;
-                _context20.t1 = _context20["catch"](7);
+                _context19.prev = 17;
+                _context19.t1 = _context19["catch"](7);
                 _didIteratorError35 = true;
-                _iteratorError35 = _context20.t1;
+                _iteratorError35 = _context19.t1;
 
               case 21:
-                _context20.prev = 21;
-                _context20.prev = 22;
+                _context19.prev = 21;
+                _context19.prev = 22;
 
                 if (!_iteratorNormalCompletion35 && _iterator35.return) {
                   _iterator35.return();
                 }
 
               case 24:
-                _context20.prev = 24;
+                _context19.prev = 24;
 
                 if (!_didIteratorError35) {
-                  _context20.next = 27;
+                  _context19.next = 27;
                   break;
                 }
 
                 throw _iteratorError35;
 
               case 27:
-                return _context20.finish(24);
+                return _context19.finish(24);
 
               case 28:
-                return _context20.finish(21);
+                return _context19.finish(21);
 
               case 29:
 
@@ -57062,14 +57237,14 @@ var ComponentManager = function () {
 
               case 34:
               case "end":
-                return _context20.stop();
+                return _context19.stop();
             }
           }
-        }, _callee19, this, [[7, 17, 21, 29], [22,, 24, 28]]);
+        }, _callee18, this, [[7, 17, 21, 29], [22,, 24, 28]]);
       }));
 
       function deactivateComponent(_x47) {
-        return _ref20.apply(this, arguments);
+        return _ref19.apply(this, arguments);
       }
 
       return deactivateComponent;
@@ -57077,14 +57252,14 @@ var ComponentManager = function () {
   }, {
     key: "reloadComponent",
     value: function () {
-      var _ref21 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee21(component) {
+      var _ref20 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee20(component) {
         var _this46 = this;
 
         var _loop5, _iteratorNormalCompletion36, _didIteratorError36, _iteratorError36, _iterator36, _step36, handler;
 
-        return _regenerator2.default.wrap(function _callee21$(_context23) {
+        return _regenerator2.default.wrap(function _callee20$(_context22) {
           while (1) {
-            switch (_context23.prev = _context23.next) {
+            switch (_context22.prev = _context22.next) {
               case 0:
                 //
                 // Do soft deactivate
@@ -57092,23 +57267,23 @@ var ComponentManager = function () {
                 component.active = false;
 
                 _loop5 = /*#__PURE__*/_regenerator2.default.mark(function _loop5(handler) {
-                  return _regenerator2.default.wrap(function _loop5$(_context22) {
+                  return _regenerator2.default.wrap(function _loop5$(_context21) {
                     while (1) {
-                      switch (_context22.prev = _context22.next) {
+                      switch (_context21.prev = _context21.next) {
                         case 0:
                           if (!(handler.areas.includes(component.area) || handler.areas.includes("*"))) {
-                            _context22.next = 3;
+                            _context21.next = 3;
                             break;
                           }
 
-                          _context22.next = 3;
+                          _context21.next = 3;
                           return _this46.waitTimeout(function () {
                             handler.activationHandler && handler.activationHandler(component);
                           });
 
                         case 3:
                         case "end":
-                          return _context22.stop();
+                          return _context21.stop();
                       }
                     }
                   }, _loop5, _this46);
@@ -57116,56 +57291,56 @@ var ComponentManager = function () {
                 _iteratorNormalCompletion36 = true;
                 _didIteratorError36 = false;
                 _iteratorError36 = undefined;
-                _context23.prev = 5;
+                _context22.prev = 5;
                 _iterator36 = this.handlers[Symbol.iterator]();
 
               case 7:
                 if (_iteratorNormalCompletion36 = (_step36 = _iterator36.next()).done) {
-                  _context23.next = 13;
+                  _context22.next = 13;
                   break;
                 }
 
                 handler = _step36.value;
-                return _context23.delegateYield(_loop5(handler), "t0", 10);
+                return _context22.delegateYield(_loop5(handler), "t0", 10);
 
               case 10:
                 _iteratorNormalCompletion36 = true;
-                _context23.next = 7;
+                _context22.next = 7;
                 break;
 
               case 13:
-                _context23.next = 19;
+                _context22.next = 19;
                 break;
 
               case 15:
-                _context23.prev = 15;
-                _context23.t1 = _context23["catch"](5);
+                _context22.prev = 15;
+                _context22.t1 = _context22["catch"](5);
                 _didIteratorError36 = true;
-                _iteratorError36 = _context23.t1;
+                _iteratorError36 = _context22.t1;
 
               case 19:
-                _context23.prev = 19;
-                _context23.prev = 20;
+                _context22.prev = 19;
+                _context22.prev = 20;
 
                 if (!_iteratorNormalCompletion36 && _iterator36.return) {
                   _iterator36.return();
                 }
 
               case 22:
-                _context23.prev = 22;
+                _context22.prev = 22;
 
                 if (!_didIteratorError36) {
-                  _context23.next = 25;
+                  _context22.next = 25;
                   break;
                 }
 
                 throw _iteratorError36;
 
               case 25:
-                return _context23.finish(22);
+                return _context22.finish(22);
 
               case 26:
-                return _context23.finish(19);
+                return _context22.finish(19);
 
               case 27:
 
@@ -57185,76 +57360,76 @@ var ComponentManager = function () {
                 // Do soft activate
                 //
 
-                this.timeout((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee20() {
+                this.timeout((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee19() {
                   var _iteratorNormalCompletion37, _didIteratorError37, _iteratorError37, _iterator37, _step37, handler;
 
-                  return _regenerator2.default.wrap(function _callee20$(_context21) {
+                  return _regenerator2.default.wrap(function _callee19$(_context20) {
                     while (1) {
-                      switch (_context21.prev = _context21.next) {
+                      switch (_context20.prev = _context20.next) {
                         case 0:
                           component.active = true;
                           _iteratorNormalCompletion37 = true;
                           _didIteratorError37 = false;
                           _iteratorError37 = undefined;
-                          _context21.prev = 4;
+                          _context20.prev = 4;
                           _iterator37 = _this46.handlers[Symbol.iterator]();
 
                         case 6:
                           if (_iteratorNormalCompletion37 = (_step37 = _iterator37.next()).done) {
-                            _context21.next = 14;
+                            _context20.next = 14;
                             break;
                           }
 
                           handler = _step37.value;
 
                           if (!(handler.areas.includes(component.area) || handler.areas.includes("*"))) {
-                            _context21.next = 11;
+                            _context20.next = 11;
                             break;
                           }
 
-                          _context21.next = 11;
+                          _context20.next = 11;
                           return _this46.waitTimeout(function () {
                             handler.activationHandler && handler.activationHandler(component);
                           });
 
                         case 11:
                           _iteratorNormalCompletion37 = true;
-                          _context21.next = 6;
+                          _context20.next = 6;
                           break;
 
                         case 14:
-                          _context21.next = 20;
+                          _context20.next = 20;
                           break;
 
                         case 16:
-                          _context21.prev = 16;
-                          _context21.t0 = _context21["catch"](4);
+                          _context20.prev = 16;
+                          _context20.t0 = _context20["catch"](4);
                           _didIteratorError37 = true;
-                          _iteratorError37 = _context21.t0;
+                          _iteratorError37 = _context20.t0;
 
                         case 20:
-                          _context21.prev = 20;
-                          _context21.prev = 21;
+                          _context20.prev = 20;
+                          _context20.prev = 21;
 
                           if (!_iteratorNormalCompletion37 && _iterator37.return) {
                             _iterator37.return();
                           }
 
                         case 23:
-                          _context21.prev = 23;
+                          _context20.prev = 23;
 
                           if (!_didIteratorError37) {
-                            _context21.next = 26;
+                            _context20.next = 26;
                             break;
                           }
 
                           throw _iteratorError37;
 
                         case 26:
-                          return _context21.finish(23);
+                          return _context20.finish(23);
 
                         case 27:
-                          return _context21.finish(20);
+                          return _context20.finish(20);
 
                         case 28:
 
@@ -57268,22 +57443,22 @@ var ComponentManager = function () {
 
                         case 30:
                         case "end":
-                          return _context21.stop();
+                          return _context20.stop();
                       }
                     }
-                  }, _callee20, _this46, [[4, 16, 20, 28], [21,, 23, 27]]);
+                  }, _callee19, _this46, [[4, 16, 20, 28], [21,, 23, 27]]);
                 })));
 
               case 31:
               case "end":
-                return _context23.stop();
+                return _context22.stop();
             }
           }
-        }, _callee21, this, [[5, 15, 19, 27], [20,, 22, 26]]);
+        }, _callee20, this, [[5, 15, 19, 27], [20,, 22, 26]]);
       }));
 
       function reloadComponent(_x48) {
-        return _ref21.apply(this, arguments);
+        return _ref20.apply(this, arguments);
       }
 
       return reloadComponent;
@@ -57643,23 +57818,23 @@ var DesktopManager = function () {
   }, {
     key: "convertComponentForTransmission",
     value: function () {
-      var _ref23 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee22(component) {
-        return _regenerator2.default.wrap(function _callee22$(_context24) {
+      var _ref22 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee21(component) {
+        return _regenerator2.default.wrap(function _callee21$(_context23) {
           while (1) {
-            switch (_context24.prev = _context24.next) {
+            switch (_context23.prev = _context23.next) {
               case 0:
-                return _context24.abrupt("return", new SFItemParams(component).paramsForExportFile(true));
+                return _context23.abrupt("return", new SFItemParams(component).paramsForExportFile(true));
 
               case 1:
               case "end":
-                return _context24.stop();
+                return _context23.stop();
             }
           }
-        }, _callee22, this);
+        }, _callee21, this);
       }));
 
       function convertComponentForTransmission(_x49) {
-        return _ref23.apply(this, arguments);
+        return _ref22.apply(this, arguments);
       }
 
       return convertComponentForTransmission;
@@ -57683,30 +57858,30 @@ var DesktopManager = function () {
   }, {
     key: "installComponent",
     value: function () {
-      var _ref24 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee23(component) {
-        return _regenerator2.default.wrap(function _callee23$(_context25) {
+      var _ref23 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee22(component) {
+        return _regenerator2.default.wrap(function _callee22$(_context24) {
           while (1) {
-            switch (_context25.prev = _context25.next) {
+            switch (_context24.prev = _context24.next) {
               case 0:
-                _context25.t0 = this;
-                _context25.next = 3;
+                _context24.t0 = this;
+                _context24.next = 3;
                 return this.convertComponentForTransmission(component);
 
               case 3:
-                _context25.t1 = _context25.sent;
+                _context24.t1 = _context24.sent;
 
-                _context25.t0.installComponentHandler.call(_context25.t0, _context25.t1);
+                _context24.t0.installComponentHandler.call(_context24.t0, _context24.t1);
 
               case 5:
               case "end":
-                return _context25.stop();
+                return _context24.stop();
             }
           }
-        }, _callee23, this);
+        }, _callee22, this);
       }));
 
       function installComponent(_x50) {
-        return _ref24.apply(this, arguments);
+        return _ref23.apply(this, arguments);
       }
 
       return installComponent;
@@ -57845,33 +58020,33 @@ var DesktopManager = function () {
   }, {
     key: "desktop_requestBackupFile",
     value: function () {
-      var _ref25 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee24(callback) {
+      var _ref24 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee23(callback) {
         var keys, authParams;
-        return _regenerator2.default.wrap(function _callee24$(_context26) {
+        return _regenerator2.default.wrap(function _callee23$(_context25) {
           while (1) {
-            switch (_context26.prev = _context26.next) {
+            switch (_context25.prev = _context25.next) {
               case 0:
                 if (!(this.authManager.offline() && this.passcodeManager.hasPasscode())) {
-                  _context26.next = 5;
+                  _context25.next = 5;
                   break;
                 }
 
                 keys = this.passcodeManager.keys();
                 authParams = this.passcodeManager.passcodeAuthParams();
-                _context26.next = 11;
+                _context25.next = 11;
                 break;
 
               case 5:
-                _context26.next = 7;
+                _context25.next = 7;
                 return this.authManager.keys();
 
               case 7:
-                keys = _context26.sent;
-                _context26.next = 10;
+                keys = _context25.sent;
+                _context25.next = 10;
                 return this.authManager.getAuthParams();
 
               case 10:
-                authParams = _context26.sent;
+                authParams = _context25.sent;
 
               case 11:
 
@@ -57882,14 +58057,14 @@ var DesktopManager = function () {
 
               case 12:
               case "end":
-                return _context26.stop();
+                return _context25.stop();
             }
           }
-        }, _callee24, this);
+        }, _callee23, this);
       }));
 
       function desktop_requestBackupFile(_x51) {
-        return _ref25.apply(this, arguments);
+        return _ref24.apply(this, arguments);
       }
 
       return desktop_requestBackupFile;
@@ -57918,19 +58093,19 @@ var HttpManager = function (_SFHttpManager) {
     // calling callbacks in a $timeout allows UI to update
 
 
-    _this50.setJWTRequestHandler((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee25() {
-      return _regenerator2.default.wrap(function _callee25$(_context27) {
+    _this50.setJWTRequestHandler((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee24() {
+      return _regenerator2.default.wrap(function _callee24$(_context26) {
         while (1) {
-          switch (_context27.prev = _context27.next) {
+          switch (_context26.prev = _context26.next) {
             case 0:
-              return _context27.abrupt("return", storageManager.getItem("jwt"));
+              return _context26.abrupt("return", storageManager.getItem("jwt"));
 
             case 2:
             case "end":
-              return _context27.stop();
+              return _context26.stop();
           }
         }
-      }, _callee25, _this51);
+      }, _callee24, _this51);
     })));
     return _this50;
   }
@@ -58501,7 +58676,17 @@ angular.module('app').service('nativeExtManager', NativeExtManager);
     };
 
     this.passcodeAuthParams = function () {
-      return JSON.parse(storageManager.getItemSync("offlineParams", StorageManager.Fixed));
+      var authParams = JSON.parse(storageManager.getItemSync("offlineParams", StorageManager.Fixed));
+      if (authParams && !authParams.version) {
+        var keys = this.keys();
+        if (keys && keys.ak) {
+          // If there's no version stored, and there's an ak, it has to be 002. Newer versions would have thier version stored in authParams.
+          authParams.version = "002";
+        } else {
+          authParams.version = "001";
+        }
+      }
+      return authParams;
     };
 
     this.unlock = function (passcode, callback) {
@@ -58563,24 +58748,24 @@ angular.module('app').service('nativeExtManager', NativeExtManager);
     };
 
     this.decryptLocalStorage = function () {
-      var _ref27 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee26(keys, authParams) {
-        return _regenerator2.default.wrap(function _callee26$(_context28) {
+      var _ref26 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee25(keys, authParams) {
+        return _regenerator2.default.wrap(function _callee25$(_context27) {
           while (1) {
-            switch (_context28.prev = _context28.next) {
+            switch (_context27.prev = _context27.next) {
               case 0:
                 storageManager.setKeys(keys, authParams);
-                return _context28.abrupt("return", storageManager.decryptStorage());
+                return _context27.abrupt("return", storageManager.decryptStorage());
 
               case 2:
               case "end":
-                return _context28.stop();
+                return _context27.stop();
             }
           }
-        }, _callee26, this);
+        }, _callee25, this);
       }));
 
       return function (_x53, _x54) {
-        return _ref27.apply(this, arguments);
+        return _ref26.apply(this, arguments);
       };
     }();
   }
@@ -58601,52 +58786,52 @@ var SessionHistory = function (_SFSessionHistoryMana) {
     };
 
     var keyRequestHandler = function () {
-      var _ref28 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee27() {
+      var _ref27 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee26() {
         var offline, auth_params, keys;
-        return _regenerator2.default.wrap(function _callee27$(_context29) {
+        return _regenerator2.default.wrap(function _callee26$(_context28) {
           while (1) {
-            switch (_context29.prev = _context29.next) {
+            switch (_context28.prev = _context28.next) {
               case 0:
                 offline = authManager.offline();
 
                 if (!offline) {
-                  _context29.next = 5;
+                  _context28.next = 5;
                   break;
                 }
 
-                _context29.t0 = passcodeManager.passcodeAuthParams();
-                _context29.next = 8;
+                _context28.t0 = passcodeManager.passcodeAuthParams();
+                _context28.next = 8;
                 break;
 
               case 5:
-                _context29.next = 7;
+                _context28.next = 7;
                 return authManager.getAuthParams();
 
               case 7:
-                _context29.t0 = _context29.sent;
+                _context28.t0 = _context28.sent;
 
               case 8:
-                auth_params = _context29.t0;
+                auth_params = _context28.t0;
 
                 if (!offline) {
-                  _context29.next = 13;
+                  _context28.next = 13;
                   break;
                 }
 
-                _context29.t1 = passcodeManager.keys();
-                _context29.next = 16;
+                _context28.t1 = passcodeManager.keys();
+                _context28.next = 16;
                 break;
 
               case 13:
-                _context29.next = 15;
+                _context28.next = 15;
                 return authManager.keys();
 
               case 15:
-                _context29.t1 = _context29.sent;
+                _context28.t1 = _context28.sent;
 
               case 16:
-                keys = _context29.t1;
-                return _context29.abrupt("return", {
+                keys = _context28.t1;
+                return _context28.abrupt("return", {
                   keys: keys,
                   offline: offline,
                   auth_params: auth_params
@@ -58654,14 +58839,14 @@ var SessionHistory = function (_SFSessionHistoryMana) {
 
               case 18:
               case "end":
-                return _context29.stop();
+                return _context28.stop();
             }
           }
-        }, _callee27, _this62);
+        }, _callee26, _this62);
       }));
 
       return function keyRequestHandler() {
-        return _ref28.apply(this, arguments);
+        return _ref27.apply(this, arguments);
       };
     }();
 
@@ -58986,11 +59171,11 @@ var StorageManager = function (_SFStorageManager) {
   }, {
     key: "setItem",
     value: function () {
-      var _ref29 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee28(key, value, vaultKey) {
+      var _ref28 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee27(key, value, vaultKey) {
         var storage;
-        return _regenerator2.default.wrap(function _callee28$(_context30) {
+        return _regenerator2.default.wrap(function _callee27$(_context29) {
           while (1) {
-            switch (_context30.prev = _context30.next) {
+            switch (_context29.prev = _context29.next) {
               case 0:
                 storage = this.getVault(vaultKey);
 
@@ -59002,14 +59187,14 @@ var StorageManager = function (_SFStorageManager) {
 
               case 3:
               case "end":
-                return _context30.stop();
+                return _context29.stop();
             }
           }
-        }, _callee28, this);
+        }, _callee27, this);
       }));
 
       function setItem(_x55, _x56, _x57) {
-        return _ref29.apply(this, arguments);
+        return _ref28.apply(this, arguments);
       }
 
       return setItem;
@@ -59017,23 +59202,23 @@ var StorageManager = function (_SFStorageManager) {
   }, {
     key: "getItem",
     value: function () {
-      var _ref30 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee29(key, vault) {
-        return _regenerator2.default.wrap(function _callee29$(_context31) {
+      var _ref29 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee28(key, vault) {
+        return _regenerator2.default.wrap(function _callee28$(_context30) {
           while (1) {
-            switch (_context31.prev = _context31.next) {
+            switch (_context30.prev = _context30.next) {
               case 0:
-                return _context31.abrupt("return", this.getItemSync(key, vault));
+                return _context30.abrupt("return", this.getItemSync(key, vault));
 
               case 1:
               case "end":
-                return _context31.stop();
+                return _context30.stop();
             }
           }
-        }, _callee29, this);
+        }, _callee28, this);
       }));
 
       function getItem(_x58, _x59) {
-        return _ref30.apply(this, arguments);
+        return _ref29.apply(this, arguments);
       }
 
       return getItem;
@@ -59047,14 +59232,39 @@ var StorageManager = function (_SFStorageManager) {
   }, {
     key: "removeItem",
     value: function () {
-      var _ref31 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee30(key, vault) {
+      var _ref30 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee29(key, vault) {
         var storage;
+        return _regenerator2.default.wrap(function _callee29$(_context31) {
+          while (1) {
+            switch (_context31.prev = _context31.next) {
+              case 0:
+                storage = this.getVault(vault);
+                return _context31.abrupt("return", storage.removeItem(key));
+
+              case 2:
+              case "end":
+                return _context31.stop();
+            }
+          }
+        }, _callee29, this);
+      }));
+
+      function removeItem(_x60, _x61) {
+        return _ref30.apply(this, arguments);
+      }
+
+      return removeItem;
+    }()
+  }, {
+    key: "clear",
+    value: function () {
+      var _ref31 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee30() {
         return _regenerator2.default.wrap(function _callee30$(_context32) {
           while (1) {
             switch (_context32.prev = _context32.next) {
               case 0:
-                storage = this.getVault(vault);
-                return _context32.abrupt("return", storage.removeItem(key));
+                this.memoryStorage.clear();
+                localStorage.clear();
 
               case 2:
               case "end":
@@ -59064,33 +59274,8 @@ var StorageManager = function (_SFStorageManager) {
         }, _callee30, this);
       }));
 
-      function removeItem(_x60, _x61) {
-        return _ref31.apply(this, arguments);
-      }
-
-      return removeItem;
-    }()
-  }, {
-    key: "clear",
-    value: function () {
-      var _ref32 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee31() {
-        return _regenerator2.default.wrap(function _callee31$(_context33) {
-          while (1) {
-            switch (_context33.prev = _context33.next) {
-              case 0:
-                this.memoryStorage.clear();
-                localStorage.clear();
-
-              case 2:
-              case "end":
-                return _context33.stop();
-            }
-          }
-        }, _callee31, this);
-      }));
-
       function clear() {
-        return _ref32.apply(this, arguments);
+        return _ref31.apply(this, arguments);
       }
 
       return clear;
@@ -59130,15 +59315,15 @@ var StorageManager = function (_SFStorageManager) {
   }, {
     key: "decryptStorage",
     value: function () {
-      var _ref33 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee32() {
+      var _ref32 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee31() {
         var stored, encryptedStorage, _iteratorNormalCompletion49, _didIteratorError49, _iteratorError49, _iterator49, _step49, key;
 
-        return _regenerator2.default.wrap(function _callee32$(_context34) {
+        return _regenerator2.default.wrap(function _callee31$(_context33) {
           while (1) {
-            switch (_context34.prev = _context34.next) {
+            switch (_context33.prev = _context33.next) {
               case 0:
                 stored = JSON.parse(this.getItemSync("encryptedStorage", StorageManager.Fixed));
-                _context34.next = 3;
+                _context33.next = 3;
                 return SFJS.itemTransformer.decryptItem(stored, this.encryptedStorageKeys);
 
               case 3:
@@ -59146,7 +59331,7 @@ var StorageManager = function (_SFStorageManager) {
                 _iteratorNormalCompletion49 = true;
                 _didIteratorError49 = false;
                 _iteratorError49 = undefined;
-                _context34.prev = 7;
+                _context33.prev = 7;
 
 
                 for (_iterator49 = Object.keys(encryptedStorage.content.storage)[Symbol.iterator](); !(_iteratorNormalCompletion49 = (_step49 = _iterator49.next()).done); _iteratorNormalCompletion49 = true) {
@@ -59154,49 +59339,49 @@ var StorageManager = function (_SFStorageManager) {
 
                   this.setItem(key, encryptedStorage.storage[key]);
                 }
-                _context34.next = 15;
+                _context33.next = 15;
                 break;
 
               case 11:
-                _context34.prev = 11;
-                _context34.t0 = _context34["catch"](7);
+                _context33.prev = 11;
+                _context33.t0 = _context33["catch"](7);
                 _didIteratorError49 = true;
-                _iteratorError49 = _context34.t0;
+                _iteratorError49 = _context33.t0;
 
               case 15:
-                _context34.prev = 15;
-                _context34.prev = 16;
+                _context33.prev = 15;
+                _context33.prev = 16;
 
                 if (!_iteratorNormalCompletion49 && _iterator49.return) {
                   _iterator49.return();
                 }
 
               case 18:
-                _context34.prev = 18;
+                _context33.prev = 18;
 
                 if (!_didIteratorError49) {
-                  _context34.next = 21;
+                  _context33.next = 21;
                   break;
                 }
 
                 throw _iteratorError49;
 
               case 21:
-                return _context34.finish(18);
+                return _context33.finish(18);
 
               case 22:
-                return _context34.finish(15);
+                return _context33.finish(15);
 
               case 23:
               case "end":
-                return _context34.stop();
+                return _context33.stop();
             }
           }
-        }, _callee32, this, [[7, 11, 15, 23], [16,, 18, 22]]);
+        }, _callee31, this, [[7, 11, 15, 23], [16,, 18, 22]]);
       }));
 
       function decryptStorage() {
-        return _ref33.apply(this, arguments);
+        return _ref32.apply(this, arguments);
       }
 
       return decryptStorage;
@@ -59232,14 +59417,14 @@ var StorageManager = function (_SFStorageManager) {
   }, {
     key: "getAllModels",
     value: function () {
-      var _ref34 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee33() {
+      var _ref33 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee32() {
         var _this67 = this;
 
-        return _regenerator2.default.wrap(function _callee33$(_context35) {
+        return _regenerator2.default.wrap(function _callee32$(_context34) {
           while (1) {
-            switch (_context35.prev = _context35.next) {
+            switch (_context34.prev = _context34.next) {
               case 0:
-                return _context35.abrupt("return", new Promise(function (resolve, reject) {
+                return _context34.abrupt("return", new Promise(function (resolve, reject) {
                   if (_this67.modelStorageMode == StorageManager.Fixed) {
                     _this67.dbManager.getAllModels(resolve);
                   } else {
@@ -59249,14 +59434,14 @@ var StorageManager = function (_SFStorageManager) {
 
               case 1:
               case "end":
-                return _context35.stop();
+                return _context34.stop();
             }
           }
-        }, _callee33, this);
+        }, _callee32, this);
       }));
 
       function getAllModels() {
-        return _ref34.apply(this, arguments);
+        return _ref33.apply(this, arguments);
       }
 
       return getAllModels;
@@ -59264,12 +59449,44 @@ var StorageManager = function (_SFStorageManager) {
   }, {
     key: "saveModel",
     value: function () {
-      var _ref35 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee34(item) {
+      var _ref34 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee33(item) {
+        return _regenerator2.default.wrap(function _callee33$(_context35) {
+          while (1) {
+            switch (_context35.prev = _context35.next) {
+              case 0:
+                return _context35.abrupt("return", this.saveModels([item]));
+
+              case 1:
+              case "end":
+                return _context35.stop();
+            }
+          }
+        }, _callee33, this);
+      }));
+
+      function saveModel(_x62) {
+        return _ref34.apply(this, arguments);
+      }
+
+      return saveModel;
+    }()
+  }, {
+    key: "saveModels",
+    value: function () {
+      var _ref35 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee34(items, onsuccess, onerror) {
+        var _this68 = this;
+
         return _regenerator2.default.wrap(function _callee34$(_context36) {
           while (1) {
             switch (_context36.prev = _context36.next) {
               case 0:
-                return _context36.abrupt("return", this.saveModels([item]));
+                return _context36.abrupt("return", new Promise(function (resolve, reject) {
+                  if (_this68.modelStorageMode == StorageManager.Fixed) {
+                    _this68.dbManager.saveModels(items, resolve, reject);
+                  } else {
+                    resolve();
+                  }
+                }));
 
               case 1:
               case "end":
@@ -59279,25 +59496,25 @@ var StorageManager = function (_SFStorageManager) {
         }, _callee34, this);
       }));
 
-      function saveModel(_x62) {
+      function saveModels(_x63, _x64, _x65) {
         return _ref35.apply(this, arguments);
       }
 
-      return saveModel;
+      return saveModels;
     }()
   }, {
-    key: "saveModels",
+    key: "deleteModel",
     value: function () {
-      var _ref36 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee35(items, onsuccess, onerror) {
-        var _this68 = this;
+      var _ref36 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee35(item) {
+        var _this69 = this;
 
         return _regenerator2.default.wrap(function _callee35$(_context37) {
           while (1) {
             switch (_context37.prev = _context37.next) {
               case 0:
                 return _context37.abrupt("return", new Promise(function (resolve, reject) {
-                  if (_this68.modelStorageMode == StorageManager.Fixed) {
-                    _this68.dbManager.saveModels(items, resolve, reject);
+                  if (_this69.modelStorageMode == StorageManager.Fixed) {
+                    _this69.dbManager.deleteModel(item, resolve);
                   } else {
                     resolve();
                   }
@@ -59311,28 +59528,24 @@ var StorageManager = function (_SFStorageManager) {
         }, _callee35, this);
       }));
 
-      function saveModels(_x63, _x64, _x65) {
+      function deleteModel(_x66) {
         return _ref36.apply(this, arguments);
       }
 
-      return saveModels;
+      return deleteModel;
     }()
   }, {
-    key: "deleteModel",
+    key: "clearAllModels",
     value: function () {
-      var _ref37 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee36(item) {
-        var _this69 = this;
+      var _ref37 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee36() {
+        var _this70 = this;
 
         return _regenerator2.default.wrap(function _callee36$(_context38) {
           while (1) {
             switch (_context38.prev = _context38.next) {
               case 0:
                 return _context38.abrupt("return", new Promise(function (resolve, reject) {
-                  if (_this69.modelStorageMode == StorageManager.Fixed) {
-                    _this69.dbManager.deleteModel(item, resolve);
-                  } else {
-                    resolve();
-                  }
+                  _this70.dbManager.clearAllModels(resolve);
                 }));
 
               case 1:
@@ -59343,36 +59556,8 @@ var StorageManager = function (_SFStorageManager) {
         }, _callee36, this);
       }));
 
-      function deleteModel(_x66) {
-        return _ref37.apply(this, arguments);
-      }
-
-      return deleteModel;
-    }()
-  }, {
-    key: "clearAllModels",
-    value: function () {
-      var _ref38 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee37() {
-        var _this70 = this;
-
-        return _regenerator2.default.wrap(function _callee37$(_context39) {
-          while (1) {
-            switch (_context39.prev = _context39.next) {
-              case 0:
-                return _context39.abrupt("return", new Promise(function (resolve, reject) {
-                  _this70.dbManager.clearAllModels(resolve);
-                }));
-
-              case 1:
-              case "end":
-                return _context39.stop();
-            }
-          }
-        }, _callee37, this);
-      }));
-
       function clearAllModels() {
-        return _ref38.apply(this, arguments);
+        return _ref37.apply(this, arguments);
       }
 
       return clearAllModels;
@@ -61069,74 +61254,74 @@ var PasswordWizard = function () {
       };
 
       $scope.validateCurrentPassword = function () {
-        var _ref39 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee39(callback) {
+        var _ref38 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee38(callback) {
           var _this75 = this;
 
           var currentPassword, newPass, authParams, password;
-          return _regenerator2.default.wrap(function _callee39$(_context41) {
+          return _regenerator2.default.wrap(function _callee38$(_context40) {
             while (1) {
-              switch (_context41.prev = _context41.next) {
+              switch (_context40.prev = _context40.next) {
                 case 0:
                   currentPassword = $scope.formData.currentPassword;
                   newPass = $scope.securityUpdate ? currentPassword : $scope.formData.newPassword;
 
                   if (!$scope.changePassword) {
-                    _context41.next = 11;
+                    _context40.next = 11;
                     break;
                   }
 
                   if (!(!newPass || newPass.length == 0)) {
-                    _context41.next = 6;
+                    _context40.next = 6;
                     break;
                   }
 
                   callback(false);
-                  return _context41.abrupt("return");
+                  return _context40.abrupt("return");
 
                 case 6:
                   if (!(newPass != $scope.formData.newPasswordConfirmation)) {
-                    _context41.next = 11;
+                    _context40.next = 11;
                     break;
                   }
 
                   alert("Your new password does not match its confirmation.");
                   $scope.formData.status = null;
                   callback(false);
-                  return _context41.abrupt("return");
+                  return _context40.abrupt("return");
 
                 case 11:
                   if (authManager.user.email) {
-                    _context41.next = 16;
+                    _context40.next = 16;
                     break;
                   }
 
                   alert("We don't have your email stored. Please log out then log back in to fix this issue.");
                   $scope.formData.status = null;
                   callback(false);
-                  return _context41.abrupt("return");
+                  return _context40.abrupt("return");
 
                 case 16:
-                  _context41.next = 18;
+                  _context40.next = 18;
                   return authManager.getAuthParams();
 
                 case 18:
-                  authParams = _context41.sent;
+                  authParams = _context40.sent;
                   password = $scope.formData.currentPassword;
 
                   SFJS.crypto.computeEncryptionKeysForUser(password, authParams).then(function () {
-                    var _ref40 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee38(keys) {
+                    var _ref39 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee37(keys) {
                       var success;
-                      return _regenerator2.default.wrap(function _callee38$(_context40) {
+                      return _regenerator2.default.wrap(function _callee37$(_context39) {
                         while (1) {
-                          switch (_context40.prev = _context40.next) {
+                          switch (_context39.prev = _context39.next) {
                             case 0:
-                              _context40.t0 = keys.mk;
-                              _context40.next = 3;
+                              _context39.t0 = keys.mk;
+                              _context39.next = 3;
                               return authManager.keys();
 
                             case 3:
-                              _context40.t1 = _context40.sent.mk;
-                              success = _context40.t0 === _context40.t1;
+                              _context39.t1 = _context39.sent.mk;
+                              success = _context39.t0 === _context39.t1;
 
                               if (success) {
                                 _this75.currentServerPw = keys.pw;
@@ -61149,27 +61334,27 @@ var PasswordWizard = function () {
 
                             case 7:
                             case "end":
-                              return _context40.stop();
+                              return _context39.stop();
                           }
                         }
-                      }, _callee38, _this75);
+                      }, _callee37, _this75);
                     }));
 
                     return function (_x70) {
-                      return _ref40.apply(this, arguments);
+                      return _ref39.apply(this, arguments);
                     };
                   }());
 
                 case 21:
                 case "end":
-                  return _context41.stop();
+                  return _context40.stop();
               }
             }
-          }, _callee39, this);
+          }, _callee38, this);
         }));
 
         return function (_x69) {
-          return _ref39.apply(this, arguments);
+          return _ref38.apply(this, arguments);
         };
       }();
 
@@ -61190,41 +61375,41 @@ var PasswordWizard = function () {
       };
 
       $scope.processPasswordChange = function () {
-        var _ref41 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee40(callback) {
+        var _ref40 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee39(callback) {
           var newUserPassword, currentServerPw, results, newKeys, newAuthParams, syncResponse;
-          return _regenerator2.default.wrap(function _callee40$(_context42) {
+          return _regenerator2.default.wrap(function _callee39$(_context41) {
             while (1) {
-              switch (_context42.prev = _context42.next) {
+              switch (_context41.prev = _context41.next) {
                 case 0:
                   newUserPassword = $scope.securityUpdate ? $scope.formData.currentPassword : $scope.formData.newPassword;
                   currentServerPw = this.currentServerPw;
-                  _context42.next = 4;
+                  _context41.next = 4;
                   return SFJS.crypto.generateInitialKeysAndAuthParamsForUser(authManager.user.email, newUserPassword);
 
                 case 4:
-                  results = _context42.sent;
+                  results = _context41.sent;
                   newKeys = results.keys;
                   newAuthParams = results.authParams;
 
                   // perform a sync beforehand to pull in any last minutes changes before we change the encryption key (and thus cant decrypt new changes)
 
-                  _context42.next = 9;
+                  _context41.next = 9;
                   return syncManager.sync();
 
                 case 9:
-                  syncResponse = _context42.sent;
-                  _context42.t0 = authManager;
-                  _context42.next = 13;
+                  syncResponse = _context41.sent;
+                  _context41.t0 = authManager;
+                  _context41.next = 13;
                   return syncManager.getServerURL();
 
                 case 13:
-                  _context42.t1 = _context42.sent;
-                  _context42.t2 = authManager.user.email;
-                  _context42.t3 = currentServerPw;
-                  _context42.t4 = newKeys;
-                  _context42.t5 = newAuthParams;
+                  _context41.t1 = _context41.sent;
+                  _context41.t2 = authManager.user.email;
+                  _context41.t3 = currentServerPw;
+                  _context41.t4 = newKeys;
+                  _context41.t5 = newAuthParams;
 
-                  _context42.t6 = function (response) {
+                  _context41.t6 = function (response) {
                     if (response.error) {
                       alert(response.error.message ? response.error.message : "There was an error changing your password. Please try again.");
                       $timeout(function () {
@@ -61237,18 +61422,18 @@ var PasswordWizard = function () {
                     }
                   };
 
-                  _context42.t0.changePassword.call(_context42.t0, _context42.t1, _context42.t2, _context42.t3, _context42.t4, _context42.t5).then(_context42.t6);
+                  _context41.t0.changePassword.call(_context41.t0, _context41.t1, _context41.t2, _context41.t3, _context41.t4, _context41.t5).then(_context41.t6);
 
                 case 20:
                 case "end":
-                  return _context42.stop();
+                  return _context41.stop();
               }
             }
-          }, _callee40, this);
+          }, _callee39, this);
         }));
 
         return function (_x71) {
-          return _ref41.apply(this, arguments);
+          return _ref40.apply(this, arguments);
         };
       }();
     }]
