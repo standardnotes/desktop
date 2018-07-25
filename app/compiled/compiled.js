@@ -1129,7 +1129,7 @@ var SFAuthManager = exports.SFAuthManager = function () {
                 this._authParams = JSON.parse(data);
 
               case 5:
-                if (this._authParams.version) {
+                if (!(this._authParams && !this._authParams.version)) {
                   _context6.next = 9;
                   break;
                 }
@@ -44437,7 +44437,7 @@ var SFAuthManager = exports.SFAuthManager = function () {
                 this._authParams = JSON.parse(data);
 
               case 5:
-                if (this._authParams.version) {
+                if (!(this._authParams && !this._authParams.version)) {
                   _context6.next = 9;
                   break;
                 }
