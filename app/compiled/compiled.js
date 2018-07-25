@@ -4198,6 +4198,8 @@ var SFSyncManager = exports.SFSyncManager = function () {
                                 _this16.syncStatusDidChange();
                                 reject();
                               });
+                            }).catch(function (e) {
+                              reject(e);
                             });
 
                           case 7:
@@ -4752,14 +4754,12 @@ var SFSyncManager = exports.SFSyncManager = function () {
                               break;
                             }
 
-                            try {
-                              _this18.syncOffline(allDirtyItems).then(function (response) {
-                                resolve(response);
-                              });
+                            _this18.syncOffline(allDirtyItems).then(function (response) {
                               _this18.modelManager.clearDirtyItems(allDirtyItems);
-                            } catch (e) {
+                              resolve(response);
+                            }).catch(function (e) {
                               _this18.notifyEvent("sync-exception", e);
-                            }
+                            });
                             return _context61.abrupt("return");
 
                           case 18:
@@ -47506,6 +47506,8 @@ var SFSyncManager = exports.SFSyncManager = function () {
                                 _this16.syncStatusDidChange();
                                 reject();
                               });
+                            }).catch(function (e) {
+                              reject(e);
                             });
 
                           case 7:
@@ -48060,14 +48062,12 @@ var SFSyncManager = exports.SFSyncManager = function () {
                               break;
                             }
 
-                            try {
-                              _this18.syncOffline(allDirtyItems).then(function (response) {
-                                resolve(response);
-                              });
+                            _this18.syncOffline(allDirtyItems).then(function (response) {
                               _this18.modelManager.clearDirtyItems(allDirtyItems);
-                            } catch (e) {
+                              resolve(response);
+                            }).catch(function (e) {
                               _this18.notifyEvent("sync-exception", e);
-                            }
+                            });
                             return _context61.abrupt("return");
 
                           case 18:
@@ -52630,7 +52630,7 @@ var NoteHistoryEntry = function (_SFItemHistoryEntry) {
       } else if (this.textCharDiffLength > 0) {
         return this.textCharDiffLength + " characters added";
       } else {
-        return "Title changed";
+        return "Title or metadata changed";
       }
     }
   }]);
@@ -58254,7 +58254,7 @@ var MigrationManager = function (_SFMigrationManager) {
                   if (clientData) {
                     note.setDomainDataItem(component.uuid, clientData, ComponentManager.ClientDataDomain);
                     note.setDomainDataItem(component.hosted_url, null, ComponentManager.ClientDataDomain);
-                    note.setDirty(true);
+                    note.setDirty(true, true); // dont update client date
                   }
                 }
               } catch (err) {
