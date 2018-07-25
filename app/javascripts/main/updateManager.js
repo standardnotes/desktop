@@ -57,7 +57,7 @@ class UpdateManager {
       type: 'info',
       title: 'Update Ready',
       message: `A new update (version ${info.version}) is ready to install.`,
-      buttons: ['Quit & Install', 'Install Later']
+      buttons: ['Quit and Install', 'Install Later']
     }, (buttonIndex) => {
       if (buttonIndex === 0) {
         setImmediate(() => {
