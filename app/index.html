@@ -117,6 +117,9 @@
         sheet.insertRule('#tags-column { padding-top: 25px !important; }', sheet.cssRules.length);
       }
 
+      // disable drag-n-drop of file in the app 
+      document.addEventListener('dragover', event => event.preventDefault())
+      document.addEventListener('drop', event => event.preventDefault())
     </script>
 
     <style>
