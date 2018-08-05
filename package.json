@@ -22,8 +22,8 @@
       "category": "public.app-category.productivity"
     },
     "win": {
-      "certificateSubjectName" : "Standard Notes Ltd.",
-      "publisherName" : "Standard Notes Ltd."
+      "certificateSubjectName": "Standard Notes Ltd.",
+      "publisherName": "Standard Notes Ltd."
     },
     "linux": {
       "category": "Office",
