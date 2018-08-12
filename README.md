@@ -3,7 +3,7 @@ This application makes use of the core JS/CSS/HTML code found in the [web repo](
 ## Running Locally
 
 ```
-npm install
+npm run setup
 npm run start
 ```
 
