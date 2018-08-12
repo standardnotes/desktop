@@ -19,6 +19,16 @@ electron-packager . "Standard Notes" \
   --out=dist
 ```
 
+or
+
+- `npm run dist`
+
+or
+
+- `npm run dist-win`
+- `npm run dist-linux`
+- `npm run dist-mac`
+
 ## Installation
 
 On Linux, download the latest AppImage from the [Releases](https://github.com/standardnotes/desktop/releases/latest) page, and give it executable permission:

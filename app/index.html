@@ -47,24 +47,23 @@
 
       // load zip library (for exporting items as zip)
       var scriptTag = document.createElement('script');
-      scriptTag.src = "../vendor/zip/zip.js";
+      scriptTag.src = "./vendor/zip/zip.js";
       scriptTag.async = true;
       var headTag = document.getElementsByTagName('head')[0];
       headTag.appendChild(scriptTag);
       scriptTag.onload = function() {
-        zip.workerScriptsPath = "../vendor/zip/";
+        zip.workerScriptsPath = "./vendor/zip/";
       }
 
       window._default_sf_server = "https://sync.standardnotes.org";
 
       window._extensions_manager_location = "extensions/extensions-manager/dist/index.html";
       window._batch_manager_location = "extensions/batch-manager/dist/index.html";
-      // window._extensions_manager_location = "http://localhost:8080";
 
     </script>
 
-    <script src="../../node_modules/standard-notes-web/dist/javascripts/compiled.js" debug="false"></script>
-    <link rel="stylesheet" media="all" href="../../node_modules/standard-notes-web/dist/stylesheets/app.css" debug="false" />
+    <script src="standard-notes-web/javascripts/compiled.js" debug="false"></script>
+    <link rel="stylesheet" media="all" href="standard-notes-web/stylesheets/app.css" debug="false" />
 
     <script>
       const {app} = window.nodeRequire('electron').remote;
