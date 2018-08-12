@@ -47,12 +47,12 @@
 
       // load zip library (for exporting items as zip)
       var scriptTag = document.createElement('script');
-      scriptTag.src = "../compiled/zip/zip.js";
+      scriptTag.src = "../vendor/zip/zip.js";
       scriptTag.async = true;
       var headTag = document.getElementsByTagName('head')[0];
       headTag.appendChild(scriptTag);
       scriptTag.onload = function() {
-        zip.workerScriptsPath = "../compiled/zip/";
+        zip.workerScriptsPath = "../vendor/zip/";
       }
 
       window._default_sf_server = "https://sync.standardnotes.org";
@@ -63,8 +63,8 @@
 
     </script>
 
-    <script src="../compiled/compiled.js" debug="false"></script>
-    <link rel="stylesheet" media="all" href="../stylesheets/app.css" debug="false" />
+    <script src="../../node_modules/standard-notes-web/dist/javascripts/compiled.js" debug="false"></script>
+    <link rel="stylesheet" media="all" href="../../node_modules/standard-notes-web/dist/stylesheets/app.css" debug="false" />
 
     <script>
       const {app} = window.nodeRequire('electron').remote;
@@ -117,7 +117,7 @@
         sheet.insertRule('#tags-column { padding-top: 25px !important; }', sheet.cssRules.length);
       }
 
-      // disable drag-n-drop of file in the app 
+      // disable drag-n-drop of file in the app
       document.addEventListener('dragover', event => event.preventDefault())
       document.addEventListener('drop', event => event.preventDefault())
     </script>
