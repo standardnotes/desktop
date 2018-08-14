@@ -50,6 +50,6 @@
     "postinstall": "electron-builder install-app-deps",
     "build": "rimraf app/dist/ && babel ./app --out-dir app/dist/ --ignore ./app/vendor,./app/extensions,./app/compiled,./app/assets,./app/stylesheets,./app/dist,./node_modules,./.babelrc,./package.json,./npm-debug.log --copy-files && cp -a ./app/extensions ./app/dist/ && cp -a ./app/vendor/ ./app/dist/vendor && cp -a ./app/node_modules/standard-notes-web/dist/ ./app/dist/standard-notes-web/",
     "start": "npm run build && electron . --enable-logging --icon _icon/icon.png",
-    "setup": "npm install && npm --prefix ./app install ./app"
+    "setup": "npm install && npm --prefix ./app install ./app && git submodule update --init"
   }
 }
