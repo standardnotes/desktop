@@ -141,6 +141,9 @@ class MenuManager {
             click () { shell.openExternal('mailto:hello@standardnotes.org') }
           },
           {
+            type: 'separator'
+          },
+          {
             label: "Toggle Error Console",
             click () {
               window.webContents.toggleDevTools();
@@ -160,6 +163,9 @@ class MenuManager {
                 window.reload();
               });
              }
+          },
+          {
+            type: 'separator'
           },
           {
             label: 'Version: ' + app.getVersion(),
@@ -297,6 +303,12 @@ class MenuManager {
 
     let latestVersion = this.updateManager.latestVersion();
     submenu.push({label: `Latest Version: ${latestVersion ? latestVersion : 'Error Retrieving'}`, click: () => {
+      this.updateManager.openChangelog();
+    }})
+
+    submenu.push({type: 'separator'});
+
+    submenu.push({label: `View ${updateData.currentVersion} Release Notes`, click: () => {
       this.updateManager.openChangelog();
     }})
 
