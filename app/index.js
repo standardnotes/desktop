@@ -88,6 +88,11 @@ function createWindow () {
     } else if(darwin) {
       /* the user only tried to close the window */
       e.preventDefault();
+
+      // Fixes Mac full screen issue where pressing close results in a black screen.
+      if(win.isFullScreen()) {
+        win.setFullScreen(false);
+      }
       win.hide();
     }
   })
