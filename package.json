@@ -40,7 +40,7 @@
   },
   "scripts": {
     "pack": "build --dir",
-    "release": "npm run build && electron-builder -mwl --x64 --ia32",
+    "release": "npm run setup && npm run build && electron-builder -mwl --x64 --ia32",
     "build-linux": "npm run build && electron-builder -l --x64 --ia32",
     "build-beta": "npm run build && electron-builder -mwl --x64 --ia32 --publish=always --em.productName='Standard Notes (Beta)' --em.appId=org.standardnotes.standardnotes.beta",
     "dist": "npm run build && electron-builder -mwl --x64 --ia32",
