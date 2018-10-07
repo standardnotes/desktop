@@ -4,6 +4,8 @@
 
   var buildEditorContextMenu = remote.require('electron-editor-context-menu');
 
+  var desktopManager = angular.element(document).injector().get('desktopManager');
+
   function contextEvent(e) {
     let menu = buildEditorContextMenu();
 
@@ -15,9 +17,7 @@
     }, 30);
   }
 
-  function addContextMenuTo(component) {
-    let iframe = component.querySelector("iframe");
-
+  function addContextMenuTo(iframe) {
     if(iframe) {
       // remove context menu event
       iframe.contentWindow.removeEventListener("contextmenu", contextEvent);
@@ -27,19 +27,10 @@
     }
   }
 
-  var rootNode = document; //.getElementById("editor-column");
-  var changesObserved = function(mutationsList, observer) {
-    var components = rootNode.querySelectorAll("component-view");
-
-    components.forEach((component) => {
-      addContextMenuTo(component);
-    });
-  }
-
-  var observer = new MutationObserver(changesObserved);
-  observer.observe(rootNode, {
-    subtree: true,
-    attributes: true,
-    attributefilter: ["data-component-id"]
+  // register activation observer to be notified when a component is registered
+  desktopManager.desktop_registerActivationObserver((component) => {
+    if(component.window && component.window.frameElement) {
+      addContextMenuTo(component.window.frameElement);
+    }
   });
 })();

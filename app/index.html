@@ -17,12 +17,6 @@
           console.error(e);
         }
 
-        try {
-          require("./javascripts/render/editorContextMenu.js")
-        } catch (e) {
-          console.error(e);
-        }
-
         // https://github.com/electron/electron/blob/master/docs/faq.md#i-can-not-use-jqueryrequirejsmeteorangularjs-in-electron
         window.nodeRequire = require;
         delete window.require;
@@ -106,7 +100,6 @@
           ipcRenderer.send("search-text", text);
         });
 
-
         /* Handled by ArchiveManager */
         desktopManager.desktop_setInitialDataLoadHandler(() => {
           ipcRenderer.send("initial-data-loaded");
@@ -115,6 +108,12 @@
         desktopManager.desktop_setMajorDataChangeHandler(() => {
           ipcRenderer.send("major-data-change");
         })
+
+        try {
+          window.nodeRequire("./javascripts/render/editorContextMenu.js")
+        } catch (e) {
+          console.error(e);
+        }
       });
 
       // For Mac inset window
