@@ -30,7 +30,12 @@
   // register activation observer to be notified when a component is registered
   desktopManager.desktop_registerActivationObserver((component) => {
     if(component.window && component.window.frameElement) {
-      addContextMenuTo(component.window.frameElement);
+      // safely try to register the event on this component's iframe
+      try {
+        addContextMenuTo(component.window.frameElement);
+      } catch (e) {
+        console.error(e);
+      }
     }
   });
 })();
