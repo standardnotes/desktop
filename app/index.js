@@ -136,6 +136,15 @@ app.on('activate', function() {
   win.webContents.send("window-activated");
 });
 
+// require('electron-context-menu')({
+//   shouldShowMenu: (event, params) => {
+//     console.log(params)
+
+//     return params.inputFieldType != "plainText" && params.frameURL.length > 0 || params.isEditable;
+//   },
+//   showInspectElement: false
+// });
+
 app.on('ready', function(){
   if(!win) {
     createWindow();
