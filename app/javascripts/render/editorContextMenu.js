@@ -4,26 +4,26 @@
 
   var buildEditorContextMenu = remote.require('electron-editor-context-menu');
 
+  function contextEvent(e) {
+    let menu = buildEditorContextMenu();
+
+    // The 'contextmenu' event is emitted after 'selectionchange' has fired but possibly before the
+    // visible selection has changed. Try to wait to show the menu until after that, otherwise the
+    // visible selection will update after the menu dismisses and look weird.
+    setTimeout(function() {
+      menu.popup({window: remote.getCurrentWindow()});
+    }, 30);
+  }
+
   function addContextMenuTo(component) {
-    let iframe = component.querySelectorAll("iframe")[0];
+    let iframe = component.querySelector("iframe");
 
     if(iframe) {
-      // TODO check if it's already added or not?
+      // remove context menu event
+      iframe.contentWindow.removeEventListener("contextmenu", contextEvent);
 
-      if(iframe.contentWindow.contextmenu) {
-        iframe.removeEventListener('contextmenu', changesObserved);
-      }
-
-      iframe.contentWindow.addEventListener('contextmenu', function(e) {
-        let menu = buildEditorContextMenu();
-
-        // The 'contextmenu' event is emitted after 'selectionchange' has fired but possibly before the
-        // visible selection has changed. Try to wait to show the menu until after that, otherwise the
-        // visible selection will update after the menu dismisses and look weird.
-        setTimeout(function() {
-          menu.popup({window: remote.getCurrentWindow()});
-        }, 30);
-      });
+      // add content menu event
+      iframe.contentWindow.addEventListener("contextmenu", contextEvent);
     }
   }
 
@@ -38,8 +38,8 @@
 
   var observer = new MutationObserver(changesObserved);
   observer.observe(rootNode, {
-    childList: true,
     subtree: true,
-    attributefilter: "component-id"
+    attributes: true,
+    attributefilter: ["data-component-id"]
   });
 })();
