@@ -18,12 +18,9 @@
   }
 
   function addContextMenuTo(uuid) {
-    let componentFrame = document.querySelector('[data-component-id="' + uuid + '"');
+    let componentFrame = document.querySelector('[data-component-id="' + uuid + '"]');
 
     if(componentFrame) {
-      // remove context menu event
-      componentFrame.contentWindow.removeEventListener("contextmenu", contextEvent);
-
       // add content menu event
       componentFrame.contentWindow.addEventListener("contextmenu", contextEvent);
     }
