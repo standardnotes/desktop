@@ -18,6 +18,6 @@
     "request": "^2.83.0",
     "semver": "^5.5.0",
     "spellchecker": "git+https://mobitar@github.com/mobitar/node-spellchecker.git",
-    "standard-notes-web": "2.3.12"
+    "standard-notes-web": "2.3.13"
   }
 }
