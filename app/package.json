@@ -17,7 +17,7 @@
     "os-locale": "^2.1.0",
     "request": "^2.83.0",
     "semver": "^5.5.0",
-    "spellchecker": "git+https://mobitar@github.com/mobitar/node-spellchecker.git",
+    "spellchecker": "github:mobitar/node-spellchecker",
     "standard-notes-web": "2.3.13"
   }
 }
