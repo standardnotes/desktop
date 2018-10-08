@@ -17,25 +17,24 @@
     }, 30);
   }
 
-  function addContextMenuTo(iframe) {
-    if(iframe) {
+  function addContextMenuTo(uuid) {
+    let componentFrame = document.querySelector('[data-component-id="' + uuid + '"');
+
+    if(componentFrame) {
       // remove context menu event
-      iframe.contentWindow.removeEventListener("contextmenu", contextEvent);
+      componentFrame.contentWindow.removeEventListener("contextmenu", contextEvent);
 
       // add content menu event
-      iframe.contentWindow.addEventListener("contextmenu", contextEvent);
+      componentFrame.contentWindow.addEventListener("contextmenu", contextEvent);
     }
   }
 
   // register activation observer to be notified when a component is registered
-  desktopManager.desktop_registerActivationObserver((component) => {
-    if(component.window && component.window.frameElement) {
-      // safely try to register the event on this component's iframe
-      try {
-        addContextMenuTo(component.window.frameElement);
-      } catch (e) {
-        console.error(e);
-      }
+  desktopManager.desktop_registerComponentActivationObserver((component) => {
+    try {
+      addContextMenuTo(component.uuid);
+    } catch (e) {
+      console.error(e);
     }
   });
 })();

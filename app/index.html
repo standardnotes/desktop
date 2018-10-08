@@ -109,11 +109,7 @@
           ipcRenderer.send("major-data-change");
         })
 
-        try {
-          window.nodeRequire("./javascripts/render/editorContextMenu.js")
-        } catch (e) {
-          console.error(e);
-        }
+        window.nodeRequire("./javascripts/render/editorContextMenu.js");
       });
 
       // For Mac inset window
