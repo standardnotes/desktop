@@ -59,7 +59,8 @@ function createWindow () {
     'minHeight': 400,
     show: false,
     icon: iconLocation,
-    titleBarStyle: 'hiddenInset'
+    titleBarStyle: 'hiddenInset',
+    frame: false
   })
 
   searchManager.setWindow(win);
@@ -148,3 +149,7 @@ app.on('ready', function(){
     menuManager.reload();
   }
 })
+
+ipcMain.on("display-app-menu", (event, e) => {
+  menuManager.popupMenu(win, e);
+});

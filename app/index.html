@@ -67,8 +67,8 @@
     <link rel="stylesheet" media="all" href="standard-notes-web/stylesheets/app.css" debug="false" />
 
     <script>
-      const {app} = window.nodeRequire('electron').remote;
-      var userDataPath = app.getPath('userData');
+      const {remote, app} = window.nodeRequire('electron');
+      var userDataPath = remote.app.getPath('userData');
 
       angular.element(document).ready(function () {
         var desktopManager = angular.element(document).injector().get('desktopManager');
@@ -110,6 +110,32 @@
         })
 
         window.nodeRequire("./javascripts/render/editorContextMenu.js");
+
+
+        /*
+        Title bar events
+        */
+        document.getElementById("menu").addEventListener("click", (e) => {
+          ipcRenderer.send("display-app-menu", { x: e.x, y: e.y })
+        });
+
+        document.getElementById("min-btn").addEventListener("click", (e) => {
+          remote.getCurrentWindow().minimize();
+        });
+
+        document.getElementById("max-btn").addEventListener("click", (e) => {
+          const currentWindow = remote.getCurrentWindow();
+
+          if(currentWindow.isMaximized()) {
+            currentWindow.unmaximize();
+          } else {
+            currentWindow.maximize();
+          }
+        });
+
+        document.getElementById("close-btn").addEventListener("click", (e) => {
+          remote.app.quit();
+        });
       });
 
       // For Mac inset window
@@ -129,6 +155,60 @@
         font-size: 16px;
       }
 
+      .title-bar {
+        -webkit-app-region: drag;
+        padding: 0;
+        margin: 0;
+        height: 40px;
+        line-height: 40px;
+        vertical-align: middle;
+        background-color: #086dd6; /* #f6f6f6 */
+        border-bottom: 1px solid #ddd;
+      }
+
+      .title-bar button {
+        -webkit-app-region: no-drag;
+        margin: 0;
+        background: none;
+        border: none;
+        padding: 0 10px;
+        color: #fff;
+        font-size: 23px;
+        vertical-align: middle;
+      }
+
+      .title-bar button:hover {
+        color: #ddd;
+      }
+
+      .title-bar-window-actions {
+        position: fixed;
+        top: 0;
+        right: 6px;
+        font-size: 0;
+      }
+
+      .hamburger-menu {
+        padding-left: 1.2em
+      }
+
+      .hamburger-menu:before {
+        content: '';
+        position: absolute;
+        top: 27%;
+        left :0px;
+        width: .75em; /* 12px/16px */
+        height: .125em; /* 2px/16px */
+        border-top: .375em double #fff; /* 6px/16px */
+        border-bottom: .125em solid #fff; /* 2px / 16px */
+      }
+
+      .main-ui-view {
+        /* 40px is the height of titlebar */
+        height: calc(100vh - 40px);
+        min-height: calc(100vh - 40px);
+      }
+
       /* Required for BrowserWindow titleBarStyle: 'hiddenInset' */
       .tags, #tags-title-bar, #notes-title-bar, #editor-title-bar, #lock-screen {
         -webkit-app-region: drag;
@@ -138,10 +218,17 @@
         -webkit-app-region: no-drag;
       }
     </style>
-
   </head>
 
   <body ng-class="bodyClass">
+    <div class="title-bar">
+      <button id="menu" class="hamburger-menu">=</button>
+      <div class="title-bar-window-actions">
+        <button id="min-btn">-</button>
+        <button id="max-btn">+</button>
+        <button id="close-btn">x</button>
+      </div>
+    </div>
     <div id="home" ng-controller="HomeCtrl" ng-include="'home.html'"></div>
   </body>
 
