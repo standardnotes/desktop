@@ -150,6 +150,6 @@ app.on('ready', function(){
   }
 })
 
-ipcMain.on("display-app-menu", (event, e) => {
-  menuManager.popupMenu(win, e);
+ipcMain.on("display-app-menu", (event, position) => {
+  menuManager.popupMenu(position);
 });

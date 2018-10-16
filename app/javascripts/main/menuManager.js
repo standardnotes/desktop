@@ -256,9 +256,9 @@ class MenuManager {
     Menu.setApplicationMenu(this.menu);
   }
 
-  popupMenu(window, e) {
+  popupMenu(position) {
     if(this.menu) {
-      this.menu.popup(window, e.x, e.y);
+      this.menu.popup(this.window, position.x, position.y);
     }
   }
 
