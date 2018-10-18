@@ -159,11 +159,11 @@
         -webkit-app-region: drag;
         padding: 0;
         margin: 0;
-        height: 40px;
-        line-height: 40px;
+        height: 35px;
+        line-height: 35px;
         vertical-align: middle;
-        background-color: #086dd6; /* #f6f6f6 */
-        border-bottom: 1px solid #ddd;
+        background: var(--primary-bg-color) !important;
+        border-bottom: 1px solid var(--border-color);
       }
 
       .title-bar button {
@@ -172,13 +172,20 @@
         background: none;
         border: none;
         padding: 0 10px;
-        color: #fff;
+        color: var(--ui-text-color);
         font-size: 23px;
         vertical-align: middle;
       }
 
       .title-bar button:hover {
-        color: #ddd;
+        color: var(--blue-color);
+      }
+
+      .title-bar .title {
+        position: fixed;
+        top: 0;
+        left: 6px;
+        font-size: 0;
       }
 
       .title-bar-window-actions {
@@ -188,25 +195,10 @@
         font-size: 0;
       }
 
-      .hamburger-menu {
-        padding-left: 1.2em
-      }
-
-      .hamburger-menu:before {
-        content: '';
-        position: absolute;
-        top: 27%;
-        left :0px;
-        width: .75em; /* 12px/16px */
-        height: .125em; /* 2px/16px */
-        border-top: .375em double #fff; /* 6px/16px */
-        border-bottom: .125em solid #fff; /* 2px / 16px */
-      }
-
       .main-ui-view {
-        /* 40px is the height of titlebar */
-        height: calc(100vh - 40px);
-        min-height: calc(100vh - 40px);
+        /* 35px is the height of titlebar */
+        height: calc(100vh - 35px);
+        min-height: calc(100vh - 35px);
       }
 
       /* Required for BrowserWindow titleBarStyle: 'hiddenInset' */
@@ -217,16 +209,42 @@
       input, .tags .content, .component-view-container {
         -webkit-app-region: no-drag;
       }
+
+      @font-face {
+          font-family: 'titlebar';
+          src: url('fonts/titlebar.eot');
+          src: url('fonts/titlebar.eot?#iefix') format('embedded-opentype'),
+               url('fonts/titlebar.woff') format('woff'),
+               url('fonts/titlebar.ttf') format('truetype'),
+               url('fonts/titlebar.svg#titlebar') format('svg');
+          font-weight: normal;
+          font-style: normal;
+      }
+      [class*='icon-']:before{
+        display: inline-block;
+         font-family: 'titlebar';
+         font-style: normal;
+         font-weight: normal;
+         font-size: 14px;
+         -webkit-font-smoothing: antialiased;
+         -moz-osx-font-smoothing: grayscale;
+      }
+      .icon-maximize:before{content:'\0041';}
+      .icon-minimize:before{content:'\0042';}
+      .icon-close:before{content:'\0043';}
+      .icon-menu:before{content:'\0044';}
     </style>
   </head>
 
   <body ng-class="bodyClass">
     <div class="title-bar">
-      <button id="menu" class="hamburger-menu">=</button>
+      <div class="title">
+        <button id="menu"><i class="icon-menu"></i></button>
+      </div>
       <div class="title-bar-window-actions">
-        <button id="min-btn">-</button>
-        <button id="max-btn">+</button>
-        <button id="close-btn">x</button>
+        <button id="min-btn"><i class="icon-minimize"></i></button>
+        <button id="max-btn"><i class="icon-maximize"></i></button>
+        <button id="close-btn"><i class="icon-close"></i></button>
       </div>
     </div>
     <div id="home" ng-controller="HomeCtrl" ng-include="'home.html'"></div>
