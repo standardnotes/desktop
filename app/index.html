@@ -143,8 +143,8 @@
         sheet.insertRule('#tags-column { padding-top: 25px !important; }', sheet.cssRules.length);
         sheet.insertRule('#title-bar { display: none; }', sheet.cssRules.length);
       } else {
-        // If not Mac, take the title-bar-height off of the app content height so its not overflowing
-        sheet.insertRule('.main-ui-view { height: calc(100vh - var(--title-bar-height)) !important; min-height: calc(100vh - var(--title-bar-height)) !important; }', sheet.cssRules.length);
+        // If not Mac, take the sn-titlebar-height off of the app content height so its not overflowing
+        sheet.insertRule('.main-ui-view { height: calc(100vh - var(--sn-titlebar-height)) !important; min-height: calc(100vh - var(--sn-titlebar-height)) !important; }', sheet.cssRules.length);
       }
 
       // disable drag-n-drop of file in the app
@@ -159,23 +159,23 @@
       }
 
       :root {
-        --primary-bg-color: #f6f6f6;
-        --border-color: #dddddd;
-        --ui-text-color: rgba(0, 0, 0, 0.6);
-        --blue-color: #086dd6;
-        --title-bar-height: 35px;
-        --title-bar-font-size: 14px;
+        --sn-titlebar-bg-color: #f6f6f6;
+        --sn-titlebar-border-color: #dddddd;
+        --sn-titlebar-ui-color: rgba(0, 0, 0, 0.6);
+        --sn-titlebar-ui-hover-color: #086dd6;
+        --sn-titlebar-height: 35px;
+        --sn-titlebar-font-size: 14px;
       }
 
       #title-bar {
         -webkit-app-region: drag;
         padding: 0;
         margin: 0;
-        height: var(--title-bar-height);
-        line-height: var(--title-bar-height);
+        height: var(--sn-titlebar-height);
+        line-height: var(--sn-titlebar-height);
         vertical-align: middle;
-        background: var(--primary-bg-color) !important;
-        border-bottom: 1px solid var(--border-color);
+        background: var(--sn-titlebar-bg-color) !important;
+        border-bottom: 1px solid var(--sn-titlebar-border-color);
       }
 
       #title-bar button {
@@ -184,13 +184,13 @@
         background: none;
         border: none;
         padding: 0 10px;
-        color: var(--ui-text-color);
+        color: var(--sn-titlebar-ui-color);
         font-size: 23px;
         vertical-align: middle;
       }
 
       #title-bar button:hover {
-        color: var(--blue-color);
+        color: var(--sn-titlebar-ui-hover-color);
       }
 
       #title-bar .title {
@@ -231,7 +231,7 @@
          font-family: 'titlebar';
          font-style: normal;
          font-weight: normal;
-         font-size: var(--title-bar-font-size);
+         font-size: var(--sn-titlebar-font-size);
          -webkit-font-smoothing: antialiased;
          -moz-osx-font-smoothing: grayscale;
       }
