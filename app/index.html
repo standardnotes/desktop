@@ -111,11 +111,10 @@
 
         window.nodeRequire("./javascripts/render/editorContextMenu.js");
 
-
         /*
         Title bar events
         */
-        document.getElementById("menu").addEventListener("click", (e) => {
+        document.getElementById("menu-btn").addEventListener("click", (e) => {
           ipcRenderer.send("display-app-menu", { x: e.x, y: e.y })
         });
 
@@ -139,9 +138,13 @@
       });
 
       // For Mac inset window
+      var sheet = window.document.styleSheets[0];
       if(process.platform == "darwin") {
-        var sheet = window.document.styleSheets[0];
         sheet.insertRule('#tags-column { padding-top: 25px !important; }', sheet.cssRules.length);
+        sheet.insertRule('#title-bar { display: none; }', sheet.cssRules.length);
+      } else {
+        // If not Mac, take the title-bar-height off of the app content height so its not overflowing
+        sheet.insertRule('.main-ui-view { height: calc(100vh - var(--title-bar-height)) !important; min-height: calc(100vh - var(--title-bar-height)) !important; }', sheet.cssRules.length);
       }
 
       // disable drag-n-drop of file in the app
@@ -160,20 +163,22 @@
         --border-color: #dddddd;
         --ui-text-color: rgba(0, 0, 0, 0.6);
         --blue-color: #086dd6;
+        --title-bar-height: 35px;
+        --title-bar-font-size: 14px;
       }
 
-      .title-bar {
+      #title-bar {
         -webkit-app-region: drag;
         padding: 0;
         margin: 0;
-        height: 35px;
-        line-height: 35px;
+        height: var(--title-bar-height);
+        line-height: var(--title-bar-height);
         vertical-align: middle;
         background: var(--primary-bg-color) !important;
         border-bottom: 1px solid var(--border-color);
       }
 
-      .title-bar button {
+      #title-bar button {
         -webkit-app-region: no-drag;
         margin: 0;
         background: none;
@@ -184,28 +189,22 @@
         vertical-align: middle;
       }
 
-      .title-bar button:hover {
+      #title-bar button:hover {
         color: var(--blue-color);
       }
 
-      .title-bar .title {
+      #title-bar .title {
         position: fixed;
         top: 0;
         left: 6px;
         font-size: 0;
       }
 
-      .title-bar-window-actions {
+      #title-bar .title-bar-window-actions {
         position: fixed;
         top: 0;
         right: 6px;
         font-size: 0;
-      }
-
-      .main-ui-view {
-        /* 35px is the height of titlebar */
-        height: calc(100vh - 35px);
-        min-height: calc(100vh - 35px);
       }
 
       /* Required for BrowserWindow titleBarStyle: 'hiddenInset' */
@@ -218,35 +217,35 @@
       }
 
       @font-face {
-          font-family: 'titlebar';
-          src: url('fonts/titlebar.eot');
-          src: url('fonts/titlebar.eot?#iefix') format('embedded-opentype'),
-               url('fonts/titlebar.woff') format('woff'),
-               url('fonts/titlebar.ttf') format('truetype'),
-               url('fonts/titlebar.svg#titlebar') format('svg');
-          font-weight: normal;
-          font-style: normal;
+        font-family: 'titlebar';
+        src: url('fonts/titlebar.eot');
+        src: url('fonts/titlebar.eot?#iefix') format('embedded-opentype'),
+             url('fonts/titlebar.woff') format('woff'),
+             url('fonts/titlebar.ttf') format('truetype'),
+             url('fonts/titlebar.svg#titlebar') format('svg');
+        font-weight: normal;
+        font-style: normal;
       }
-      [class*='icon-']:before{
+      #title-bar [class*='icon-']:before{
         display: inline-block;
          font-family: 'titlebar';
          font-style: normal;
          font-weight: normal;
-         font-size: 14px;
+         font-size: var(--title-bar-font-size);
          -webkit-font-smoothing: antialiased;
          -moz-osx-font-smoothing: grayscale;
       }
-      .icon-maximize:before{content:'\0041';}
-      .icon-minimize:before{content:'\0042';}
-      .icon-close:before{content:'\0043';}
-      .icon-menu:before{content:'\0044';}
+      #title-bar .icon-maximize:before{content:'\0041';}
+      #title-bar .icon-minimize:before{content:'\0042';}
+      #title-bar .icon-close:before{content:'\0043';}
+      #title-bar .icon-menu:before{content:'\0044';}
     </style>
   </head>
 
   <body ng-class="bodyClass">
-    <div class="title-bar">
+    <div id="title-bar">
       <div class="title">
-        <button id="menu"><i class="icon-menu"></i></button>
+        <button id="menu-btn"><i class="icon-menu"></i></button>
       </div>
       <div class="title-bar-window-actions">
         <button id="min-btn"><i class="icon-minimize"></i></button>
