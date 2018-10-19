@@ -11,7 +11,7 @@ class FileUtils {
   readJSONFile(path, callback) {
     fs.readFile(path, 'utf8', function (err, data) {
       if(err) {
-        console.log("ERROR READING JSON FILE", path);
+        console.error("Unable to read JSON file", path);
         callback(null, err);
         return;
       }
