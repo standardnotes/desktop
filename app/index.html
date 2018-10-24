@@ -141,7 +141,7 @@
       var sheet = window.document.styleSheets[0];
       if(process.platform == "darwin") {
         sheet.insertRule('#tags-column { padding-top: 25px !important; }', sheet.cssRules.length);
-        // sheet.insertRule('#desktop-title-bar { display: none; }', sheet.cssRules.length);
+        sheet.insertRule('#desktop-title-bar { display: none; }', sheet.cssRules.length);
       } else {
         // If not Mac, take the sn-titlebar-height off of the app content height so its not overflowing
         sheet.insertRule('.main-ui-view { height: calc(100vh - var(--sn-titlebar-height)) !important; min-height: calc(100vh - var(--sn-titlebar-height)) !important; }', sheet.cssRules.length);
