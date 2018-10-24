@@ -144,7 +144,7 @@
         sheet.insertRule('#desktop-title-bar { display: none; }', sheet.cssRules.length);
       } else {
         // If not Mac, take the sn-titlebar-height off of the app content height so its not overflowing
-        sheet.insertRule('.main-ui-view { height: calc(100vh - var(--sn-titlebar-height)) !important; min-height: calc(100vh - var(--sn-titlebar-height)) !important; }', sheet.cssRules.length);
+        sheet.insertRule('.main-ui-view { height: calc(100vh - var(--sn-desktop-titlebar-height)) !important; min-height: calc(100vh - var(--sn-desktop-titlebar-height)) !important; }', sheet.cssRules.length);
       }
 
       // disable drag-n-drop of file in the app
@@ -153,29 +153,30 @@
     </script>
 
     <style>
+
       .editor-content .editable {
         font-family: Menlo, Consolas, 'DejaVu Sans Mono', monospace;
         font-size: 16px;
       }
 
       :root {
-        --sn-titlebar-bg-color: #f6f6f6;
-        --sn-titlebar-border-color: #dddddd;
-        --sn-titlebar-ui-color: rgba(0, 0, 0, 0.6);
-        --sn-titlebar-ui-hover-color: #086dd6;
-        --sn-titlebar-height: 35px;
-        --sn-titlebar-icon-font-size: 16px;
+        --sn-desktop-titlebar-bg-color: #f6f6f6;
+        --sn-desktop-titlebar-border-color: #dddddd;
+        --sn-desktop-titlebar-ui-color: rgba(0, 0, 0, 0.6);
+        --sn-desktop-titlebar-ui-hover-color: #086dd6;
+        --sn-desktop-titlebar-height: 35px;
+        --sn-desktop-titlebar-icon-font-size: 16px;
       }
 
       #desktop-title-bar {
         -webkit-app-region: drag;
         padding: 0;
         margin: 0;
-        height: var(--sn-titlebar-height);
-        line-height: var(--sn-titlebar-height);
+        height: var(--sn-desktop-titlebar-height);
+        line-height: var(--sn-desktop-titlebar-height);
         vertical-align: middle;
-        background: var(--sn-titlebar-bg-color) !important;
-        border-bottom: 1px solid var(--sn-titlebar-border-color);
+        background: var(--sn-desktop-titlebar-bg-color) !important;
+        border-bottom: 1px solid var(--sn-desktop-titlebar-border-color);
       }
 
       #desktop-title-bar button {
@@ -184,17 +185,17 @@
         background: none;
         border: none;
         padding: 0 10px;
-        color: var(--sn-titlebar-ui-color);
+        color: var(--sn-desktop-titlebar-ui-color);
         vertical-align: middle;
         height: 100%;
       }
 
       #desktop-title-bar button svg {
-        max-width: var(--sn-titlebar-icon-font-size);
+        max-width: var(--sn-desktop-titlebar-icon-font-size);
       }
 
       #desktop-title-bar button:hover svg {
-        color: var(--sn-titlebar-ui-hover-color);
+        color: var(--sn-desktop-titlebar-ui-hover-color);
       }
 
       #desktop-title-bar .title-bar-left-buttons {
