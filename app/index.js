@@ -59,6 +59,7 @@ function createWindow () {
     'minHeight': 400,
     show: false,
     icon: iconLocation,
+    titleBarStyle: darwin ? 'hiddenInset' : null,
     frame: false
   })
 
