@@ -133,7 +133,7 @@
         });
 
         document.getElementById("close-btn").addEventListener("click", (e) => {
-          remote.app.quit();
+          remote.getCurrentWindow().close();
         });
       });
 
