@@ -141,7 +141,7 @@
       var sheet = window.document.styleSheets[0];
       if(process.platform == "darwin") {
         sheet.insertRule('#tags-column { padding-top: 25px !important; }', sheet.cssRules.length);
-        sheet.insertRule('#title-bar { display: none; }', sheet.cssRules.length);
+        // sheet.insertRule('#desktop-title-bar { display: none; }', sheet.cssRules.length);
       } else {
         // If not Mac, take the sn-titlebar-height off of the app content height so its not overflowing
         sheet.insertRule('.main-ui-view { height: calc(100vh - var(--sn-titlebar-height)) !important; min-height: calc(100vh - var(--sn-titlebar-height)) !important; }', sheet.cssRules.length);
@@ -164,10 +164,10 @@
         --sn-titlebar-ui-color: rgba(0, 0, 0, 0.6);
         --sn-titlebar-ui-hover-color: #086dd6;
         --sn-titlebar-height: 35px;
-        --sn-titlebar-font-size: 14px;
+        --sn-titlebar-icon-font-size: 16px;
       }
 
-      #title-bar {
+      #desktop-title-bar {
         -webkit-app-region: drag;
         padding: 0;
         margin: 0;
@@ -178,29 +178,32 @@
         border-bottom: 1px solid var(--sn-titlebar-border-color);
       }
 
-      #title-bar button {
+      #desktop-title-bar button {
         -webkit-app-region: no-drag;
         margin: 0;
         background: none;
         border: none;
         padding: 0 10px;
         color: var(--sn-titlebar-ui-color);
-        font-size: 23px;
         vertical-align: middle;
+        height: 100%;
       }
 
-      #title-bar button:hover {
+      #desktop-title-bar button svg {
+        max-width: var(--sn-titlebar-icon-font-size);
+      }
+
+      #desktop-title-bar button:hover svg {
         color: var(--sn-titlebar-ui-hover-color);
       }
 
-      #title-bar .title {
-        position: fixed;
-        top: 0;
-        left: 6px;
+      #desktop-title-bar .title-bar-left-buttons {
+        height: 100%;
         font-size: 0;
+        margin-left: 6px;
       }
 
-      #title-bar .title-bar-window-actions {
+      #desktop-title-bar .title-bar-right-buttons {
         position: fixed;
         top: 0;
         right: 6px;
@@ -215,42 +218,26 @@
       input, .tags .content, .component-view-container {
         -webkit-app-region: no-drag;
       }
-
-      @font-face {
-        font-family: 'titlebar';
-        src: url('fonts/titlebar.eot');
-        src: url('fonts/titlebar.eot?#iefix') format('embedded-opentype'),
-             url('fonts/titlebar.woff') format('woff'),
-             url('fonts/titlebar.ttf') format('truetype'),
-             url('fonts/titlebar.svg#titlebar') format('svg');
-        font-weight: normal;
-        font-style: normal;
-      }
-      #title-bar [class*='icon-']:before{
-        display: inline-block;
-         font-family: 'titlebar';
-         font-style: normal;
-         font-weight: normal;
-         font-size: var(--sn-titlebar-font-size);
-         -webkit-font-smoothing: antialiased;
-         -moz-osx-font-smoothing: grayscale;
-      }
-      #title-bar .icon-maximize:before{content:'\0041';}
-      #title-bar .icon-minimize:before{content:'\0042';}
-      #title-bar .icon-close:before{content:'\0043';}
-      #title-bar .icon-menu:before{content:'\0044';}
     </style>
   </head>
 
   <body ng-class="bodyClass">
-    <div id="title-bar">
-      <div class="title">
-        <button id="menu-btn"><i class="icon-menu"></i></button>
+    <div id="desktop-title-bar">
+      <div class="title-bar-left-buttons">
+        <button id="menu-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
       </div>
-      <div class="title-bar-window-actions">
-        <button id="min-btn"><i class="icon-minimize"></i></button>
-        <button id="max-btn"><i class="icon-maximize"></i></button>
-        <button id="close-btn"><i class="icon-close"></i></button>
+      <div class="title-bar-right-buttons">
+        <button id="min-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-minus"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+        <button id="max-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-maximize-2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+        </button>
+        <button id="close-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
     </div>
     <div id="home" ng-controller="HomeCtrl" ng-include="'home.html'"></div>
