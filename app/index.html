@@ -67,8 +67,8 @@
     <link rel="stylesheet" media="all" href="standard-notes-web/stylesheets/app.css" debug="false" />
 
     <script>
-      const {app} = window.nodeRequire('electron').remote;
-      var userDataPath = app.getPath('userData');
+      const {remote, app} = window.nodeRequire('electron');
+      var userDataPath = remote.app.getPath('userData');
 
       angular.element(document).ready(function () {
         var desktopManager = angular.element(document).injector().get('desktopManager');
@@ -110,12 +110,41 @@
         })
 
         window.nodeRequire("./javascripts/render/editorContextMenu.js");
+
+        /*
+        Title bar events
+        */
+        document.getElementById("menu-btn").addEventListener("click", (e) => {
+          ipcRenderer.send("display-app-menu", { x: e.x, y: e.y })
+        });
+
+        document.getElementById("min-btn").addEventListener("click", (e) => {
+          remote.getCurrentWindow().minimize();
+        });
+
+        document.getElementById("max-btn").addEventListener("click", (e) => {
+          const currentWindow = remote.getCurrentWindow();
+
+          if(currentWindow.isMaximized()) {
+            currentWindow.unmaximize();
+          } else {
+            currentWindow.maximize();
+          }
+        });
+
+        document.getElementById("close-btn").addEventListener("click", (e) => {
+          remote.getCurrentWindow().close();
+        });
       });
 
       // For Mac inset window
+      var sheet = window.document.styleSheets[0];
       if(process.platform == "darwin") {
-        var sheet = window.document.styleSheets[0];
         sheet.insertRule('#tags-column { padding-top: 25px !important; }', sheet.cssRules.length);
+        sheet.insertRule('#desktop-title-bar { display: none; }', sheet.cssRules.length);
+      } else {
+        // If not Mac, take the sn-titlebar-height off of the app content height so its not overflowing
+        sheet.insertRule('.main-ui-view { height: calc(100vh - var(--sn-desktop-titlebar-height)) !important; min-height: calc(100vh - var(--sn-desktop-titlebar-height)) !important; }', sheet.cssRules.length);
       }
 
       // disable drag-n-drop of file in the app
@@ -124,9 +153,62 @@
     </script>
 
     <style>
+
       .editor-content .editable {
         font-family: Menlo, Consolas, 'DejaVu Sans Mono', monospace;
         font-size: 16px;
+      }
+
+      :root {
+        --sn-desktop-titlebar-bg-color: #f6f6f6;
+        --sn-desktop-titlebar-border-color: #dddddd;
+        --sn-desktop-titlebar-ui-color: rgba(0, 0, 0, 0.6);
+        --sn-desktop-titlebar-ui-hover-color: #086dd6;
+        --sn-desktop-titlebar-height: 35px;
+        --sn-desktop-titlebar-icon-font-size: 16px;
+      }
+
+      #desktop-title-bar {
+        -webkit-app-region: drag;
+        padding: 0;
+        margin: 0;
+        height: var(--sn-desktop-titlebar-height);
+        line-height: var(--sn-desktop-titlebar-height);
+        vertical-align: middle;
+        background: var(--sn-desktop-titlebar-bg-color) !important;
+        border-bottom: 1px solid var(--sn-desktop-titlebar-border-color);
+      }
+
+      #desktop-title-bar button {
+        -webkit-app-region: no-drag;
+        margin: 0;
+        background: none;
+        border: none;
+        padding: 0 10px;
+        color: var(--sn-desktop-titlebar-ui-color);
+        vertical-align: middle;
+        height: 100%;
+      }
+
+      #desktop-title-bar button svg {
+        max-width: var(--sn-desktop-titlebar-icon-font-size);
+      }
+
+      #desktop-title-bar button:hover svg {
+        color: var(--sn-desktop-titlebar-ui-hover-color);
+      }
+
+      #desktop-title-bar .title-bar-left-buttons {
+        height: 100%;
+        font-size: 0;
+        margin-left: 6px;
+      }
+
+      #desktop-title-bar .title-bar-right-buttons {
+        position: fixed;
+        top: 0;
+        right: 6px;
+        font-size: 0;
       }
 
       /* Required for BrowserWindow titleBarStyle: 'hiddenInset' */
@@ -138,10 +220,27 @@
         -webkit-app-region: no-drag;
       }
     </style>
-
   </head>
 
   <body ng-class="bodyClass">
+    <div id="desktop-title-bar">
+      <div class="title-bar-left-buttons">
+        <button id="menu-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="title-bar-right-buttons">
+        <button id="min-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-minus"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+        <button id="max-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-maximize-2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+        </button>
+        <button id="close-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+    </div>
     <div id="home" ng-controller="HomeCtrl" ng-include="'home.html'"></div>
   </body>
 

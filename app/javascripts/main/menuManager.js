@@ -256,6 +256,12 @@ class MenuManager {
     Menu.setApplicationMenu(this.menu);
   }
 
+  popupMenu(position) {
+    if(this.menu) {
+      this.menu.popup(this.window, position.x, position.y);
+    }
+  }
+
   buildUpdateMenu(updateData) {
     let updateNeeded = this.updateManager.updateNeeded();
     var label = updateData.checkingForUpdate ? "Checking for update..." : (updateNeeded ? "(1) Update Available" : 'Updates');
