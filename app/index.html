@@ -169,14 +169,21 @@
       }
 
       #desktop-title-bar {
-        -webkit-app-region: drag;
-        padding: 0;
+        -webkit-app-region: no-drag;
+        padding: 5px;
         margin: 0;
         height: var(--sn-desktop-titlebar-height);
         line-height: var(--sn-desktop-titlebar-height);
         vertical-align: middle;
         background: var(--sn-desktop-titlebar-bg-color) !important;
         border-bottom: 1px solid var(--sn-desktop-titlebar-border-color);
+      }
+
+      #desktop-title-bar-inner {
+        -webkit-app-region: drag;
+        padding: 0;
+        margin: 0;
+        height: 100%;
       }
 
       #desktop-title-bar button {
@@ -201,7 +208,7 @@
       #desktop-title-bar .title-bar-left-buttons {
         height: 100%;
         font-size: 0;
-        margin-left: 6px;
+        padding-left: 3px;
       }
 
       #desktop-title-bar .title-bar-right-buttons {
@@ -224,21 +231,23 @@
 
   <body ng-class="bodyClass">
     <div id="desktop-title-bar">
-      <div class="title-bar-left-buttons">
-        <button id="menu-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-        </button>
-      </div>
-      <div class="title-bar-right-buttons">
-        <button id="min-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-minus"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-        </button>
-        <button id="max-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-maximize-2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
-        </button>
-        <button id="close-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
+      <div id="desktop-title-bar-inner">
+        <div class="title-bar-left-buttons">
+          <button id="menu-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+        </div>
+        <div class="title-bar-right-buttons">
+          <button id="min-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-minus"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+          <button id="max-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-maximize-2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+          </button>
+          <button id="close-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
       </div>
     </div>
     <div id="home" ng-controller="HomeCtrl" ng-include="'home.html'"></div>
