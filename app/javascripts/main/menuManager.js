@@ -264,7 +264,7 @@ class MenuManager {
 
   buildUpdateMenu(updateData) {
     let updateNeeded = this.updateManager.updateNeeded();
-    var label = updateData.checkingForUpdate ? "Checking for update..." : (updateNeeded ? "(1) Update Available" : 'Updates');
+    var label = updateData.checkingForUpdate ? "Checking for updates..." : (updateNeeded ? "(1) Update Available" : 'Updates');
     var structure = { label: label };
 
     var submenu = [];
