@@ -78,6 +78,10 @@ function createWindow () {
     win = null
   })
 
+  win.on('blur', (event) => {
+    win.webContents.send("window-blurred", null);
+  })
+
   win.once('ready-to-show', () => {
     win.show()
   })

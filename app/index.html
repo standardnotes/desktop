@@ -75,6 +75,10 @@
 
         desktopManager.desktop_setApplicationDataPath(userDataPath);
 
+        ipcRenderer.on('window-blurred', function (event, message) {
+          desktopManager.desktop_windowLostFocus();
+        });
+
         /*
         Responses from packageManager
         */
@@ -160,12 +164,25 @@
       }
 
       :root {
-        --sn-desktop-titlebar-bg-color: #f6f6f6;
-        --sn-desktop-titlebar-border-color: #dddddd;
-        --sn-desktop-titlebar-ui-color: rgba(0, 0, 0, 0.6);
-        --sn-desktop-titlebar-ui-hover-color: #086dd6;
         --sn-desktop-titlebar-height: 35px;
         --sn-desktop-titlebar-icon-font-size: 16px;
+      }
+
+      /* To offset frameless window nav buttons on Mac */
+      .mac-desktop #editor-column, .mac-desktop #notes-column {
+        transition: 0.15s padding ease;
+      }
+
+      .mac-desktop #app.collapsed-notes.collapsed-tags #editor-column {
+        padding-top: 18px;
+      }
+
+      .mac-desktop #app.collapsed-tags #notes-column {
+        padding-top: 18px;
+      }
+
+      panel-resizer {
+        -webkit-app-region: no-drag;
       }
 
       #desktop-title-bar {
@@ -175,8 +192,8 @@
         height: var(--sn-desktop-titlebar-height);
         line-height: var(--sn-desktop-titlebar-height);
         vertical-align: middle;
-        background: var(--sn-desktop-titlebar-bg-color) !important;
-        border-bottom: 1px solid var(--sn-desktop-titlebar-border-color);
+        background: var(--sn-stylekit-contrast-background-color) !important;
+        border-bottom: 1px solid var(--sn-stylekit-contrast-border-color);
       }
 
       #desktop-title-bar button {
@@ -185,7 +202,7 @@
         background: none;
         border: none;
         padding: 0 10px;
-        color: var(--sn-desktop-titlebar-ui-color);
+        color: var(--sn-stylekit-contrast-foreground-color);
         vertical-align: middle;
         height: 100%;
       }
@@ -195,7 +212,7 @@
       }
 
       #desktop-title-bar button:hover svg {
-        color: var(--sn-desktop-titlebar-ui-hover-color);
+        color: var(--sn-stylekit-info-color);
       }
 
       #desktop-title-bar .title-bar-left-buttons {
