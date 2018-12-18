@@ -47,7 +47,6 @@ class PackageManager {
     console.log("Installing component", component.content.name, downloadUrl);
 
     let callback = (installedComponent, error) => {
-      console.log("Calling installComponent callback with error", error);
       this.window.webContents.send("install-component-complete", {component: installedComponent, error: error});
     }
 

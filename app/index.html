@@ -29,11 +29,6 @@
           controllerScope.onUpdateAvailable(message);
         });
 
-        ipcRenderer.on('window-activated', function (event, message) {
-          var syncManager = angular.element(document).injector().get('syncManager');
-          syncManager.sync();
-        });
-
         // Download data archive
         ipcRenderer.on('download-backup', function (event, message) {
           var desktopManager = angular.element(document).injector().get('desktopManager');
@@ -77,6 +72,10 @@
 
         ipcRenderer.on('window-blurred', function (event, message) {
           desktopManager.desktop_windowLostFocus();
+        });
+
+        ipcRenderer.on('window-focused', function (event, message) {
+          desktopManager.desktop_windowGainedFocus();
         });
 
         /*
