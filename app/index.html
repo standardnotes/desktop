@@ -193,6 +193,8 @@
         vertical-align: middle;
         background: var(--sn-stylekit-contrast-background-color) !important;
         border-bottom: 1px solid var(--sn-stylekit-contrast-border-color);
+        display: flex;
+        justify-content: space-between;
       }
 
       #desktop-title-bar button {
@@ -214,16 +216,7 @@
         color: var(--sn-stylekit-info-color);
       }
 
-      #desktop-title-bar .title-bar-left-buttons {
-        height: 100%;
-        font-size: 0;
-        margin-left: 6px;
-      }
-
-      #desktop-title-bar .title-bar-right-buttons {
-        position: fixed;
-        top: 0;
-        right: 6px;
+      #desktop-title-bar .title-bar-left-buttons, #desktop-title-bar .title-bar-right-buttons {
         font-size: 0;
       }
 
