@@ -143,17 +143,19 @@ class PackageManager {
     }
   }
 
-  checkForUpdate(component) {
+  async checkForUpdate(component) {
     var latestURL = component.content.package_info.latest_url;
     if(!latestURL) {
       console.log("No latest url, skipping update", component.content.name);
       return;
     }
-    // console.log("Checking for update for", component.content.name, "current version", component.content.package_info.version);
-    request.get(latestURL, (error, response, body) => {
+
+    request.get(latestURL, async (error, response, body) => {
       if(response.statusCode == 200) {
         var payload = JSON.parse(body);
-        if(payload && payload.version && compareVersions(payload.version, component.content.package_info.version) == 1) {
+        let installedVersion = await this.getInstalledVersionForComponent(component);
+        console.log("Checking for update for:", component.content.name, "Latest Version:", payload.version, "Installed Version", installedVersion);
+        if(payload && payload.version && compareVersions(payload.version, installedVersion) == 1) {
           // Latest version is greater than installed version
           console.log("Downloading new version", payload.download_url);
           component.content.package_info.download_url = payload.download_url;
@@ -164,8 +166,24 @@ class PackageManager {
     })
   }
 
+  async getInstalledVersionForComponent(component) {
+    // We check package.json version rather than component.content.package_info.version
+    // because we want device specific versions rather than a globally synced value
+    let paths = this.pathsForComponent(component);
+    let packagePath = path.join(paths.absolutePath, "package.json");
+    return new Promise((resolve, reject) => {
+      fileUtils.readJSONFile(packagePath, (response, error)  => {
+        if(!response) {
+          resolve(null);
+        } else {
+          resolve(response['version']);
+        }
+      })
+    })
+  }
+
   uninstallComponent(component) {
-    console.log("UNINSTALLING COMPONENT", component.uuid);
+    console.log("Uninstalling component", component.uuid);
     fileUtils.readJSONFile(MappingFileLocation, (response, error) => {
       if(!response) {
         // No mapping.json means nothing is installed
