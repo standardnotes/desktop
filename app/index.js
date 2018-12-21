@@ -78,6 +78,14 @@ function createWindow () {
     win = null
   })
 
+  win.on('blur', (event) => {
+    win.webContents.send("window-blurred", null);
+  })
+
+  win.on('focus', (event) => {
+    win.webContents.send("window-focused", null);
+  })
+
   win.once('ready-to-show', () => {
     win.show()
   })
@@ -133,8 +141,6 @@ app.on('activate', function() {
   }
 
   updateManager.checkForUpdate();
-
-  win.webContents.send("window-activated");
 });
 
 app.on('ready', function(){

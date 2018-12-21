@@ -29,11 +29,6 @@
           controllerScope.onUpdateAvailable(message);
         });
 
-        ipcRenderer.on('window-activated', function (event, message) {
-          var syncManager = angular.element(document).injector().get('syncManager');
-          syncManager.sync();
-        });
-
         // Download data archive
         ipcRenderer.on('download-backup', function (event, message) {
           var desktopManager = angular.element(document).injector().get('desktopManager');
@@ -74,6 +69,14 @@
         var desktopManager = angular.element(document).injector().get('desktopManager');
 
         desktopManager.desktop_setApplicationDataPath(userDataPath);
+
+        ipcRenderer.on('window-blurred', function (event, message) {
+          desktopManager.desktop_windowLostFocus();
+        });
+
+        ipcRenderer.on('window-focused', function (event, message) {
+          desktopManager.desktop_windowGainedFocus();
+        });
 
         /*
         Responses from packageManager
@@ -141,7 +144,8 @@
       var sheet = window.document.styleSheets[0];
       if(process.platform == "darwin") {
         sheet.insertRule('#tags-column { padding-top: 25px !important; }', sheet.cssRules.length);
-        sheet.insertRule('#desktop-title-bar { display: none; }', sheet.cssRules.length);
+        // !important is important here because #desktop-title-bar has display: flex.
+        sheet.insertRule('#desktop-title-bar { display: none !important; }', sheet.cssRules.length);
       } else {
         // If not Mac, take the sn-titlebar-height off of the app content height so its not overflowing
         sheet.insertRule('.main-ui-view { height: calc(100vh - var(--sn-desktop-titlebar-height)) !important; min-height: calc(100vh - var(--sn-desktop-titlebar-height)) !important; }', sheet.cssRules.length);
@@ -160,12 +164,25 @@
       }
 
       :root {
-        --sn-desktop-titlebar-bg-color: #f6f6f6;
-        --sn-desktop-titlebar-border-color: #dddddd;
-        --sn-desktop-titlebar-ui-color: rgba(0, 0, 0, 0.6);
-        --sn-desktop-titlebar-ui-hover-color: #086dd6;
         --sn-desktop-titlebar-height: 35px;
         --sn-desktop-titlebar-icon-font-size: 16px;
+      }
+
+      /* To offset frameless window nav buttons on Mac */
+      .mac-desktop #editor-column, .mac-desktop #notes-column {
+        transition: 0.15s padding ease;
+      }
+
+      .mac-desktop #app.collapsed-notes.collapsed-tags #editor-column {
+        padding-top: 18px;
+      }
+
+      .mac-desktop #app.collapsed-tags #notes-column {
+        padding-top: 18px;
+      }
+
+      panel-resizer {
+        -webkit-app-region: no-drag;
       }
 
       #desktop-title-bar {
@@ -175,8 +192,10 @@
         height: var(--sn-desktop-titlebar-height);
         line-height: var(--sn-desktop-titlebar-height);
         vertical-align: middle;
-        background: var(--sn-desktop-titlebar-bg-color) !important;
-        border-bottom: 1px solid var(--sn-desktop-titlebar-border-color);
+        background: var(--sn-stylekit-contrast-background-color) !important;
+        border-bottom: 1px solid var(--sn-stylekit-contrast-border-color);
+        display: flex;
+        justify-content: space-between;
       }
 
       #desktop-title-bar button {
@@ -185,7 +204,7 @@
         background: none;
         border: none;
         padding: 0 10px;
-        color: var(--sn-desktop-titlebar-ui-color);
+        color: var(--sn-stylekit-contrast-foreground-color);
         vertical-align: middle;
         height: 100%;
       }
@@ -195,19 +214,10 @@
       }
 
       #desktop-title-bar button:hover svg {
-        color: var(--sn-desktop-titlebar-ui-hover-color);
+        color: var(--sn-stylekit-info-color);
       }
 
-      #desktop-title-bar .title-bar-left-buttons {
-        height: 100%;
-        font-size: 0;
-        margin-left: 6px;
-      }
-
-      #desktop-title-bar .title-bar-right-buttons {
-        position: fixed;
-        top: 0;
-        right: 6px;
+      #desktop-title-bar .title-bar-left-buttons, #desktop-title-bar .title-bar-right-buttons {
         font-size: 0;
       }
 
