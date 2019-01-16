@@ -12,7 +12,9 @@ class ArchiveManager {
 
   constructor() {
     ipcMain.on('data-archive', (event, data) => {
-      this.writeDataToFile(data);
+      this.writeDataToFile(data, (success) => {
+        this.window.webContents.send("finished-saving-backup", {success: success});
+      });
     });
 
     this.backupsLocation = store.get("backupsLocation");
@@ -41,7 +43,7 @@ class ArchiveManager {
     })
   }
 
-  writeDataToFile(data) {
+  writeDataToFile(data, callback) {
     if(this.backupsDisabled) {
       console.log("Backups are disabled; returning.")
       return;
@@ -67,11 +69,12 @@ class ArchiveManager {
     let filePath = path.join(dir, name);
 
     fs.writeFile(filePath, data, (err) => {
-        if(err){
-          console.log("An error ocurred saving backup file: " + err.message)
-        } else {
-          console.log("Data backup succesfully saved: ", name);
-        }
+      if(err){
+        console.log("An error ocurred saving backup file: " + err.message)
+      } else {
+        console.log("Data backup succesfully saved: ", name);
+      }
+      callback(err == null);
     });
   }
 
