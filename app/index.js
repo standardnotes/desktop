@@ -55,7 +55,7 @@ function createWindow () {
     'y': winState.y,
     'width': winState.width,
     'height': winState.height,
-    'minWidth': 600,
+    'minWidth': 300,
     'minHeight': 400,
     show: false,
     icon: iconLocation,
@@ -80,6 +80,7 @@ function createWindow () {
 
   win.on('blur', (event) => {
     win.webContents.send("window-blurred", null);
+    archiveManager.applicationDidBlur();
   })
 
   win.on('focus', (event) => {

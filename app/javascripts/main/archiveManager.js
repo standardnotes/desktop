@@ -21,6 +21,13 @@ class ArchiveManager {
     this.backupsDisabled = store.get("backupsDisabled");
   }
 
+  applicationDidBlur() {
+    if(this.needsBackup) {
+      this.needsBackup = false;
+      this.performBackup();
+    }
+  }
+
   defaultLocation() {
     return path.join(app.getPath('home'), "Standard Notes Backups");
   }
@@ -87,7 +94,9 @@ class ArchiveManager {
       clearInterval(this.interval);
     }
 
-    this.performBackup();
+    // Instead of performing a backup on app launch,
+    // which drastically slows down performance, wait until window blurs
+    this.needsBackup = true;
 
     let hoursInterval = 12; // Every X hours
     let seconds = hoursInterval * 60 * 60;
