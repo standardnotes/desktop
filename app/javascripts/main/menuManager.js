@@ -314,7 +314,7 @@ class MenuManager {
 
     submenu.push({type: 'separator'});
 
-    submenu.push({label: `View ${updateData.currentVersion} Release Notes`, click: () => {
+    submenu.push({label: `View ${latestVersion} Release Notes`, click: () => {
       this.updateManager.openChangelog();
     }})
 
