@@ -3,10 +3,7 @@ var fs = require('fs');
 var path = require('path');
 const Store = require('./store.js');
 
-const store = new Store({
-  configName: 'user-preferences',
-  defaults: {}
-});
+const store = Store.instance();
 
 class ArchiveManager {
 

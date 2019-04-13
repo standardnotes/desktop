@@ -1,6 +1,7 @@
 const shell = require('electron').shell;
-const {app, Menu} = require('electron');
+const {app, Menu, dialog} = require('electron');
 const path = require('path')
+const Store = require('./store.js');
 
 class MenuManager {
 
@@ -14,6 +15,7 @@ class MenuManager {
     this.updateManager = updateManager;
 
     let updateData = updateManager.getMetadata();
+    let useSystemMenuBar = Store.instance().get("useSystemMenuBar");
 
     const template = [
       {
@@ -74,7 +76,10 @@ class MenuManager {
             role: 'togglefullscreen'
           },
           {
-            visible: process.platform === 'darwin' ? false : true,
+            type: 'separator'
+          },
+          {
+            visible: process.platform !== 'darwin' && useSystemMenuBar,
             label: 'Hide Menu Bar',
             accelerator: 'Alt + m',
             click() {
@@ -83,6 +88,17 @@ class MenuManager {
               } else {
                 window.setMenuBarVisibility(true)
               }
+            }
+          },
+          {
+            visible: process.platform !== 'darwin',
+            label: `Use Themed Menu Bar`,
+            type: 'checkbox',
+            checked: !useSystemMenuBar,
+            click: () => {
+              Store.instance().set("useSystemMenuBar", !useSystemMenuBar);
+              this.reload();
+              dialog.showMessageBox({title: "Preference Changed", message: "Your menu bar preference has been saved. Please restart the application for the change to take effect."});
             }
           }
         ]
