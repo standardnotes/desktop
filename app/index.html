@@ -69,7 +69,9 @@
 
     <script>
       const {remote, app} = window.nodeRequire('electron');
+      const Store = window.nodeRequire('./javascripts/main/store.js');
       var userDataPath = remote.app.getPath('userData');
+      let useSystemMenuBar = Store.instance().get("useSystemMenuBar");
 
       angular.element(document).ready(function () {
         var desktopManager = angular.element(document).injector().get('desktopManager');
@@ -88,7 +90,7 @@
         Responses from packageManager
         */
         ipcRenderer.on('install-component-complete', function (event, data) {
-          console.log("install-component-complete", data.component.content.name, data.error && data.error.tag);
+          // console.log("install-component-complete", data.component.content.name, data.error && data.error.tag);
           desktopManager.desktop_onComponentInstallationComplete(data.component, data.error);
         });
 
@@ -148,12 +150,17 @@
 
       // For Mac inset window
       var sheet = window.document.styleSheets[0];
-      if(process.platform == "darwin") {
+      let isMacOS = process.platform == "darwin";
+
+      if(isMacOS) {
         sheet.insertRule('#tags-column { padding-top: 25px !important; }', sheet.cssRules.length);
+      }
+
+      if(isMacOS || useSystemMenuBar) {
         // !important is important here because #desktop-title-bar has display: flex.
         sheet.insertRule('#desktop-title-bar { display: none !important; }', sheet.cssRules.length);
       } else {
-        // If not Mac, take the sn-titlebar-height off of the app content height so its not overflowing
+        // Use custom title bar. Take the sn-titlebar-height off of the app content height so its not overflowing
         sheet.insertRule('.main-ui-view { height: calc(100vh - var(--sn-desktop-titlebar-height)) !important; min-height: calc(100vh - var(--sn-desktop-titlebar-height)) !important; }', sheet.cssRules.length);
       }
 

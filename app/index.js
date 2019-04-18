@@ -6,6 +6,7 @@ const url = require('url')
 const windowStateKeeper = require('electron-window-state')
 const shell = require('electron').shell;
 const log = require('electron-log');
+const Store = require('./javascripts/main/store.js');
 
 import menuManager from './javascripts/main/menuManager.js'
 import archiveManager from './javascripts/main/archiveManager.js';
@@ -49,6 +50,9 @@ function createWindow () {
 
   let iconLocation = path.join(__dirname, '/icon/Icon-512x512.png');
 
+  // Defaults to false in store.js
+  let useSystemMenuBar = Store.instance().get("useSystemMenuBar");
+
   // Create the window using the state information
   win = new BrowserWindow({
     'x': winState.x,
@@ -59,8 +63,12 @@ function createWindow () {
     'minHeight': 400,
     show: false,
     icon: iconLocation,
-    titleBarStyle: darwin ? 'hiddenInset' : null,
-    frame: false
+
+    // We want hiddenInset on Mac. On Windows/Linux, doesn't seem to have an effect, but we'll default to it's original value before themed title bar changes were put in place.
+    titleBarStyle: darwin || useSystemMenuBar ? 'hiddenInset' : null,
+
+    // Will apply  to Windows and Linux only, since titleBarStyle takes precendence for mac. But we'll explicitely specifiy false for mac to be on the safe side
+    frame: darwin ? false : useSystemMenuBar
   })
 
   searchManager.setWindow(win);
