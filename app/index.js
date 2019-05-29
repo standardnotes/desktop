@@ -152,16 +152,30 @@ app.on('activate', function() {
   updateManager.checkForUpdate();
 });
 
-app.on('ready', function(){
-  if(!win) {
-    createWindow();
-  } else {
-    win.focus();
+const isSecondInstance = app.makeSingleInstance((commandLine, workingDirectory) => {
+  // Someone tried to run a second instance, we should focus our window.
+  if (win) {
+    if (win.isMinimized()) win.restore()
+    win.focus()
   }
+})
 
-  menuManager.loadMenu(win, archiveManager, updateManager);
-  updateManager.onNeedMenuReload = () => {
-    menuManager.reload();
+app.on('ready', function(){
+
+  if (isSecondInstance) {
+    console.warn("Quiting app and focusing existing instance.");
+    app.quit()
+  } else {
+    if(!win) {
+      createWindow();
+    } else {
+      win.focus();
+    }
+
+    menuManager.loadMenu(win, archiveManager, updateManager);
+    updateManager.onNeedMenuReload = () => {
+      menuManager.reload();
+    }
   }
 })
 
