@@ -11,7 +11,8 @@ class Store {
       instance = new Store({
         configName: 'user-preferences',
         defaults: {
-          useSystemMenuBar: false
+          useSystemMenuBar: false,
+          isMenuBarVisible: true
         }
       });
     }
@@ -43,7 +44,8 @@ class Store {
 
 function parseDataFile(filePath, defaults) {
   try {
-    return JSON.parse(fs.readFileSync(filePath));
+    const userData = JSON.parse(fs.readFileSync(filePath));
+    return Object.assign(defaults, userData);
   } catch(error) {
     // if there was some kind of error, return the passed in defaults instead.
     return defaults;

@@ -16,6 +16,9 @@ class MenuManager {
 
     let updateData = updateManager.getMetadata();
     let useSystemMenuBar = Store.instance().get("useSystemMenuBar");
+    let isMenuBarVisible = Store.instance().get("isMenuBarVisible");
+
+    window.setMenuBarVisibility(isMenuBarVisible);
 
     const template = [
       {
@@ -82,12 +85,10 @@ class MenuManager {
             visible: process.platform !== 'darwin' && useSystemMenuBar,
             label: 'Hide Menu Bar',
             accelerator: 'Alt + m',
-            click() {
-              if (window.isMenuBarVisible(true)) {
-                window.setMenuBarVisibility(false)
-              } else {
-                window.setMenuBarVisibility(true)
-              }
+            click: () => {
+              isMenuBarVisible = !isMenuBarVisible;
+              window.setMenuBarVisibility(isMenuBarVisible);
+              Store.instance().set("isMenuBarVisible", isMenuBarVisible);
             }
           },
           {
