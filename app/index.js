@@ -163,6 +163,7 @@ const isSecondInstance = app.makeSingleInstance((commandLine, workingDirectory) 
 app.on('ready', function(){
 
   if (isSecondInstance) {
+    console.warn("Quiting app and focusing existing instance.");
     app.quit()
   } else {
     if(!win) {
