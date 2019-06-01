@@ -1,8 +1,7 @@
-const {app, Menu, BrowserWindow, dialog, ipcMain} = require('electron');
+const {app, Menu, BrowserWindow, ipcMain, Tray} = require('electron');
 app.setName('Standard Notes');
 
 const path = require('path')
-const url = require('url')
 const windowStateKeeper = require('electron-window-state')
 const shell = require('electron').shell;
 const log = require('electron-log');
@@ -29,7 +28,7 @@ process.on('uncaughtException', function (err) {
 log.transports.file.level = 'info';
 
 let darwin = process.platform === 'darwin'
-let win, willQuitApp = false;
+let win, tray, trayContextMenu, willQuitApp = false;
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
@@ -89,10 +88,12 @@ function createWindow () {
   win.on('blur', (event) => {
     win.webContents.send("window-blurred", null);
     archiveManager.applicationDidBlur();
+    tray.updateContextMenu('inactive');
   })
 
   win.on('focus', (event) => {
     win.webContents.send("window-focused", null);
+    tray.updateContextMenu('active');
   })
 
   win.once('ready-to-show', () => {
@@ -139,6 +140,58 @@ function createWindow () {
   });
 }
 
+function createTrayIcon (mainWindow) {
+  let icon;
+
+  if (process.platform === 'darwin') {
+    icon = path.join(__dirname, `/icon/IconTemplate.png`);
+  } else {
+    icon = path.join(__dirname, `/icon/Icon-256x256.png`);
+  }
+
+  tray = new Tray(icon);
+
+  tray.toggleWindowVisibility = (visibility) => {
+    if (mainWindow) {
+      if (visibility === 'active') {
+        mainWindow.hide();
+      } else {
+        mainWindow.show();
+
+        // On some versions of GNOME the window may not be on top when restored.
+        mainWindow.setAlwaysOnTop(true);
+        mainWindow.focus();
+        mainWindow.setAlwaysOnTop(false);
+      }
+    }
+  };
+
+  tray.updateContextMenu = (visibility) => {
+    // NOTE: we want to have the show/hide entry available in the tray icon
+    // context menu, since the 'click' event may not work on all platforms.
+    // For details please refer to:
+    // https://github.com/electron/electron/blob/master/docs/api/tray.md.
+    trayContextMenu = Menu.buildFromTemplate([{
+      id: 'toggleWindowVisibility',
+      label: visibility === 'active' ? 'Hide' : 'Show',
+      click: tray.toggleWindowVisibility.bind(this, visibility),
+    },
+    {
+      type: 'separator'
+    },
+    {
+      id: 'quit',
+      label: 'Quit',
+      click: app.quit.bind(app),
+    }]);
+
+    tray.setContextMenu(trayContextMenu);
+  };
+
+  tray.setToolTip('Standard Notes');
+  return tray;
+}
+
 app.on('before-quit', () => willQuitApp = true);
 
 app.on('activate', function() {
@@ -163,6 +216,8 @@ app.on('ready', function(){
   updateManager.onNeedMenuReload = () => {
     menuManager.reload();
   }
+
+  createTrayIcon(win);
 })
 
 ipcMain.on("display-app-menu", (event, position) => {
