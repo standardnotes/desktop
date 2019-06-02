@@ -88,12 +88,15 @@ function createWindow () {
   win.on('blur', (event) => {
     win.webContents.send("window-blurred", null);
     archiveManager.applicationDidBlur();
-    tray.updateContextMenu('inactive');
+  })
+
+  win.on('hide', (event) => {
+    tray.updateContextMenu();
   })
 
   win.on('focus', (event) => {
     win.webContents.send("window-focused", null);
-    tray.updateContextMenu('active');
+    tray.updateContextMenu();
   })
 
   win.once('ready-to-show', () => {
@@ -104,7 +107,7 @@ function createWindow () {
     if (willQuitApp) {
       /* the user tried to quit the app */
       win = null;
-    } else if(darwin) {
+    } else {
       /* the user only tried to close the window */
       e.preventDefault();
 
@@ -141,19 +144,13 @@ function createWindow () {
 }
 
 function createTrayIcon (mainWindow) {
-  let icon;
-
-  if (process.platform === 'darwin') {
-    icon = path.join(__dirname, `/icon/IconTemplate.png`);
-  } else {
-    icon = path.join(__dirname, `/icon/Icon-256x256.png`);
-  }
+  const icon = path.join(__dirname, `/icon/Icon-256x256.png`);
 
   tray = new Tray(icon);
 
-  tray.toggleWindowVisibility = (visibility) => {
+  tray.toggleWindowVisibility = (show) => {
     if (mainWindow) {
-      if (visibility === 'active') {
+      if (!show) {
         mainWindow.hide();
       } else {
         mainWindow.show();
@@ -166,29 +163,43 @@ function createTrayIcon (mainWindow) {
     }
   };
 
-  tray.updateContextMenu = (visibility) => {
-    // NOTE: we want to have the show/hide entry available in the tray icon
-    // context menu, since the 'click' event may not work on all platforms.
-    // For details please refer to:
-    // https://github.com/electron/electron/blob/master/docs/api/tray.md.
-    trayContextMenu = Menu.buildFromTemplate([{
-      id: 'toggleWindowVisibility',
-      label: visibility === 'active' ? 'Hide' : 'Show',
-      click: tray.toggleWindowVisibility.bind(this, visibility),
-    },
-    {
-      type: 'separator'
-    },
-    {
-      id: 'quit',
-      label: 'Quit',
-      click: app.quit.bind(app),
-    }]);
+  tray.updateContextMenu = () => {
+    if (mainWindow.isVisible()) {
+      trayContextMenu.items[0].visible = false;
+      trayContextMenu.items[1].visible = true;
+    } else {
+      trayContextMenu.items[0].visible = true;
+      trayContextMenu.items[1].visible = false;
+    }
 
     tray.setContextMenu(trayContextMenu);
   };
 
+  trayContextMenu = Menu.buildFromTemplate([{
+    id: 'ShowWindow',
+    label: 'Show',
+    click: tray.toggleWindowVisibility.bind(this, true),
+  }, {
+    id: 'HideWindow',
+    label: 'Hide',
+    click: tray.toggleWindowVisibility.bind(this, false),
+  },
+  {
+    type: 'separator'
+  },
+  {
+    id: 'quit',
+    label: 'Quit',
+    click: app.quit.bind(app),
+  }]);
+
   tray.setToolTip('Standard Notes');
+  tray.setContextMenu(trayContextMenu);
+
+  tray.on('click', () => {
+    tray.popUpContextMenu();
+  });
+
   return tray;
 }
 
@@ -217,7 +228,9 @@ app.on('ready', function(){
     menuManager.reload();
   }
 
-  createTrayIcon(win);
+  if (process.platform === 'win32' || process.platform === 'linux') {
+    createTrayIcon(win);
+  }
 })
 
 ipcMain.on("display-app-menu", (event, position) => {
