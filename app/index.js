@@ -68,7 +68,11 @@ function createWindow () {
     titleBarStyle: darwin || useSystemMenuBar ? 'hiddenInset' : null,
 
     // Will apply  to Windows and Linux only, since titleBarStyle takes precendence for mac. But we'll explicitely specifiy false for mac to be on the safe side
-    frame: darwin ? false : useSystemMenuBar
+    frame: darwin ? false : useSystemMenuBar,
+    // Turn on node integration in the browser
+    webPreferences: {
+      nodeIntegration: true
+    }
   })
 
   searchManager.setWindow(win);

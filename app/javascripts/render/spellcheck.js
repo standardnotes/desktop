@@ -13,7 +13,7 @@
   var os = require('os');
   var semver = require('semver');
   var spellchecker = require('spellchecker');
-
+  var debounce = require('lodash.debounce');
   // `remote.require` since `Menu` is a main-process module.
   var buildEditorContextMenu = remote.require('electron-editor-context-menu');
 
@@ -81,9 +81,10 @@
   }
 
   var simpleChecker = window.spellChecker = {
-    spellCheck: function(text) {
-      return !this.isMisspelled(text);
-    },
+    spellCheck: debounce(function(words, callback) {
+      const misspelled = words.filter(w => this.isMisspelled(w))
+      callback(misspelled);
+    }, 500),
     isMisspelled: function(text) {
       var misspelled = spellchecker.isMisspelled(text);
 
@@ -110,9 +111,6 @@
 
   webFrame.setSpellCheckProvider(
     'en-US',
-    // Not sure what this parameter (`autoCorrectWord`) does: https://github.com/atom/electron/issues/4371
-    // The documentation for `webFrame.setSpellCheckProvider` passes `true` so we do too.
-    true,
     simpleChecker
   );
 
