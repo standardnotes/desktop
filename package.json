@@ -36,6 +36,14 @@
       },
       "target": [
         "AppImage"
+      ],
+      "extraResources":
+      [
+        {
+          "from": "app/node_modules/spellchecker/vendor",
+          "to": "app.asar.unpacked/node_modules/spellchecker/vendor",
+          "filter": "**/*"
+        }
       ]
     }
   },
