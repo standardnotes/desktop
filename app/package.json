@@ -13,7 +13,6 @@
     "electron-log": "^1.3.0",
     "electron-updater": "^4.0.6",
     "electron-window-state": "^4.0.1",
-    "lodash.debounce": "^4.0.8",
     "os": "^0.1.1",
     "os-locale": "^2.1.0",
     "request": "^2.83.0",

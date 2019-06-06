@@ -13,7 +13,6 @@
   var os = require('os');
   var semver = require('semver');
   var spellchecker = require('spellchecker');
-  var debounce = require('lodash.debounce');
   // `remote.require` since `Menu` is a main-process module.
   var buildEditorContextMenu = remote.require('electron-editor-context-menu');
 
@@ -79,6 +78,21 @@
     // OSX and Windows 8+ have OS-level spellcheck APIs
     console.log('Using OS-level spell check API with locale', process.env.LANG);
   }
+
+  function debounce(func, wait, immediate) {
+    var timeout;
+    return function() {
+      var context = this, args = arguments;
+      var later = function() {
+        timeout = null;
+        if (!immediate) func.apply(context, args);
+      };
+      var callNow = immediate && !timeout;
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+      if (callNow) func.apply(context, args);
+    };
+  };
 
   var simpleChecker = window.spellChecker = {
     spellCheck: debounce(function(words, callback) {
