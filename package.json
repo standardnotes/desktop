@@ -1,7 +1,7 @@
 {
   "name": "standard-notes",
   "main": "./app/dist/index.js",
-  "version": "3.0.11",
+  "version": "3.0.12",
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
     "babel-cli": "^6.26.0",
