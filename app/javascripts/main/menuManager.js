@@ -25,6 +25,16 @@ class MenuManager {
         label: 'Edit',
         submenu: [
           {
+            label: 'New Note',
+            accelerator: 'CmdOrCtrl+N',
+            click: () => this.window.webContents.send('on-shortcut', { action:'new-note' })
+          },
+          {
+            label: 'Search',
+            accelerator: 'CmdOrCtrl+F',
+            click: () => this.window.webContents.send('on-shortcut', { action:'search' })
+          },
+          {
             role: 'undo'
           },
           {

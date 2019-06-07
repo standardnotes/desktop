@@ -94,6 +94,23 @@
           desktopManager.desktop_onComponentInstallationComplete(data.component, data.error);
         });
 
+        function triggerKeyboardEvent(event){
+          global.dispatchEvent(new KeyboardEvent('keydown', event));
+        }
+
+        /* Shortcuts */
+        ipcRenderer.on('on-shortcut', function (event, data={}) {
+          console.log('event', event ,data);
+          const {action=''} = data;
+          switch(action){
+            case 'search':
+              triggerKeyboardEvent({'key':'f',shiftKey:true,metaKey:true});
+              break;
+            case 'new-note':
+              triggerKeyboardEvent({'key':'n',ctrlKey:true,metaKey:true});
+              break;
+          }
+        });
         /*
         Actions triggered from the web code
         */
