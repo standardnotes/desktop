@@ -152,13 +152,29 @@ app.on('activate', function() {
   updateManager.checkForUpdate();
 });
 
-const isSecondInstance = app.makeSingleInstance((commandLine, workingDirectory) => {
-  // Someone tried to run a second instance, we should focus our window.
+// feature flag: https://github.com/electron/electron/blob/master/docs/api/breaking-changes.md#appmakesingleinstance
+const hasRequestSingleInstanceLock = app.requestSingleInstanceLock ? true : false;
+let isSecondInstance = null;
+
+// Someone tried to run a second instance, we should focus our window.
+const handleSecondInstance = (argv, cwd) => {
   if (win) {
     if (win.isMinimized()) win.restore()
     win.focus()
   }
-})
+}
+
+if (hasRequestSingleInstanceLock) {
+  isSecondInstance = !app.requestSingleInstanceLock()
+
+  app.on('second-instance', (event, argv, cwd) => {
+    handleSecondInstance(argv, cwd)
+  })
+} else {
+  isSecondInstance = app.makeSingleInstance((argv, cwd) => {
+    handleSecondInstance(argv, cwd)
+  })
+}
 
 app.on('ready', function(){
 
