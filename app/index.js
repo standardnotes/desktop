@@ -13,6 +13,7 @@ import archiveManager from './javascripts/main/archiveManager.js';
 import packageManager from './javascripts/main/packageManager.js';
 import searchManager from './javascripts/main/searchManager.js';
 import updateManager from './javascripts/main/updateManager.js';
+import zoomManager from './javascripts/main/zoomManager.js';
 
 ipcMain.on('initial-data-loaded', () => {
   archiveManager.beginBackups();
@@ -75,6 +76,7 @@ function createWindow () {
   archiveManager.setWindow(win);
   packageManager.setWindow(win);
   updateManager.setWindow(win);
+  zoomManager.setWindow(win);
 
   // Register listeners on the window, so we can update the state
   // automatically (the listeners will be removed when the window
