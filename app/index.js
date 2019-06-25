@@ -1,8 +1,7 @@
-const {app, Menu, BrowserWindow, dialog, ipcMain} = require('electron');
+const {app, Menu, BrowserWindow, ipcMain, Tray} = require('electron');
 app.setName('Standard Notes');
 
 const path = require('path')
-const url = require('url')
 const windowStateKeeper = require('electron-window-state')
 const shell = require('electron').shell;
 const log = require('electron-log');
@@ -30,7 +29,7 @@ process.on('uncaughtException', function (err) {
 log.transports.file.level = 'info';
 
 let darwin = process.platform === 'darwin'
-let win, willQuitApp = false;
+let win, tray, trayContextMenu, willQuitApp = false;
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
@@ -93,8 +92,13 @@ function createWindow () {
     archiveManager.applicationDidBlur();
   })
 
+  win.on('hide', (event) => {
+    tray.updateContextMenu();
+  })
+
   win.on('focus', (event) => {
     win.webContents.send("window-focused", null);
+    tray.updateContextMenu();
   })
 
   win.once('ready-to-show', () => {
@@ -105,7 +109,7 @@ function createWindow () {
     if (willQuitApp) {
       /* the user tried to quit the app */
       win = null;
-    } else if(darwin) {
+    } else {
       /* the user only tried to close the window */
       e.preventDefault();
 
@@ -139,6 +143,66 @@ function createWindow () {
       shell.openExternal(url);
     }
   });
+}
+
+function createTrayIcon (mainWindow) {
+  const icon = path.join(__dirname, `/icon/Icon-256x256.png`);
+
+  tray = new Tray(icon);
+
+  tray.toggleWindowVisibility = (show) => {
+    if (mainWindow) {
+      if (!show) {
+        mainWindow.hide();
+      } else {
+        mainWindow.show();
+
+        // On some versions of GNOME the window may not be on top when restored.
+        mainWindow.setAlwaysOnTop(true);
+        mainWindow.focus();
+        mainWindow.setAlwaysOnTop(false);
+      }
+    }
+  };
+
+  tray.updateContextMenu = () => {
+    if (mainWindow.isVisible()) {
+      trayContextMenu.items[0].visible = false;
+      trayContextMenu.items[1].visible = true;
+    } else {
+      trayContextMenu.items[0].visible = true;
+      trayContextMenu.items[1].visible = false;
+    }
+
+    tray.setContextMenu(trayContextMenu);
+  };
+
+  trayContextMenu = Menu.buildFromTemplate([{
+    id: 'ShowWindow',
+    label: 'Show',
+    click: tray.toggleWindowVisibility.bind(this, true),
+  }, {
+    id: 'HideWindow',
+    label: 'Hide',
+    click: tray.toggleWindowVisibility.bind(this, false),
+  },
+  {
+    type: 'separator'
+  },
+  {
+    id: 'quit',
+    label: 'Quit',
+    click: app.quit.bind(app),
+  }]);
+
+  tray.setToolTip('Standard Notes');
+  tray.setContextMenu(trayContextMenu);
+
+  tray.on('click', () => {
+    tray.popUpContextMenu();
+  });
+
+  return tray;
 }
 
 app.on('before-quit', () => willQuitApp = true);
@@ -194,6 +258,10 @@ app.on('ready', function(){
     updateManager.onNeedMenuReload = () => {
       menuManager.reload();
     }
+  }
+
+  if (process.platform === 'win32' || process.platform === 'linux') {
+    createTrayIcon(win);
   }
 })
 
