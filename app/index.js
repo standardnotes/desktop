@@ -93,12 +93,16 @@ function createWindow () {
   })
 
   win.on('hide', (event) => {
-    tray.updateContextMenu();
+    if(tray) {
+      tray.updateContextMenu();
+    }
   })
 
   win.on('focus', (event) => {
     win.webContents.send("window-focused", null);
-    tray.updateContextMenu();
+    if(tray) {
+      tray.updateContextMenu();
+    }
   })
 
   win.once('ready-to-show', () => {
@@ -243,7 +247,6 @@ if (hasRequestSingleInstanceLock) {
 }
 
 app.on('ready', function(){
-
   if (isSecondInstance) {
     console.warn("Quiting app and focusing existing instance.");
     app.quit()
