@@ -162,8 +162,9 @@ let isSecondInstance = null;
 // Someone tried to run a second instance, we should focus our window.
 const handleSecondInstance = (argv, cwd) => {
   if (win) {
-    if (win.isMinimized()) win.restore()
-    win.focus()
+    if (!win.isVisible()) win.show();
+    if (win.isMinimized()) win.restore();
+    win.focus();
   }
 }
 
