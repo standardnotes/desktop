@@ -1,4 +1,4 @@
-const {app, Menu, BrowserWindow, ipcMain} = require('electron');
+const {app, BrowserWindow, ipcMain} = require('electron');
 app.setName('Standard Notes');
 
 const path = require('path')
@@ -13,6 +13,7 @@ import packageManager from './javascripts/main/packageManager.js';
 import searchManager from './javascripts/main/searchManager.js';
 import updateManager from './javascripts/main/updateManager.js';
 import zoomManager from './javascripts/main/zoomManager.js';
+import trayManager from './javascripts/main/trayManager.js';
 
 ipcMain.on('initial-data-loaded', () => {
   archiveManager.beginBackups();
@@ -76,6 +77,7 @@ function createWindow () {
   packageManager.setWindow(win);
   updateManager.setWindow(win);
   zoomManager.setWindow(win);
+  trayManager.setWindow(win);
 
   // Register listeners on the window, so we can update the state
   // automatically (the listeners will be removed when the window
@@ -104,7 +106,7 @@ function createWindow () {
     if (willQuitApp) {
       /* the user tried to quit the app */
       win = null;
-    } else if(darwin) {
+    } else {
       /* the user only tried to close the window */
       e.preventDefault();
 
@@ -191,6 +193,10 @@ app.on('ready', function(){
     menuManager.loadMenu(win, archiveManager, updateManager);
     updateManager.onNeedMenuReload = () => {
       menuManager.reload();
+    }
+
+    if (process.platform === 'win32' || process.platform === 'linux') {
+      trayManager.createTrayIcon(win);
     }
   }
 })
