@@ -124,19 +124,15 @@ function createWindow () {
 
   // handle link clicks
   win.webContents.on('new-window', function(e, url) {
-    if(!url.includes("file://")) {
-      e.preventDefault();
-      shell.openExternal(url);
-    }
+    e.preventDefault();
+    shell.openExternal(url);
   });
 
   // handle link clicks (this event is fired instead of
   // 'new-window' when target is not set to _blank)
   win.webContents.on('will-navigate', function(e, url) {
-    if(!url.includes("file://")) {
-      e.preventDefault();
-      shell.openExternal(url);
-    }
+    e.preventDefault();
+    shell.openExternal(url);
   });
 }
 
