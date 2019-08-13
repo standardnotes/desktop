@@ -68,7 +68,12 @@ function createWindow () {
     titleBarStyle: darwin || useSystemMenuBar ? 'hiddenInset' : null,
 
     // Will apply  to Windows and Linux only, since titleBarStyle takes precendence for mac. But we'll explicitely specifiy false for mac to be on the safe side
-    frame: darwin ? false : useSystemMenuBar
+    frame: darwin ? false : useSystemMenuBar,
+
+    // Enable Node.js integration as it's not enable by default from Electron 5.0: https://github.com/electron/electron/blob/master/docs/api/breaking-changes.md
+    webPreferences: {
+      nodeIntegration: true
+    }
   })
 
   searchManager.setWindow(win);
@@ -144,9 +149,9 @@ app.on('before-quit', () => willQuitApp = true);
 
 app.on('activate', function() {
 
-	if (!win) {
+  if (!win) {
     createWindow();
-	} else {
+  } else {
     win.show();
   }
 
