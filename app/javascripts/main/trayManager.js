@@ -1,11 +1,16 @@
 const path = require('path');
 const {Tray, Menu, app} = require('electron');
+const Store = require('./store.js');
 
 const icon = path.join(__dirname, `../../icon/Icon-256x256.png`);
 
 class TrayManager {
   setWindow(window) {
     this.window = window;
+  }
+
+  shouldMinimizeToTray () {
+    return Store.instance().get("minimizeToTray");
   }
 
   createTrayIcon () {

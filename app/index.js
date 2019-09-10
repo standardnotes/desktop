@@ -108,11 +108,10 @@ function createWindow () {
   })
 
   win.on('close', (e) => {
-    let minimizeToTray = Store.instance().get("minimizeToTray");
     if (willQuitApp) {
       /* the user tried to quit the app */
       win = null;
-    } else if(darwin || minimizeToTray) {
+    } else if(darwin || trayManager.shouldMinimizeToTray()) {
       /* the user only tried to close the window */
       e.preventDefault();
 
@@ -197,13 +196,13 @@ app.on('ready', function(){
       win.focus();
     }
 
-    menuManager.loadMenu(win, archiveManager, updateManager);
+    menuManager.loadMenu(win, archiveManager, updateManager, trayManager);
     updateManager.onNeedMenuReload = () => {
       menuManager.reload();
     }
 
-    if (process.platform === 'win32' || process.platform === 'linux') {
-      trayManager.createTrayIcon(win);
+    if (trayManager.shouldMinimizeToTray() && (process.platform === 'win32' || process.platform === 'linux')) {
+      trayManager.createTrayIcon();
     }
   }
 })
