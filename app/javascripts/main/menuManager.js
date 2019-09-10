@@ -6,17 +6,19 @@ const Store = require('./store.js');
 class MenuManager {
 
   reload() {
-    this.loadMenu(this.window, this.archiveManager, this.updateManager);
+    this.loadMenu(this.window, this.archiveManager, this.updateManager, this.trayManager);
   }
 
-  loadMenu(window, archiveManager, updateManager) {
+  loadMenu(window, archiveManager, updateManager, trayManager) {
     this.window = window;
     this.archiveManager = archiveManager;
     this.updateManager = updateManager;
+    this.trayManager = trayManager;
 
     let updateData = updateManager.getMetadata();
     let useSystemMenuBar = Store.instance().get("useSystemMenuBar");
     let isMenuBarVisible = Store.instance().get("isMenuBarVisible");
+    let minimizeToTray = trayManager.shouldMinimizeToTray();
 
     window.setMenuBarVisibility(isMenuBarVisible);
 
@@ -112,6 +114,22 @@ class MenuManager {
           },
           {
             role: 'close'
+          },
+          {
+            type: 'separator'
+          },
+          {
+            visible: process.platform !== 'darwin',
+            label: `Minimize To Tray On Close`,
+            type: 'checkbox',
+            checked: minimizeToTray,
+            click: () => {
+              Store.instance().set("minimizeToTray", !minimizeToTray);
+              this.reload();
+              if(trayManager.shouldMinimizeToTray()) {
+                trayManager.createTrayIcon();
+              }
+            }
           }
         ]
       },
@@ -129,8 +147,6 @@ class MenuManager {
             archiveManager.changeBackupsLocation();
           }},
           {label: 'Open Backups Location', click() {
-            // Todo: Upgrade to Electron 1.8.1 when it is released to fix issue where opened
-            // window is not focused: https://github.com/electron/electron/issues/10477
              shell.openItem(archiveManager.getBackupsLocation());
           }}
         ]
