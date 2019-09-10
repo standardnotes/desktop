@@ -108,10 +108,11 @@ function createWindow () {
   })
 
   win.on('close', (e) => {
+    let minimizeToTray = Store.instance().get("minimizeToTray");
     if (willQuitApp) {
       /* the user tried to quit the app */
       win = null;
-    } else {
+    } else if(darwin || minimizeToTray) {
       /* the user only tried to close the window */
       e.preventDefault();
 

@@ -17,6 +17,7 @@ class MenuManager {
     let updateData = updateManager.getMetadata();
     let useSystemMenuBar = Store.instance().get("useSystemMenuBar");
     let isMenuBarVisible = Store.instance().get("isMenuBarVisible");
+    let minimizeToTray = Store.instance().get("minimizeToTray");
 
     window.setMenuBarVisibility(isMenuBarVisible);
 
@@ -112,6 +113,19 @@ class MenuManager {
           },
           {
             role: 'close'
+          },
+          {
+            type: 'separator'
+          },
+          {
+            visible: process.platform !== 'darwin',
+            label: `Minimize to tray on close`,
+            type: 'checkbox',
+            checked: minimizeToTray,
+            click: () => {
+              Store.instance().set("minimizeToTray", !minimizeToTray);
+              this.reload();
+            }
           }
         ]
       },
