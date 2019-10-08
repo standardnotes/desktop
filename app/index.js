@@ -1,6 +1,13 @@
 const {app, BrowserWindow, ipcMain} = require('electron');
 app.setName('Standard Notes');
 
+/*
+  Opt out of site isolation A/B tests.
+  https://github.com/cypress-io/cypress/issues/1951#issuecomment-401579981
+  For us, it impedes on our ability to include a context menu inside editor extensions.
+*/
+app.commandLine.appendSwitch('disable-site-isolation-trials');
+
 const path = require('path')
 const windowStateKeeper = require('electron-window-state')
 const shell = require('electron').shell;
