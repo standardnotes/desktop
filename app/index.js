@@ -94,13 +94,36 @@ function createWindow () {
     win = null
   })
 
+  /*
+    Both Electron 5 and 6 have an issue where inputs freeze up after an alert is shown.
+    The only workaround is to blur then focus the window.
+    https://github.com/electron/electron/issues/20400
+  */
+  const isWindows = process.platform === 'win32';
+  let needsFocusFix = false;
+  let triggeringProgrammaticBlur = false;
+
   win.on('blur', (event) => {
     win.webContents.send("window-blurred", null);
     archiveManager.applicationDidBlur();
+    if(!triggeringProgrammaticBlur) {
+      needsFocusFix = true;
+    }
   })
 
   win.on('focus', (event) => {
     win.webContents.send("window-focused", null);
+    if(isWindows && needsFocusFix) {
+      needsFocusFix = false;
+      triggeringProgrammaticBlur = true;
+      setTimeout(function () {
+        win.blur();
+        win.focus();
+        setTimeout(function () {
+          triggeringProgrammaticBlur = false;
+        }, 100);
+      }, 100);
+    }
   })
 
   win.once('ready-to-show', () => {
