@@ -2,39 +2,25 @@
 // https://github.com/WhisperSystems/Signal-Desktop/blob/development/js/spell_check.js
 
 (function () {
-  var electron = require('electron');
-  var {remote, app} = require('electron');
+  const electron = require('electron');
+  const {remote, app} = require('electron');
   // var remote = electron.remote;
   // var app = remote.app;
-  var webFrame = electron.webFrame;
-  var path = require('path');
+  const webFrame = electron.webFrame;
+  const path = require('path');
 
-  var osLocale = require('os-locale');
-  var os = require('os');
-  var semver = require('semver');
-  var spellchecker = require('spellchecker');
+  const osLocale = require('os-locale');
+  const os = require('os');
+  const semver = require('semver');
+  const spellchecker = require('spellchecker');
   // `remote.require` since `Menu` is a main-process module.
-  var buildEditorContextMenu = remote.require('electron-editor-context-menu');
+  const buildEditorContextMenu = remote.require('electron-editor-context-menu');
 
-  var EN_VARIANT = /^en/;
+  const EN_VARIANT = /^en/;
 
   // Prevent the spellchecker from showing contractions as errors.
-  var ENGLISH_SKIP_WORDS = [
-    'ain',
-    'couldn',
-    'didn',
-    'doesn',
-    'hadn',
-    'hasn',
-    'mightn',
-    'mustn',
-    'needn',
-    'oughtn',
-    'shan',
-    'shouldn',
-    'wasn',
-    'weren',
-    'wouldn'
+  const ENGLISH_SKIP_WORDS = ['ain', 'couldn', 'didn', 'doesn', 'hadn', 'hasn', 'mightn', 'mustn',
+    'needn', 'oughtn', 'shan', 'shouldn', 'wasn', 'weren', 'wouldn'
   ];
 
   function setupLinux(locale) {
@@ -62,7 +48,7 @@
 
   // We load locale this way and not via app.getLocale() because this call returns
   //   'es_ES' and not just 'es.' And hunspell requires the fully-qualified locale.
-  var locale = osLocale.sync().replace('-', '_');
+  const locale = osLocale.sync().replace('-', '_');
 
   // The LANG environment variable is how node spellchecker finds its default language:
   //   https://github.com/atom/node-spellchecker/blob/59d2d5eee5785c4b34e9669cd5d987181d17c098/lib/spellchecker.js#L29
@@ -123,10 +109,21 @@
     }
   };
 
-  webFrame.setSpellCheckProvider(
-    'en-US',
-    simpleChecker
-  );
+  function loadSpellcheckIntoFrames() {
+    webFrame.setSpellCheckProvider('en-US', simpleChecker);
+  }
+
+  loadSpellcheckIntoFrames();
+
+  function getContextMenuForText(selectedText) {
+    var isMisspelled = selectedText && simpleChecker.isMisspelled(selectedText);
+    var spellingSuggestions = isMisspelled && simpleChecker.getSuggestions(selectedText).slice(0, 5);
+    var menu = buildEditorContextMenu({
+      isMisspelled: isMisspelled,
+      spellingSuggestions: spellingSuggestions,
+    });
+    return menu;
+  }
 
   window.addEventListener('contextmenu', function(e) {
     // Only show the context menu in text editors.
@@ -134,13 +131,8 @@
       return;
     }
 
-    var selectedText = window.getSelection().toString();
-    var isMisspelled = selectedText && simpleChecker.isMisspelled(selectedText);
-    var spellingSuggestions = isMisspelled && simpleChecker.getSuggestions(selectedText).slice(0, 5);
-    var menu = buildEditorContextMenu({
-      isMisspelled: isMisspelled,
-      spellingSuggestions: spellingSuggestions,
-    });
+    let selectedText = window.getSelection().toString();
+    let menu = getContextMenuForText(selectedText);
 
     // The 'contextmenu' event is emitted after 'selectionchange' has fired but possibly before the
     // visible selection has changed. Try to wait to show the menu until after that, otherwise the
@@ -148,5 +140,45 @@
     setTimeout(function() {
       menu.popup({window: remote.getCurrentWindow()});
     }, 30);
+  });
+
+
+
+  /*
+   Context menus and spellcheck for editor extensions
+  */
+
+  var desktopManager = angular.element(document).injector().get('desktopManager');
+
+  function editorExtensionContextEvent(e) {
+    let selectedText = e.view.getSelection().toString();
+    let menu = getContextMenuForText(selectedText);
+
+    // The 'contextmenu' event is emitted after 'selectionchange' has fired but possibly before the
+    // visible selection has changed. Try to wait to show the menu until after that, otherwise the
+    // visible selection will update after the menu dismisses and look weird.
+    setTimeout(function() {
+      menu.popup({window: remote.getCurrentWindow()});
+    }, 30);
+  }
+
+  function addContextMenuTo(uuid) {
+    let componentFrame = document.querySelector('[data-component-id="' + uuid + '"]');
+    if(componentFrame) {
+      // add content menu event
+      componentFrame.contentWindow.addEventListener("contextmenu", editorExtensionContextEvent);
+    }
+  }
+
+  // register activation observer to be notified when a component is registered
+  desktopManager.desktop_registerComponentActivationObserver((component) => {
+    try {
+      // Reload spellcheck integration after iframe is loaded (https://github.com/electron/electron/issues/13514#issuecomment-445396551)
+      loadSpellcheckIntoFrames();
+
+      addContextMenuTo(component.uuid);
+    } catch (e) {
+      console.error(e);
+    }
   });
 })();

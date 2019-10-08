@@ -11,11 +11,6 @@
       try {
         const {ipcRenderer} = require('electron');
         window.ipcRenderer = ipcRenderer;
-        try {
-          require("./javascripts/render/spellcheck.js")
-        } catch (e) {
-          console.error(e);
-        }
 
         // https://github.com/electron/electron/blob/master/docs/faq.md#i-can-not-use-jqueryrequirejsmeteorangularjs-in-electron
         window.nodeRequire = require;
@@ -74,6 +69,12 @@
       let useSystemMenuBar = Store.instance().get("useSystemMenuBar");
 
       angular.element(document).ready(function () {
+        try {
+          window.nodeRequire("./javascripts/render/spellcheck.js")
+        } catch (e) {
+          console.error(e);
+        }
+
         var desktopManager = angular.element(document).injector().get('desktopManager');
 
         desktopManager.desktop_setApplicationDataPath(userDataPath);
@@ -119,8 +120,6 @@
         desktopManager.desktop_setMajorDataChangeHandler(() => {
           ipcRenderer.send("major-data-change");
         })
-
-        window.nodeRequire("./javascripts/render/editorContextMenu.js");
 
         /*
         Title bar events
