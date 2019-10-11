@@ -9,14 +9,9 @@
 
     <script>
       try {
-        const {ipcRenderer} = require('electron');
+        const Bridge = window.ElectronBridge;
+        const ipcRenderer = Bridge.ipcRenderer;
         window.ipcRenderer = ipcRenderer;
-
-        // https://github.com/electron/electron/blob/master/docs/faq.md#i-can-not-use-jqueryrequirejsmeteorangularjs-in-electron
-        window.nodeRequire = require;
-        delete window.require;
-        delete window.exports;
-        delete window.module;
 
         ipcRenderer.on('update-available', function (event, message) {
           var controllerElement = document.querySelector('#home');
@@ -62,19 +57,14 @@
     <script src="standard-notes-web/javascripts/compiled.js" debug="false"></script>
     <link rel="stylesheet" media="all" href="standard-notes-web/stylesheets/app.css" debug="false" />
 
+    <script src="javascripts/render/spellcheck.js" debug="false"></script>
+
     <script>
-      const {remote, app} = window.nodeRequire('electron');
-      const Store = window.nodeRequire('./javascripts/main/store.js');
-      var userDataPath = remote.app.getPath('userData');
-      let useSystemMenuBar = Store.instance().get("useSystemMenuBar");
+      const Bridge = window.ElectronBridge;
+      var userDataPath = Bridge.userDataPath;
+      let useSystemMenuBar = Bridge.useSystemMenuBar();
 
       angular.element(document).ready(function () {
-        try {
-          window.nodeRequire("./javascripts/render/spellcheck.js")
-        } catch (e) {
-          console.error(e);
-        }
-
         var desktopManager = angular.element(document).injector().get('desktopManager');
 
         desktopManager.desktop_setApplicationDataPath(userDataPath);
@@ -99,6 +89,7 @@
         Actions triggered from the web code
         */
 
+
         /* Handled by PackageManager */
         desktopManager.desktop_setComponentInstallationSyncHandler((componentsData) => {
           ipcRenderer.send("sync-components", componentsData);
@@ -119,7 +110,7 @@
 
         desktopManager.desktop_setMajorDataChangeHandler(() => {
           ipcRenderer.send("major-data-change");
-        })
+        });
 
         /*
         Title bar events
@@ -129,27 +120,25 @@
         });
 
         document.getElementById("min-btn").addEventListener("click", (e) => {
-          remote.getCurrentWindow().minimize();
+          Bridge.minimizeWindow();
         });
 
         document.getElementById("max-btn").addEventListener("click", (e) => {
-          const currentWindow = remote.getCurrentWindow();
-
-          if(currentWindow.isMaximized()) {
-            currentWindow.unmaximize();
+          if(Bridge.isWindowMaximized()) {
+            Bridge.unmaximizeWindow();
           } else {
-            currentWindow.maximize();
+            Bridge.maximizeWindow();
           }
         });
 
         document.getElementById("close-btn").addEventListener("click", (e) => {
-          remote.getCurrentWindow().close();
+          Bridge.closeWindow();
         });
       });
 
       // For Mac inset window
       var sheet = window.document.styleSheets[0];
-      let isMacOS = process.platform == "darwin";
+      let isMacOS = Bridge.isMacOS;
 
       if(isMacOS) {
         sheet.insertRule('#tags-column { padding-top: 25px !important; }', sheet.cssRules.length);
