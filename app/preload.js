@@ -5,7 +5,7 @@ const os = require('os');
 const Store = require('./javascripts/main/store.js');
 const buildEditorContextMenu = remote.require('electron-editor-context-menu');
 
-import { Transmitter, FrameMessageBus, Validation } from 'electron-valence/transmitter';
+import { Transmitter, FrameMessageBus, Validation } from 'sn-electron-valence/transmitter';
 const { PropertyType } = Validation;
 const messageBus = new FrameMessageBus();
 const transmitter = new Transmitter(messageBus,
@@ -81,23 +81,23 @@ function listenForIpcEvents() {
   }
 
   ipcRenderer.on('update-available', function (event, data) {
-    sendMessage("update-available");
+    sendMessage("update-available", data);
   });
 
   ipcRenderer.on('download-backup', function (event, data) {
-    sendMessage("download-backup");
+    sendMessage("download-backup", data);
   });
 
   ipcRenderer.on('finished-saving-backup', function (event, data) {
-    sendMessage("finished-saving-backup");
+    sendMessage("finished-saving-backup", data);
   });
 
   ipcRenderer.on('window-blurred', function (event, data) {
-    sendMessage("window-blurred");
+    sendMessage("window-blurred", data);
   });
 
   ipcRenderer.on('window-focused', function (event, data) {
-    sendMessage("window-focused");
+    sendMessage("window-focused", data);
   });
 
   ipcRenderer.on('install-component-complete', function (event, data) {

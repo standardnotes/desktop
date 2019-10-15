@@ -1,4 +1,4 @@
-const {app, BrowserWindow, ipcMain} = require('electron');
+const {app, BrowserWindow, ipcMain, session} = require('electron');
 app.setName('Standard Notes');
 
 const path = require('path')
@@ -42,7 +42,6 @@ app.on('window-all-closed', () => {
 })
 
 function createWindow () {
-
   // Load the previous state with fallback to defaults
   let winState = windowStateKeeper({
     defaultWidth: 1100,
@@ -71,7 +70,6 @@ function createWindow () {
     // Will apply  to Windows and Linux only, since titleBarStyle takes precendence for mac. But we'll explicitely specifiy false for mac to be on the safe side
     frame: darwin ? false : useSystemMenuBar,
 
-    // Enable Node.js integration as it's not enable by default from Electron 5.0: https://github.com/electron/electron/blob/master/docs/api/breaking-changes.md
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -230,6 +228,7 @@ app.on('ready', function(){
       trayManager.createTrayIcon();
     }
   }
+
 })
 
 ipcMain.on("display-app-menu", (event, position) => {

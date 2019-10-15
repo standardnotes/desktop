@@ -1,6 +1,9 @@
 const messageBus = new ElectronValence.FrameMessageBus();
 const receiver = new ElectronValence.Receiver(messageBus);
 
+// Accessed by web app
+window.isElectron = true;
+
 let angularReady = new Promise((resolve, reject) => {
   angular.element(document).ready(function () {
     resolve();
@@ -13,8 +16,6 @@ Promise.all([
   angularReady,
   receiver.ready,
 ]).then(async () => {
-  console.log("Angular and receiver ready");
-
   bridge = receiver.items[0];
   desktopManager = angular.element(document).injector().get('desktopManager');
 
@@ -30,6 +31,7 @@ Promise.all([
 async function configureWindow() {
   const isMacOS = await bridge.isMacOS;
   const useSystemMenuBar = await bridge.useSystemMenuBar;
+
   /*
   Title bar events
   */
@@ -105,7 +107,7 @@ async function registerIpcMessageListener() {
       // message doesn't belong to us
       return;
     }
-    console.log("Renderer received IPC message", payload);
+
     let message = payload.message;
     let data = payload.data;
 
@@ -119,14 +121,14 @@ async function registerIpcMessageListener() {
     } else if(message === "update-available") {
       var controllerElement = document.querySelector('#home');
       var controllerScope = angular.element(controllerElement).scope();
-      controllerScope.onUpdateAvailable(message);
-    } else if(message === "update-available") {
+      controllerScope.onUpdateAvailable();
+    } else if(message === "download-backup") {
       desktopManager.desktop_didBeginBackup();
       let data = desktopManager.desktop_requestBackupFile((data) => {
-        retainBridge.sendIpcMessage('data-archive', data);
+        bridge.sendIpcMessage('data-archive', data);
       });
     } else if(message === "finished-saving-backup") {
-      desktopManager.desktop_didFinishBackup(message.success);
+      desktopManager.desktop_didFinishBackup(data.success);
     }
   });
 }

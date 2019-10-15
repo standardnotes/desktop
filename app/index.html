@@ -4,6 +4,7 @@
     <meta charset="utf-8"/>
     <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
     <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' 'self'; connect-src *; style-src 'unsafe-inline' 'self'">
     <meta name="theme-color" content="#ffffff">
     <title>Notes</title>
 
@@ -24,10 +25,10 @@
 
     </script>
 
-    <script src="standard-notes-web/javascripts/compiled.js" debug="false"></script>
-    <link rel="stylesheet" media="all" href="standard-notes-web/stylesheets/app.css" debug="false" />
+    <script src="standard-notes-web/javascripts/compiled.js"></script>
+    <link rel="stylesheet" media="all" href="standard-notes-web/stylesheets/app.css"/>
 
-    <script src="electron-valence/Receiver.js"></script>
+    <script src="sn-electron-valence/Receiver.js"></script>
     <script src="renderer.js"></script>
 
     <script>
