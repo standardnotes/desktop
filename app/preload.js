@@ -1,17 +1,46 @@
-var hostProcess = process;
-var hostRequire = require;
 const { webFrame, ipcRenderer, remote } = require('electron')
-const Store = require('./javascripts/main/store.js');
-
-const path = require('path');
 const osLocale = require('os-locale');
 const os = require('os');
-const semver = require('semver');
 
+const Store = require('./javascripts/main/store.js');
 const buildEditorContextMenu = remote.require('electron-editor-context-menu');
 
-process.once('loaded', function() {
+import { Transmitter, FrameMessageBus, Validation } from 'electron-valence/transmitter';
+const { PropertyType } = Validation;
+const messageBus = new FrameMessageBus();
+const transmitter = new Transmitter(messageBus,
+	{
+    spellcheck: {
+      type: PropertyType.OBJECT,
+      properties: {
+				reload: PropertyType.METHOD,
+        showContextMenuForText: {
+          type: PropertyType.METHOD,
+          argValidators: [{ type: 'string', minLength: 1 } ]
+        },
+			},
+    },
+		isMacOS: PropertyType.VALUE,
+    userDataPath: PropertyType.VALUE,
+    useSystemMenuBar: PropertyType.VALUE,
+    sendIpcMessage: {
+      type: PropertyType.METHOD,
+      argValidators: [{ type: 'string', minLength: 1 }, { type: 'object'} ]
+    },
+    closeWindow: { type: PropertyType.METHOD },
+    minimizeWindow: { type: PropertyType.METHOD },
+    maximizeWindow: { type: PropertyType.METHOD },
+    unmaximizeWindow: { type: PropertyType.METHOD },
+    isWindowMaximized: { type: PropertyType.METHOD },
+	},
+);
 
+process.once('loaded', function() {
+  loadTransmitter();
+  listenForIpcEvents();
+});
+
+function loadTransmitter() {
   let spellcheck;
   try {
     spellcheck = loadSpellcheck();
@@ -19,12 +48,14 @@ process.once('loaded', function() {
     console.error("Error loading spellcheck", e);
   }
 
-  const Bridge = {
-    ipcRenderer: ipcRenderer,
+  transmitter.expose({
+    spellcheck: spellcheck,
     userDataPath: remote.app.getPath('userData'),
     isMacOS: process.platform == "darwin",
-    spellcheck: spellcheck,
-
+    useSystemMenuBar: Store.instance().get("useSystemMenuBar"),
+    sendIpcMessage: async (message, data) => {
+      ipcRenderer.send(message, data);
+    },
     closeWindow: () => {
       remote.getCurrentWindow().close();
     },
@@ -40,17 +71,41 @@ process.once('loaded', function() {
     isWindowMaximized: () => {
       return remote.getCurrentWindow().isMaximized()
     },
-    useSystemMenuBar: () => {
-      return Store.instance().get("useSystemMenuBar");
-    },
+  });
+}
+
+function listenForIpcEvents() {
+
+  const sendMessage = (message, payload) => {
+    window.postMessage(JSON.stringify({message, data: payload}), 'file://');
   }
 
-  window.ElectronBridge = Bridge;
+  ipcRenderer.on('update-available', function (event, data) {
+    sendMessage("update-available");
+  });
 
-});
+  ipcRenderer.on('download-backup', function (event, data) {
+    sendMessage("download-backup");
+  });
 
+  ipcRenderer.on('finished-saving-backup', function (event, data) {
+    sendMessage("finished-saving-backup");
+  });
 
-const loadSpellcheck = () => {
+  ipcRenderer.on('window-blurred', function (event, data) {
+    sendMessage("window-blurred");
+  });
+
+  ipcRenderer.on('window-focused', function (event, data) {
+    sendMessage("window-focused");
+  });
+
+  ipcRenderer.on('install-component-complete', function (event, data) {
+    sendMessage("install-component-complete", data);
+  });
+}
+
+function loadSpellcheck() {
   let spellchecker;
   try {
     spellchecker = require('spellchecker');
@@ -120,7 +175,7 @@ const loadSpellcheck = () => {
   };
 
   return  {
-    showContextMenuForText: (selectedText) => {
+    showContextMenuForText: async (selectedText) => {
       var isMisspelled = selectedText && simpleChecker.isMisspelled(selectedText);
       var spellingSuggestions = isMisspelled && simpleChecker.getSuggestions(selectedText).slice(0, 5);
       var menu = buildEditorContextMenu({
@@ -129,7 +184,7 @@ const loadSpellcheck = () => {
       });
       menu.popup({window: remote.getCurrentWindow()});
     },
-    reload: () => {
+    reload: async () => {
       webFrame.setSpellCheckProvider('en-US', simpleChecker);
     }
   }

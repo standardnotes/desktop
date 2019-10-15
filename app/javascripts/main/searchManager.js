@@ -3,7 +3,8 @@ var {ipcMain, remote, dialog, app} = require('electron');
 class SearchManager {
 
   constructor() {
-    ipcMain.on('search-text', (event, text) => {
+    ipcMain.on('search-text', (event, data) => {
+      let text = data.text;
       this.window.webContents.stopFindInPage('clearSelection');
       if(text && text.length > 0) {
         // This option arrangement is required to avoid an issue where clicking on a

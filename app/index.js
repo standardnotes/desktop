@@ -74,7 +74,7 @@ function createWindow () {
     // Enable Node.js integration as it's not enable by default from Electron 5.0: https://github.com/electron/electron/blob/master/docs/api/breaking-changes.md
     webPreferences: {
       nodeIntegration: false,
-      contextIsolation: false,
+      contextIsolation: true,
       preload: path.join(__dirname, "preload.js")
     }
   })
