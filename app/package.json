@@ -18,6 +18,7 @@
     "request": "^2.83.0",
     "semver": "^5.5.0",
     "spellchecker": "github:mobitar/node-spellchecker",
-    "standard-notes-web": "3.0.18-beta1"
+    "standard-notes-web": "3.0.18-beta1",
+    "sn-electron-valence": "0.0.4"
   }
 }

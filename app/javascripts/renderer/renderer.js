@@ -99,9 +99,9 @@ async function configureDesktopManager() {
 }
 
 async function registerIpcMessageListener() {
-  let rendererPath = await bridge.rendererPath;
   window.addEventListener('message', (event) => {
-    if(event.origin !== rendererPath) {
+    // We don't have access to the full file path.
+    if(event.origin !== "file://") {
       return;
     }
 

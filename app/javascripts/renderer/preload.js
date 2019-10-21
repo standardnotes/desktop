@@ -2,11 +2,11 @@ const { webFrame, ipcRenderer, remote } = require('electron')
 const osLocale = require('os-locale');
 const os = require('os');
 
-const Store = require('./javascripts/main/store.js');
+const Store = require('../main/store.js');
 const buildEditorContextMenu = remote.require('electron-editor-context-menu');
 const rendererPath = 'file://' + __dirname + '/renderer.js';
 
-import { Transmitter, FrameMessageBus, Validation } from 'sn-electron-valence/transmitter';
+import { Transmitter, FrameMessageBus, Validation } from 'sn-electron-valence/Transmitter';
 const { PropertyType } = Validation;
 const messageBus = new FrameMessageBus();
 const transmitter = new Transmitter(messageBus,
@@ -23,7 +23,6 @@ const transmitter = new Transmitter(messageBus,
     },
 		isMacOS: PropertyType.VALUE,
     userDataPath: PropertyType.VALUE,
-    rendererPath: PropertyType.VALUE,
     useSystemMenuBar: PropertyType.VALUE,
     sendIpcMessage: {
       type: PropertyType.METHOD,

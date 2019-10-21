@@ -73,7 +73,7 @@ function createWindow () {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.js")
+      preload: path.join(__dirname, "javascripts/renderer/preload.js")
     }
   })
 
@@ -167,6 +167,11 @@ function createWindow () {
   // handle link clicks (this event is fired instead of
   // 'new-window' when target is not set to _blank)
   win.webContents.on('will-navigate', function(e, url) {
+    // check for windowUrl equality in the case of window.reload() calls
+    // in packaged app, spaces in url can contain %20 in url but not in windowUrl.
+    if(decodeURIComponent(url) === decodeURIComponent(windowUrl)) {
+      return;
+    }
     if(shouldOpenUrl(url)) {
       shell.openExternal(url);
     }
