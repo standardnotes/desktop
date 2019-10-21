@@ -146,27 +146,31 @@ function createWindow () {
     }
   })
 
-  let url = 'file://' + __dirname + '/index.html';
+  let windowUrl = 'file://' + __dirname + '/index.html';
   if ('APP_RELATIVE_PATH' in process.env) {
-    url = 'file://' + __dirname + '/' + process.env.APP_RELATIVE_PATH;
+    windowUrl = 'file://' + __dirname + '/' + process.env.APP_RELATIVE_PATH;
   }
-  win.loadURL(url);
+  win.loadURL(windowUrl);
+
+  const shouldOpenUrl = (url) => {
+    return url.startsWith("http") || url.startsWith("https");
+  }
 
   // handle link clicks
   win.webContents.on('new-window', function(e, url) {
-    if(!url.includes("file://")) {
-      e.preventDefault();
+    if(shouldOpenUrl(url)) {
       shell.openExternal(url);
     }
+    e.preventDefault();
   });
 
   // handle link clicks (this event is fired instead of
   // 'new-window' when target is not set to _blank)
   win.webContents.on('will-navigate', function(e, url) {
-    if(!url.includes("file://")) {
-      e.preventDefault();
+    if(shouldOpenUrl(url)) {
       shell.openExternal(url);
     }
+    e.preventDefault();
   });
 }
 
