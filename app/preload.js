@@ -4,6 +4,7 @@ const os = require('os');
 
 const Store = require('./javascripts/main/store.js');
 const buildEditorContextMenu = remote.require('electron-editor-context-menu');
+const rendererPath = 'file://' + __dirname + '/renderer.js';
 
 import { Transmitter, FrameMessageBus, Validation } from 'sn-electron-valence/transmitter';
 const { PropertyType } = Validation;
@@ -22,6 +23,7 @@ const transmitter = new Transmitter(messageBus,
     },
 		isMacOS: PropertyType.VALUE,
     userDataPath: PropertyType.VALUE,
+    rendererPath: PropertyType.VALUE,
     useSystemMenuBar: PropertyType.VALUE,
     sendIpcMessage: {
       type: PropertyType.METHOD,
@@ -51,6 +53,7 @@ function loadTransmitter() {
   transmitter.expose({
     spellcheck: spellcheck,
     userDataPath: remote.app.getPath('userData'),
+    rendererPath: rendererPath,
     isMacOS: process.platform == "darwin",
     useSystemMenuBar: Store.instance().get("useSystemMenuBar"),
     sendIpcMessage: async (message, data) => {
@@ -77,7 +80,7 @@ function loadTransmitter() {
 function listenForIpcEvents() {
 
   const sendMessage = (message, payload) => {
-    window.postMessage(JSON.stringify({message, data: payload}), 'file://');
+    window.postMessage(JSON.stringify({message, data: payload}), rendererPath);
   }
 
   ipcRenderer.on('update-available', function (event, data) {

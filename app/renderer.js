@@ -99,7 +99,12 @@ async function configureDesktopManager() {
 }
 
 async function registerIpcMessageListener() {
+  let rendererPath = await bridge.rendererPath;
   window.addEventListener('message', (event) => {
+    if(event.origin !== rendererPath) {
+      return;
+    }
+
     let payload;
     try {
       payload = JSON.parse(event.data);
