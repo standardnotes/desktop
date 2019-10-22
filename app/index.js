@@ -1,12 +1,5 @@
-const {app, BrowserWindow, ipcMain} = require('electron');
+const {app, BrowserWindow, ipcMain, session} = require('electron');
 app.setName('Standard Notes');
-
-/*
-  Opt out of site isolation A/B tests.
-  https://github.com/cypress-io/cypress/issues/1951#issuecomment-401579981
-  For us, it impedes on our ability to include a context menu inside editor extensions.
-*/
-app.commandLine.appendSwitch('disable-site-isolation-trials');
 
 const path = require('path')
 const windowStateKeeper = require('electron-window-state')
@@ -49,7 +42,6 @@ app.on('window-all-closed', () => {
 })
 
 function createWindow () {
-
   // Load the previous state with fallback to defaults
   let winState = windowStateKeeper({
     defaultWidth: 1100,
@@ -78,9 +70,10 @@ function createWindow () {
     // Will apply  to Windows and Linux only, since titleBarStyle takes precendence for mac. But we'll explicitely specifiy false for mac to be on the safe side
     frame: darwin ? false : useSystemMenuBar,
 
-    // Enable Node.js integration as it's not enable by default from Electron 5.0: https://github.com/electron/electron/blob/master/docs/api/breaking-changes.md
     webPreferences: {
-      nodeIntegration: true
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, "javascripts/renderer/preload.js")
     }
   })
 
@@ -153,27 +146,36 @@ function createWindow () {
     }
   })
 
-  let url = 'file://' + __dirname + '/index.html';
+  let windowUrl = 'file://' + __dirname + '/index.html';
   if ('APP_RELATIVE_PATH' in process.env) {
-    url = 'file://' + __dirname + '/' + process.env.APP_RELATIVE_PATH;
+    windowUrl = 'file://' + __dirname + '/' + process.env.APP_RELATIVE_PATH;
   }
-  win.loadURL(url);
+  win.loadURL(windowUrl);
+
+  const shouldOpenUrl = (url) => {
+    return url.startsWith("http") || url.startsWith("https");
+  }
 
   // handle link clicks
   win.webContents.on('new-window', function(e, url) {
-    if(!url.includes("file://")) {
-      e.preventDefault();
+    if(shouldOpenUrl(url)) {
       shell.openExternal(url);
     }
+    e.preventDefault();
   });
 
   // handle link clicks (this event is fired instead of
   // 'new-window' when target is not set to _blank)
   win.webContents.on('will-navigate', function(e, url) {
-    if(!url.includes("file://")) {
-      e.preventDefault();
+    // check for windowUrl equality in the case of window.reload() calls
+    // in packaged app, spaces in url can contain %20 in url but not in windowUrl.
+    if(decodeURIComponent(url) === decodeURIComponent(windowUrl)) {
+      return;
+    }
+    if(shouldOpenUrl(url)) {
       shell.openExternal(url);
     }
+    e.preventDefault();
   });
 }
 
@@ -235,6 +237,7 @@ app.on('ready', function(){
       trayManager.createTrayIcon();
     }
   }
+
 })
 
 ipcMain.on("display-app-menu", (event, position) => {

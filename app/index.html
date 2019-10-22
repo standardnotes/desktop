@@ -4,44 +4,11 @@
     <meta charset="utf-8"/>
     <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
     <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' 'self'; connect-src *; style-src 'unsafe-inline' 'self'">
     <meta name="theme-color" content="#ffffff">
     <title>Notes</title>
 
     <script>
-      try {
-        const {ipcRenderer} = require('electron');
-        window.ipcRenderer = ipcRenderer;
-
-        // https://github.com/electron/electron/blob/master/docs/faq.md#i-can-not-use-jqueryrequirejsmeteorangularjs-in-electron
-        window.nodeRequire = require;
-        delete window.require;
-        delete window.exports;
-        delete window.module;
-
-        ipcRenderer.on('update-available', function (event, message) {
-          var controllerElement = document.querySelector('#home');
-          var controllerScope = angular.element(controllerElement).scope();
-          controllerScope.onUpdateAvailable(message);
-        });
-
-        // Download data archive
-        ipcRenderer.on('download-backup', function (event, message) {
-          var desktopManager = angular.element(document).injector().get('desktopManager');
-          desktopManager.desktop_didBeginBackup();
-          let data = desktopManager.desktop_requestBackupFile((data) => {
-            event.sender.send('data-archive', data);
-          });
-        });
-
-        ipcRenderer.on('finished-saving-backup', (event, message) => {
-          var desktopManager = angular.element(document).injector().get('desktopManager');
-          desktopManager.desktop_didFinishBackup(message.success);
-        })
-      }
-      catch (e) {
-        console.log(e);
-      }
-
       // load zip library (for exporting items as zip)
       var scriptTag = document.createElement('script');
       scriptTag.src = "./vendor/zip/zip.js";
@@ -53,116 +20,18 @@
       }
 
       window._default_sf_server = "https://sync.standardnotes.org";
-
       window._extensions_manager_location = "extensions/extensions-manager/dist/index.html";
       window._batch_manager_location = "extensions/batch-manager/dist/index.html";
 
     </script>
 
-    <script src="standard-notes-web/javascripts/compiled.js" debug="false"></script>
-    <link rel="stylesheet" media="all" href="standard-notes-web/stylesheets/app.css" debug="false" />
+    <script src="standard-notes-web/javascripts/compiled.js"></script>
+    <link rel="stylesheet" media="all" href="standard-notes-web/stylesheets/app.css"/>
+
+    <script src="sn-electron-valence/Receiver.js"></script>
+    <script src="javascripts/renderer/renderer.js"></script>
 
     <script>
-      const {remote, app} = window.nodeRequire('electron');
-      const Store = window.nodeRequire('./javascripts/main/store.js');
-      var userDataPath = remote.app.getPath('userData');
-      let useSystemMenuBar = Store.instance().get("useSystemMenuBar");
-
-      angular.element(document).ready(function () {
-        try {
-          window.nodeRequire("./javascripts/render/spellcheck.js")
-        } catch (e) {
-          console.error(e);
-        }
-
-        var desktopManager = angular.element(document).injector().get('desktopManager');
-
-        desktopManager.desktop_setApplicationDataPath(userDataPath);
-
-        ipcRenderer.on('window-blurred', function (event, message) {
-          desktopManager.desktop_windowLostFocus();
-        });
-
-        ipcRenderer.on('window-focused', function (event, message) {
-          desktopManager.desktop_windowGainedFocus();
-        });
-
-        /*
-        Responses from packageManager
-        */
-        ipcRenderer.on('install-component-complete', function (event, data) {
-          // console.log("install-component-complete", data.component.content.name, data.error && data.error.tag);
-          desktopManager.desktop_onComponentInstallationComplete(data.component, data.error);
-        });
-
-        /*
-        Actions triggered from the web code
-        */
-
-        /* Handled by PackageManager */
-        desktopManager.desktop_setComponentInstallationSyncHandler((componentsData) => {
-          ipcRenderer.send("sync-components", componentsData);
-        })
-
-        desktopManager.desktop_setInstallComponentHandler((componentData) => {
-          ipcRenderer.send("install-component", componentData);
-        });
-
-        desktopManager.desktop_setSearchHandler((text) => {
-          ipcRenderer.send("search-text", text);
-        });
-
-        /* Handled by ArchiveManager */
-        desktopManager.desktop_setInitialDataLoadHandler(() => {
-          ipcRenderer.send("initial-data-loaded");
-        })
-
-        desktopManager.desktop_setMajorDataChangeHandler(() => {
-          ipcRenderer.send("major-data-change");
-        })
-
-        /*
-        Title bar events
-        */
-        document.getElementById("menu-btn").addEventListener("click", (e) => {
-          ipcRenderer.send("display-app-menu", { x: e.x, y: e.y })
-        });
-
-        document.getElementById("min-btn").addEventListener("click", (e) => {
-          remote.getCurrentWindow().minimize();
-        });
-
-        document.getElementById("max-btn").addEventListener("click", (e) => {
-          const currentWindow = remote.getCurrentWindow();
-
-          if(currentWindow.isMaximized()) {
-            currentWindow.unmaximize();
-          } else {
-            currentWindow.maximize();
-          }
-        });
-
-        document.getElementById("close-btn").addEventListener("click", (e) => {
-          remote.getCurrentWindow().close();
-        });
-      });
-
-      // For Mac inset window
-      var sheet = window.document.styleSheets[0];
-      let isMacOS = process.platform == "darwin";
-
-      if(isMacOS) {
-        sheet.insertRule('#tags-column { padding-top: 25px !important; }', sheet.cssRules.length);
-      }
-
-      if(isMacOS || useSystemMenuBar) {
-        // !important is important here because #desktop-title-bar has display: flex.
-        sheet.insertRule('#desktop-title-bar { display: none !important; }', sheet.cssRules.length);
-      } else {
-        // Use custom title bar. Take the sn-titlebar-height off of the app content height so its not overflowing
-        sheet.insertRule('.main-ui-view { height: calc(100vh - var(--sn-desktop-titlebar-height)) !important; min-height: calc(100vh - var(--sn-desktop-titlebar-height)) !important; }', sheet.cssRules.length);
-      }
-
       // disable drag-n-drop of file in the app
       document.addEventListener('dragover', event => event.preventDefault())
       document.addEventListener('drop', event => event.preventDefault())

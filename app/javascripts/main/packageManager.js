@@ -17,11 +17,11 @@ class PackageManager {
 
   constructor() {
     ipcMain.on('install-component', (event, data) => {
-      this.installComponent(data);
+      this.installComponent(data.componentData);
     });
 
     ipcMain.on('sync-components', (event, data) => {
-      this.syncComponents(data);
+      this.syncComponents(data.componentsData);
     });
   }
 
