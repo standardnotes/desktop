@@ -2,6 +2,9 @@ const messageBus = new ElectronValence.FrameMessageBus();
 const receiver = new ElectronValence.Receiver(messageBus);
 
 // Accessed by web app
+window._default_sf_server = "https://sync.standardnotes.org";
+window._extensions_manager_location = "extensions/extensions-manager/dist/index.html";
+window._batch_manager_location = "extensions/batch-manager/dist/index.html";
 window.isElectron = true;
 
 let angularReady = new Promise((resolve, reject) => {
@@ -26,11 +29,17 @@ Promise.all([
   configureWindow();
 
   configureSpellcheck();
+
+  loadZipLibrary();
 })
 
 async function configureWindow() {
   const isMacOS = await bridge.isMacOS;
   const useSystemMenuBar = await bridge.useSystemMenuBar;
+
+  // disable drag-n-drop of file in the app
+  document.addEventListener('dragover', event => event.preventDefault())
+  document.addEventListener('drop', event => event.preventDefault())
 
   /*
   Title bar events
@@ -136,6 +145,18 @@ async function registerIpcMessageListener() {
       desktopManager.desktop_didFinishBackup(data.success);
     }
   });
+}
+
+function loadZipLibrary() {
+  // load zip library (for exporting items as zip)
+  var scriptTag = document.createElement('script');
+  scriptTag.src = "./vendor/zip/zip.js";
+  scriptTag.async = true;
+  var headTag = document.getElementsByTagName('head')[0];
+  headTag.appendChild(scriptTag);
+  scriptTag.onload = function() {
+    zip.workerScriptsPath = "./vendor/zip/";
+  }
 }
 
 async function configureSpellcheck() {

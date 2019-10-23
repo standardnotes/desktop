@@ -4,26 +4,10 @@
     <meta charset="utf-8"/>
     <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
     <meta content="width=device-width, initial-scale=1" name="viewport"/>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' 'self'; connect-src *; style-src 'unsafe-inline' 'self'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src *; style-src 'unsafe-inline' 'self'">
     <meta name="theme-color" content="#ffffff">
+
     <title>Notes</title>
-
-    <script>
-      // load zip library (for exporting items as zip)
-      var scriptTag = document.createElement('script');
-      scriptTag.src = "./vendor/zip/zip.js";
-      scriptTag.async = true;
-      var headTag = document.getElementsByTagName('head')[0];
-      headTag.appendChild(scriptTag);
-      scriptTag.onload = function() {
-        zip.workerScriptsPath = "./vendor/zip/";
-      }
-
-      window._default_sf_server = "https://sync.standardnotes.org";
-      window._extensions_manager_location = "extensions/extensions-manager/dist/index.html";
-      window._batch_manager_location = "extensions/batch-manager/dist/index.html";
-
-    </script>
 
     <script src="standard-notes-web/javascripts/compiled.js"></script>
     <link rel="stylesheet" media="all" href="standard-notes-web/stylesheets/app.css"/>
@@ -31,86 +15,7 @@
     <script src="sn-electron-valence/Receiver.js"></script>
     <script src="javascripts/renderer/renderer.js"></script>
 
-    <script>
-      // disable drag-n-drop of file in the app
-      document.addEventListener('dragover', event => event.preventDefault())
-      document.addEventListener('drop', event => event.preventDefault())
-    </script>
-
-    <style>
-
-      .editor-content .editable {
-        font-family: Menlo, Consolas, 'DejaVu Sans Mono', monospace;
-        font-size: 16px;
-      }
-
-      :root {
-        --sn-desktop-titlebar-height: 35px;
-        --sn-desktop-titlebar-icon-font-size: 16px;
-      }
-
-      /* To offset frameless window nav buttons on Mac */
-      .mac-desktop #editor-column, .mac-desktop #notes-column {
-        transition: 0.15s padding ease;
-      }
-
-      .mac-desktop #app.collapsed-notes.collapsed-tags #editor-column {
-        padding-top: 18px;
-      }
-
-      .mac-desktop #app.collapsed-tags #notes-column {
-        padding-top: 18px;
-      }
-
-      panel-resizer {
-        -webkit-app-region: no-drag;
-      }
-
-      #desktop-title-bar {
-        -webkit-app-region: drag;
-        padding: 0;
-        margin: 0;
-        height: var(--sn-desktop-titlebar-height);
-        line-height: var(--sn-desktop-titlebar-height);
-        vertical-align: middle;
-        background: var(--sn-stylekit-contrast-background-color) !important;
-        border-bottom: 1px solid var(--sn-stylekit-contrast-border-color);
-        display: flex;
-        justify-content: space-between;
-      }
-
-      #desktop-title-bar button {
-        -webkit-app-region: no-drag;
-        margin: 0;
-        background: none;
-        border: none;
-        padding: 0 10px;
-        color: var(--sn-stylekit-contrast-foreground-color);
-        vertical-align: middle;
-        height: 100%;
-      }
-
-      #desktop-title-bar button svg {
-        max-width: var(--sn-desktop-titlebar-icon-font-size);
-      }
-
-      #desktop-title-bar button:hover svg {
-        color: var(--sn-stylekit-info-color);
-      }
-
-      #desktop-title-bar .title-bar-left-buttons, #desktop-title-bar .title-bar-right-buttons {
-        font-size: 0;
-      }
-
-      /* Required for BrowserWindow titleBarStyle: 'hiddenInset' */
-      .mac-desktop .tags, .mac-desktop #tags-title-bar, .mac-desktop #notes-title-bar, .mac-desktop #editor-title-bar, .mac-desktop #lock-screen {
-        -webkit-app-region: drag;
-      }
-
-      input, .tags .content, .component-view-container {
-        -webkit-app-region: no-drag;
-      }
-    </style>
+    <link rel="stylesheet" media="all" href="stylesheets/renderer.css"/>
   </head>
 
   <body ng-class="bodyClass">

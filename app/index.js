@@ -130,13 +130,13 @@ function createWindow () {
     win.show()
   })
 
-  win.on('close', (e) => {
+  win.on('close', (event) => {
     if (willQuitApp) {
       /* the user tried to quit the app */
       win = null;
     } else if(darwin || trayManager.shouldMinimizeToTray()) {
       /* the user only tried to close the window */
-      e.preventDefault();
+      event.preventDefault();
 
       // Fixes Mac full screen issue where pressing close results in a black screen.
       if(win.isFullScreen()) {
@@ -156,26 +156,39 @@ function createWindow () {
     return url.startsWith("http") || url.startsWith("https");
   }
 
+  // Check urls for equality by decoding components
+  // In packaged app, spaces in navigation events urls can contain %20 but not in windowUrl.
+  const safeUrlCompare = (a, b) => {
+    // Catch exceptions in case of malformed urls.
+    try {
+      let equal = decodeURIComponent(a) === decodeURIComponent(b);
+      return equal;
+    } catch (error) {
+      return false;
+    }
+  }
+
   // handle link clicks
-  win.webContents.on('new-window', function(e, url) {
+  win.webContents.on('new-window', function(event, url) {
     if(shouldOpenUrl(url)) {
       shell.openExternal(url);
     }
-    e.preventDefault();
+    event.preventDefault();
   });
 
   // handle link clicks (this event is fired instead of
   // 'new-window' when target is not set to _blank)
-  win.webContents.on('will-navigate', function(e, url) {
-    // check for windowUrl equality in the case of window.reload() calls
-    // in packaged app, spaces in url can contain %20 in url but not in windowUrl.
-    if(decodeURIComponent(url) === decodeURIComponent(windowUrl)) {
+  win.webContents.on('will-navigate', function(event, url) {
+    // Check for windowUrl equality in the case of window.reload() calls.
+    if(safeUrlCompare(url, windowUrl) === true) {
       return;
     }
+
     if(shouldOpenUrl(url)) {
       shell.openExternal(url);
     }
-    e.preventDefault();
+
+    event.preventDefault();
   });
 }
 
