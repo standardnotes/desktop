@@ -52,8 +52,8 @@ async function configureWindow() {
     bridge.minimizeWindow();
   });
 
-  document.getElementById("max-btn").addEventListener("click", (e) => {
-    if(bridge.isWindowMaximized()) {
+  document.getElementById("max-btn").addEventListener("click", async (e) => {
+    if(await bridge.isWindowMaximized()) {
       bridge.unmaximizeWindow();
     } else {
       bridge.maximizeWindow();

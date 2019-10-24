@@ -53,24 +53,26 @@ function loadTransmitter() {
     spellcheck: spellcheck,
     userDataPath: remote.app.getPath('userData'),
     rendererPath: rendererPath,
-    isMacOS: process.platform == "darwin",
+    isMacOS: process.platform === "darwin",
     useSystemMenuBar: Store.instance().get("useSystemMenuBar"),
+
+		// All functions must be async, as electron-valence expects to run .then() on them.
     sendIpcMessage: async (message, data) => {
       ipcRenderer.send(message, data);
     },
-    closeWindow: () => {
+    closeWindow: async () => {
       remote.getCurrentWindow().close();
     },
-    minimizeWindow: () => {
+    minimizeWindow: async () => {
       remote.getCurrentWindow().minimize();
     },
-    maximizeWindow: () => {
+    maximizeWindow: async () => {
       remote.getCurrentWindow().maximize();
     },
-    unmaximizeWindow: () => {
+    unmaximizeWindow: async () => {
       remote.getCurrentWindow().unmaximize();
     },
-    isWindowMaximized: () => {
+    isWindowMaximized: async () => {
       return remote.getCurrentWindow().isMaximized()
     },
   });
