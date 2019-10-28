@@ -138,8 +138,10 @@ async function registerIpcMessageListener() {
       controllerScope.onUpdateAvailable();
     } else if(message === "download-backup") {
       desktopManager.desktop_didBeginBackup();
-      let data = desktopManager.desktop_requestBackupFile((data) => {
-        bridge.sendIpcMessage('data-archive', data);
+      desktopManager.desktop_requestBackupFile((data) => {
+        if(data) {
+          bridge.sendIpcMessage('data-archive', data);
+        }
       });
     } else if(message === "finished-saving-backup") {
       desktopManager.desktop_didFinishBackup(data.success);

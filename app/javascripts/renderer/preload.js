@@ -80,7 +80,7 @@ function loadTransmitter() {
 
 function listenForIpcEvents() {
 
-  const sendMessage = (message, payload) => {
+  const sendMessage = (message, payload = {}) => {
     window.postMessage(JSON.stringify({message, data: payload}), rendererPath);
   }
 

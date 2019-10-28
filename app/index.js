@@ -156,13 +156,15 @@ function createWindow () {
     return url.startsWith("http") || url.startsWith("https");
   }
 
-  // Check urls for equality by decoding components
+  // Check file urls for equality by decoding components
   // In packaged app, spaces in navigation events urls can contain %20 but not in windowUrl.
-  const safeUrlCompare = (a, b) => {
+  const safeFileUrlCompare = (a, b) => {
     // Catch exceptions in case of malformed urls.
     try {
-      let equal = decodeURIComponent(a) === decodeURIComponent(b);
-      return equal;
+      // Craft URL objects to eliminate production URL values that can contain "#!/" suffixes (on Windows)
+      let aPath = new URL(decodeURIComponent(a)).pathname;
+      let bPath = new URL(decodeURIComponent(b)).pathname;
+      return aPath === bPath;
     } catch (error) {
       return false;
     }
@@ -180,7 +182,7 @@ function createWindow () {
   // 'new-window' when target is not set to _blank)
   win.webContents.on('will-navigate', function(event, url) {
     // Check for windowUrl equality in the case of window.reload() calls.
-    if(safeUrlCompare(url, windowUrl) === true) {
+    if(safeFileUrlCompare(url, windowUrl) === true) {
       return;
     }
 
