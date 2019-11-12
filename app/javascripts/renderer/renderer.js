@@ -37,6 +37,8 @@ async function configureWindow() {
   const isMacOS = await bridge.isMacOS;
   const useSystemMenuBar = await bridge.useSystemMenuBar;
 
+  window.electronAppVersion = await bridge.appVersion;
+
   // disable drag-n-drop of file in the app
   document.addEventListener('dragover', event => event.preventDefault())
   document.addEventListener('drop', event => event.preventDefault())

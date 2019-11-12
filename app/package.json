@@ -2,8 +2,8 @@
   "name": "standard-notes",
   "productName": "Standard Notes",
   "description": "A simple and private place for your notes, thoughts, and life's work.",
-  "author": "Standard Notes <hello@standardnotes.org>",
-  "version": "3.0.19",
+  "author": "Standard Notes <help@standardnotes.org>",
+  "version": "3.0.20",
   "main": "./dist/index.js",
   "dependencies": {
     "adm-zip": "^0.4.7",

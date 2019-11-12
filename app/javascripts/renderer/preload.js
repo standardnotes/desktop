@@ -11,28 +11,29 @@ const { PropertyType } = Validation;
 const messageBus = new FrameMessageBus();
 const transmitter = new Transmitter(messageBus,
 	{
-    spellcheck: {
-      type: PropertyType.OBJECT,
-      properties: {
+		spellcheck: {
+		  type: PropertyType.OBJECT,
+		  properties: {
 				reload: PropertyType.METHOD,
-        showContextMenuForText: {
-          type: PropertyType.METHOD,
-          argValidators: [{ type: 'string', minLength: 1 } ]
-        },
+		    showContextMenuForText: {
+		      type: PropertyType.METHOD,
+		      argValidators: [{ type: 'string', minLength: 1 } ]
+		    },
 			},
-    },
+		},
 		isMacOS: PropertyType.VALUE,
-    userDataPath: PropertyType.VALUE,
-    useSystemMenuBar: PropertyType.VALUE,
-    sendIpcMessage: {
-      type: PropertyType.METHOD,
-      argValidators: [{ type: 'string', minLength: 1 }, { type: 'object'} ]
-    },
-    closeWindow: { type: PropertyType.METHOD },
-    minimizeWindow: { type: PropertyType.METHOD },
-    maximizeWindow: { type: PropertyType.METHOD },
-    unmaximizeWindow: { type: PropertyType.METHOD },
-    isWindowMaximized: { type: PropertyType.METHOD },
+		appVersion: PropertyType.VALUE,
+		userDataPath: PropertyType.VALUE,
+		useSystemMenuBar: PropertyType.VALUE,
+		sendIpcMessage: {
+		  type: PropertyType.METHOD,
+		  argValidators: [{ type: 'string', minLength: 1 }, { type: 'object'} ]
+		},
+		closeWindow: { type: PropertyType.METHOD },
+		minimizeWindow: { type: PropertyType.METHOD },
+		maximizeWindow: { type: PropertyType.METHOD },
+		unmaximizeWindow: { type: PropertyType.METHOD },
+		isWindowMaximized: { type: PropertyType.METHOD },
 	},
 );
 
@@ -42,40 +43,41 @@ process.once('loaded', function() {
 });
 
 function loadTransmitter() {
-  let spellcheck;
-  try {
-    spellcheck = loadSpellcheck();
-  } catch (e) {
-    console.error("Error loading spellcheck", e);
-  }
+	let spellcheck;
+	try {
+	  spellcheck = loadSpellcheck();
+	} catch (e) {
+	  console.error("Error loading spellcheck", e);
+	}
 
-  transmitter.expose({
-    spellcheck: spellcheck,
-    userDataPath: remote.app.getPath('userData'),
-    rendererPath: rendererPath,
-    isMacOS: process.platform === "darwin",
-    useSystemMenuBar: Store.instance().get("useSystemMenuBar"),
+	transmitter.expose({
+		spellcheck: spellcheck,
+		userDataPath: remote.app.getPath('userData'),
+		rendererPath: rendererPath,
+		isMacOS: process.platform === "darwin",
+		appVersion: remote.app.getVersion(),
+		useSystemMenuBar: Store.instance().get("useSystemMenuBar"),
 
 		// All functions must be async, as electron-valence expects to run .then() on them.
-    sendIpcMessage: async (message, data) => {
-      ipcRenderer.send(message, data);
-    },
-    closeWindow: async () => {
-      remote.getCurrentWindow().close();
-    },
-    minimizeWindow: async () => {
-      remote.getCurrentWindow().minimize();
-    },
-    maximizeWindow: async () => {
-      remote.getCurrentWindow().maximize();
-    },
-    unmaximizeWindow: async () => {
-      remote.getCurrentWindow().unmaximize();
-    },
-    isWindowMaximized: async () => {
-      return remote.getCurrentWindow().isMaximized()
-    },
-  });
+		sendIpcMessage: async (message, data) => {
+		  ipcRenderer.send(message, data);
+		},
+		closeWindow: async () => {
+		  remote.getCurrentWindow().close();
+		},
+		minimizeWindow: async () => {
+		  remote.getCurrentWindow().minimize();
+		},
+		maximizeWindow: async () => {
+		  remote.getCurrentWindow().maximize();
+		},
+		unmaximizeWindow: async () => {
+		  remote.getCurrentWindow().unmaximize();
+		},
+		isWindowMaximized: async () => {
+		  return remote.getCurrentWindow().isMaximized()
+		},
+	});
 }
 
 function listenForIpcEvents() {
