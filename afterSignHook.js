@@ -46,4 +46,5 @@ module.exports = async function (params) {
     }
 
     console.log(`Done notarizing ${appId}`);
+    console.warn(`DO NOT FORGET: Manually zip .app file for Catalina zip workaround issue! (Details in afterSignHook.js)`);
 };
