@@ -1,7 +1,7 @@
 {
   "name": "standard-notes",
   "main": "./app/dist/index.js",
-  "version": "3.0.20",
+  "version": "3.0.21",
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
     "@babel/cli": "^7.6.4",
@@ -32,7 +32,8 @@
     "mac": {
       "category": "public.app-category.productivity",
       "hardenedRuntime": true,
-      "entitlements": "./build/entitlements.mac.inherit.plist"
+      "entitlements": "./build/entitlements.mac.inherit.plist",
+      "entitlementsInherit": "./build/entitlements.mac.inherit.plist"
     },
     "win": {
       "certificateSubjectName": "Standard Notes Ltd.",

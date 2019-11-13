@@ -3,7 +3,7 @@
   "productName": "Standard Notes",
   "description": "A simple and private place for your notes, thoughts, and life's work.",
   "author": "Standard Notes <help@standardnotes.org>",
-  "version": "3.0.20",
+  "version": "3.0.21",
   "main": "./dist/index.js",
   "dependencies": {
     "adm-zip": "^0.4.7",
@@ -17,8 +17,8 @@
     "os-locale": "^2.1.0",
     "request": "^2.83.0",
     "semver": "^5.5.0",
+    "sn-electron-valence": "0.0.4",
     "spellchecker": "github:mobitar/node-spellchecker",
-    "standard-notes-web": "github:standardnotes/web",
-    "sn-electron-valence": "0.0.4"
+    "standard-notes-web": "github:standardnotes/web"
   }
 }
