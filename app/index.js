@@ -7,6 +7,9 @@ const shell = require('electron').shell;
 const log = require('electron-log');
 const Store = require('./javascripts/main/store.js');
 
+const ExtensionsServer = require('./javascripts/main/extServer.js');
+ExtensionsServer.instance().createServer();
+
 import menuManager from './javascripts/main/menuManager.js'
 import archiveManager from './javascripts/main/archiveManager.js';
 import packageManager from './javascripts/main/packageManager.js';

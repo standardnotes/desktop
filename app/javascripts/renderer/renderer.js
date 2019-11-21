@@ -83,8 +83,8 @@ async function configureWindow() {
 }
 
 async function configureDesktopManager() {
-  const userDataPath = await bridge.userDataPath;
-  desktopManager.desktop_setApplicationDataPath(userDataPath);
+  const extServerHost = await bridge.extServerHost;
+  desktopManager.desktop_setExtServerHost(extServerHost);
 
   /* Handled by PackageManager */
   desktopManager.desktop_setComponentInstallationSyncHandler(async (componentsData) => {

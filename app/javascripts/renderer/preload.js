@@ -3,6 +3,7 @@ const osLocale = require('os-locale');
 const os = require('os');
 
 const Store = require('../main/store.js');
+const ExtensionsServer = require('../main/extServer.js')
 const buildEditorContextMenu = remote.require('electron-editor-context-menu');
 const rendererPath = 'file://' + __dirname + '/renderer.js';
 
@@ -23,7 +24,7 @@ const transmitter = new Transmitter(messageBus,
 		},
 		isMacOS: PropertyType.VALUE,
 		appVersion: PropertyType.VALUE,
-		userDataPath: PropertyType.VALUE,
+		extServerHost: PropertyType.VALUE,
 		useSystemMenuBar: PropertyType.VALUE,
 		sendIpcMessage: {
 		  type: PropertyType.METHOD,
@@ -52,7 +53,7 @@ function loadTransmitter() {
 
 	transmitter.expose({
 		spellcheck: spellcheck,
-		userDataPath: remote.app.getPath('userData'),
+		extServerHost: ExtensionsServer.instance().getHost(),
 		rendererPath: rendererPath,
 		isMacOS: process.platform === "darwin",
 		appVersion: remote.app.getVersion(),
