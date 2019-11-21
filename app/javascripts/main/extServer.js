@@ -1,7 +1,9 @@
 const {app} = require('electron');
-var http = require('http');
-var fs = require('fs');
-var path = require('path');
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const mime = require('mime-types');
+const url = require('url');
 
 const mimes = {
   '.ico': 'image/x-icon',
@@ -36,13 +38,15 @@ class ExtensionsServer {
     function handleRequest(req, res) {
       const extensionsFolder = "Extensions";
       const extensionsDir = path.join(app.getPath('userData'), extensionsFolder);
-      const modifiedReqUrl = req.url.replace(extensionsFolder, "");
+      const pathName = url.parse(req.url).pathname;
+      const modifiedReqUrl = pathName.replace(extensionsFolder, "");
       const filePath = path.join(extensionsDir, modifiedReqUrl);
 
       fs.exists(filePath, function(exists) {
         if(exists && fs.lstatSync(filePath).isFile()) {
           const ext = path.parse(filePath).ext;
-          res.setHeader("Content-Type", mimes[ext] || 'text/plain');
+          const mimeType = mime.lookup(ext);
+          res.setHeader("Content-Type", `${mimeType}; charset=utf-8`);
           res.writeHead(200, {
             'Access-Control-Allow-Origin': '*'
           });
