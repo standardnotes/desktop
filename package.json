@@ -48,7 +48,8 @@
         "StartupWMClass": "standard notes"
       },
       "target": [
-        "AppImage"
+        "AppImage",
+        "snap"
       ],
       "extraResources": [
         {
