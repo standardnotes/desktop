@@ -55,13 +55,13 @@ class ExtensionsServer {
         }
 
         res.writeHead(404);
-        res.write('404 Not Found');
+        res.write('Unable to load extension. Please restart the application and try again. If the issue persists, try uninstalling then reinstalling the extension.');
         res.end();
       });
     }
 
-    var server = http.createServer(handleRequest);
-    server.listen(this.port, () => {
+    const server = http.createServer(handleRequest);
+    server.listen(this.port, '127.0.0.1', () => {
       console.log(`Extensions server started at http://localhost:${this.port}`);
     });
   }
