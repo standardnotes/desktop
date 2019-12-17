@@ -39,7 +39,8 @@ class ExtensionsServer {
       const extensionsFolder = "Extensions";
       const extensionsDir = path.join(app.getPath('userData'), extensionsFolder);
       const pathName = url.parse(req.url).pathname;
-      const modifiedReqUrl = pathName.replace(extensionsFolder, "");
+      // Normalize path (parse '..' and '.') so that we prevent path traversal by joining a fully resolved path to the Extensions dir.
+      const modifiedReqUrl = path.normalize(pathName.replace(extensionsFolder, ""));
       const filePath = path.join(extensionsDir, modifiedReqUrl);
 
       fs.exists(filePath, function(exists) {
