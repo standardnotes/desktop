@@ -24,6 +24,16 @@ class MenuManager {
 
     const template = [
       {
+        label: 'App',
+        visible: process.platform !== 'darwin',
+        submenu: [
+          {
+            role: 'quit'
+          }
+        ]
+      },
+
+      {
         label: 'Edit',
         submenu: [
           {
