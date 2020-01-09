@@ -1,17 +1,17 @@
-var {ipcMain, remote, dialog, app} = require('electron');
-var fs = require('fs');
-var path = require('path');
-var http = require('http');
-var https = require('https');
-var request = require("request");
-var appPath = app.getPath('userData');
-var AdmZip = require('adm-zip');
-var compareVersions = require('compare-versions');
+const {ipcMain, remote, dialog, app} = require('electron');
+const fs = require('fs');
+const path = require('path');
+const http = require('http');
+const https = require('https');
+const request = require("request");
+const appPath = app.getPath('userData');
+const AdmZip = require('adm-zip');
+const compareVersions = require('compare-versions');
 
 import fileUtils from "./fileUtils";
 
-let ExtensionsFolderName = "Extensions";
-let MappingFileLocation = appPath + `/${ExtensionsFolderName}/mapping.json`;
+const ExtensionsFolderName = "Extensions";
+const MappingFileLocation = appPath + `/${ExtensionsFolderName}/mapping.json`;
 
 class PackageManager {
 

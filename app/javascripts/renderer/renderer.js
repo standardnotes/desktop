@@ -1,13 +1,13 @@
 const messageBus = new ElectronValence.FrameMessageBus();
 const receiver = new ElectronValence.Receiver(messageBus);
 
-// Accessed by web app
+/** Accessed by web app */
 window._default_sf_server = "https://sync.standardnotes.org";
 window._extensions_manager_location = "extensions/extensions-manager/dist/index.html";
 window._batch_manager_location = "extensions/batch-manager/dist/index.html";
 window.isElectron = true;
 
-let angularReady = new Promise((resolve, reject) => {
+const angularReady = new Promise((resolve, reject) => {
   angular.element(document).ready(function () {
     resolve();
   });
@@ -23,13 +23,9 @@ Promise.all([
   desktopManager = angular.element(document).injector().get('desktopManager');
 
   registerIpcMessageListener();
-
   configureDesktopManager();
-
   configureWindow();
-
   configureSpellcheck();
-
   loadZipLibrary();
 })
 

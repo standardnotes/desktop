@@ -2,19 +2,20 @@
 <html ng-app="app">
   <head>
     <meta charset="utf-8"/>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src *; style-src 'unsafe-inline' 'self' http://localhost:45653; frame-src *">
+
     <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
     <meta content="width=device-width, initial-scale=1" name="viewport"/>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src *; style-src 'unsafe-inline' 'self' http://localhost:45653; frame-src *">
     <meta name="theme-color" content="#ffffff">
 
-    <title>Notes</title>
+    <meta ng-bind="title" content="Standard Notes" name="apple-mobile-web-app-title" />
+    <meta ng-bind="title" content="Standard Notes" name="application-name" />
 
-    <script src="standard-notes-web/javascripts/compiled.js"></script>
-    <link rel="stylesheet" media="all" href="standard-notes-web/stylesheets/app.css"/>
-
+    <script src="standard-notes-web/javascripts/app.js"></script>
     <script src="sn-electron-valence/Receiver.js"></script>
     <script src="javascripts/renderer/renderer.js"></script>
 
+    <link rel="stylesheet" media="all" href="standard-notes-web/stylesheets/app.css"/>
     <link rel="stylesheet" media="all" href="stylesheets/renderer.css"/>
   </head>
 
@@ -37,7 +38,7 @@
         </button>
       </div>
     </div>
-    <div id="home" ng-controller="HomeCtrl" ng-include="'home.html'"></div>
+    <home />
   </body>
 
 </html>
