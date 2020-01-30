@@ -1,0 +1,12 @@
+{
+  "extends": ["eslint:recommended", "semistandard", "prettier"],
+  "parser": "babel-eslint",
+  "rules": {
+    "no-throw-literal": 0,
+    "no-console": "off",
+    "semi": 1
+  },
+  "env": {
+    "browser": true
+  }
+}

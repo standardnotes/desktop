@@ -1,33 +1,14 @@
-const {app} = require('electron');
+const { app } = require('electron');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const mime = require('mime-types');
 const url = require('url');
 
-const mimes = {
-  '.ico': 'image/x-icon',
-  '.html': 'text/html',
-  '.js': 'text/javascript',
-  '.json': 'application/json',
-  '.css': 'text/css',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg'
-};
-
-let instance = null;
-
-class ExtensionsServer {
-
-  static instance() {
-    if(instance == null) {
-      instance = new ExtensionsServer();
-    }
-    return instance;
-  }
-
+export class ExtensionsServer {
   constructor() {
     this.port = 45653;
+    this.createServer();
   }
 
   getHost() {
@@ -43,8 +24,8 @@ class ExtensionsServer {
       const modifiedReqUrl = path.normalize(pathName.replace(extensionsFolder, ""));
       const filePath = path.join(extensionsDir, modifiedReqUrl);
 
-      fs.exists(filePath, function(exists) {
-        if(exists && fs.lstatSync(filePath).isFile()) {
+      fs.exists(filePath, function (exists) {
+        if (exists && fs.lstatSync(filePath).isFile()) {
           const ext = path.parse(filePath).ext;
           const mimeType = mime.lookup(ext);
           res.setHeader("Content-Type", `${mimeType}; charset=utf-8`);
@@ -67,5 +48,3 @@ class ExtensionsServer {
     });
   }
 }
-
-module.exports = ExtensionsServer;

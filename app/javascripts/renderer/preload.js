@@ -1,13 +1,18 @@
-const { webFrame, ipcRenderer, remote } = require('electron')
+import { 
+  Transmitter, 
+  FrameMessageBus, 
+  Validation 
+} from 'sn-electron-valence/Transmitter';
+import {
+  Store,
+  StoreKeys
+} from '../main/store';
+const { webFrame, ipcRenderer, remote } = require('electron');
 const osLocale = require('os-locale');
-const os = require('os');
-
-const Store = require('../main/store.js');
-const ExtensionsServer = require('../main/extServer.js')
+const path = require('path');
 const buildEditorContextMenu = remote.require('electron-editor-context-menu');
-const rendererPath = 'file://' + __dirname + '/renderer.js';
+const rendererPath = path.join('file://', __dirname, '/renderer.js');
 
-import { Transmitter, FrameMessageBus, Validation } from 'sn-electron-valence/Transmitter';
 const { PropertyType } = Validation;
 const messageBus = new FrameMessageBus();
 const transmitter = new Transmitter(messageBus,
@@ -49,15 +54,15 @@ function loadTransmitter() {
 	  spellcheck = loadSpellcheck();
 	} catch (e) {
 	  console.error("Error loading spellcheck", e);
-	}
+  }
 
 	transmitter.expose({
 		spellcheck: spellcheck,
-		extServerHost: ExtensionsServer.instance().getHost(),
+    extServerHost: Store.get(StoreKeys.ExtServerHost),
 		rendererPath: rendererPath,
 		isMacOS: process.platform === "darwin",
 		appVersion: remote.app.getVersion(),
-		useSystemMenuBar: Store.instance().get("useSystemMenuBar"),
+		useSystemMenuBar: Store.get(StoreKeys.UseSystemMenuBar),
 
 		// All functions must be async, as electron-valence expects to run .then() on them.
 		sendIpcMessage: async (message, data) => {
@@ -76,16 +81,18 @@ function loadTransmitter() {
 		  remote.getCurrentWindow().unmaximize();
 		},
 		isWindowMaximized: async () => {
-		  return remote.getCurrentWindow().isMaximized()
+		  return remote.getCurrentWindow().isMaximized();
 		},
 	});
 }
 
 function listenForIpcEvents() {
-
   const sendMessage = (message, payload = {}) => {
-    window.postMessage(JSON.stringify({message, data: payload}), rendererPath);
-  }
+    window.postMessage(
+      JSON.stringify({message, data: payload}), 
+      rendererPath
+    );
+  };
 
   ipcRenderer.on('update-available', function (event, data) {
     sendMessage("update-available", data);
@@ -128,7 +135,7 @@ function loadSpellcheck() {
   ];
 
   // We load locale this way and not via app.getLocale() because this call returns
-  //   'es_ES' and not just 'es.' And hunspell requires the fully-qualified locale.
+  // 'es_ES' and not just 'es.' And hunspell requires the fully-qualified locale.
   const locale = osLocale.sync().replace('-', '_');
 
   // The LANG environment variable is how node spellchecker finds its default language:
@@ -140,12 +147,13 @@ function loadSpellcheck() {
   function debounce(func, wait, immediate) {
     var timeout;
     return function() {
-      var context = this, args = arguments;
-      var later = function() {
+      const context = this;
+      const args = arguments;
+      const later = function() {
         timeout = null;
         if (!immediate) func.apply(context, args);
       };
-      var callNow = immediate && !timeout;
+      const callNow = immediate && !timeout;
       clearTimeout(timeout);
       timeout = setTimeout(later, wait);
       if (callNow) func.apply(context, args);
@@ -158,10 +166,10 @@ function loadSpellcheck() {
       callback(misspelled);
     }, 500),
     isMisspelled: function(text) {
-      var misspelled = spellchecker.isMisspelled(text);
+      const misspelled = spellchecker.isMisspelled(text);
 
       // The idea is to make this as fast as possible. For the many, many calls which
-      //   don't result in the red squiggly, we minimize the number of checks.
+      // don't result in the red squiggly, we minimize the number of checks.
       if (!misspelled) {
         return false;
       }
@@ -183,9 +191,9 @@ function loadSpellcheck() {
 
   return  {
     showContextMenuForText: async (selectedText) => {
-      var isMisspelled = selectedText && simpleChecker.isMisspelled(selectedText);
-      var spellingSuggestions = isMisspelled && simpleChecker.getSuggestions(selectedText).slice(0, 5);
-      var menu = buildEditorContextMenu({
+      const isMisspelled = selectedText && simpleChecker.isMisspelled(selectedText);
+      const spellingSuggestions = isMisspelled && simpleChecker.getSuggestions(selectedText).slice(0, 5);
+      const menu = buildEditorContextMenu({
         isMisspelled: isMisspelled,
         spellingSuggestions: spellingSuggestions,
       });

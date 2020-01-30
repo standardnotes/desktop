@@ -1,27 +1,24 @@
-const shell = require('electron').shell;
-const {app, Menu, dialog} = require('electron');
-const path = require('path')
-const Store = require('./store.js');
+import { Store, StoreKeys } from './store';
+const { app, Menu, dialog, shell } = require('electron');
 
-class MenuManager {
-
-  reload() {
-    this.loadMenu(this.window, this.archiveManager, this.updateManager, this.trayManager);
-  }
-
-  loadMenu(window, archiveManager, updateManager, trayManager) {
+export class MenuManager {
+  constructor(window, archiveManager, updateManager, trayManager) {
     this.window = window;
     this.archiveManager = archiveManager;
     this.updateManager = updateManager;
     this.trayManager = trayManager;
+  }
 
-    let updateData = updateManager.getMetadata();
-    let useSystemMenuBar = Store.instance().get("useSystemMenuBar");
-    let isMenuBarVisible = Store.instance().get("isMenuBarVisible");
-    let minimizeToTray = trayManager.shouldMinimizeToTray();
+  reload() {
+    this.loadMenu();
+  }
 
-    window.setMenuBarVisibility(isMenuBarVisible);
-
+  loadMenu() {
+    const updateData = this.updateManager.getMetadata();
+    const useSystemMenuBar = Store.get(StoreKeys.UseSystemMenuBar);
+    const minimizeToTray = this.trayManager.shouldMinimizeToTray();
+    let isMenuBarVisible = Store.get(StoreKeys.MenuBarVisible);
+    this.window.setMenuBarVisibility(isMenuBarVisible);
     const template = [
       {
         label: 'Edit',
@@ -52,7 +49,6 @@ class MenuManager {
           }
         ]
       },
-
       {
         label: 'View',
         submenu: [
@@ -89,8 +85,8 @@ class MenuManager {
             accelerator: 'Alt + m',
             click: () => {
               isMenuBarVisible = !isMenuBarVisible;
-              window.setMenuBarVisibility(isMenuBarVisible);
-              Store.instance().set("isMenuBarVisible", isMenuBarVisible);
+              this.window.setMenuBarVisibility(isMenuBarVisible);
+              Store.set(StoreKeys.MenuBarVisible, isMenuBarVisible);
             }
           },
           {
@@ -99,9 +95,12 @@ class MenuManager {
             type: 'checkbox',
             checked: !useSystemMenuBar,
             click: () => {
-              Store.instance().set("useSystemMenuBar", !useSystemMenuBar);
+              Store.set(StoreKeys.UseSystemMenuBar, !useSystemMenuBar);
               this.reload();
-              dialog.showMessageBox({title: "Preference Changed", message: "Your menu bar preference has been saved. Please restart the application for the change to take effect."});
+              dialog.showMessageBox({
+                title: "Preference Changed",
+                message: "Your menu bar preference has been saved. Please restart the application for the change to take effect."
+              });
             }
           }
         ]
@@ -124,10 +123,10 @@ class MenuManager {
             type: 'checkbox',
             checked: minimizeToTray,
             click: () => {
-              Store.instance().set("minimizeToTray", !minimizeToTray);
+              Store.set(StoreKeys.MinimizeToTray, !minimizeToTray);
               this.reload();
-              if(trayManager.shouldMinimizeToTray()) {
-                trayManager.createTrayIcon();
+              if (this.trayManager.shouldMinimizeToTray()) {
+                this.trayManager.createTrayIcon();
               }
             }
           }
@@ -136,77 +135,92 @@ class MenuManager {
       {
         label: 'Backups',
         submenu: [
-          {label: (archiveManager.isBackupsEnabled() ? 'Disable' : 'Enable') + ' Automatic Backups', click: () => {
-            archiveManager.toggleBackupsStatus();
-            this.reload();
-          }},
+          {
+            label: (
+                this.archiveManager.isBackupsEnabled() ? 'Disable' : 'Enable'
+              ) + ' Automatic Backups',
+            click: () => {
+              this.archiveManager.toggleBackupsStatus();
+              this.reload();
+            }
+          },
           {
             type: 'separator'
           },
-          {label: 'Change Backups Location', click() {
-            archiveManager.changeBackupsLocation();
-          }},
-          {label: 'Open Backups Location', click() {
-             shell.openItem(archiveManager.getBackupsLocation());
-          }}
+          {
+            label: 'Change Backups Location', 
+            click: () => {
+              this.archiveManager.changeBackupsLocation();
+            }
+          },
+          {
+            label: 'Open Backups Location', 
+            click: () => {
+              shell.openItem(this.archiveManager.getBackupsLocation());
+            }
+          }
         ]
       },
-
       this.buildUpdateMenu(updateData),
-
       {
         role: 'help',
         submenu: [
           {
-            label: 'GitHub',
-            click () { shell.openExternal('https://github.com/standardnotes') }
-          },
-          {
-            label: 'Slack',
-            click () { shell.openExternal('https://standardnotes.org/slack') }
+            label: 'Email Support',
+            click: () => { shell.openExternal('mailto:help@standardnotes.org') }
           },
           {
             label: 'Website',
-            click () { shell.openExternal('https://standardnotes.org') }
+            click: () => { shell.openExternal('https://standardnotes.org') }
           },
           {
-            label: 'Support',
-            click () { shell.openExternal('mailto:hello@standardnotes.org') }
+            label: 'GitHub',
+            click: () => { shell.openExternal('https://github.com/standardnotes') }
+          },
+          {
+            label: 'Slack',
+            click: () => { shell.openExternal('https://standardnotes.org/slack') }
+          },
+          {
+            label: 'Twitter',
+            click: () => { shell.openExternal('https://twitter.com/StandardNotes') }
           },
           {
             type: 'separator'
           },
           {
             label: "Toggle Error Console",
-            click () {
-              window.webContents.toggleDevTools();
-             }
+            click: () => {
+              this.window.webContents.toggleDevTools();
+            }
           },
           {
             label: 'Open Data Directory',
-            click () {
-              var userDataPath = app.getPath('userData');
+            click: () => {
+              const userDataPath = app.getPath('userData');
               shell.openItem(userDataPath);
-             }
+            }
           },
           {
             label: 'Clear Cache and Reload',
-            click () {
-              window.webContents.session.clearCache(function(){
-                window.reload();
+            click: () => {
+              this.window.webContents.session.clearCache(() => {
+                this.window.reload();
               });
-             }
+            }
           },
           {
             type: 'separator'
           },
           {
             label: 'Version: ' + app.getVersion(),
-            click () { shell.openExternal('https://github.com/standardnotes/desktop/releases') }
+            click: () => { 
+              shell.openExternal('https://github.com/standardnotes/desktop/releases');
+            }
           }
         ]
       }
-    ]
+    ];
 
     if (process.platform === 'darwin') {
       template.unshift({
@@ -241,8 +255,8 @@ class MenuManager {
             role: 'quit'
           }
         ]
-      })
-      // Edit menu.
+      });
+      /* Edit menu. */
       template[1].submenu.push(
         {
           type: 'separator'
@@ -258,8 +272,8 @@ class MenuManager {
             }
           ]
         }
-      )
-      // Window menu.
+      );
+      /* Window menu. */
       template[3].submenu = [
         {
           label: 'Close',
@@ -282,7 +296,7 @@ class MenuManager {
           label: 'Bring All to Front',
           role: 'front'
         }
-      ]
+      ];
     }
 
     this.menu = Menu.buildFromTemplate(template);
@@ -290,86 +304,102 @@ class MenuManager {
   }
 
   popupMenu(position) {
-    if(this.menu) {
+    if (this.menu) {
       this.menu.popup(this.window, position.x, position.y);
     }
   }
 
   buildUpdateMenu(updateData) {
-    let updateNeeded = this.updateManager.updateNeeded();
-    var label = updateData.checkingForUpdate ? "Checking for update..." : (updateNeeded ? "(1) Update Available" : 'Updates');
-    var structure = { label: label };
+    const updateNeeded = this.updateManager.updateNeeded();
+    const label = updateData.checkingForUpdate 
+      ? "Checking for update..." 
+      : (updateNeeded ? "(1) Update Available" : 'Updates');
+    const structure = { label: label };
+    const submenu = [];
 
-    var submenu = [];
-
-    if(this.updateManager.autoupdateDownloaded()) {
+    if (this.updateManager.autoupdateDownloaded()) {
       submenu.push({
-        label: `Install Pending Update (${this.updateManager.autoupdateDownloadedVersion()})`,
+        label: `Install Pending Update 
+          (${this.updateManager.autoupdateDownloadedVersion()})
+        `,
         click: () => {
           this.updateManager.installAutoupdateNow();
         }
-      })
+      });
     }
 
     submenu.push({
-      label: this.updateManager.autoupdateEnabled() ? "Automatic Updates Enabled (Beta)" : "Automatic Updates Disabled",
+      label: this.updateManager.autoupdateEnabled() 
+        ? "Automatic Updates Enabled" 
+        : "Automatic Updates Disabled",
       click: () => {
         this.updateManager.toggleAutoupdateStatus();
       }
-    })
+    });
 
-    submenu.push({type: 'separator'});
+    submenu.push({ type: 'separator' });
 
-    if(updateData.lastCheck && !updateData.checkinForUpdate) {
+    if (updateData.lastCheck && !updateData.checkinForUpdate) {
       submenu.push({
         label: `Last checked ${updateData.lastCheck.toLocaleString()}`,
-        click() {}
-      })
+        click: () => { }
+      });
     }
 
-    if(!updateData.checkinForUpdate) {
+    if (!updateData.checkinForUpdate) {
       submenu.push({
         label: `Check for Update`,
-        click: () => { this.updateManager.checkForUpdate({userTriggered: true}); }
-      })
+        click: () => { 
+          this.updateManager.checkForUpdate({ userTriggered: true }); 
+        }
+      });
     }
 
-    submenu.push({type: 'separator'});
+    submenu.push({ type: 'separator' });
 
-    submenu.push({label: `Your Version: ${updateData.currentVersion}`, click() {
+    submenu.push({
+      label: `Your Version: ${updateData.currentVersion}`, 
+      click: () => {}
+    });
 
-    }})
+    const latestVersion = this.updateManager.latestVersion();
+    submenu.push({
+      label: `Latest Version: ${latestVersion || 'Error Retrieving'}`, 
+      click: () => {
+        this.updateManager.openChangelog();
+      }
+    });
 
-    let latestVersion = this.updateManager.latestVersion();
-    submenu.push({label: `Latest Version: ${latestVersion ? latestVersion : 'Error Retrieving'}`, click: () => {
-      this.updateManager.openChangelog();
-    }})
+    submenu.push({ type: 'separator' });
 
-    submenu.push({type: 'separator'});
+    submenu.push({
+      label: `View ${latestVersion} Release Notes`, 
+      click: () => {
+        this.updateManager.openChangelog();
+      }
+    });
 
-    submenu.push({label: `View ${latestVersion} Release Notes`, click: () => {
-      this.updateManager.openChangelog();
-    }})
-
-    if(updateData.latestDownloaded) {
+    if (updateData.latestDownloaded) {
       submenu.push({
         label: "Open Download Location",
         click: () => {
           this.updateManager.openDownloadLocation();
         }
-      })
-    } else if(updateNeeded || updateData.downloadingUpdate) {
+      });
+    } else if (updateNeeded || updateData.downloadingUpdate) {
       submenu.push({
-        label: updateData.downloadingUpdate ? "Downloading update..." : "Manually Download Update",
+        label: updateData.downloadingUpdate 
+          ? "Downloading update..." 
+          : "Manually Download Update",
         click: () => {
-          updateData.downloadingUpdate ? this.updateManager.openDownloadLocation() :  this.updateManager.downloadUpdateFile();
+          updateData.downloadingUpdate 
+            ? this.updateManager.openDownloadLocation() 
+            : this.updateManager.downloadUpdateFile();
         }
-      })
+      });
     }
 
     structure.submenu = submenu;
     return structure;
   }
 }
-
-export default new MenuManager();

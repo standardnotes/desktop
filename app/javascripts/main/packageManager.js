@@ -1,21 +1,20 @@
-const {ipcMain, remote, dialog, app} = require('electron');
+import { FileUtils } from "./fileUtils";
+const { ipcMain, app } = require('electron');
 const fs = require('fs');
 const path = require('path');
-const http = require('http');
-const https = require('https');
 const request = require("request");
 const appPath = app.getPath('userData');
 const AdmZip = require('adm-zip');
 const compareVersions = require('compare-versions');
-
-import fileUtils from "./fileUtils";
+const fileUtils = new FileUtils();
 
 const ExtensionsFolderName = "Extensions";
 const MappingFileLocation = appPath + `/${ExtensionsFolderName}/mapping.json`;
 
-class PackageManager {
+export class PackageManager {
 
-  constructor() {
+  constructor(window) {
+    this.window = window;
     ipcMain.on('install-component', (event, data) => {
       this.installComponent(data.componentData);
     });
@@ -25,12 +24,8 @@ class PackageManager {
     });
   }
 
-  setWindow(window) {
-    this.window = window;
-  }
-
   pathsForComponent(component) {
-    let relativePath = `${ExtensionsFolderName}/` + component.content.package_info.identifier;
+    const relativePath = `${ExtensionsFolderName}/` + component.content.package_info.identifier;
     return {
       downloadPath: appPath + `/${ExtensionsFolderName}/downloads/` + component.content.name + ".zip",
       relativePath: relativePath,
@@ -39,36 +34,36 @@ class PackageManager {
   }
 
   installComponent(component) {
-    let downloadUrl = component.content.package_info.download_url;
-    if(!downloadUrl) {
+    const downloadUrl = component.content.package_info.download_url;
+    if (!downloadUrl) {
       return;
     }
 
     console.log("Installing component", component.content.name, downloadUrl);
 
-    let callback = (installedComponent, error) => {
-      this.window.webContents.send("install-component-complete", {component: installedComponent, error: error});
-    }
+    const callback = (installedComponent, error) => {
+      this.window.webContents.send("install-component-complete", { component: installedComponent, error: error });
+    };
 
-    let paths = this.pathsForComponent(component);
+    const paths = this.pathsForComponent(component);
 
     fileUtils.downloadFile(downloadUrl, paths.downloadPath, (error) => {
-      if(!error) {
+      if (!error) {
         // Delete any existing content, especially in the case of performing an update
         fileUtils.deleteAppRelativeDirectory(paths.relativePath);
 
         // Extract contents
         this.unzipFile(paths.downloadPath, paths.absolutePath, (err) => {
-          if(!err) {
+          if (!err) {
             this.unnestPackageContents(paths.absolutePath, () => {
               // Find out main file
               fileUtils.readJSONFile(paths.absolutePath + "/package.json", (response, error) => {
                 var main;
-                if(response) {
-                  if(response.sn) { main = response["sn"]["main"]; }
-                  if(response.version) { component.content.package_info.version = response.version; }
+                if (response) {
+                  if (response.sn) { main = response["sn"]["main"]; }
+                  if (response.version) { component.content.package_info.version = response.version; }
                 }
-                if(!main) { main = "index.html"; }
+                if (!main) { main = "index.html"; }
 
                 component.content.local_url = "sn://" + paths.relativePath + "/" + main;
                 callback(component);
@@ -80,12 +75,12 @@ class PackageManager {
           } else {
             // Unzip error
             console.log("Unzip error for", component.content.name);
-            callback(component, {tag: "error-unzipping"})
+            callback(component, { tag: "error-unzipping" })
           }
         });
       } else {
         // Download error
-        callback(component, {tag: "error-downloading"})
+        callback(component, { tag: "error-downloading" })
       }
     });
   }
@@ -96,16 +91,16 @@ class PackageManager {
    */
   updateMappingFile(componentId, componentPath) {
     fileUtils.readJSONFile(MappingFileLocation, (response, error) => {
-      if(!response) response = {};
+      if (!response) response = {};
 
       var obj = response[componentId] || {};
       obj["location"] = componentPath;
       response[componentId] = obj;
 
       fs.writeFile(MappingFileLocation, JSON.stringify(response, null, 2), 'utf8', (err) => {
-        if(err) console.log("Mapping file save error:", err);
+        if (err) console.log("Mapping file save error:", err);
       });
-    })
+    });
   }
 
   syncComponents(components) {
@@ -114,48 +109,52 @@ class PackageManager {
 
     console.log(`Syncing components: ${components.length}`);
 
-    for(let component of components) {
-      if(component.deleted) {
+    for (const component of components) {
+      if (component.deleted) {
         // Uninstall
         this.uninstallComponent(component);
         continue;
       }
 
-      if(!component.content.package_info) {
+      if (!component.content.package_info) {
         console.log("Package info is null, continuing");
         continue;
       }
 
-      let paths = this.pathsForComponent(component);
+      const paths = this.pathsForComponent(component);
       fs.stat(paths.absolutePath, (err, stats) => {
         var doesntExist = err && err.code === 'ENOENT';
-        if(doesntExist || !component.content.local_url) {
+        if (doesntExist || !component.content.local_url) {
           // Doesn't exist, install it
           this.installComponent(component);
-        } else if(!component.content.autoupdateDisabled) {
+        } else if (!component.content.autoupdateDisabled) {
           // Check for updates
           this.checkForUpdate(component);
         } else {
           // Already exists or update update disabled
-          console.log("Not installing component", component.content.name,  "Already exists?", !doesntExist);
+          console.log("Not installing component", component.content.name, "Already exists?", !doesntExist);
         }
-      })
+      });
     }
   }
 
   async checkForUpdate(component) {
     var latestURL = component.content.package_info.latest_url;
-    if(!latestURL) {
+    if (!latestURL) {
       console.log("No latest url, skipping update", component.content.name);
       return;
     }
 
     request.get(latestURL, async (error, response, body) => {
-      if(response.statusCode == 200) {
-        var payload = JSON.parse(body);
-        let installedVersion = await this.getInstalledVersionForComponent(component);
-        console.log("Checking for update for:", component.content.name, "Latest Version:", payload.version, "Installed Version", installedVersion);
-        if(payload && payload.version && compareVersions(payload.version, installedVersion) == 1) {
+      if (!error && response.statusCode == 200) {
+        const payload = JSON.parse(body);
+        const installedVersion = await this.getInstalledVersionForComponent(component);
+        console.log("Checking for update for:", component.content.name,
+          "Latest Version:", payload.version, "Installed Version", installedVersion);
+        if (
+          payload && payload.version
+          && compareVersions(payload.version, installedVersion) === 1
+        ) {
           // Latest version is greater than installed version
           console.log("Downloading new version", payload.download_url);
           component.content.package_info.download_url = payload.download_url;
@@ -169,45 +168,41 @@ class PackageManager {
   async getInstalledVersionForComponent(component) {
     // We check package.json version rather than component.content.package_info.version
     // because we want device specific versions rather than a globally synced value
-    let paths = this.pathsForComponent(component);
-    let packagePath = path.join(paths.absolutePath, "package.json");
+    const paths = this.pathsForComponent(component);
+    const packagePath = path.join(paths.absolutePath, "package.json");
     return new Promise((resolve, reject) => {
-      fileUtils.readJSONFile(packagePath, (response, error)  => {
-        if(!response) {
+      fileUtils.readJSONFile(packagePath, (response, error) => {
+        if (!response) {
           resolve(null);
         } else {
           resolve(response['version']);
         }
-      })
-    })
+      });
+    });
   }
 
   uninstallComponent(component) {
     console.log("Uninstalling component", component.uuid);
     fileUtils.readJSONFile(MappingFileLocation, (response, error) => {
-      if(!response) {
+      if (!response) {
         // No mapping.json means nothing is installed
         return;
       }
 
       // Get installation location
-      var mapping = response[component.uuid];
-      if(!mapping || !mapping.location) {
+      const mapping = response[component.uuid];
+      if (!mapping || !mapping.location) {
         return;
       }
 
-      let location = mapping["location"];
-
+      const location = mapping["location"];
       fileUtils.deleteAppRelativeDirectory(location);
-
       delete response[component.uuid];
-
       fs.writeFile(MappingFileLocation, JSON.stringify(response, null, 2), 'utf8', (err) => {
-        if(err) console.log("Uninstall, mapping file save error:", err);
+        if (err) console.log("Uninstall, mapping file save error:", err);
       });
-    })
+    });
   }
-
 
   /*
     File/Network Operations
@@ -216,10 +211,10 @@ class PackageManager {
   unzipFile(filePath, dest, callback) {
     console.log("Unzipping file at", filePath, "to", dest);
     fs.readFile(filePath, 'utf8', function (err, data) {
-      if(err) {
-         console.log("Unzip File Error", err);
-         callback(err);
-         return;
+      if (err) {
+        console.log("Unzip File Error", err);
+        callback(err);
+        return;
       }
 
       var zip = new AdmZip(filePath);
@@ -238,15 +233,15 @@ class PackageManager {
   unnestPackageContents(directory, callback) {
     // console.log("unnestPackageContents", directory);
     fs.readdir(directory, (err, files) => {
-      if(err) {
+      if (err) {
         callback();
         return;
       }
 
-      if(files.length == 1) {
+      if (files.length === 1) {
         var file = files[0];
         var location = path.join(directory, file);
-        if(fs.statSync(location).isDirectory()) {
+        if (fs.statSync(location).isDirectory()) {
           // Unnest
           fileUtils.copyFolderRecursiveSync(location, directory, false);
           callback();
@@ -257,7 +252,4 @@ class PackageManager {
       callback();
     });
   }
-
 }
-
-export default new PackageManager();

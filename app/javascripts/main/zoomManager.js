@@ -1,29 +1,23 @@
-const store = require('./store')
+import { Store, StoreKeys } from './store';
 
-class ZoomManager {
-
-  setWindow(window) {
+export class ZoomManager {
+  constructor(window) {
     this.window = window;
     this.bind();
   }
 
   bind() {
-    // We can't rely on ready-to-show as it doesn't fire consistently
-    // See: https://github.com/electron/electron/issues/7779
     this.window.webContents.on('dom-ready', () => {
-      const zoomFactor = store.instance().get('zoomFactor');
+      const zoomFactor = Store.get(StoreKeys.ZoomFactor);
       if (zoomFactor) {
         this.window.webContents.setZoomFactor(zoomFactor);
       }
-    })
+    });
 
     this.window.on('close', () => {
-      // Persist the zoom level
       this.window.webContents.getZoomFactor((zoomFactor) => {
-        store.instance().set('zoomFactor', zoomFactor);
+        Store.set(StoreKeys.ZoomFactor, zoomFactor);
       });
-    })
+    });
   }
 }
-
-export default new ZoomManager();

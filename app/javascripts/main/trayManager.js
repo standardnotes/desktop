@@ -1,19 +1,18 @@
+import { Store, StoreKeys } from './store';
 const path = require('path');
-const {Tray, Menu, app} = require('electron');
-const Store = require('./store.js');
-
+const { Tray, Menu, app } = require('electron');
 const icon = path.join(__dirname, `../../icon/Icon-256x256.png`);
 
-class TrayManager {
-  setWindow(window) {
+export class TrayManager {
+  constructor(window) {
     this.window = window;
   }
 
-  shouldMinimizeToTray () {
-    return Store.instance().get("minimizeToTray");
+  shouldMinimizeToTray() {
+    return Store.get(StoreKeys.MinimizeToTray);
   }
 
-  createTrayIcon () {
+  createTrayIcon() {
     const tray = new Tray(icon);
 
     tray.toggleWindowVisibility = (show) => {
@@ -81,5 +80,3 @@ class TrayManager {
     });
   }
 }
-
-export default new TrayManager();

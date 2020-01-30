@@ -1,16 +1,13 @@
-var {ipcMain, remote, dialog, app} = require('electron');
+var { app } = require('electron');
 var fs = require('fs');
 var path = require('path');
-var http = require('http');
-var https = require('https');
 var request = require("request");
 var appPath = app.getPath('userData');
 
-class FileUtils {
-
+export class FileUtils {
   readJSONFile(path, callback) {
     fs.readFile(path, 'utf8', function (err, data) {
-      if(err) {
+      if (err) {
         console.error("Unable to read JSON file", path);
         callback(null, err);
         return;
@@ -62,19 +59,19 @@ class FileUtils {
 
     request(url)
       .on('error', function (err) {
-        console.log('File download error', url,  err);
+        console.log('File download error', url, err);
         callback && callback()
         callback = null;
       })
-      .on('response', function(response) {
-        if(response.statusCode !== 200) {
+      .on('response', function (response) {
+        if (response.statusCode !== 200) {
           console.log("File download not 200", url);
           callback && callback(response);
           callback = null;
         }
       })
       .pipe(fs.createWriteStream(filePath))
-      .on('close', function() {
+      .on('close', function () {
         console.log('File download success', url);
         callback && callback(null)
         callback = null;
@@ -85,8 +82,8 @@ class FileUtils {
     var targetFile = target;
 
     //if target is a directory a new file with the same name will be created
-    if(fs.existsSync(target)) {
-      if(fs.lstatSync(target).isDirectory()) {
+    if (fs.existsSync(target)) {
+      if (fs.lstatSync(target).isDirectory()) {
         targetFile = path.join(target, path.basename(source));
       }
     }
@@ -100,7 +97,7 @@ class FileUtils {
 
     // Check if folder needs to be created or integrated
     var targetFolder = addBase ? path.join(target, path.basename(source)) : target;
-    if(!fs.existsSync(targetFolder)) {
+    if (!fs.existsSync(targetFolder)) {
       fs.mkdirSync(targetFolder);
     }
 
@@ -109,7 +106,7 @@ class FileUtils {
       files = fs.readdirSync(source);
       files.forEach((file) => {
         var curSource = path.join(source, file);
-        if(fs.lstatSync(curSource).isDirectory()) {
+        if (fs.lstatSync(curSource).isDirectory()) {
           this.copyFolderRecursiveSync(curSource, targetFolder, true);
         } else {
           this.copyFileSync(curSource, targetFolder);
@@ -117,7 +114,4 @@ class FileUtils {
       });
     }
   }
-
 }
-
-export default new FileUtils();

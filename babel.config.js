@@ -15,7 +15,8 @@ module.exports = function (api) {
       "generators": false,
       "async": false
     }],
-    "@babel/plugin-transform-async-to-generator"
+    "@babel/plugin-transform-async-to-generator",
+    "@babel/plugin-proposal-class-properties"
   ];
 
   const ignore = [
