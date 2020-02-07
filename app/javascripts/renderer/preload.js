@@ -60,7 +60,7 @@ function loadTransmitter() {
 		spellcheck: spellcheck,
     extServerHost: Store.get(StoreKeys.ExtServerHost),
 		rendererPath: rendererPath,
-		isMacOS: process.platform === "darwin",
+		isMacOS: process.platform === 'darwin',
 		appVersion: remote.app.getVersion(),
 		useSystemMenuBar: Store.get(StoreKeys.UseSystemMenuBar),
 

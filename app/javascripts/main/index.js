@@ -4,6 +4,6 @@ export { FileUtils } from './fileUtils';
 export { MenuManager } from './menuManager';
 export { PackageManager } from './packageManager';
 export { SearchManager } from './searchManager';
-export { TrayManager } from './TrayManager';
+export { TrayManager } from './trayManager';
 export { UpdateManager } from './updateManager';
 export { ZoomManager } from './zoomManager';

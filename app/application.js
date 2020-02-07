@@ -188,7 +188,7 @@ export class DesktopApplication {
       defaultHeight: WINDOW_DEFAULT_HEIGHT
     });
     const iconLocation = path.join(__dirname, '/icon/Icon-512x512.png');
-    const useSystemMenuBar = Store.get(StoreKeys.useSystemMenuBar);
+    const useSystemMenuBar = Store.get(StoreKeys.UseSystemMenuBar);
     const titleBarStyle = (this.isMac || useSystemMenuBar)
       ? 'hiddenInset'
       : null;

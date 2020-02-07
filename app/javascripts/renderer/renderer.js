@@ -23,11 +23,11 @@ Promise.all([
   bridge = receiver.items[0];
   desktopManager = angular.element(document).injector().get('desktopManager');
 
-  registerIpcMessageListener();
-  configureDesktopManager();
-  configureWindow();
-  configureSpellcheck();
-  loadZipLibrary();
+  await registerIpcMessageListener();
+  await configureDesktopManager();
+  await configureWindow();
+  await configureSpellcheck();
+  await loadZipLibrary();
 });
 
 async function configureWindow() {
@@ -65,7 +65,6 @@ async function configureWindow() {
   document.getElementById("close-btn").addEventListener("click", (e) => {
     bridge.closeWindow();
   });
-
 
   // For Mac inset window
   const sheet = window.document.styleSheets[0];
@@ -162,7 +161,7 @@ async function registerIpcMessageListener() {
   });
 }
 
-function loadZipLibrary() {
+async function loadZipLibrary() {
   // load zip library (for exporting items as zip)
   var scriptTag = document.createElement('script');
   scriptTag.src = "./vendor/zip/zip.js";

@@ -20,8 +20,8 @@ export class Store {
       this.instance = new Store({
         configName: 'user-preferences',
         defaults: {
-          useSystemMenuBar: false,
-          isMenuBarVisible: true
+          [StoreKeys.UseSystemMenuBar]: false,
+          [StoreKeys.MenuBarVisible]: true
         }
       });
     }
