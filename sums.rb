@@ -1,19 +1,21 @@
+#!/usr/bin/env ruby
+
 require 'json'
 
 package = JSON.parse(File.read("package.json"))
 version = package["version"]
 
 files = [
-  "Standard Notes-#{version}-mac.zip",
+  "Standard-Notes-#{version}-mac.zip",
 
-  "Standard Notes-#{version}.dmg",
-  "Standard Notes-#{version}.dmg.blockmap",
+  "Standard-Notes-#{version}.dmg",
+  "Standard-Notes-#{version}.dmg.blockmap",
 
-  "Standard Notes-#{version}-i386.AppImage",
-  "Standard Notes-#{version}.AppImage",
+  "Standard-Notes-#{version}-i386.AppImage",
+  "Standard-Notes-#{version}.AppImage",
 
-  "Standard Notes Setup #{version}.exe",
-  "Standard Notes Setup #{version}.exe.blockmap",
+  "Standard-Notes-Setup-#{version}.exe",
+  "Standard-Notes-Setup-#{version}.exe.blockmap",
 
   "standard-notes_#{version}_amd64.snap",
 
