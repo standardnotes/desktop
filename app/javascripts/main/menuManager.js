@@ -127,6 +127,8 @@ export class MenuManager {
               this.reload();
               if (this.trayManager.shouldMinimizeToTray()) {
                 this.trayManager.createTrayIcon();
+              } else {
+                this.trayManager.removeTrayIcon();
               }
             }
           }

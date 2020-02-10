@@ -23,7 +23,7 @@ const WINDOW_DEFAULT_HEIGHT = 800;
 const WINDOW_MIN_WIDTH = 300;
 const WINDOW_MIN_HEIGHT = 400;
 
-const Platforms = {
+export const Platforms = {
   Mac: 1,
   Windows: 2,
   Linux: 3,
@@ -84,7 +84,7 @@ export class DesktopApplication {
     this.archiveManager = new ArchiveManager(this.window);
     this.packageManager = new PackageManager(this.window);
     this.searchManager = new SearchManager(this.window);
-    this.trayManager = new TrayManager(this.window);
+    this.trayManager = new TrayManager(this.window, this.platform);
     this.updateManager = new UpdateManager(this.window);
     this.zoomManager = new ZoomManager(this.window);
     this.menuManager = new MenuManager(
