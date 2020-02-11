@@ -1,8 +1,8 @@
-import { 
-  Transmitter, 
-  FrameMessageBus, 
-  Validation 
-} from 'sn-electron-valence/Transmitter';
+const {
+  Transmitter,
+  FrameMessageBus,
+  Validation
+} = require('sn-electron-valence/Transmitter');
 import {
   Store,
   StoreKeys

@@ -9,6 +9,8 @@
     "@babel/plugin-proposal-class-properties": "^7.8.3",
     "@babel/preset-env": "^7.7.7",
     "babel-eslint": "^10.0.3",
+    "babel-loader": "^8.0.6",
+    "copy-webpack-plugin": "^5.1.1",
     "electron": "^5.0.11",
     "electron-builder": "21.2.0",
     "electron-notarize": "^0.2.1",
@@ -20,8 +22,11 @@
     "eslint-plugin-node": "^10.0.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
+    "file-loader": "^5.0.2",
     "mime-types": "^2.1.26",
-    "rimraf": "^3.0.0"
+    "rimraf": "^3.0.0",
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10"
   },
   "build": {
     "appId": "org.standardnotes.standardnotes",
@@ -77,8 +82,10 @@
     "dist-mac": "npm run build && electron-builder -m",
     "dist-linux": "npm run build && electron-builder -l --x64 --ia32",
     "postinstall": "electron-builder install-app-deps",
-    "build": "rimraf app/dist/ && babel ./app --out-dir app/dist/ --copy-files && cp -a ./app/extensions ./app/dist/ && cp -a ./app/vendor/ ./app/dist/vendor && cp -a ./app/node_modules/standard-notes-web/dist/ ./app/dist/standard-notes-web/ && cp -a ./app/node_modules/sn-electron-valence/ ./app/dist/sn-electron-valence/",
-    "start": "npm run build && electron . --enable-logging --icon _icon/icon.png",
+    "dev": "webpack --mode=development --watch",
+    "build": "rimraf app/dist/ && webpack --mode=production",
+    "start": "electron . --enable-logging --icon _icon/icon.png",
+    "clean": "rimraf app/dist/",
     "setup": "npm install && npm --prefix ./app install ./app && git submodule update --init --force --remote"
   }
 }

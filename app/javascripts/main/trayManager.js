@@ -8,7 +8,7 @@ import {
 } from "./strings";
 const path = require("path");
 const { Tray, Menu, app } = require("electron");
-const icon = path.join(__dirname, `../../icon/Icon-256x256.png`);
+const icon = path.join(__dirname, `/icon/Icon-256x256.png`);
 
 const WindowEvents = {
   Hide: "hide",

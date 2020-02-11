@@ -13,6 +13,7 @@ import {
   StoreKeys
 } from './javascripts/main/store';
 import { AppName } from './javascripts/main/strings';
+import index from './index.html';
 
 const { app, BrowserWindow, shell, ipcMain } = require('electron');
 const path = require('path');
@@ -245,9 +246,11 @@ export class DesktopApplication {
       }
     });
 
-    let windowUrl = path.join('file://', __dirname, '/index.html');
+    let windowUrl;
     if ('APP_RELATIVE_PATH' in process.env) {
-      windowUrl = path.join('file://', __dirname, process.env.APP_RELATIVE_PATH);
+      windowUrl = path.join('file://', __dirname, process.env.APP_RELATIVE_PATH, index);
+    } else {
+      windowUrl = path.join('file://', __dirname, index);
     }
     this.window.loadURL(windowUrl);
 
