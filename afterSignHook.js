@@ -43,6 +43,7 @@ module.exports = async function (params) {
         });
     } catch (error) {
         console.error(error);
+        throw error;
     }
 
     console.log(`Done notarizing ${appId}`);
