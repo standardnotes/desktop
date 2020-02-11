@@ -125,7 +125,7 @@ export class MenuManager {
             click: () => {
               Store.set(StoreKeys.MinimizeToTray, !minimizeToTray);
               this.reload();
-              if (minimizeToTray) {
+              if (this.trayManager.shouldMinimizeToTray()) {
                 this.trayManager.createTrayIcon();
               } else {
                 this.trayManager.destroyTrayIcon();
