@@ -32,7 +32,8 @@ export function createTrayManager(window, store, platform) {
         window.show();
 
         if (platform === Platforms.Linux) {
-          // On some versions of GNOME the window may not be on top when restored.
+          /* On some versions of GNOME the window may not be on top when
+          restored. */
           window.setAlwaysOnTop(true);
           window.focus();
           window.setAlwaysOnTop(false);
@@ -40,9 +41,9 @@ export function createTrayManager(window, store, platform) {
       };
 
       if (platform === Platforms.Windows) {
-        // On Windows, right-clicking invokes the menu, as opposed to
-        // left-clicking for the other platforms. So we map left-clicking
-        // to the conventional action of showing the app
+        /* On Windows, right-clicking invokes the menu, as opposed to
+        left-clicking for the other platforms. So we map left-clicking
+        to the conventional action of showing the app. */
         tray.on("click", showWindow);
       }
 
