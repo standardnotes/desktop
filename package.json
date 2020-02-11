@@ -26,7 +26,8 @@
     "mime-types": "^2.1.26",
     "rimraf": "^3.0.0",
     "webpack": "^4.41.5",
-    "webpack-cli": "^3.3.10"
+    "webpack-cli": "^3.3.10",
+    "webpack-merge": "^4.2.2"
   },
   "build": {
     "appId": "org.standardnotes.standardnotes",
@@ -82,8 +83,8 @@
     "dist-mac": "npm run build && electron-builder -m",
     "dist-linux": "npm run build && electron-builder -l --x64 --ia32",
     "postinstall": "electron-builder install-app-deps",
-    "dev": "webpack --mode=development --watch",
-    "build": "rimraf app/dist/ && webpack --mode=production",
+    "build": "rimraf app/dist/ && webpack --config webpack.prod.js",
+    "dev": "webpack --config webpack.dev.js --watch",
     "start": "electron . --enable-logging --icon _icon/icon.png",
     "clean": "rimraf app/dist/",
     "setup": "npm install && npm --prefix ./app install ./app && git submodule update --init --force --remote"
