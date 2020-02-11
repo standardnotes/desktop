@@ -1,6 +1,6 @@
 import {
   ArchiveManager,
-  ExtensionsServer,
+  createExtensionsServer,
   MenuManager,
   PackageManager,
   SearchManager,
@@ -73,8 +73,8 @@ export class DesktopApplication {
   }
 
   createExtensionsServer() {
-    this.extensionsServer = new ExtensionsServer();
-    Store.set(StoreKeys.ExtServerHost, this.extensionsServer.getHost());
+    const host = createExtensionsServer();
+    Store.set(StoreKeys.ExtServerHost, host);
   }
 
   onWindowCreate() {
@@ -97,6 +97,7 @@ export class DesktopApplication {
   }
 
   registerSingleInstanceHandler() {
+    // eslint-disable-next-line no-unneeded-ternary
     const hasRequestSingleInstanceLock = app.requestSingleInstanceLock ? true : false;
     /* Someone tried to run a second instance, we should focus our window. */
     const handleSecondInstance = (argv, cwd) => {

@@ -1,4 +1,4 @@
-import { Store, StoreKeys } from "./store";
+import { StoreKeys } from "./store";
 import { Platforms } from "../../application";
 import {
   AppName,

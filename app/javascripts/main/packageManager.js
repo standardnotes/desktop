@@ -30,7 +30,7 @@ export class PackageManager {
       downloadPath: appPath + `/${ExtensionsFolderName}/downloads/` + component.content.name + ".zip",
       relativePath: relativePath,
       absolutePath: appPath + "/" + relativePath
-    }
+    };
   }
 
   installComponent(component) {
@@ -60,7 +60,7 @@ export class PackageManager {
               fileUtils.readJSONFile(paths.absolutePath + "/package.json", (response, error) => {
                 var main;
                 if (response) {
-                  if (response.sn) { main = response["sn"]["main"]; }
+                  if (response.sn) { main = response.sn.main; }
                   if (response.version) { component.content.package_info.version = response.version; }
                 }
                 if (!main) { main = "index.html"; }
@@ -70,17 +70,17 @@ export class PackageManager {
 
                 // Update mapping file
                 this.updateMappingFile(component.uuid, paths.relativePath);
-              })
-            })
+              });
+            });
           } else {
             // Unzip error
             console.log("Unzip error for", component.content.name);
-            callback(component, { tag: "error-unzipping" })
+            callback(component, { tag: "error-unzipping" });
           }
         });
       } else {
         // Download error
-        callback(component, { tag: "error-downloading" })
+        callback(component, { tag: "error-downloading" });
       }
     });
   }
@@ -94,7 +94,7 @@ export class PackageManager {
       if (!response) response = {};
 
       var obj = response[componentId] || {};
-      obj["location"] = componentPath;
+      obj.location = componentPath;
       response[componentId] = obj;
 
       fs.writeFile(MappingFileLocation, JSON.stringify(response, null, 2), 'utf8', (err) => {
@@ -146,7 +146,7 @@ export class PackageManager {
     }
 
     request.get(latestURL, async (error, response, body) => {
-      if (!error && response.statusCode == 200) {
+      if (!error && response.statusCode === 200) {
         const payload = JSON.parse(body);
         const installedVersion = await this.getInstalledVersionForComponent(component);
         console.log("Checking for update for:", component.content.name,
@@ -162,7 +162,7 @@ export class PackageManager {
           this.installComponent(component);
         }
       }
-    })
+    });
   }
 
   async getInstalledVersionForComponent(component) {
@@ -175,7 +175,7 @@ export class PackageManager {
         if (!response) {
           resolve(null);
         } else {
-          resolve(response['version']);
+          resolve(response.version);
         }
       });
     });
@@ -195,7 +195,7 @@ export class PackageManager {
         return;
       }
 
-      const location = mapping["location"];
+      const location = mapping.location;
       fileUtils.deleteAppRelativeDirectory(location);
       delete response[component.uuid];
       fs.writeFile(MappingFileLocation, JSON.stringify(response, null, 2), 'utf8', (err) => {

@@ -45,7 +45,7 @@ async function configureWindow() {
   */
   document.getElementById("menu-btn").addEventListener("click", (e) => {
     bridge.sendIpcMessage(
-      "display-app-menu", 
+      "display-app-menu",
       { x: e.x, y: e.y }
     );
   });
@@ -70,7 +70,7 @@ async function configureWindow() {
   const sheet = window.document.styleSheets[0];
   if(isMacOS) {
     sheet.insertRule(
-      '#tags-column { padding-top: 25px !important; }', 
+      '#tags-column { padding-top: 25px !important; }',
       sheet.cssRules.length
     );
   }
@@ -78,15 +78,15 @@ async function configureWindow() {
   if(isMacOS || useSystemMenuBar) {
     // !important is important here because #desktop-title-bar has display: flex.
     sheet.insertRule(
-      '#desktop-title-bar { display: none !important; }', 
+      '#desktop-title-bar { display: none !important; }',
       sheet.cssRules.length
     );
   } else {
-    /* Use custom title bar. Take the sn-titlebar-height off of 
+    /* Use custom title bar. Take the sn-titlebar-height off of
     the app content height so its not overflowing */
     sheet.insertRule(
-      `.main-ui-view { height: calc(100vh - var(--sn-desktop-titlebar-height)) !important; 
-        min-height: calc(100vh - var(--sn-desktop-titlebar-height)) !important; }`, 
+      `.main-ui-view { height: calc(100vh - var(--sn-desktop-titlebar-height)) !important;
+        min-height: calc(100vh - var(--sn-desktop-titlebar-height)) !important; }`,
       sheet.cssRules.length
     );
   }

@@ -6,8 +6,10 @@ export class ArchiveManager {
   constructor(window) {
     this.window = window;
     ipcMain.on('data-archive', (event, data) => {
-      this.writeDataToFile(data, (success) => {
-        this.window.webContents.send("finished-saving-backup", {success: success});
+      this.writeDataToFile(data, error => {
+        this.window.webContents.send("finished-saving-backup", {
+          success: error === null
+        });
       });
     });
 
@@ -65,9 +67,9 @@ export class ArchiveManager {
 
     var find = ':';
     var re = new RegExp(find, 'g');
-    let name = (new Date()).toISOString().replace(re, "-") + ".txt";
+    const name = (new Date()).toISOString().replace(re, "-") + ".txt";
 
-    let filePath = path.join(dir, name);
+    const filePath = path.join(dir, name);
 
     fs.writeFile(filePath, data, (err) => {
       if(err){
@@ -75,7 +77,7 @@ export class ArchiveManager {
       } else {
         console.log("Data backup succesfully saved: ", name);
       }
-      callback(err == null);
+      callback(err);
     });
   }
 

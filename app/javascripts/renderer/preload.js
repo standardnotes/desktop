@@ -1,12 +1,12 @@
+import {
+  Store,
+  StoreKeys
+} from '../main/store';
 const {
   Transmitter,
   FrameMessageBus,
   Validation
 } = require('sn-electron-valence/Transmitter');
-import {
-  Store,
-  StoreKeys
-} from '../main/store';
 const { webFrame, ipcRenderer, remote } = require('electron');
 const osLocale = require('os-locale');
 const path = require('path');
@@ -162,7 +162,7 @@ function loadSpellcheck() {
 
   const simpleChecker = window.spellChecker = {
     spellCheck: debounce(function(words, callback) {
-      const misspelled = words.filter(w => this.isMisspelled(w))
+      const misspelled = words.filter(w => this.isMisspelled(w));
       callback(misspelled);
     }, 500),
     isMisspelled: function(text) {
@@ -202,5 +202,5 @@ function loadSpellcheck() {
     reload: async () => {
       webFrame.setSpellCheckProvider('en-US', simpleChecker);
     }
-  }
+  };
 }

@@ -169,23 +169,23 @@ export class MenuManager {
         submenu: [
           {
             label: 'Email Support',
-            click: () => { shell.openExternal('mailto:help@standardnotes.org') }
+            click: () => { shell.openExternal('mailto:help@standardnotes.org'); }
           },
           {
             label: 'Website',
-            click: () => { shell.openExternal('https://standardnotes.org') }
+            click: () => { shell.openExternal('https://standardnotes.org'); }
           },
           {
             label: 'GitHub',
-            click: () => { shell.openExternal('https://github.com/standardnotes') }
+            click: () => { shell.openExternal('https://github.com/standardnotes'); }
           },
           {
             label: 'Slack',
-            click: () => { shell.openExternal('https://standardnotes.org/slack') }
+            click: () => { shell.openExternal('https://standardnotes.org/slack'); }
           },
           {
             label: 'Twitter',
-            click: () => { shell.openExternal('https://twitter.com/StandardNotes') }
+            click: () => { shell.openExternal('https://twitter.com/StandardNotes'); }
           },
           {
             type: 'separator'
