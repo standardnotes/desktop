@@ -28,10 +28,16 @@ const electronMainConfig = {
     new CopyPlugin([
       { from: "app/extensions", to: "extensions" },
       { from: "app/vendor", to: "vendor" },
-      { from: "app/node_modules/standard-notes-web/dist", to: "standard-notes-web" },
-      { from: "app/node_modules/sn-electron-valence", to: "sn-electron-valence" },
+      {
+        from: "app/node_modules/standard-notes-web/dist",
+        to: "standard-notes-web"
+      },
+      {
+        from: "app/node_modules/sn-electron-valence",
+        to: "sn-electron-valence"
+      },
       { from: "app/stylesheets/renderer.css", to: "stylesheets/renderer.css" },
-      { from: "app/icon", to: "icon" },
+      { from: "app/icon", to: "icon" }
     ])
   ]
 };
@@ -53,11 +59,12 @@ const electronRendererConfig = {
     rules: [{ test: /\.js$/, exclude: /node_modules/, loader: "babel-loader" }]
   },
   externals: {
-    "spellchecker": "commonjs spellchecker",
-    "electron": "commonjs electron",
+    spellchecker: "commonjs spellchecker",
+    electron: "commonjs electron",
     "os-locale": "commonjs os-locale",
-    "path": "commonjs path",
-    "sn-electron-valence/Transmitter": "commonjs sn-electron-valence/Transmitter",
+    path: "commonjs path",
+    "sn-electron-valence/Transmitter":
+      "commonjs sn-electron-valence/Transmitter"
   }
 };
 
