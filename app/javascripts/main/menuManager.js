@@ -125,10 +125,10 @@ export class MenuManager {
             click: () => {
               Store.set(StoreKeys.MinimizeToTray, !minimizeToTray);
               this.reload();
-              if (this.trayManager.shouldMinimizeToTray()) {
+              if (minimizeToTray) {
                 this.trayManager.createTrayIcon();
               } else {
-                this.trayManager.removeTrayIcon();
+                this.trayManager.destroyTrayIcon();
               }
             }
           }

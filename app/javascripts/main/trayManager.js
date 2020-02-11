@@ -1,95 +1,101 @@
 import { Store, StoreKeys } from "./store";
 import { Platforms } from "../../application";
+import {
+  AppName,
+  TrayLabelShow,
+  TrayLabelHide,
+  TrayLabelQuit
+} from "./strings";
 const path = require("path");
 const { Tray, Menu, app } = require("electron");
 const icon = path.join(__dirname, `../../icon/Icon-256x256.png`);
 
-export class TrayManager {
-  constructor(window, platform) {
-    this.window = window;
-    this.platform = platform;
-    this.tray = null;
-  }
+const WindowEvents = {
+  Hide: "hide",
+  Focus: "focus",
+  Blur: "blur"
+};
 
-  shouldMinimizeToTray() {
-    return Store.get(StoreKeys.MinimizeToTray);
-  }
+export function createTrayManager(window, store, platform) {
+  let tray = null;
 
-  createTrayIcon() {
-    const tray = new Tray(icon);
-    this.tray = tray;
+  return {
+    shouldMinimizeToTray() {
+      return store.get(StoreKeys.MinimizeToTray);
+    }
 
-    tray.toggleWindowVisibility = show => {
-      if (this.window) {
-        if (show) {
-          this.window.show();
+    createTrayIcon() {
+      tray = new Tray(icon);
+      tray.setToolTip(AppName);
 
+      const showWindow = () => {
+        window.show();
+
+        if (platform === Platforms.Linux) {
           // On some versions of GNOME the window may not be on top when restored.
-          this.window.setAlwaysOnTop(true);
-          this.window.focus();
-          this.window.setAlwaysOnTop(false);
+          window.setAlwaysOnTop(true);
+          window.focus();
+          window.setAlwaysOnTop(false);
+        }
+      };
+
+      if (platform === Platforms.Windows) {
+        // On Windows, right-clicking invokes the menu, as opposed to
+        // left-clicking for the other platforms. So we map left-clicking
+        // to the conventional action of showing the app
+        tray.on("click", showWindow);
+      }
+
+      const SHOW_WINDOW_ID = "SHOW_WINDOW";
+      const HIDE_WINDOW_ID = "HIDE_WINDOW";
+      const trayContextMenu = Menu.buildFromTemplate([
+        {
+          id: SHOW_WINDOW_ID,
+          label: TrayLabelShow,
+          click: showWindow
+        },
+        {
+          id: HIDE_WINDOW_ID,
+          label: TrayLabelHide,
+          click() {
+            window.hide();
+          }
+        },
+        {
+          type: "separator"
+        },
+        {
+          label: TrayLabelQuit,
+          click() {
+            app.quit();
+          }
+        }
+      ]);
+
+      tray.updateContextMenu = () => {
+        if (window.isVisible()) {
+          trayContextMenu.getMenuItemById(SHOW_WINDOW_ID).visible = false;
+          trayContextMenu.getMenuItemById(HIDE_WINDOW_ID).visible = true;
         } else {
-          this.window.hide();
+          trayContextMenu.getMenuItemById(SHOW_WINDOW_ID).visible = true;
+          trayContextMenu.getMenuItemById(HIDE_WINDOW_ID).visible = false;
         }
-      }
-    };
 
-    const trayContextMenu = Menu.buildFromTemplate([
-      {
-        id: "ShowWindow",
-        label: "Show",
-        click() {
-          tray.toggleWindowVisibility(true);
-        }
-      },
-      {
-        id: "HideWindow",
-        label: "Hide",
-        click() {
-          tray.toggleWindowVisibility(false);
-        }
-      },
-      {
-        type: "separator"
-      },
-      {
-        id: "quit",
-        label: "Quit",
-        click() {
-          app.quit();
-        }
-      }
-    ]);
+        tray.setContextMenu(trayContextMenu);
+      };
+      tray.updateContextMenu(); // initialization
 
-    tray.updateContextMenu = () => {
-      if (this.window.isVisible()) {
-        trayContextMenu.items[0].visible = false;
-        trayContextMenu.items[1].visible = true;
-      } else {
-        trayContextMenu.items[0].visible = true;
-        trayContextMenu.items[1].visible = false;
-      }
+      window.on(WindowEvents.Hide, tray.updateContextMenu);
+      window.on(WindowEvents.Focus, tray.updateContextMenu);
+      window.on(WindowEvents.Blur, tray.updateContextMenu);
+    },
 
-      tray.setContextMenu(trayContextMenu);
-    };
-
-    tray.updateContextMenu();
-    tray.setToolTip("Standard Notes");
-    tray.setContextMenu(trayContextMenu);
-
-    if (this.platform === Platforms.Windows) {
-      tray.on("click", () => tray.toggleWindowVisibility(true));
+    destroyTrayIcon() {
+      window.off(WindowEvents.Hide, tray.updateContextMenu);
+      window.off(WindowEvents.Focus, tray.updateContextMenu);
+      window.off(WindowEvents.Blur, tray.updateContextMenu);
+      tray.destroy();
+      tray = null;
     }
-
-    this.window.on("hide", tray.updateContextMenu);
-    this.window.on("focus", tray.updateContextMenu);
-    this.window.on("blur", tray.updateContextMenu);
-  }
-
-  removeTrayIcon() {
-    if (this.tray) {
-      this.tray.destroy();
-      this.tray = null;
-    }
-  }
+  };
 }

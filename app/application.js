@@ -4,7 +4,7 @@ import {
   MenuManager,
   PackageManager,
   SearchManager,
-  TrayManager,
+  createTrayManager,
   UpdateManager,
   ZoomManager
 } from './javascripts/main';
@@ -12,12 +12,12 @@ import {
   Store,
   StoreKeys
 } from './javascripts/main/store';
+import { AppName } from './javascripts/main/strings';
 
 const { app, BrowserWindow, shell, ipcMain } = require('electron');
 const path = require('path');
 const windowStateKeeper = require('electron-window-state');
 
-const APPLICATION_NAME = 'Standard Notes';
 const WINDOW_DEFAULT_WIDTH = 1100;
 const WINDOW_DEFAULT_HEIGHT = 800;
 const WINDOW_MIN_WIDTH = 300;
@@ -64,7 +64,7 @@ export class DesktopApplication {
   }) {
     this.platform = platform;
     this.isMac = Platforms.isMac(this.platform);
-    app.setName(APPLICATION_NAME);
+    app.setName(AppName);
     this.createExtensionsServer();
     this.registerAppEventListeners();
     this.registerSingleInstanceHandler();
@@ -84,7 +84,7 @@ export class DesktopApplication {
     this.archiveManager = new ArchiveManager(this.window);
     this.packageManager = new PackageManager(this.window);
     this.searchManager = new SearchManager(this.window);
-    this.trayManager = new TrayManager(this.window, this.platform);
+    this.trayManager = createTrayManager(this.window, Store, this.platform);
     this.updateManager = new UpdateManager(this.window);
     this.zoomManager = new ZoomManager(this.window);
     this.menuManager = new MenuManager(
