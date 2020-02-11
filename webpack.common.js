@@ -14,7 +14,19 @@ const electronMainConfig = {
   },
   module: {
     rules: [
-      { test: /\.js$/, exclude: /node_modules/, loader: "babel-loader" },
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        loader: [
+          "babel-loader",
+          {
+            loader: "eslint-loader",
+            options: {
+              fix: true
+            }
+          }
+        ]
+      },
       {
         test: /\.(png|html)$/i,
         loader: "file-loader",

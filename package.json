@@ -17,6 +17,7 @@
     "eslint-config-prettier": "^6.7.0",
     "eslint-config-semistandard": "^15.0.0",
     "eslint-config-standard": "^14.1.0",
+    "eslint-loader": "^3.0.3",
     "eslint-plugin-import": "^2.19.1",
     "eslint-plugin-node": "^10.0.0",
     "eslint-plugin-promise": "^4.2.1",
@@ -86,6 +87,7 @@
     "dev": "webpack --config webpack.dev.js --watch",
     "start": "electron . --enable-logging --icon _icon/icon.png",
     "clean": "rimraf app/dist/",
-    "setup": "npm install && npm --prefix ./app install ./app && git submodule update --init --force --remote"
+    "setup": "npm install && npm --prefix ./app install ./app && git submodule update --init --force --remote",
+    "lint": "eslint --fix app/index.js app/application.js app/javascripts/**/*.js"
   }
 }
