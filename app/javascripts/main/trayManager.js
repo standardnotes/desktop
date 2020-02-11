@@ -22,7 +22,7 @@ export function createTrayManager(window, store, platform) {
   return {
     shouldMinimizeToTray() {
       return store.get(StoreKeys.MinimizeToTray);
-    }
+    },
 
     createTrayIcon() {
       tray = new Tray(icon);
