@@ -2,15 +2,18 @@ This application makes use of the core JS/CSS/HTML code found in the [web repo](
 
 ## Running Locally
 
-```
+```bash
 npm run setup
+npm run dev
+
+# In another terminal
 npm run start
 ```
 
 ## Building
 
 Build for all platforms:
-```
+```bash
 electron-packager . "Standard Notes" \
   --platform=all \
   --icon=icon/icon \

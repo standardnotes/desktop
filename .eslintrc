@@ -6,7 +6,9 @@
     "no-console": "off",
     "semi": 1
   },
-  "env": {
-    "browser": true
+  "globals": {
+    "angular": true,
+    "ElectronValence": true,
+    "zip": true
   }
 }

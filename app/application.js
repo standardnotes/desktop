@@ -1,10 +1,10 @@
 import {
   ArchiveManager,
-  ExtensionsServer,
+  createExtensionsServer,
   MenuManager,
   PackageManager,
   SearchManager,
-  TrayManager,
+  createTrayManager,
   UpdateManager,
   ZoomManager
 } from './javascripts/main';
@@ -12,18 +12,19 @@ import {
   Store,
   StoreKeys
 } from './javascripts/main/store';
+import { AppName } from './javascripts/main/strings';
+import index from './index.html';
 
 const { app, BrowserWindow, shell, ipcMain } = require('electron');
 const path = require('path');
 const windowStateKeeper = require('electron-window-state');
 
-const APPLICATION_NAME = 'Standard Notes';
 const WINDOW_DEFAULT_WIDTH = 1100;
 const WINDOW_DEFAULT_HEIGHT = 800;
 const WINDOW_MIN_WIDTH = 300;
 const WINDOW_MIN_HEIGHT = 400;
 
-const Platforms = {
+export const Platforms = {
   Mac: 1,
   Windows: 2,
   Linux: 3,
@@ -64,7 +65,7 @@ export class DesktopApplication {
   }) {
     this.platform = platform;
     this.isMac = Platforms.isMac(this.platform);
-    app.setName(APPLICATION_NAME);
+    app.setName(AppName);
     this.createExtensionsServer();
     this.registerAppEventListeners();
     this.registerSingleInstanceHandler();
@@ -72,8 +73,8 @@ export class DesktopApplication {
   }
 
   createExtensionsServer() {
-    this.extensionsServer = new ExtensionsServer();
-    Store.set(StoreKeys.ExtServerHost, this.extensionsServer.getHost());
+    const host = createExtensionsServer();
+    Store.set(StoreKeys.ExtServerHost, host);
   }
 
   onWindowCreate() {
@@ -84,7 +85,7 @@ export class DesktopApplication {
     this.archiveManager = new ArchiveManager(this.window);
     this.packageManager = new PackageManager(this.window);
     this.searchManager = new SearchManager(this.window);
-    this.trayManager = new TrayManager(this.window);
+    this.trayManager = createTrayManager(this.window, Store, this.platform);
     this.updateManager = new UpdateManager(this.window);
     this.zoomManager = new ZoomManager(this.window);
     this.menuManager = new MenuManager(
@@ -96,6 +97,7 @@ export class DesktopApplication {
   }
 
   registerSingleInstanceHandler() {
+    // eslint-disable-next-line no-unneeded-ternary
     const hasRequestSingleInstanceLock = app.requestSingleInstanceLock ? true : false;
     /* Someone tried to run a second instance, we should focus our window. */
     const handleSecondInstance = (argv, cwd) => {
@@ -245,9 +247,11 @@ export class DesktopApplication {
       }
     });
 
-    let windowUrl = path.join('file://', __dirname, '/index.html');
+    let windowUrl;
     if ('APP_RELATIVE_PATH' in process.env) {
-      windowUrl = path.join('file://', __dirname, process.env.APP_RELATIVE_PATH);
+      windowUrl = path.join('file://', __dirname, process.env.APP_RELATIVE_PATH, index);
+    } else {
+      windowUrl = path.join('file://', __dirname, index);
     }
     this.window.loadURL(windowUrl);
 

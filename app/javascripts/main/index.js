@@ -1,9 +1,9 @@
 export { ArchiveManager } from './archiveManager';
-export { ExtensionsServer } from './extServer';
+export { createExtensionsServer } from './extServer';
 export { FileUtils } from './fileUtils';
 export { MenuManager } from './menuManager';
 export { PackageManager } from './packageManager';
 export { SearchManager } from './searchManager';
-export { TrayManager } from './trayManager';
+export { createTrayManager } from './trayManager';
 export { UpdateManager } from './updateManager';
 export { ZoomManager } from './zoomManager';

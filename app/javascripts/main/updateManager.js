@@ -168,7 +168,7 @@ export class UpdateManager {
     this.triggerMenuReload();
 
     const url = this.metadata.latest.downloads[platformKey];
-    const filename = url.split('/').pop()
+    const filename = url.split('/').pop();
     const path = appPath + "/" + UpdateFoldersName + "/" + filename;
     console.log("Downloading update file", url);
     fileUtils.downloadFile(url, path, (error) => {

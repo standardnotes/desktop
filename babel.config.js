@@ -4,18 +4,12 @@ module.exports = function (api) {
   const presets = [
     ["@babel/preset-env", {
       "targets": {
-        "node": "current"
+        "electron": 5
       }
     }]
   ];
 
   const plugins = [
-    ["@babel/plugin-transform-regenerator", {
-      "asyncGenerators": false,
-      "generators": false,
-      "async": false
-    }],
-    "@babel/plugin-transform-async-to-generator",
     "@babel/plugin-proposal-class-properties"
   ];
 

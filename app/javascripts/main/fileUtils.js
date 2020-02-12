@@ -26,19 +26,19 @@ export class FileUtils {
 
   deleteAppRelativeDirectory(relativePath) {
     console.log("Delete App Relative Directory", relativePath);
-    let deleteDirectory = (dir_path) => {
-      if (fs.existsSync(dir_path)) {
-        fs.readdirSync(dir_path).forEach((entry) => {
-          var entry_path = path.join(dir_path, entry);
-          if (fs.lstatSync(entry_path).isDirectory()) {
-            deleteDirectory(entry_path);
+    const deleteDirectory = (dirPath) => {
+      if (fs.existsSync(dirPath)) {
+        fs.readdirSync(dirPath).forEach((entry) => {
+          const entryPath = path.join(dirPath, entry);
+          if (fs.lstatSync(entryPath).isDirectory()) {
+            deleteDirectory(entryPath);
           } else {
-            fs.unlinkSync(entry_path);
+            fs.unlinkSync(entryPath);
           }
         });
-        fs.rmdirSync(dir_path);
+        fs.rmdirSync(dirPath);
       }
-    }
+    };
 
     deleteDirectory(path.join(appPath, relativePath));
   }
@@ -60,7 +60,7 @@ export class FileUtils {
     request(url)
       .on('error', function (err) {
         console.log('File download error', url, err);
-        callback && callback()
+        callback && callback();
         callback = null;
       })
       .on('response', function (response) {
@@ -73,7 +73,7 @@ export class FileUtils {
       .pipe(fs.createWriteStream(filePath))
       .on('close', function () {
         console.log('File download success', url);
-        callback && callback(null)
+        callback && callback(null);
         callback = null;
       });
   }
@@ -81,7 +81,7 @@ export class FileUtils {
   copyFileSync(source, target) {
     var targetFile = target;
 
-    //if target is a directory a new file with the same name will be created
+    // if target is a directory a new file with the same name will be created
     if (fs.existsSync(target)) {
       if (fs.lstatSync(target).isDirectory()) {
         targetFile = path.join(target, path.basename(source));
