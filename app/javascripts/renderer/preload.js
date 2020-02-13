@@ -57,9 +57,9 @@ function loadTransmitter() {
   }
 
 	transmitter.expose({
-		spellcheck: spellcheck,
+		spellcheck,
     extServerHost: Store.get(StoreKeys.ExtServerHost),
-		rendererPath: rendererPath,
+		rendererPath,
 		isMacOS: process.platform === 'darwin',
 		appVersion: remote.app.getVersion(),
 		useSystemMenuBar: Store.get(StoreKeys.UseSystemMenuBar),
@@ -89,7 +89,7 @@ function loadTransmitter() {
 function listenForIpcEvents() {
   const sendMessage = (message, payload = {}) => {
     window.postMessage(
-      JSON.stringify({message, data: payload}), 
+      JSON.stringify({message, data: payload}),
       rendererPath
     );
   };

@@ -6,7 +6,6 @@
   "version": "3.3.2",
   "main": "./dist/index.js",
   "dependencies": {
-    "adm-zip": "^0.4.13",
     "compare-versions": "^3.5.1",
     "electron-editor-context-menu": "^1.1.1",
     "electron-is-dev": "^0.1.2",
@@ -16,9 +15,9 @@
     "os": "^0.1.1",
     "os-locale": "^2.1.0",
     "request": "^2.88.0",
-    "semver": "^5.5.0",
     "sn-electron-valence": "0.0.4",
     "spellchecker": "github:mobitar/node-spellchecker",
-    "standard-notes-web": "github:standardnotes/web#f2478c87824c8414f75bfedc93b02a4a04963e1c"
+    "standard-notes-web": "github:standardnotes/web#f2478c87824c8414f75bfedc93b02a4a04963e1c",
+    "yauzl": "^2.10.0"
   }
 }

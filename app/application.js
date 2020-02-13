@@ -2,7 +2,7 @@ import {
   ArchiveManager,
   createExtensionsServer,
   MenuManager,
-  PackageManager,
+  initializePackageManager,
   SearchManager,
   createTrayManager,
   UpdateManager,
@@ -27,80 +27,39 @@ const WINDOW_MIN_HEIGHT = 400;
 export const Platforms = {
   Mac: 1,
   Windows: 2,
-  Linux: 3,
-  isMac: (platform) => {
-    return platform === Platforms.Mac;
-  },
+  Linux: 3
 };
 
-export class DesktopApplication {
-
-  static instance = null;
-
-  static createSharedApplication() {
-    const getPlatform = () => {
-      const processPlatform = process.platform;
-      if (processPlatform === 'darwin') {
-        return Platforms.Mac;
-      } else if (processPlatform === 'win32') {
-        return Platforms.Windows;
-      } else if (processPlatform === 'linux') {
-        return Platforms.Linux;
-      }
-    };
-    this.instance = new DesktopApplication({
-      platform: getPlatform()
-    });
+function determinePlatform(platform) {
+  switch (platform) {
+    case "darwin":
+      return Platforms.Mac;
+    case "win32":
+      return Platforms.Windows;
+    case "linux":
+      return Platforms.Linux;
+    default:
+      throw `Unknown platform: ${platform}.`;
   }
+}
 
-  static sharedApplication() {
-    if (!this.instance) {
-      throw 'Attempting to access application before creation';
-    }
-    return this.instance;
-  }
+class DesktopApplication {
 
-  constructor({
-    platform
-  }) {
-    this.platform = platform;
-    this.isMac = Platforms.isMac(this.platform);
+  constructor() {
     app.setName(AppName);
-    this.createExtensionsServer();
+    this.platform = determinePlatform(process.platform);
+    this.isMac = this.platform === Platforms.Mac;
+    Store.set(StoreKeys.ExtServerHost, createExtensionsServer());
     this.registerAppEventListeners();
     this.registerSingleInstanceHandler();
     this.registerIpcEventListeners();
-  }
-
-  createExtensionsServer() {
-    const host = createExtensionsServer();
-    Store.set(StoreKeys.ExtServerHost, host);
-  }
-
-  onWindowCreate() {
-    this.createServices();
-  }
-
-  createServices() {
-    this.archiveManager = new ArchiveManager(this.window);
-    this.packageManager = new PackageManager(this.window);
-    this.searchManager = new SearchManager(this.window);
-    this.trayManager = createTrayManager(this.window, Store, this.platform);
-    this.updateManager = new UpdateManager(this.window);
-    this.zoomManager = new ZoomManager(this.window);
-    this.menuManager = new MenuManager(
-      this.window,
-      this.archiveManager,
-      this.updateManager,
-      this.trayManager
-    );
   }
 
   registerSingleInstanceHandler() {
     // eslint-disable-next-line no-unneeded-ternary
     const hasRequestSingleInstanceLock = app.requestSingleInstanceLock ? true : false;
     /* Someone tried to run a second instance, we should focus our window. */
-    const handleSecondInstance = (argv, cwd) => {
+    const handleSecondInstance = () => {
       if (this.window) {
         if (!this.window.isVisible()) {
           this.window.show();
@@ -115,11 +74,11 @@ export class DesktopApplication {
     if (hasRequestSingleInstanceLock) {
       this.isSecondInstance = !app.requestSingleInstanceLock();
       app.on('second-instance', (event, argv, cwd) => {
-        handleSecondInstance(argv, cwd);
+        handleSecondInstance();
       });
     } else {
       this.isSecondInstance = app.makeSingleInstance((argv, cwd) => {
-        handleSecondInstance(argv, cwd);
+        handleSecondInstance();
       });
     }
   }
@@ -150,11 +109,7 @@ export class DesktopApplication {
     });
 
     app.on('activate', () => {
-      if (!this.window) {
-        this.createWindow();
-      } else {
-        this.window.show();
-      }
+      this.createOrFocusWindow();
       this.updateManager.checkForUpdate();
     });
 
@@ -163,11 +118,7 @@ export class DesktopApplication {
         console.warn("Quiting app and focusing existing instance.");
         app.quit();
       } else {
-        if (!this.window) {
-          this.createWindow();
-        } else {
-          this.window.focus();
-        }
+        this.createOrFocusWindow();
 
         this.menuManager.loadMenu();
         this.updateManager.onNeedMenuReload = () => {
@@ -182,6 +133,14 @@ export class DesktopApplication {
         }
       }
     });
+  }
+
+  createOrFocusWindow() {
+    if (this.window) {
+      this.window.focus();
+    } else {
+      this.createWindow();
+    }
   }
 
   createWindow() {
@@ -213,7 +172,19 @@ export class DesktopApplication {
     });
 
     winState.manage(this.window);
-    this.onWindowCreate();
+
+    initializePackageManager(this.window.webContents);
+    this.archiveManager = new ArchiveManager(this.window);
+    this.searchManager = new SearchManager(this.window);
+    this.trayManager = createTrayManager(this.window, Store, this.platform);
+    this.updateManager = new UpdateManager(this.window);
+    this.zoomManager = new ZoomManager(this.window);
+    this.menuManager = new MenuManager(
+      this.window,
+      this.archiveManager,
+      this.updateManager,
+      this.trayManager
+    );
 
     this.window.on('closed', (event) => {
       this.window = null;
@@ -293,8 +264,9 @@ export class DesktopApplication {
       event.preventDefault();
     });
   }
+}
 
-  openDevTools() {
-    this.window.webContents.openDevTools();
-  }
+export function createDesktopApplication() {
+  // eslint-disable-next-line no-new
+  new DesktopApplication();
 }

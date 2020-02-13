@@ -1,0 +1,1 @@
+export const SYNC_COMPONENTS = "SYNC_COMPONENTS";

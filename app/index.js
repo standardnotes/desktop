@@ -1,6 +1,6 @@
-import { DesktopApplication } from './application';
+import { createDesktopApplication } from './application';
 
-DesktopApplication.createSharedApplication();
+createDesktopApplication();
 
 const log = require('electron-log');
 log.transports.file.level = 'info';

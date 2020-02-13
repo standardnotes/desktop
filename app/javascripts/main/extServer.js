@@ -1,4 +1,5 @@
 import { UnableToLoadExtension } from "./strings";
+import { FILE_DOES_NOT_EXIST } from "./fileUtils";
 
 const { app } = require("electron");
 const http = require("http");
@@ -11,8 +12,8 @@ function normalizeFilePath(req) {
   const extensionsFolder = "Extensions";
   const extensionsDir = path.join(app.getPath("userData"), extensionsFolder);
   const pathName = new URL(req.url, `http://${req.headers.host}`).pathname;
-  /* Normalize path (parse '..' and '.') so that we prevent path traversal by
-  joining a fully resolved path to the Extensions dir. */
+  // Normalize path (parse '..' and '.') so that we prevent path traversal by
+  // joining a fully resolved path to the Extensions dir.
   const modifiedReqUrl = path.normalize(pathName.replace(extensionsFolder, ""));
   return path.join(extensionsDir, modifiedReqUrl);
 }
@@ -40,7 +41,6 @@ async function handleRequest(req, res) {
 
 function onRequestError(error, res) {
   console.error(error);
-  const FILE_DOES_NOT_EXIST = "ENOENT";
   const responseCode = error.code !== FILE_DOES_NOT_EXIST ? 404 : 500;
   res.writeHead(responseCode);
   res.write(UnableToLoadExtension);
@@ -48,13 +48,9 @@ function onRequestError(error, res) {
 }
 
 export function createExtensionsServer() {
-  const port = 45653;
-  const ip = "127.0.0.1";
-  const host = `http://localhost:${port}/`;
-
-  http.createServer(handleRequest).listen(port, ip, () => {
+  const host = "http://localhost:45653/";
+  http.createServer(handleRequest).listen(45653, "localhost", () => {
     console.log(`Extensions server started at ${host}`);
   });
-
   return host;
 }
