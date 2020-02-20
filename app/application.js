@@ -66,19 +66,14 @@ export class DesktopApplication {
     this.platform = platform;
     this.isMac = Platforms.isMac(this.platform);
     app.setName(AppName);
-    this.createExtensionsServer();
     this.registerAppEventListeners();
     this.registerSingleInstanceHandler();
     this.registerIpcEventListeners();
   }
 
-  createExtensionsServer() {
-    const host = createExtensionsServer();
-    Store.set(StoreKeys.ExtServerHost, host);
-  }
-
   onWindowCreate() {
     this.createServices();
+    Store.set(StoreKeys.ExtServerHost, createExtensionsServer());
   }
 
   createServices() {
