@@ -66,7 +66,6 @@ export class DesktopApplication {
     this.platform = platform;
     this.isMac = Platforms.isMac(this.platform);
     app.setName(AppName);
-    this.createExtensionsServer();
     this.registerAppEventListeners();
     this.registerSingleInstanceHandler();
     this.registerIpcEventListeners();
@@ -79,6 +78,7 @@ export class DesktopApplication {
 
   onWindowCreate() {
     this.createServices();
+    this.createExtensionsServer();
   }
 
   createServices() {
