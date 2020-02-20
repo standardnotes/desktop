@@ -71,9 +71,14 @@ export class DesktopApplication {
     this.registerIpcEventListeners();
   }
 
+  createExtensionsServer() {
+    const host = createExtensionsServer();
+    Store.set(StoreKeys.ExtServerHost, host);
+  }
+
   onWindowCreate() {
     this.createServices();
-    Store.set(StoreKeys.ExtServerHost, createExtensionsServer());
+    this.createExtensionsServer();
   }
 
   createServices() {
