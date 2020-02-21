@@ -1,9 +1,9 @@
-import { ensureDirectoryExists } from "./fileUtils";
-const https = require("https");
-const fs = require("fs");
-const path = require("path");
-const { promisify } = require("util");
-let { pipeline } = require("stream");
+import { ensureDirectoryExists } from './fileUtils';
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
+const { promisify } = require('util');
+let { pipeline } = require('stream');
 pipeline = promisify(pipeline);
 
 /**
@@ -20,15 +20,15 @@ export async function downloadFile(url, filePath) {
 
 export async function getJSON(url) {
   const response = await get(url);
-  response.setEncoding("utf-8");
-  let data = "";
+  response.setEncoding('utf-8');
+  let data = '';
   return new Promise((resolve, reject) => {
     response
-      .on("data", chunk => {
+      .on('data', chunk => {
         data += chunk;
       })
-      .on("error", reject)
-      .on("close", () => {
+      .on('error', reject)
+      .on('close', () => {
         resolve(JSON.parse(data));
       });
   });
@@ -61,6 +61,6 @@ async function get(url, maxRedirects = 3) {
  */
 function promiseGet(url) {
   return new Promise((resolve, reject) => {
-    https.get(url, resolve).on("error", reject);
+    https.get(url, resolve).on('error', reject);
   });
 }

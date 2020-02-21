@@ -91,15 +91,15 @@ export class MenuManager {
           },
           {
             visible: process.platform !== 'darwin',
-            label: `Use Themed Menu Bar`,
+            label: 'Use Themed Menu Bar',
             type: 'checkbox',
             checked: !useSystemMenuBar,
             click: () => {
               Store.set(StoreKeys.UseSystemMenuBar, !useSystemMenuBar);
               this.reload();
               dialog.showMessageBox({
-                title: "Preference Changed",
-                message: "Your menu bar preference has been saved. Please restart the application for the change to take effect."
+                title: 'Preference Changed',
+                message: 'Your menu bar preference has been saved. Please restart the application for the change to take effect.'
               });
             }
           }
@@ -119,7 +119,7 @@ export class MenuManager {
           },
           {
             visible: process.platform !== 'darwin',
-            label: `Minimize To Tray On Close`,
+            label: 'Minimize To Tray On Close',
             type: 'checkbox',
             checked: minimizeToTray,
             click: () => {
@@ -191,7 +191,7 @@ export class MenuManager {
             type: 'separator'
           },
           {
-            label: "Toggle Error Console",
+            label: 'Toggle Error Console',
             click: () => {
               this.window.webContents.toggleDevTools();
             }
@@ -314,8 +314,8 @@ export class MenuManager {
   buildUpdateMenu(updateData) {
     const updateNeeded = this.updateManager.updateNeeded();
     const label = updateData.checkingForUpdate 
-      ? "Checking for update..." 
-      : (updateNeeded ? "(1) Update Available" : 'Updates');
+      ? 'Checking for update...' 
+      : (updateNeeded ? '(1) Update Available' : 'Updates');
     const structure = { label: label };
     const submenu = [];
 
@@ -332,8 +332,8 @@ export class MenuManager {
 
     submenu.push({
       label: this.updateManager.autoupdateEnabled() 
-        ? "Automatic Updates Enabled" 
-        : "Automatic Updates Disabled",
+        ? 'Automatic Updates Enabled' 
+        : 'Automatic Updates Disabled',
       click: () => {
         this.updateManager.toggleAutoupdateStatus();
       }
@@ -350,7 +350,7 @@ export class MenuManager {
 
     if (!updateData.checkinForUpdate) {
       submenu.push({
-        label: `Check for Update`,
+        label: 'Check for Update',
         click: () => { 
           this.updateManager.checkForUpdate({ userTriggered: true }); 
         }
@@ -383,7 +383,7 @@ export class MenuManager {
 
     if (updateData.latestDownloaded) {
       submenu.push({
-        label: "Open Download Location",
+        label: 'Open Download Location',
         click: () => {
           this.updateManager.openDownloadLocation();
         }
@@ -391,8 +391,8 @@ export class MenuManager {
     } else if (updateNeeded || updateData.downloadingUpdate) {
       submenu.push({
         label: updateData.downloadingUpdate 
-          ? "Downloading update..." 
-          : "Manually Download Update",
+          ? 'Downloading update...' 
+          : 'Manually Download Update',
         click: () => {
           updateData.downloadingUpdate 
             ? this.updateManager.openDownloadLocation() 

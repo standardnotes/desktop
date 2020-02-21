@@ -7,7 +7,7 @@ export class ArchiveManager {
     this.window = window;
     ipcMain.on('data-archive', (event, data) => {
       this.writeDataToFile(data, error => {
-        this.window.webContents.send("finished-saving-backup", {
+        this.window.webContents.send('finished-saving-backup', {
           success: error === null
         });
       });
@@ -25,7 +25,7 @@ export class ArchiveManager {
   }
 
   defaultLocation() {
-    return path.join(app.getPath('home'), "Standard Notes Backups");
+    return path.join(app.getPath('home'), 'Standard Notes Backups');
   }
 
   getBackupsLocation() {
@@ -48,7 +48,7 @@ export class ArchiveManager {
 
   writeDataToFile(data, callback) {
     if(this.backupsDisabled) {
-      console.log("Backups are disabled; returning.");
+      console.log('Backups are disabled; returning.');
       return;
     }
 
@@ -61,21 +61,21 @@ export class ArchiveManager {
 
     // Return on empty after creating directory
     if(!data) {
-      console.log("Empty data, not writing backup file.");
+      console.log('Empty data, not writing backup file.');
       return;
     }
 
     var find = ':';
     var re = new RegExp(find, 'g');
-    const name = (new Date()).toISOString().replace(re, "-") + ".txt";
+    const name = (new Date()).toISOString().replace(re, '-') + '.txt';
 
     const filePath = path.join(dir, name);
 
     fs.writeFile(filePath, data, (err) => {
       if(err){
-        console.log("An error ocurred saving backup file: " + err.message);
+        console.log('An error ocurred saving backup file: ' + err.message);
       } else {
-        console.log("Data backup succesfully saved: ", name);
+        console.log('Data backup succesfully saved: ', name);
       }
       callback(err);
     });
@@ -99,10 +99,10 @@ export class ArchiveManager {
 
   performBackup() {
     if(this.backupsDisabled) {
-      console.log("Backups are disabled; returning.");
+      console.log('Backups are disabled; returning.');
       return;
     }
-    this.window.webContents.send("download-backup");
+    this.window.webContents.send('download-backup');
   }
 
   isBackupsEnabled() {

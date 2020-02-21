@@ -1,12 +1,12 @@
-import { SYNC_COMPONENTS } from "../shared/messages";
+import { IpcMessages } from '../shared/ipcMessages';
 const messageBus = new ElectronValence.FrameMessageBus();
 const receiver = new ElectronValence.Receiver(messageBus);
 
 /** Accessed by web app */
-window._default_sf_server = "https://sync.standardnotes.org";
+window._default_sf_server = 'https://sync.standardnotes.org';
 window._extensions_manager_location =
-  "extensions/extensions-manager/dist/index.html";
-window._batch_manager_location = "extensions/batch-manager/dist/index.html";
+  'extensions/extensions-manager/dist/index.html';
+window._batch_manager_location = 'extensions/batch-manager/dist/index.html';
 window.isElectron = true;
 
 (async () => {
@@ -19,7 +19,7 @@ window.isElectron = true;
   const desktopManager = angular
     .element(document)
     .injector()
-    .get("desktopManager");
+    .get('desktopManager');
   registerIpcMessageListener(desktopManager, bridge);
   configureDesktopManager(desktopManager, bridge);
 })();
@@ -35,21 +35,21 @@ async function configureWindow(bridge) {
   window.electronAppVersion = appVersion;
 
   // disable drag-n-drop of file in the app
-  document.addEventListener("dragover", event => event.preventDefault());
-  document.addEventListener("drop", event => event.preventDefault());
+  document.addEventListener('dragover', event => event.preventDefault());
+  document.addEventListener('drop', event => event.preventDefault());
 
   /*
   Title bar events
   */
-  document.getElementById("menu-btn").addEventListener("click", e => {
-    bridge.sendIpcMessage("display-app-menu", { x: e.x, y: e.y });
+  document.getElementById('menu-btn').addEventListener('click', e => {
+    bridge.sendIpcMessage(IpcMessages.DisplayAppMenu, { x: e.x, y: e.y });
   });
 
-  document.getElementById("min-btn").addEventListener("click", e => {
+  document.getElementById('min-btn').addEventListener('click', e => {
     bridge.minimizeWindow();
   });
 
-  document.getElementById("max-btn").addEventListener("click", async e => {
+  document.getElementById('max-btn').addEventListener('click', async e => {
     if (await bridge.isWindowMaximized()) {
       bridge.unmaximizeWindow();
     } else {
@@ -57,7 +57,7 @@ async function configureWindow(bridge) {
     }
   });
 
-  document.getElementById("close-btn").addEventListener("click", e => {
+  document.getElementById('close-btn').addEventListener('click', () => {
     bridge.closeWindow();
   });
 
@@ -65,7 +65,7 @@ async function configureWindow(bridge) {
   const sheet = window.document.styleSheets[0];
   if (isMacOS) {
     sheet.insertRule(
-      "#tags-column { padding-top: 25px !important; }",
+      '#tags-column { padding-top: 25px !important; }',
       sheet.cssRules.length
     );
   }
@@ -73,7 +73,7 @@ async function configureWindow(bridge) {
   if (isMacOS || useSystemMenuBar) {
     // !important is important here because #desktop-title-bar has display: flex.
     sheet.insertRule(
-      "#desktop-title-bar { display: none !important; }",
+      '#desktop-title-bar { display: none !important; }',
       sheet.cssRules.length
     );
   } else {
@@ -94,28 +94,28 @@ async function configureDesktopManager(desktopManager, bridge) {
   desktopManager.desktop_setComponentInstallationSyncHandler(
     async componentsData => {
       /* Handled by PackageManager */
-      bridge.sendIpcMessage(SYNC_COMPONENTS, { componentsData });
+      bridge.sendIpcMessage(IpcMessages.SyncComponents, { componentsData });
     }
   );
 
   desktopManager.desktop_setSearchHandler(text => {
-    bridge.sendIpcMessage("search-text", { text });
+    bridge.sendIpcMessage(IpcMessages.SearchText, { text });
   });
 
   desktopManager.desktop_setInitialDataLoadHandler(() => {
     /* Handled by ArchiveManager */
-    bridge.sendIpcMessage("initial-data-loaded", {});
+    bridge.sendIpcMessage(IpcMessages.InitialDataLoaded, {});
   });
 
-  desktopManager.desktop_setMajorDataChangeHandler(() => {
-    bridge.sendIpcMessage("major-data-change", {});
+  desktopManager.desktop_setIpcMessages.MajorDataChangeHandler(() => {
+    bridge.sendIpcMessage(IpcMessages.MajorDataChange, {});
   });
 }
 
 function registerIpcMessageListener(desktopManager, bridge) {
-  window.addEventListener("message", event => {
+  window.addEventListener('message', event => {
     // We don't have access to the full file path.
-    if (event.origin !== "file://") {
+    if (event.origin !== 'file://') {
       return;
     }
 
@@ -130,28 +130,28 @@ function registerIpcMessageListener(desktopManager, bridge) {
     const message = payload.message;
     const data = payload.data;
 
-    if (message === "window-blurred") {
+    if (message === IpcMessages.WindowBlurred) {
       desktopManager.desktop_windowLostFocus();
-    } else if (message === "window-focused") {
+    } else if (message === IpcMessages.WindowFocused) {
       desktopManager.desktop_windowGainedFocus();
-    } else if (message === "install-component-complete") {
+    } else if (message === IpcMessages.InstallComponentComplete) {
       // Responses from packageManager
       desktopManager.desktop_onComponentInstallationComplete(
         data.component,
         data.error
       );
-    } else if (message === "update-available") {
-      var controllerElement = document.querySelector("#home");
+    } else if (message === IpcMessages.UpdateAvailable) {
+      var controllerElement = document.querySelector('#home');
       var controllerScope = angular.element(controllerElement).scope();
       controllerScope.onUpdateAvailable();
-    } else if (message === "download-backup") {
+    } else if (message === IpcMessages.DownloadBackup) {
       desktopManager.desktop_didBeginBackup();
       desktopManager.desktop_requestBackupFile(data => {
         if (data) {
-          bridge.sendIpcMessage("data-archive", data);
+          bridge.sendIpcMessage('data-archive', data);
         }
       });
-    } else if (message === "finished-saving-backup") {
+    } else if (message === IpcMessages.FinishedSavingBackup) {
       desktopManager.desktop_didFinishBackup(data.success);
     }
   });
@@ -159,20 +159,20 @@ function registerIpcMessageListener(desktopManager, bridge) {
 
 async function loadZipLibrary() {
   // load zip library (for exporting items as zip)
-  const scriptTag = document.createElement("script");
-  scriptTag.src = "./vendor/zip/zip.js";
+  const scriptTag = document.createElement('script');
+  scriptTag.src = './vendor/zip/zip.js';
   scriptTag.async = true;
-  const headTag = document.getElementsByTagName("head")[0];
+  const headTag = document.getElementsByTagName('head')[0];
   headTag.appendChild(scriptTag);
   scriptTag.onload = () => {
-    zip.workerScriptsPath = "./vendor/zip/";
+    zip.workerScriptsPath = './vendor/zip/';
   };
 }
 
 async function configureSpellcheck(spellcheck) {
   spellcheck.reload();
 
-  window.addEventListener("contextmenu", function(e) {
+  window.addEventListener('contextmenu', function(e) {
     // Only show the context menu in text editors.
     if (!e.target.closest('textarea, input, [contenteditable="true"]')) {
       return;

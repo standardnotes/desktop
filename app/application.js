@@ -8,11 +8,9 @@ import {
   UpdateManager,
   ZoomManager
 } from './javascripts/main';
-import {
-  Store,
-  StoreKeys
-} from './javascripts/main/store';
+import { Store, StoreKeys } from './javascripts/main/store';
 import { AppName } from './javascripts/main/strings';
+import { IpcMessages } from './javascripts/shared/ipcMessages';
 import index from './index.html';
 
 const { app, BrowserWindow, shell, ipcMain } = require('electron');
@@ -32,11 +30,11 @@ export const Platforms = {
 
 function determinePlatform(platform) {
   switch (platform) {
-    case "darwin":
+    case 'darwin':
       return Platforms.Mac;
-    case "win32":
+    case 'win32':
       return Platforms.Windows;
-    case "linux":
+    case 'linux':
       return Platforms.Linux;
     default:
       throw `Unknown platform: ${platform}.`;
@@ -44,20 +42,20 @@ function determinePlatform(platform) {
 }
 
 class DesktopApplication {
-
   constructor() {
     app.setName(AppName);
     this.platform = determinePlatform(process.platform);
     this.isMac = this.platform === Platforms.Mac;
-    Store.set(StoreKeys.ExtServerHost, createExtensionsServer());
     this.registerAppEventListeners();
     this.registerSingleInstanceHandler();
     this.registerIpcEventListeners();
   }
 
   registerSingleInstanceHandler() {
-    // eslint-disable-next-line no-unneeded-ternary
-    const hasRequestSingleInstanceLock = app.requestSingleInstanceLock ? true : false;
+    const hasRequestSingleInstanceLock = app.requestSingleInstanceLock
+      ? true // eslint-disable-line no-unneeded-ternary
+      : false;
+
     /* Someone tried to run a second instance, we should focus our window. */
     const handleSecondInstance = () => {
       if (this.window) {
@@ -73,26 +71,26 @@ class DesktopApplication {
 
     if (hasRequestSingleInstanceLock) {
       this.isSecondInstance = !app.requestSingleInstanceLock();
-      app.on('second-instance', (event, argv, cwd) => {
+      app.on('second-instance', () => {
         handleSecondInstance();
       });
     } else {
-      this.isSecondInstance = app.makeSingleInstance((argv, cwd) => {
+      this.isSecondInstance = app.makeSingleInstance(() => {
         handleSecondInstance();
       });
     }
   }
 
   registerIpcEventListeners() {
-    ipcMain.on("display-app-menu", (event, position) => {
+    ipcMain.on(IpcMessages.DisplayAppMenu, (_event, position) => {
       this.menuManager.popupMenu(position);
     });
 
-    ipcMain.on('initial-data-loaded', () => {
+    ipcMain.on(IpcMessages.InitialDataLoaded, () => {
       this.archiveManager.beginBackups();
     });
 
-    ipcMain.on('major-data-change', () => {
+    ipcMain.on(IpcMessages.MajorDataChange, () => {
       this.archiveManager.performBackup();
     });
   }
@@ -109,16 +107,17 @@ class DesktopApplication {
     });
 
     app.on('activate', () => {
-      this.createOrFocusWindow();
+      this.window.focus();
       this.updateManager.checkForUpdate();
     });
 
     app.on('ready', () => {
       if (this.isSecondInstance) {
-        console.warn("Quiting app and focusing existing instance.");
+        console.warn('Quiting app and focusing existing instance.');
         app.quit();
       } else {
-        this.createOrFocusWindow();
+        this.createExtensionsServer();
+        this.createWindow();
 
         this.menuManager.loadMenu();
         this.updateManager.onNeedMenuReload = () => {
@@ -135,12 +134,9 @@ class DesktopApplication {
     });
   }
 
-  createOrFocusWindow() {
-    if (this.window) {
-      this.window.focus();
-    } else {
-      this.createWindow();
-    }
+  createExtensionsServer() {
+    const host = createExtensionsServer();
+    Store.set(StoreKeys.ExtServerHost, host);
   }
 
   createWindow() {
@@ -150,16 +146,14 @@ class DesktopApplication {
     });
     const iconLocation = path.join(__dirname, '/icon/Icon-512x512.png');
     const useSystemMenuBar = Store.get(StoreKeys.UseSystemMenuBar);
-    const titleBarStyle = (this.isMac || useSystemMenuBar)
-      ? 'hiddenInset'
-      : null;
+    const titleBarStyle = this.isMac || useSystemMenuBar ? 'hiddenInset' : null;
     this.window = new BrowserWindow({
-      'x': winState.x,
-      'y': winState.y,
-      'width': winState.width,
-      'height': winState.height,
-      'minWidth': WINDOW_MIN_WIDTH,
-      'minHeight': WINDOW_MIN_HEIGHT,
+      x: winState.x,
+      y: winState.y,
+      width: winState.width,
+      height: winState.height,
+      minWidth: WINDOW_MIN_WIDTH,
+      minHeight: WINDOW_MIN_HEIGHT,
       show: false,
       icon: iconLocation,
       titleBarStyle: titleBarStyle,
@@ -167,43 +161,32 @@ class DesktopApplication {
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
-        preload: path.join(__dirname, "javascripts/renderer/preload.js")
+        preload: path.join(__dirname, 'javascripts/renderer/preload.js')
       }
     });
 
     winState.manage(this.window);
 
-    initializePackageManager(this.window.webContents);
-    this.archiveManager = new ArchiveManager(this.window);
-    this.searchManager = new SearchManager(this.window);
-    this.trayManager = createTrayManager(this.window, Store, this.platform);
-    this.updateManager = new UpdateManager(this.window);
-    this.zoomManager = new ZoomManager(this.window);
-    this.menuManager = new MenuManager(
-      this.window,
-      this.archiveManager,
-      this.updateManager,
-      this.trayManager
-    );
+    this.createWindowDependentServices(this.window);
 
-    this.window.on('closed', (event) => {
+    this.window.on('closed', () => {
       this.window = null;
     });
 
-    this.window.on('blur', (event) => {
-      this.window.webContents.send("window-blurred", null);
+    this.window.on('blur', () => {
+      this.window.webContents.send(IpcMessages.WindowBlurred, null);
       this.archiveManager.applicationDidBlur();
     });
 
-    this.window.on('focus', (event) => {
-      this.window.webContents.send("window-focused", null);
+    this.window.on('focus', () => {
+      this.window.webContents.send(IpcMessages.WindowFocused, null);
     });
 
     this.window.once('ready-to-show', () => {
       this.window.show();
     });
 
-    this.window.on('close', (event) => {
+    this.window.on('close', event => {
       if (this.willQuitApp) {
         /* The user tried to quit the app */
         this.window = null;
@@ -220,21 +203,32 @@ class DesktopApplication {
 
     let windowUrl;
     if ('APP_RELATIVE_PATH' in process.env) {
-      windowUrl = path.join('file://', __dirname, process.env.APP_RELATIVE_PATH, index);
+      windowUrl = path.join(
+        'file://',
+        __dirname,
+        process.env.APP_RELATIVE_PATH,
+        index
+      );
     } else {
       windowUrl = path.join('file://', __dirname, index);
     }
     this.window.loadURL(windowUrl);
 
-    const shouldOpenUrl = (url) => {
-      return url.startsWith("http") || url.startsWith("https");
+    const shouldOpenUrl = url => {
+      return url.startsWith('http') || url.startsWith('https');
     };
-    // Check file urls for equality by decoding components
-    // In packaged app, spaces in navigation events urls can contain %20 but not in windowUrl.
+    /**
+     * Check file urls for equality by decoding components
+     * In packaged app, spaces in navigation events urls can contain %20 but
+     * not in windowUrl.
+     */
     const safeFileUrlCompare = (a, b) => {
-      // Catch exceptions in case of malformed urls.
+      /** Catch exceptions in case of malformed urls. */
       try {
-        // Craft URL objects to eliminate production URL values that can contain "#!/" suffixes (on Windows)
+        /**
+         * Craft URL objects to eliminate production URL values that can
+         * contain "#!/" suffixes (on Windows)
+         */
         const aPath = new URL(decodeURIComponent(a)).pathname;
         const bPath = new URL(decodeURIComponent(b)).pathname;
         return aPath === bPath;
@@ -243,7 +237,7 @@ class DesktopApplication {
       }
     };
 
-    // handle link clicks
+    /** handle link clicks */
     this.window.webContents.on('new-window', (event, url) => {
       if (shouldOpenUrl(url)) {
         shell.openExternal(url);
@@ -251,10 +245,12 @@ class DesktopApplication {
       event.preventDefault();
     });
 
-    // handle link clicks (this event is fired instead of
-    // 'new-window' when target is not set to _blank)
+    /**
+     * handle link clicks (this event is fired instead of 'new-window' when
+     * target is not set to _blank)
+     */
     this.window.webContents.on('will-navigate', (event, url) => {
-      // Check for windowUrl equality in the case of window.reload() calls.
+      /** Check for windowUrl equality in the case of window.reload() calls. */
       if (safeFileUrlCompare(url, windowUrl) === true) {
         return;
       }
@@ -263,6 +259,25 @@ class DesktopApplication {
       }
       event.preventDefault();
     });
+  }
+
+  createWindowDependentServices(window) {
+    initializePackageManager(window.webContents);
+    this.archiveManager = new ArchiveManager(window);
+    this.searchManager = new SearchManager(window);
+    this.trayManager = createTrayManager(window, Store, this.platform);
+    this.updateManager = new UpdateManager(window);
+    this.zoomManager = new ZoomManager(window);
+    this.menuManager = new MenuManager(
+      window,
+      this.archiveManager,
+      this.updateManager,
+      this.trayManager
+    );
+  }
+
+  openDevTools() {
+    this.window.webContents.openDevTools();
   }
 }
 

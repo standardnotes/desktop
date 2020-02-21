@@ -1,18 +1,18 @@
-import yauzl from "yauzl";
-const fs = require("fs");
-const path = require("path");
+import yauzl from 'yauzl';
+const fs = require('fs');
+const path = require('path');
 
-export const FILE_DOES_NOT_EXIST = "ENOENT";
-export const FILE_ALREADY_EXISTS = "EEXIST";
+export const FileDoesNotExist = 'ENOENT';
+export const FileAlreadyExists = 'EEXIST';
 
 export async function readJSONFile(path) {
-  const data = await fs.promises.readFile(path, "utf8");
+  const data = await fs.promises.readFile(path, 'utf8');
   return JSON.parse(data);
 }
 
 export async function writeJSONFile(filepath, data) {
   await ensureDirectoryExists(path.dirname(filepath));
-  await fs.promises.writeFile(filepath, JSON.stringify(data, null, 2), "utf8");
+  await fs.promises.writeFile(filepath, JSON.stringify(data, null, 2), 'utf8');
 }
 
 export async function ensureDirectoryExists(dirPath) {
@@ -20,14 +20,16 @@ export async function ensureDirectoryExists(dirPath) {
     const stat = await fs.promises.lstat(dirPath);
     if (!stat.isDirectory()) {
       throw new Error(
-        "Tried to create a directory where a file of the same " +
+        'Tried to create a directory where a file of the same ' +
           `name already exists: ${dirPath}`
       );
     }
   } catch (error) {
-    if (error.code === FILE_DOES_NOT_EXIST) {
-      // No directory here. Make sure there is a *parent* directory, and then
-      // create it.
+    if (error.code === FileDoesNotExist) {
+      /**
+       * No directory here. Make sure there is a *parent* directory, and then
+       * create it.
+       */
       await ensureDirectoryExists(path.dirname(dirPath));
       await fs.promises.mkdir(dirPath);
     } else {
@@ -44,8 +46,8 @@ export async function deleteDir(dirPath) {
   try {
     await deleteDirContents(dirPath);
   } catch (error) {
-    if (error.code === FILE_DOES_NOT_EXIST) {
-      // Directory has already been deleted.
+    if (error.code === FileDoesNotExist) {
+      /** Directory has already been deleted. */
       return;
     }
     throw error;
@@ -84,11 +86,11 @@ export async function extractNestedZip(source, dest) {
         if (err) return tryReject(err);
 
         zipFile.readEntry();
-        zipFile.on("close", resolve);
-        zipFile.on("entry", entry => {
+        zipFile.on('close', resolve);
+        zipFile.on('entry', entry => {
           if (cancelled) return;
-          if (entry.fileName.endsWith("/")) {
-            // entry is a directory, skip and read next entry
+          if (entry.fileName.endsWith('/')) {
+            /** entry is a directory, skip and read next entry */
             zipFile.readEntry();
             return;
           }
@@ -96,12 +98,14 @@ export async function extractNestedZip(source, dest) {
           zipFile.openReadStream(entry, async (err, stream) => {
             if (cancelled) return;
             if (err) return tryReject(err);
-            stream.on("error", tryReject);
+            stream.on('error', tryReject);
             const filepath = path.join(
               dest,
-              // Remove the first element of the entry's path, which is the base
-              // directory we want to ignore
-              entry.fileName.substring(entry.fileName.indexOf("/") + 1)
+              /**
+               * Remove the first element of the entry's path, which is the base
+               * directory we want to ignore
+               */
+              entry.fileName.substring(entry.fileName.indexOf('/') + 1)
             );
             try {
               await ensureDirectoryExists(path.dirname(filepath));
@@ -110,11 +114,11 @@ export async function extractNestedZip(source, dest) {
             }
             const writeStream = fs
               .createWriteStream(filepath)
-              .on("error", tryReject)
-              .on("error", tryReject);
+              .on('error', tryReject)
+              .on('error', tryReject);
 
-            stream.pipe(writeStream).on("close", () => {
-              zipFile.readEntry(); // Reads next entry.
+            stream.pipe(writeStream).on('close', () => {
+              zipFile.readEntry(); /** Reads next entry. */
             });
           });
         });

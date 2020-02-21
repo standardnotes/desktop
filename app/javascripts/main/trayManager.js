@@ -1,19 +1,19 @@
-import { StoreKeys } from "./store";
-import { Platforms } from "../../application";
+import { StoreKeys } from './store';
+import { Platforms } from '../../application';
 import {
   AppName,
   TrayLabelShow,
   TrayLabelHide,
   TrayLabelQuit
-} from "./strings";
-const path = require("path");
-const { Tray, Menu, app } = require("electron");
-const icon = path.join(__dirname, `/icon/Icon-256x256.png`);
+} from './strings';
+const path = require('path');
+const { Tray, Menu, app } = require('electron');
+const icon = path.join(__dirname, '/icon/Icon-256x256.png');
 
 const WindowEvents = {
-  Hide: "hide",
-  Focus: "focus",
-  Blur: "blur"
+  Hide: 'hide',
+  Focus: 'focus',
+  Blur: 'blur'
 };
 
 export function createTrayManager(window, store, platform) {
@@ -44,11 +44,11 @@ export function createTrayManager(window, store, platform) {
         /* On Windows, right-clicking invokes the menu, as opposed to
         left-clicking for the other platforms. So we map left-clicking
         to the conventional action of showing the app. */
-        tray.on("click", showWindow);
+        tray.on('click', showWindow);
       }
 
-      const SHOW_WINDOW_ID = "SHOW_WINDOW";
-      const HIDE_WINDOW_ID = "HIDE_WINDOW";
+      const SHOW_WINDOW_ID = 'SHOW_WINDOW';
+      const HIDE_WINDOW_ID = 'HIDE_WINDOW';
       const trayContextMenu = Menu.buildFromTemplate([
         {
           id: SHOW_WINDOW_ID,
@@ -63,7 +63,7 @@ export function createTrayManager(window, store, platform) {
           }
         },
         {
-          type: "separator"
+          type: 'separator'
         },
         {
           label: TrayLabelQuit,
