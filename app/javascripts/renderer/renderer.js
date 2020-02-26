@@ -26,7 +26,6 @@ Promise.all([
   await registerIpcMessageListener();
   await configureDesktopManager();
   await configureWindow();
-  await configureSpellcheck();
   await loadZipLibrary();
 });
 
@@ -171,24 +170,4 @@ async function loadZipLibrary() {
   scriptTag.onload = function() {
     zip.workerScriptsPath = "./vendor/zip/";
   };
-}
-
-async function configureSpellcheck() {
-  const spellcheck = await bridge.spellcheck;
-
-  spellcheck.reload();
-
-  window.addEventListener('contextmenu', function(e) {
-    // Only show the context menu in text editors.
-    if (!e.target.closest('textarea, input, [contenteditable="true"]')) {
-      return;
-    }
-    const selectedText = window.getSelection().toString();
-    // The 'contextmenu' event is emitted after 'selectionchange' has fired but possibly before the
-    // visible selection has changed. Try to wait to show the menu until after that, otherwise the
-    // visible selection will update after the menu dismisses and look weird.
-    setTimeout(function() {
-      spellcheck.showContextMenuForText(selectedText);
-    }, 30);
-  });
 }

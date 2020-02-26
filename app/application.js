@@ -1,12 +1,13 @@
 import {
   ArchiveManager,
   createExtensionsServer,
-  MenuManager,
+  createMenuManager,
   PackageManager,
   SearchManager,
   createTrayManager,
   UpdateManager,
-  ZoomManager
+  ZoomManager,
+  createSpellcheckerManager
 } from './javascripts/main';
 import {
   Store,
@@ -65,7 +66,7 @@ export class DesktopApplication {
   }) {
     this.platform = platform;
     this.isMac = Platforms.isMac(this.platform);
-    app.setName(AppName);
+    app.name = AppName;
     this.registerAppEventListeners();
     this.registerSingleInstanceHandler();
     this.registerIpcEventListeners();
@@ -88,12 +89,19 @@ export class DesktopApplication {
     this.trayManager = createTrayManager(this.window, Store, this.platform);
     this.updateManager = new UpdateManager(this.window);
     this.zoomManager = new ZoomManager(this.window);
-    this.menuManager = new MenuManager(
-      this.window,
-      this.archiveManager,
-      this.updateManager,
-      this.trayManager
+    const spellcheckerManager = createSpellcheckerManager(
+      Store.getInstance(),
+      this.window.webContents,
+      app.getLocale()
     );
+    this.menuManager = createMenuManager({
+      window: this.window,
+      archiveManager: this.archiveManager,
+      updateManager: this.updateManager,
+      trayManager: this.trayManager,
+      store: Store.getInstance(),
+      spellcheckerManager
+    });
   }
 
   registerSingleInstanceHandler() {
@@ -125,7 +133,7 @@ export class DesktopApplication {
   }
 
   registerIpcEventListeners() {
-    ipcMain.on("display-app-menu", (event, position) => {
+    ipcMain.on('display-app-menu', (event, position) => {
       this.menuManager.popupMenu(position);
     });
 
@@ -160,7 +168,7 @@ export class DesktopApplication {
 
     app.on('ready', () => {
       if (this.isSecondInstance) {
-        console.warn("Quiting app and focusing existing instance.");
+        console.warn('Quiting app and focusing existing instance.');
         app.quit();
       } else {
         if (!this.window) {
@@ -206,9 +214,10 @@ export class DesktopApplication {
       titleBarStyle: titleBarStyle,
       frame: this.isMac ? false : useSystemMenuBar,
       webPreferences: {
+        spellcheck: true,
         nodeIntegration: false,
         contextIsolation: true,
-        preload: path.join(__dirname, "javascripts/renderer/preload.js")
+        preload: path.join(__dirname, 'javascripts/renderer/preload.js')
       }
     });
 
@@ -220,12 +229,12 @@ export class DesktopApplication {
     });
 
     this.window.on('blur', (event) => {
-      this.window.webContents.send("window-blurred", null);
+      this.window.webContents.send('window-blurred', null);
       this.archiveManager.applicationDidBlur();
     });
 
     this.window.on('focus', (event) => {
-      this.window.webContents.send("window-focused", null);
+      this.window.webContents.send('window-focused', null);
     });
 
     this.window.once('ready-to-show', () => {
@@ -256,7 +265,7 @@ export class DesktopApplication {
     this.window.loadURL(windowUrl);
 
     const shouldOpenUrl = (url) => {
-      return url.startsWith("http") || url.startsWith("https");
+      return url.startsWith('http') || url.startsWith('https');
     };
     // Check file urls for equality by decoding components
     // In packaged app, spaces in navigation events urls can contain %20 but not in windowUrl.

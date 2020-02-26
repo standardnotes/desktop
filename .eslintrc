@@ -4,7 +4,8 @@
   "rules": {
     "no-throw-literal": 0,
     "no-console": "off",
-    "semi": 1
+    "semi": 1,
+    "quotes": ["error", "single"]
   },
   "globals": {
     "angular": true,
