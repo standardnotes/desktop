@@ -15,6 +15,7 @@ import {
 } from './javascripts/main/store';
 import { AppName } from './javascripts/main/strings';
 import index from './index.html';
+import { CommandLineArgs } from './javascripts/shared/cli';
 
 const { app, BrowserWindow, shell, ipcMain } = require('electron');
 const path = require('path');
@@ -67,6 +68,7 @@ export class DesktopApplication {
     this.platform = platform;
     this.isMac = Platforms.isMac(this.platform);
     app.name = AppName;
+    app.allowRendererProcessReuse = false;
     this.registerAppEventListeners();
     this.registerSingleInstanceHandler();
     this.registerIpcEventListeners();
@@ -202,6 +204,8 @@ export class DesktopApplication {
     const titleBarStyle = (this.isMac || useSystemMenuBar)
       ? 'hiddenInset'
       : null;
+
+    const isTesting = process.argv.includes(CommandLineArgs.Testing);
     this.window = new BrowserWindow({
       'x': winState.x,
       'y': winState.y,
@@ -215,8 +219,12 @@ export class DesktopApplication {
       frame: this.isMac ? false : useSystemMenuBar,
       webPreferences: {
         spellcheck: true,
-        nodeIntegration: false,
-        contextIsolation: true,
+        /**
+         * During testing, we expose unsafe node apis to the browser window as
+         * required by spectron (^10.0.0)
+         */
+        nodeIntegration: isTesting,
+        contextIsolation: !isTesting,
         preload: path.join(__dirname, 'javascripts/renderer/preload.js')
       }
     });

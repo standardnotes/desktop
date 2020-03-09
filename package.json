@@ -23,12 +23,15 @@
     "eslint-config-standard": "^14.1.0",
     "eslint-loader": "^3.0.3",
     "eslint-plugin-import": "^2.20.1",
+    "eslint-plugin-mocha": "^6.3.0",
     "eslint-plugin-node": "^11.0.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
     "file-loader": "^5.1.0",
     "mime-types": "^2.1.26",
+    "mocha": "^7.1.0",
     "rimraf": "^3.0.2",
+    "spectron": "^10.0.1",
     "webpack": "^4.41.6",
     "webpack-cli": "^3.3.11",
     "webpack-merge": "^4.2.2"
@@ -92,6 +95,7 @@
     "start": "electron . --enable-logging --icon _icon/icon.png",
     "clean": "rimraf app/dist/",
     "setup": "npm install && npm --prefix ./app install ./app && git submodule update --init --force --remote",
-    "lint": "eslint --fix app/index.js app/application.js app/javascripts/**/*.js"
+    "lint": "eslint --fix app/index.js app/application.js app/javascripts/**/*.js test/*.js",
+    "test": "mocha"
   }
 }
