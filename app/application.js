@@ -15,7 +15,7 @@ import {
 } from './javascripts/main/store';
 import { AppName } from './javascripts/main/strings';
 import index from './index.html';
-import { CommandLineArgs } from './javascripts/shared/cli';
+import { CommandLineArgs } from './javascripts/shared/CommandLineArgs';
 
 const { app, BrowserWindow, shell, ipcMain } = require('electron');
 const path = require('path');
