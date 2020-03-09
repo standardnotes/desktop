@@ -1,17 +1,17 @@
-import { FileUtils } from "./fileUtils";
+import { FileUtils } from './fileUtils';
 const { dialog, app } = require('electron');
 const shell = require('electron').shell;
 const os = require('os');
-const request = require("request");
+const request = require('request');
 const appPath = app.getPath('userData');
 const compareVersions = require('compare-versions');
-const { autoUpdater } = require("electron-updater");
+const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
 const isDev = require('electron-is-dev');
 
 const fileUtils = new FileUtils();
 
-const UpdateFoldersName = "Updates";
+const UpdateFoldersName = 'Updates';
 const DefaultUpdateEndpoint = process.env.UPDATE_ENDPOINT ||
   'https://standardnotes.org/desktop/latest.json';
 
@@ -33,8 +33,8 @@ export class UpdateManager {
 
     autoUpdater.logger = log;
 
-    autoUpdater.on("update-downloaded", (info) => {
-      this.window.webContents.send("update-available", null);
+    autoUpdater.on('update-downloaded', (info) => {
+      this.window.webContents.send('update-available', null);
       this.__autoupdateDownloaded = true;
       this.autoupdateInfo = info;
       this.triggerMenuReload();
@@ -60,7 +60,7 @@ export class UpdateManager {
       if (buttonIndex === 0) {
         setImmediate(() => {
           // index.js prevents close event on some platforms
-          this.window.removeAllListeners("close");
+          this.window.removeAllListeners('close');
           this.window.close();
           autoUpdater.quitAndInstall(false);
         });
@@ -91,7 +91,7 @@ export class UpdateManager {
 
     if (this.metadata.autoupdateEnabled) {
       dialog.showMessageBox({
-        title: "Automatic Updates Enabled.",
+        title: 'Automatic Updates Enabled.',
         message: `Automatic updates have been enabled. Please note that this functionality
            is currently in beta, and that you are advised to periodically check in and 
            ensure you are running the latest version.`
@@ -108,13 +108,13 @@ export class UpdateManager {
     try {
       autoUpdater.checkForUpdates();
     } catch (e) {
-      console.log("Exception caught while checking for autoupdates:", e);
+      console.log('Exception caught while checking for autoupdates:', e);
     }
   }
 
   checkForUpdate(options = {}) {
 
-    console.log("Checking for updates...");
+    console.log('Checking for updates...');
 
     this.__checkAutoupdate();
     this.metadata.checkingForUpdate = true;
@@ -142,11 +142,11 @@ export class UpdateManager {
           : `Your version (${this.metadata.currentVersion}) is the latest available version.`;
 
         if (error) {
-          message = "An issue occurred while checking for updates. Please try again.";
+          message = 'An issue occurred while checking for updates. Please try again.';
         }
 
         dialog.showMessageBox({
-          title: "Finished checking for updates.",
+          title: 'Finished checking for updates.',
           message: message
         });
       }
@@ -169,8 +169,8 @@ export class UpdateManager {
 
     const url = this.metadata.latest.downloads[platformKey];
     const filename = url.split('/').pop();
-    const path = appPath + "/" + UpdateFoldersName + "/" + filename;
-    console.log("Downloading update file", url);
+    const path = appPath + '/' + UpdateFoldersName + '/' + filename;
+    console.log('Downloading update file', url);
     fileUtils.downloadFile(url, path, (error) => {
       this.metadata.downloadingUpdate = false;
       if (!error) {
@@ -179,8 +179,8 @@ export class UpdateManager {
         this.openDownloadLocation();
       } else {
         dialog.showMessageBox({
-          title: "Error Downloading",
-          message: "An error occurred while trying to download your update file. Please try again."
+          title: 'Error Downloading',
+          message: 'An error occurred while trying to download your update file. Please try again.'
         });
       }
       this.triggerMenuReload();
@@ -192,17 +192,17 @@ export class UpdateManager {
     let platformKey;
     /* 'darwin', 'linux', 'openbsd', 'win32' */
     const nativePlatform = os.platform();
-    if (nativePlatform === "darwin") {
-      platformKey = "mac";
-    } else if (nativePlatform.includes("win")) {
-      platformKey = "windows";
+    if (nativePlatform === 'darwin') {
+      platformKey = 'mac';
+    } else if (nativePlatform.includes('win')) {
+      platformKey = 'windows';
     } else {
       /* Linux; possible values are: 'arm', 'arm64', 'ia32', 'x32', and 'x64'. */
       const arch = os.arch();
-      if (arch === "x64") {
-        platformKey = "appimage_64";
+      if (arch === 'x64') {
+        platformKey = 'appimage_64';
       } else {
-        platformKey = "appimage_32";
+        platformKey = 'appimage_32';
       }
     }
     return platformKey;
@@ -213,7 +213,7 @@ export class UpdateManager {
   }
 
   openDownloadLocation() {
-    shell.openItem(appPath + "/" + UpdateFoldersName);
+    shell.openItem(appPath + '/' + UpdateFoldersName);
   }
 
   triggerMenuReload() {
@@ -221,7 +221,7 @@ export class UpdateManager {
   }
 
   metaFilePath() {
-    const path = appPath + "/" + UpdateFoldersName + "/" + "settings.json";
+    const path = appPath + '/' + UpdateFoldersName + '/' + 'settings.json';
     return path;
   }
 

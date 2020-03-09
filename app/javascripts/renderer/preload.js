@@ -75,26 +75,26 @@ function listenForIpcEvents() {
   };
 
   ipcRenderer.on('update-available', function (event, data) {
-    sendMessage("update-available", data);
+    sendMessage('update-available', data);
   });
 
   ipcRenderer.on('download-backup', function (event, data) {
-    sendMessage("download-backup", data);
+    sendMessage('download-backup', data);
   });
 
   ipcRenderer.on('finished-saving-backup', function (event, data) {
-    sendMessage("finished-saving-backup", data);
+    sendMessage('finished-saving-backup', data);
   });
 
   ipcRenderer.on('window-blurred', function (event, data) {
-    sendMessage("window-blurred", data);
+    sendMessage('window-blurred', data);
   });
 
   ipcRenderer.on('window-focused', function (event, data) {
-    sendMessage("window-focused", data);
+    sendMessage('window-focused', data);
   });
 
   ipcRenderer.on('install-component-complete', function (event, data) {
-    sendMessage("install-component-complete", data);
+    sendMessage('install-component-complete', data);
   });
 }
