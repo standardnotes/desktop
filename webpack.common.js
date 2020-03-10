@@ -1,8 +1,31 @@
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 
+const moduleConfig = {
+  rules: [
+    {
+      test: /\.(js|ts)$/,
+      exclude: /node_modules/,
+      loader: 'babel-loader'
+    },
+    {
+      test: /\.(png|html)$/i,
+      loader: 'file-loader',
+      options: {
+        name: '[name].[ext]'
+      }
+    }
+  ]
+};
+
+const resolve = {
+  extensions: ['.ts', '.js']
+};
+
 const electronMainConfig = {
-  entry: './app/index.js',
+  entry: {
+    index: './app/index.js'
+  },
   output: {
     path: path.resolve(__dirname, 'app', 'dist'),
     filename: 'index.js'
@@ -12,30 +35,8 @@ const electronMainConfig = {
   node: {
     __dirname: false
   },
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        exclude: /node_modules/,
-        loader: [
-          'babel-loader',
-          {
-            loader: 'eslint-loader',
-            options: {
-              fix: true
-            }
-          }
-        ]
-      },
-      {
-        test: /\.(png|html)$/i,
-        loader: 'file-loader',
-        options: {
-          name: '[name].[ext]'
-        }
-      }
-    ]
-  },
+  resolve,
+  module: moduleConfig,
   plugins: [
     new CopyPlugin([
       { from: 'app/extensions', to: 'extensions' },
@@ -67,9 +68,8 @@ const electronRendererConfig = {
   node: {
     __dirname: false
   },
-  module: {
-    rules: [{ test: /\.js$/, exclude: /node_modules/, loader: 'babel-loader' }]
-  },
+  resolve,
+  module: moduleConfig,
   externals: {
     spellchecker: 'commonjs spellchecker',
     electron: 'commonjs electron',

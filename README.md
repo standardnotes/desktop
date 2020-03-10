@@ -10,6 +10,12 @@ npm run dev
 npm run start
 ```
 
+Before commiting, make sure the code is correctly typed:
+
+```
+npm run check-types
+```
+
 ## Building
 
 Build for all platforms:

@@ -2,9 +2,11 @@ module.exports = function (api) {
   api.cache(true);
 
   const presets = [
-    ["@babel/preset-env", {
+    "@babel/typescript",
+    [
+      "@babel/preset-env", {
       "targets": {
-        "electron": 5
+        "electron": 8
       }
     }]
   ];

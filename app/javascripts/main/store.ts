@@ -2,22 +2,28 @@ const electron = require('electron');
 const path = require('path');
 const fs = require('fs');
 
-export const StoreKeys = {
-  ExtServerHost: 'extServerHost',
-  UseSystemMenuBar: 'useSystemMenuBar',
-  MenuBarVisible: 'isMenuBarVisible',
-  BackupsLocation: 'backupsLocation',
-  BackupsDisabled: 'backupsDisabled',
-  MinimizeToTray: 'minimizeToTray',
-  ZoomFactor: 'zoomFactor',
+export enum StoreKeys {
+  ExtServerHost = 'extServerHost',
+  UseSystemMenuBar = 'useSystemMenuBar',
+  MenuBarVisible = 'isMenuBarVisible',
+  BackupsLocation = 'backupsLocation',
+  BackupsDisabled = 'backupsDisabled',
+  MinimizeToTray = 'minimizeToTray',
+  ZoomFactor = 'zoomFactor',
   /**
    * @type {Set<String> | null} a set of language codes.
    */
-  SelectedSpellCheckerLanguageCodes: 'selectedSpellCheckerLanguageCodes'
+  SelectedSpellCheckerLanguageCodes = 'selectedSpellCheckerLanguageCodes'
+};
+
+type StoreData = {
+  [key in StoreKeys]?: any;
 };
 
 export class Store {
-  static instance = null;
+  static instance: Store;
+  readonly path: string;
+  readonly data: StoreData;
 
   static getInstance() {
     if (!this.instance) {
@@ -38,15 +44,15 @@ export class Store {
     return this.instance;
   }
 
-  static get(key) {
+  static get(key: StoreKeys) {
     return this.getInstance().get(key);
   }
 
-  static set(key, val) {
+  static set(key: StoreKeys, val: any) {
     return this.getInstance().set(key, val);
   }
 
-  constructor(opts) {
+  constructor(opts: { configName: string; defaults: StoreData }) {
     /**
      * Renderer process has to get `app` module via `remote`, whereas the main process
      * can get it directly app.getPath('userData') will return a string of the user's
@@ -57,11 +63,11 @@ export class Store {
     this.data = parseDataFile(this.path, opts.defaults);
   }
 
-  get(key) {
+  get(key: StoreKeys) {
     return this.data[key];
   }
 
-  set(key, val) {
+  set(key: StoreKeys, val: any) {
     this.data[key] = val;
     fs.writeFileSync(this.path, JSON.stringify(this.data, (_key, value) => {
       if (value instanceof Set) {
@@ -72,7 +78,7 @@ export class Store {
   }
 }
 
-function parseDataFile(filePath, defaults) {
+function parseDataFile(filePath: string, defaults: StoreData) {
   try {
     const userData = JSON.parse(fs.readFileSync(filePath));
 
