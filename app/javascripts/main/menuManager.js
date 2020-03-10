@@ -23,7 +23,7 @@ export function createMenuManager({
     menu = Menu.buildFromTemplate([
       ...(isMac ? [macAppMenu(app.getName())] : []),
       editMenu(spellcheckerManager, reload),
-      viewMenu(window, store),
+      viewMenu(window, store, reload),
       windowMenu(store, trayManager, reload),
       backupsMenu(archiveManager, reload),
       updateMenu(updateManager),
