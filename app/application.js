@@ -272,9 +272,9 @@ export class DesktopApplication {
     }
     this.window.loadURL(windowUrl);
 
-    const shouldOpenUrl = (url) => {
-      return url.startsWith('http') || url.startsWith('https');
-    };
+    const shouldOpenUrl = url =>
+      url.startsWith('http') || url.startsWith('mailto');
+
     // Check file urls for equality by decoding components
     // In packaged app, spaces in navigation events urls can contain %20 but not in windowUrl.
     const safeFileUrlCompare = (a, b) => {
