@@ -68,7 +68,7 @@ export class DesktopApplication {
     this.platform = platform;
     this.isMac = Platforms.isMac(this.platform);
     app.name = AppName;
-    app.allowRendererProcessReuse = false;
+    app.allowRendererProcessReuse = true;
     this.registerAppEventListeners();
     this.registerSingleInstanceHandler();
     this.registerIpcEventListeners();
