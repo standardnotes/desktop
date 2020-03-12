@@ -10,14 +10,13 @@ export class ZoomManager {
     this.window.webContents.on('dom-ready', () => {
       const zoomFactor = Store.get(StoreKeys.ZoomFactor);
       if (zoomFactor) {
-        this.window.webContents.setZoomFactor(zoomFactor);
+        this.window.webContents.zoomFactor = zoomFactor;
       }
     });
 
     this.window.on('close', () => {
-      this.window.webContents.getZoomFactor((zoomFactor) => {
-        Store.set(StoreKeys.ZoomFactor, zoomFactor);
-      });
+      const zoomFactor = this.window.webContents.zoomFactor;
+      Store.set(StoreKeys.ZoomFactor, zoomFactor);
     });
   }
 }

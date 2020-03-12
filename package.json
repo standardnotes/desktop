@@ -1,32 +1,39 @@
 {
   "name": "standard-notes",
   "main": "./app/dist/index.js",
-  "version": "3.3.2",
+  "version": "3.3.3",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/standardnotes/desktop"
+  },
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
-    "@babel/core": "^7.7.7",
+    "@babel/core": "^7.8.4",
     "@babel/plugin-proposal-class-properties": "^7.8.3",
-    "@babel/preset-env": "^7.7.7",
+    "@babel/preset-env": "^7.8.4",
     "babel-eslint": "^10.0.3",
     "babel-loader": "^8.0.6",
     "copy-webpack-plugin": "^5.1.1",
-    "electron": "^5.0.11",
-    "electron-builder": "21.2.0",
+    "electron": "^8.0.1",
+    "electron-builder": "^22.3.2",
     "electron-notarize": "^0.2.1",
     "eslint": "^6.7.2",
     "eslint-config-prettier": "^6.7.0",
     "eslint-config-semistandard": "^15.0.0",
     "eslint-config-standard": "^14.1.0",
     "eslint-loader": "^3.0.3",
-    "eslint-plugin-import": "^2.19.1",
-    "eslint-plugin-node": "^10.0.0",
+    "eslint-plugin-import": "^2.20.1",
+    "eslint-plugin-mocha": "^6.3.0",
+    "eslint-plugin-node": "^11.0.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
-    "file-loader": "^5.0.2",
+    "file-loader": "^5.1.0",
     "mime-types": "^2.1.26",
-    "rimraf": "^3.0.0",
-    "webpack": "^4.41.5",
-    "webpack-cli": "^3.3.10",
+    "mocha": "^7.1.0",
+    "rimraf": "^3.0.2",
+    "spectron": "^10.0.1",
+    "webpack": "^4.41.6",
+    "webpack-cli": "^3.3.11",
     "webpack-merge": "^4.2.2"
   },
   "build": {
@@ -88,6 +95,7 @@
     "start": "electron . --enable-logging --icon _icon/icon.png",
     "clean": "rimraf app/dist/",
     "setup": "npm install && npm --prefix ./app install ./app && git submodule update --init --force --remote",
-    "lint": "eslint --fix app/index.js app/application.js app/javascripts/**/*.js"
+    "lint": "eslint --fix app/index.js app/application.js app/javascripts/**/*.js test/*.js",
+    "test": "mocha"
   }
 }

@@ -3,21 +3,21 @@
   "productName": "Standard Notes",
   "description": "A simple and private place for your notes, thoughts, and life's work.",
   "author": "Standard Notes <help@standardnotes.org>",
-  "version": "3.3.2",
+  "version": "3.3.3",
   "main": "./dist/index.js",
   "dependencies": {
     "compare-versions": "^3.5.1",
+    "electron": "^8.0.1",
     "electron-editor-context-menu": "^1.1.1",
     "electron-is-dev": "^0.1.2",
     "electron-log": "^1.3.0",
     "electron-updater": "^4.2.0",
     "electron-window-state": "^5.0.3",
+    "mime-types": "^2.1.26",
     "os": "^0.1.1",
     "os-locale": "^2.1.0",
     "request": "^2.88.0",
     "sn-electron-valence": "0.0.4",
-    "spellchecker": "github:mobitar/node-spellchecker",
-    "standard-notes-web": "github:standardnotes/web#f2478c87824c8414f75bfedc93b02a4a04963e1c",
-    "yauzl": "^2.10.0"
+    "standard-notes-web": "github:standardnotes/web#f2fb71662227e0fbab5b3e8f16b95a68e7b69780"
   }
 }

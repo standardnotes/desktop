@@ -1,17 +1,19 @@
 import {
   ArchiveManager,
   createExtensionsServer,
-  MenuManager,
   initializePackageManager,
+  createMenuManager,
   SearchManager,
   createTrayManager,
   UpdateManager,
-  ZoomManager
+  ZoomManager,
+  createSpellcheckerManager
 } from './javascripts/main';
 import { Store, StoreKeys } from './javascripts/main/store';
 import { AppName } from './javascripts/main/strings';
 import { IpcMessages } from './javascripts/shared/ipcMessages';
 import index from './index.html';
+import { CommandLineArgs } from './javascripts/shared/CommandLineArgs';
 
 const { app, BrowserWindow, shell, ipcMain } = require('electron');
 const path = require('path');
@@ -43,9 +45,10 @@ function determinePlatform(platform) {
 
 class DesktopApplication {
   constructor() {
-    app.setName(AppName);
     this.platform = determinePlatform(process.platform);
     this.isMac = this.platform === Platforms.Mac;
+    app.name = AppName;
+    app.allowRendererProcessReuse = true;
     this.registerAppEventListeners();
     this.registerSingleInstanceHandler();
     this.registerIpcEventListeners();
@@ -146,7 +149,11 @@ class DesktopApplication {
     });
     const iconLocation = path.join(__dirname, '/icon/Icon-512x512.png');
     const useSystemMenuBar = Store.get(StoreKeys.UseSystemMenuBar);
-    const titleBarStyle = this.isMac || useSystemMenuBar ? 'hiddenInset' : null;
+    const titleBarStyle = (this.isMac || useSystemMenuBar)
+      ? 'hiddenInset'
+      : null;
+
+    const isTesting = process.argv.includes(CommandLineArgs.Testing);
     this.window = new BrowserWindow({
       x: winState.x,
       y: winState.y,
@@ -159,8 +166,13 @@ class DesktopApplication {
       titleBarStyle: titleBarStyle,
       frame: this.isMac ? false : useSystemMenuBar,
       webPreferences: {
-        nodeIntegration: false,
-        contextIsolation: true,
+        spellcheck: true,
+        /**
+         * During testing, we expose unsafe node apis to the browser window as
+         * required by spectron (^10.0.0)
+         */
+        nodeIntegration: isTesting,
+        contextIsolation: !isTesting,
         preload: path.join(__dirname, 'javascripts/renderer/preload.js')
       }
     });
@@ -214,13 +226,13 @@ class DesktopApplication {
     }
     this.window.loadURL(windowUrl);
 
-    const shouldOpenUrl = url => {
-      return url.startsWith('http') || url.startsWith('https');
-    };
+    const shouldOpenUrl = url =>
+      url.startsWith('http') || url.startsWith('mailto');
+
     /**
      * Check file urls for equality by decoding components
-     * In packaged app, spaces in navigation events urls can contain %20 but
-     * not in windowUrl.
+     * In packaged app, spaces in navigation events urls can contain %20
+     * but not in windowUrl.
      */
     const safeFileUrlCompare = (a, b) => {
       /** Catch exceptions in case of malformed urls. */
@@ -268,12 +280,19 @@ class DesktopApplication {
     this.trayManager = createTrayManager(window, Store, this.platform);
     this.updateManager = new UpdateManager(window);
     this.zoomManager = new ZoomManager(window);
-    this.menuManager = new MenuManager(
-      window,
-      this.archiveManager,
-      this.updateManager,
-      this.trayManager
+    const spellcheckerManager = createSpellcheckerManager(
+      Store.getInstance(),
+      this.window.webContents,
+      app.getLocale()
     );
+    this.menuManager = createMenuManager({
+      window: this.window,
+      archiveManager: this.archiveManager,
+      updateManager: this.updateManager,
+      trayManager: this.trayManager,
+      store: Store.getInstance(),
+      spellcheckerManager
+    });
   }
 
   openDevTools() {
