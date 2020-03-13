@@ -1,18 +1,20 @@
 {
   "extends": [
-    "plugin:mocha/recommended",
     "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:mocha/recommended",
     "semistandard",
     "prettier"
   ],
-  "parser": "babel-eslint",
+  "parser": "@typescript-eslint/parser",
   "rules": {
     "no-throw-literal": 0,
     "no-console": "off",
     "semi": 1,
     "quotes": ["error", "single"]
   },
-  "plugins": ["mocha"],
+  "plugins": ["@typescript-eslint", "mocha"],
   "globals": {
     "angular": true,
     "ElectronValence": true,
