@@ -1,14 +1,14 @@
 var { app } = require('electron');
 var fs = require('fs');
 var path = require('path');
-var request = require("request");
+var request = require('request');
 var appPath = app.getPath('userData');
 
 export class FileUtils {
   readJSONFile(path, callback) {
     fs.readFile(path, 'utf8', function (err, data) {
       if (err) {
-        console.error("Unable to read JSON file", path);
+        console.error('Unable to read JSON file', path);
         callback(null, err);
         return;
       }
@@ -25,7 +25,7 @@ export class FileUtils {
   }
 
   deleteAppRelativeDirectory(relativePath) {
-    console.log("Delete App Relative Directory", relativePath);
+    console.log('Delete App Relative Directory', relativePath);
     const deleteDirectory = (dirPath) => {
       if (fs.existsSync(dirPath)) {
         fs.readdirSync(dirPath).forEach((entry) => {
@@ -65,7 +65,7 @@ export class FileUtils {
       })
       .on('response', function (response) {
         if (response.statusCode !== 200) {
-          console.log("File download not 200", url);
+          console.log('File download not 200', url);
           callback && callback(response);
           callback = null;
         }

@@ -1,12 +1,13 @@
 import {
   ArchiveManager,
   createExtensionsServer,
-  MenuManager,
+  createMenuManager,
   PackageManager,
   SearchManager,
   createTrayManager,
   UpdateManager,
-  ZoomManager
+  ZoomManager,
+  createSpellcheckerManager
 } from './javascripts/main';
 import {
   Store,
@@ -14,6 +15,7 @@ import {
 } from './javascripts/main/store';
 import { AppName } from './javascripts/main/strings';
 import index from './index.html';
+import { CommandLineArgs } from './javascripts/shared/CommandLineArgs';
 
 const { app, BrowserWindow, shell, ipcMain } = require('electron');
 const path = require('path');
@@ -65,7 +67,8 @@ export class DesktopApplication {
   }) {
     this.platform = platform;
     this.isMac = Platforms.isMac(this.platform);
-    app.setName(AppName);
+    app.name = AppName;
+    app.allowRendererProcessReuse = true;
     this.registerAppEventListeners();
     this.registerSingleInstanceHandler();
     this.registerIpcEventListeners();
@@ -88,12 +91,19 @@ export class DesktopApplication {
     this.trayManager = createTrayManager(this.window, Store, this.platform);
     this.updateManager = new UpdateManager(this.window);
     this.zoomManager = new ZoomManager(this.window);
-    this.menuManager = new MenuManager(
-      this.window,
-      this.archiveManager,
-      this.updateManager,
-      this.trayManager
+    const spellcheckerManager = createSpellcheckerManager(
+      Store.getInstance(),
+      this.window.webContents,
+      app.getLocale()
     );
+    this.menuManager = createMenuManager({
+      window: this.window,
+      archiveManager: this.archiveManager,
+      updateManager: this.updateManager,
+      trayManager: this.trayManager,
+      store: Store.getInstance(),
+      spellcheckerManager
+    });
   }
 
   registerSingleInstanceHandler() {
@@ -125,7 +135,7 @@ export class DesktopApplication {
   }
 
   registerIpcEventListeners() {
-    ipcMain.on("display-app-menu", (event, position) => {
+    ipcMain.on('display-app-menu', (event, position) => {
       this.menuManager.popupMenu(position);
     });
 
@@ -160,7 +170,7 @@ export class DesktopApplication {
 
     app.on('ready', () => {
       if (this.isSecondInstance) {
-        console.warn("Quiting app and focusing existing instance.");
+        console.warn('Quiting app and focusing existing instance.');
         app.quit();
       } else {
         if (!this.window) {
@@ -194,6 +204,8 @@ export class DesktopApplication {
     const titleBarStyle = (this.isMac || useSystemMenuBar)
       ? 'hiddenInset'
       : null;
+
+    const isTesting = process.argv.includes(CommandLineArgs.Testing);
     this.window = new BrowserWindow({
       'x': winState.x,
       'y': winState.y,
@@ -206,9 +218,14 @@ export class DesktopApplication {
       titleBarStyle: titleBarStyle,
       frame: this.isMac ? false : useSystemMenuBar,
       webPreferences: {
-        nodeIntegration: false,
-        contextIsolation: true,
-        preload: path.join(__dirname, "javascripts/renderer/preload.js")
+        spellcheck: true,
+        /**
+         * During testing, we expose unsafe node apis to the browser window as
+         * required by spectron (^10.0.0)
+         */
+        nodeIntegration: isTesting,
+        contextIsolation: !isTesting,
+        preload: path.join(__dirname, 'javascripts/renderer/preload.js')
       }
     });
 
@@ -220,12 +237,12 @@ export class DesktopApplication {
     });
 
     this.window.on('blur', (event) => {
-      this.window.webContents.send("window-blurred", null);
+      this.window.webContents.send('window-blurred', null);
       this.archiveManager.applicationDidBlur();
     });
 
     this.window.on('focus', (event) => {
-      this.window.webContents.send("window-focused", null);
+      this.window.webContents.send('window-focused', null);
     });
 
     this.window.once('ready-to-show', () => {

@@ -1,14 +1,24 @@
 {
-  "extends": ["eslint:recommended", "semistandard", "prettier"],
+  "extends": [
+    "plugin:mocha/recommended",
+    "eslint:recommended",
+    "semistandard",
+    "prettier"
+  ],
   "parser": "babel-eslint",
   "rules": {
     "no-throw-literal": 0,
     "no-console": "off",
-    "semi": 1
+    "semi": 1,
+    "quotes": ["error", "single"]
   },
+  "plugins": ["mocha"],
   "globals": {
     "angular": true,
     "ElectronValence": true,
     "zip": true
+  },
+  "env": {
+    "mocha": true
   }
 }

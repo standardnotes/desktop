@@ -8,17 +8,17 @@
   "dependencies": {
     "adm-zip": "^0.4.13",
     "compare-versions": "^3.5.1",
+    "electron": "^8.0.1",
     "electron-editor-context-menu": "^1.1.1",
     "electron-is-dev": "^0.1.2",
     "electron-log": "^1.3.0",
     "electron-updater": "^4.2.0",
     "electron-window-state": "^5.0.3",
+    "mime-types": "^2.1.26",
     "os": "^0.1.1",
     "os-locale": "^2.1.0",
     "request": "^2.88.0",
-    "semver": "^5.5.0",
     "sn-electron-valence": "0.0.4",
-    "spellchecker": "github:mobitar/node-spellchecker",
     "standard-notes-web": "github:standardnotes/web#f2fb71662227e0fbab5b3e8f16b95a68e7b69780"
   }
 }
