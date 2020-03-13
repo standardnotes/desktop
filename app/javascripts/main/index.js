@@ -1,7 +1,6 @@
 export { ArchiveManager } from './archiveManager';
 export { createExtensionsServer } from './extServer';
 export { initializePackageManager } from './packageManager';
-export { FileUtils } from './fileUtils';
 export { createMenuManager } from './menuManager';
 export { SearchManager } from './searchManager';
 export { createTrayManager } from './trayManager';
