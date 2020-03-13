@@ -1,4 +1,5 @@
-import { FileUtils } from './fileUtils';
+import { readJSONFile, writeJSONFile } from './fileUtils';
+import { downloadFile } from './networking';
 const { dialog, app } = require('electron');
 const shell = require('electron').shell;
 const os = require('os');
@@ -9,8 +10,6 @@ const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
 const isDev = require('electron-is-dev');
 
-const fileUtils = new FileUtils();
-
 const UpdateFoldersName = 'Updates';
 const DefaultUpdateEndpoint = process.env.UPDATE_ENDPOINT ||
   'https://standardnotes.org/desktop/latest.json';
@@ -20,7 +19,8 @@ export class UpdateManager {
   constructor(window) {
     this.window = window;
     this.metadata = {};
-    this.getUpdateInfoFile((data) => {
+
+    this.getUpdateInfoFile().then((data) => {
       if (!data) {
         data = {
           endpoint: DefaultUpdateEndpoint,
@@ -29,7 +29,7 @@ export class UpdateManager {
       }
       this.metadata = data;
       this.checkForUpdate();
-    });
+    }).catch(console.error);
 
     autoUpdater.logger = log;
 
@@ -93,7 +93,7 @@ export class UpdateManager {
       dialog.showMessageBox({
         title: 'Automatic Updates Enabled.',
         message: `Automatic updates have been enabled. Please note that this functionality
-           is currently in beta, and that you are advised to periodically check in and 
+           is currently in beta, and that you are advised to periodically check in and
            ensure you are running the latest version.`
       });
     }
@@ -126,7 +126,7 @@ export class UpdateManager {
         this.metadata.latest = latest;
       }
 
-      console.log(`Finished checking for updates. Latest version: 
+      console.log(`Finished checking for updates. Latest version:
         ${latest.version} Current version: ${currentVersion}`);
 
       this.metadata.currentVersion = currentVersion;
@@ -137,7 +137,7 @@ export class UpdateManager {
 
       if (options.userTriggered) {
         var message = this.updateNeeded()
-          ? `A new update is available (version ${this.metadata.latest.version}). 
+          ? `A new update is available (version ${this.metadata.latest.version}).
             You can attempt upgrading through auto-update, or manually download and install this update.`
           : `Your version (${this.metadata.currentVersion}) is the latest available version.`;
 
@@ -156,7 +156,7 @@ export class UpdateManager {
     });
   }
 
-  downloadUpdateFile() {
+  async downloadUpdateFile() {
     const platformKey = this.getPlatformKey();
     if (!platformKey) {
       // Open GitHub releases
@@ -171,20 +171,20 @@ export class UpdateManager {
     const filename = url.split('/').pop();
     const path = appPath + '/' + UpdateFoldersName + '/' + filename;
     console.log('Downloading update file', url);
-    fileUtils.downloadFile(url, path, (error) => {
+    try {
+      await downloadFile(url, path);
+      this.metadata.latestDownloaded = true;
+      this.saveInfoFile();
+      this.openDownloadLocation();
+    } catch (error) {
+      dialog.showMessageBox({
+        title: 'Error Downloading',
+        message: 'An error occurred while trying to download your update file. Please try again.'
+      });
+    } finally {
       this.metadata.downloadingUpdate = false;
-      if (!error) {
-        this.metadata.latestDownloaded = true;
-        this.saveInfoFile();
-        this.openDownloadLocation();
-      } else {
-        dialog.showMessageBox({
-          title: 'Error Downloading',
-          message: 'An error occurred while trying to download your update file. Please try again.'
-        });
-      }
       this.triggerMenuReload();
-    });
+    }
   }
 
   getPlatformKey() {
@@ -221,21 +221,17 @@ export class UpdateManager {
   }
 
   metaFilePath() {
-    const path = appPath + '/' + UpdateFoldersName + '/' + 'settings.json';
-    return path;
+    return appPath + '/' + UpdateFoldersName + '/' + 'settings.json';
   }
 
-  saveInfoFile() {
-    const path = this.metaFilePath();
-    fileUtils.writeJSONFile(this.metadata, path, (writeError) => { });
+  async saveInfoFile() {
+    await writeJSONFile(this.metaFilePath(), this.metadata);
   }
 
-  getUpdateInfoFile(callback) {
+  async getUpdateInfoFile() {
     // Check for update info file
     const path = this.metaFilePath();
-    fileUtils.readJSONFile(path, (data, readError) => {
-      callback(data);
-    });
+    return readJSONFile(path);
   }
 
   __getLatest(callback) {

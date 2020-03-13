@@ -6,7 +6,6 @@
   "version": "3.3.3",
   "main": "./dist/index.js",
   "dependencies": {
-    "adm-zip": "^0.4.13",
     "compare-versions": "^3.5.1",
     "electron": "^8.0.1",
     "electron-editor-context-menu": "^1.1.1",

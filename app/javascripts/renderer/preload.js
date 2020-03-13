@@ -1,3 +1,4 @@
+import { IpcMessages } from '../shared/ipcMessages';
 import {
   Store,
   StoreKeys
@@ -39,12 +40,15 @@ process.once('loaded', function() {
 function loadTransmitter() {
 	transmitter.expose({
     extServerHost: Store.get(StoreKeys.ExtServerHost),
-		rendererPath: rendererPath,
+		rendererPath,
 		isMacOS: process.platform === 'darwin',
 		appVersion: remote.app.getVersion(),
 		useSystemMenuBar: Store.get(StoreKeys.UseSystemMenuBar),
 
-		// All functions must be async, as electron-valence expects to run .then() on them.
+		/**
+     * All functions must be async, as electron-valence expects to run .then()
+     * on them.
+     */
 		sendIpcMessage: async (message, data) => {
 		  ipcRenderer.send(message, data);
 		},
@@ -74,27 +78,27 @@ function listenForIpcEvents() {
     );
   };
 
-  ipcRenderer.on('update-available', function (event, data) {
-    sendMessage('update-available', data);
+  ipcRenderer.on(IpcMessages.UpdateAvailable, function (_event, data) {
+    sendMessage(IpcMessages.UpdateAvailable, data);
   });
 
-  ipcRenderer.on('download-backup', function (event, data) {
-    sendMessage('download-backup', data);
+  ipcRenderer.on(IpcMessages.DownloadBackup, function (_event, data) {
+    sendMessage(IpcMessages.DownloadBackup, data);
   });
 
-  ipcRenderer.on('finished-saving-backup', function (event, data) {
-    sendMessage('finished-saving-backup', data);
+  ipcRenderer.on(IpcMessages.FinishedSavingBackup, function (_event, data) {
+    sendMessage(IpcMessages.FinishedSavingBackup, data);
   });
 
-  ipcRenderer.on('window-blurred', function (event, data) {
-    sendMessage('window-blurred', data);
+  ipcRenderer.on(IpcMessages.WindowBlurred, function (_event, data) {
+    sendMessage(IpcMessages.WindowBlurred, data);
   });
 
-  ipcRenderer.on('window-focused', function (event, data) {
-    sendMessage('window-focused', data);
+  ipcRenderer.on(IpcMessages.WindowFocused, function (_event, data) {
+    sendMessage(IpcMessages.WindowFocused, data);
   });
 
-  ipcRenderer.on('install-component-complete', function (event, data) {
-    sendMessage('install-component-complete', data);
+  ipcRenderer.on(IpcMessages.InstallComponentComplete, function (_event, data) {
+    sendMessage(IpcMessages.InstallComponentComplete, data);
   });
 }

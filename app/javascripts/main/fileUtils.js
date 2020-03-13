@@ -1,117 +1,128 @@
-var { app } = require('electron');
-var fs = require('fs');
-var path = require('path');
-var request = require('request');
-var appPath = app.getPath('userData');
+import yauzl from 'yauzl';
+const fs = require('fs');
+const path = require('path');
 
-export class FileUtils {
-  readJSONFile(path, callback) {
-    fs.readFile(path, 'utf8', function (err, data) {
-      if (err) {
-        console.error('Unable to read JSON file', path);
-        callback(null, err);
-        return;
-      }
-      var obj = JSON.parse(data);
-      callback(obj);
-    });
+export const FileDoesNotExist = 'ENOENT';
+export const FileAlreadyExists = 'EEXIST';
+
+export async function readJSONFile(path) {
+  const data = await fs.promises.readFile(path, 'utf8');
+  return JSON.parse(data);
+}
+
+export async function writeJSONFile(filepath, data) {
+  await ensureDirectoryExists(path.dirname(filepath));
+  await fs.promises.writeFile(filepath, JSON.stringify(data, null, 2), 'utf8');
+}
+
+export async function ensureDirectoryExists(dirPath) {
+  try {
+    const stat = await fs.promises.lstat(dirPath);
+    if (!stat.isDirectory()) {
+      throw new Error(
+        'Tried to create a directory where a file of the same ' +
+          `name already exists: ${dirPath}`
+      );
+    }
+  } catch (error) {
+    if (error.code === FileDoesNotExist) {
+      /**
+       * No directory here. Make sure there is a *parent* directory, and then
+       * create it.
+       */
+      await ensureDirectoryExists(path.dirname(dirPath));
+      await fs.promises.mkdir(dirPath);
+    } else {
+      throw error;
+    }
   }
+}
 
-  writeJSONFile(data, path, callback) {
-    this.ensureDirectoryExists(path);
-    fs.writeFile(path, JSON.stringify(data, null, 2), 'utf8', (err) => {
-      callback(err);
-    });
+/**
+ * Deletes a directory (handling recursion.)
+ * @param {string} dirPath the path of the directory
+ */
+export async function deleteDir(dirPath) {
+  try {
+    await deleteDirContents(dirPath);
+  } catch (error) {
+    if (error.code === FileDoesNotExist) {
+      /** Directory has already been deleted. */
+      return;
+    }
+    throw error;
   }
+  await fs.promises.rmdir(dirPath);
+}
 
-  deleteAppRelativeDirectory(relativePath) {
-    console.log('Delete App Relative Directory', relativePath);
-    const deleteDirectory = (dirPath) => {
-      if (fs.existsSync(dirPath)) {
-        fs.readdirSync(dirPath).forEach((entry) => {
-          const entryPath = path.join(dirPath, entry);
-          if (fs.lstatSync(entryPath).isDirectory()) {
-            deleteDirectory(entryPath);
-          } else {
-            fs.unlinkSync(entryPath);
+export async function deleteDirContents(dirPath) {
+  const children = await fs.promises.readdir(dirPath, {
+    withFileTypes: true
+  });
+  for (const child of children) {
+    const childPath = path.join(dirPath, child.name);
+    if (child.isDirectory()) {
+      await deleteDirContents(childPath);
+      await fs.promises.rmdir(childPath);
+    } else {
+      await fs.promises.unlink(childPath);
+    }
+  }
+}
+
+export async function extractNestedZip(source, dest) {
+  return new Promise((resolve, reject) => {
+    yauzl.open(
+      source,
+      { lazyEntries: true, autoClose: true },
+      (err, zipFile) => {
+        let cancelled = false;
+        const tryReject = err => {
+          if (!cancelled) {
+            cancelled = true;
+            reject(err);
           }
+        };
+        if (err) return tryReject(err);
+
+        zipFile.readEntry();
+        zipFile.on('close', resolve);
+        zipFile.on('entry', entry => {
+          if (cancelled) return;
+          if (entry.fileName.endsWith('/')) {
+            /** entry is a directory, skip and read next entry */
+            zipFile.readEntry();
+            return;
+          }
+
+          zipFile.openReadStream(entry, async (err, stream) => {
+            if (cancelled) return;
+            if (err) return tryReject(err);
+            stream.on('error', tryReject);
+            const filepath = path.join(
+              dest,
+              /**
+               * Remove the first element of the entry's path, which is the base
+               * directory we want to ignore
+               */
+              entry.fileName.substring(entry.fileName.indexOf('/') + 1)
+            );
+            try {
+              await ensureDirectoryExists(path.dirname(filepath));
+            } catch (error) {
+              return tryReject(error);
+            }
+            const writeStream = fs
+              .createWriteStream(filepath)
+              .on('error', tryReject)
+              .on('error', tryReject);
+
+            stream.pipe(writeStream).on('close', () => {
+              zipFile.readEntry(); /** Reads next entry. */
+            });
+          });
         });
-        fs.rmdirSync(dirPath);
       }
-    };
-
-    deleteDirectory(path.join(appPath, relativePath));
-  }
-
-  ensureDirectoryExists(filePath) {
-    var dirname = path.dirname(filePath);
-    if (fs.existsSync(dirname)) {
-      return true;
-    }
-    this.ensureDirectoryExists(dirname);
-    fs.mkdirSync(dirname);
-  }
-
-  downloadFile(url, filePath, callback) {
-    this.ensureDirectoryExists(filePath);
-
-    // null callback after calliing because multiple '.on' could be called
-
-    request(url)
-      .on('error', function (err) {
-        console.log('File download error', url, err);
-        callback && callback();
-        callback = null;
-      })
-      .on('response', function (response) {
-        if (response.statusCode !== 200) {
-          console.log('File download not 200', url);
-          callback && callback(response);
-          callback = null;
-        }
-      })
-      .pipe(fs.createWriteStream(filePath))
-      .on('close', function () {
-        console.log('File download success', url);
-        callback && callback(null);
-        callback = null;
-      });
-  }
-
-  copyFileSync(source, target) {
-    var targetFile = target;
-
-    // if target is a directory a new file with the same name will be created
-    if (fs.existsSync(target)) {
-      if (fs.lstatSync(target).isDirectory()) {
-        targetFile = path.join(target, path.basename(source));
-      }
-    }
-
-    fs.writeFileSync(targetFile, fs.readFileSync(source));
-  }
-
-  copyFolderRecursiveSync(source, target, addBase) {
-    // console.log("copyFolderRecursiveSync", source, target);
-    var files = [];
-
-    // Check if folder needs to be created or integrated
-    var targetFolder = addBase ? path.join(target, path.basename(source)) : target;
-    if (!fs.existsSync(targetFolder)) {
-      fs.mkdirSync(targetFolder);
-    }
-
-    // Copy
-    if (fs.lstatSync(source).isDirectory()) {
-      files = fs.readdirSync(source);
-      files.forEach((file) => {
-        var curSource = path.join(source, file);
-        if (fs.lstatSync(curSource).isDirectory()) {
-          this.copyFolderRecursiveSync(curSource, targetFolder, true);
-        } else {
-          this.copyFileSync(curSource, targetFolder);
-        }
-      });
-    }
-  }
+    );
+  });
 }
