@@ -1,69 +1,110 @@
+import compareVersions from 'compare-versions';
+import { app, ipcMain } from 'electron';
+import fs from 'fs';
+import path from 'path';
+import { IpcMessages } from '../shared/ipcMessages';
 import {
-  readJSONFile,
   deleteDir,
-  writeJSONFile,
-  FileDoesNotExist,
+  deleteDirContents,
   ensureDirectoryExists,
   extractNestedZip,
-  deleteDirContents
+  FileDoesNotExist,
+  readJSONFile,
+  writeJSONFile
 } from './fileUtils';
 import { downloadFile, getJSON } from './networking';
-import { IpcMessages } from '../shared/ipcMessages';
-const { ipcMain, app } = require('electron');
-const fs = require('fs');
-const path = require('path');
 const appPath = app.getPath('userData');
-const compareVersions = require('compare-versions');
 
 const ExtensionsFolderName = 'Extensions';
-const MappingFileLocation = `${appPath}/${ExtensionsFolderName}/mapping.json`;
 
-export function initializePackageManager(webContents) {
-  const syncTasks = [];
-  let isRunningTasks = false;
-
-  ipcMain.on(IpcMessages.SyncComponents, async (_event, data) => {
-    console.log('Package manager: received event', IpcMessages.SyncComponents);
-    syncTasks.push({ components: data.componentsData });
-    if (isRunningTasks) return;
-    isRunningTasks = true;
-    await runTasks(webContents, syncTasks);
-    isRunningTasks = false;
-  });
+function log(...message: any) {
+  console.log('PackageManager:', ...message);
 }
 
-async function runTasks(webContents, syncTasks) {
-  while (syncTasks.length > 0) {
+interface Component {
+  uuid: string;
+  deleted: boolean;
+  content: {
+    name: string;
+    autoupdateDisabled: boolean;
+    local_url: string;
+    package_info: {
+      identifier: string;
+      version: string;
+      download_url: string;
+      latest_url?: string;
+    };
+  };
+}
+
+interface SyncTask {
+  components: Component[];
+}
+
+const MappingFileLocation = `${appPath}/${ExtensionsFolderName}/mapping.json`;
+async function getMapping() {
+  try {
+    return await readJSONFile(MappingFileLocation);
+  } catch (error) {
+    if (error.code === FileDoesNotExist) {
+      /**
+       * Mapping file might be absent (first start, corrupted data)
+       */
+      return {};
+    }
+    throw error;
+  }
+}
+
+export function initializePackageManager(webContents: Electron.WebContents) {
+  const syncTasks: SyncTask[] = [];
+  let isRunningTasks = false;
+
+  ipcMain.on(
+    IpcMessages.SyncComponents,
+    async (_event, data: { componentsData: Component[] }) => {
+      const components = data.componentsData;
+
+      log('sync:', components.map(c => c.content.name).join(', '));
+      syncTasks.push({ components });
+
+      if (isRunningTasks) return;
+      isRunningTasks = true;
+      await runTasks(webContents, syncTasks);
+      isRunningTasks = false;
+    }
+  );
+}
+
+async function runTasks(webContents: Electron.WebContents, tasks: SyncTask[]) {
+  while (tasks.length > 0) {
     try {
-      const oppositeTask = await runTask(
-        webContents,
-        syncTasks[0],
-        syncTasks.slice(1)
-      );
+      const oppositeTask = await runTask(webContents, tasks[0], tasks.slice(1));
       if (oppositeTask) {
-        syncTasks.splice(syncTasks.indexOf(oppositeTask), 1);
+        tasks.splice(tasks.indexOf(oppositeTask), 1);
       }
     } catch (error) {
       /** TODO(baptiste): do something */
-      console.error(error);
+      log(error);
     } finally {
       /** Remove the task from the queue. */
-      syncTasks.splice(0, 1);
+      tasks.splice(0, 1);
     }
   }
 }
 
 /**
- *
- * @param {Electron.WebContents} webContents
- * @param {Array} components
- * @param {Array} nextTasks the tasks that follow this one. Useful to see if we
+ * @param nextTasks the tasks that follow this one. Useful to see if we
  * need to run it at all (for example in the case of a succession of
  * install/uninstall)
  * @returns If a task opposite to this one was found, returns that tas without
  * doing anything. Otherwise undefined.
  */
-async function runTask(webContents, task, nextTasks) {
+async function runTask(
+  webContents: Electron.WebContents,
+  task: SyncTask,
+  nextTasks: SyncTask[]
+): Promise<SyncTask | undefined> {
   const maxTries = 3;
   /** Try to execute the task with up to three tries. */
   for (let tries = 1; tries <= maxTries; tries++) {
@@ -107,75 +148,86 @@ async function runTask(webContents, task, nextTasks) {
   }
 }
 
-async function syncComponents(webContents, components) {
+async function syncComponents(
+  webContents: Electron.WebContents,
+  components: Component[]
+) {
   /**
    * Incoming `components` are what should be installed. For every component,
    * check the filesystem and see if that component is installed. If not,
    * install it.
    */
-  console.log(`Syncing components: ${components.length}`);
+  log(`Syncing components: ${components.length}`);
+  await Promise.all(
+    components.map(async component => {
+      if (component.deleted) {
+        /** Uninstall */
+        log(`Uninstalling ${component.content.name}`);
+        await uninstallComponent(component.uuid);
+        return;
+      }
 
-  for (const component of components) {
-    if (component.deleted) {
-      /** Uninstall */
-      console.log(`Uninstalling ${component.content.name}`);
-      await uninstallComponent(component.uuid);
-      continue;
-    }
+      if (!component.content.package_info) {
+        log('Package info is null, skipping');
+        return;
+      }
 
-    if (!component.content.package_info) {
-      console.log('Package info is null, continuing');
-      continue;
-    }
-
-    const paths = pathsForComponent(component);
-    if (!component.content.local_url) {
-      /**
-       * We have a component but it is not mapped to anything on the file system
-       */
-      await installComponent(webContents, component);
-    } else {
-      try {
-        /** Will trigger an error if the directory does not exist. */
-        await fs.promises.lstat(paths.absolutePath);
-        if (!component.content.autoupdateDisabled) {
-          await checkForUpdate(webContents, component);
-        }
-      } catch (error) {
-        if (error.code === FileDoesNotExist) {
-          /** We have a component but no content. Install the component */
-          await installComponent(webContents, component);
-        } else {
-          throw error;
+      const paths = pathsForComponent(component);
+      if (!component.content.local_url) {
+        /**
+         * We have a component but it is not mapped to anything on the file system
+         */
+        await installComponent(webContents, component);
+      } else {
+        try {
+          /** Will trigger an error if the directory does not exist. */
+          await fs.promises.lstat(paths.absolutePath);
+          if (!component.content.autoupdateDisabled) {
+            await checkForUpdate(webContents, component);
+          }
+        } catch (error) {
+          if (error.code === FileDoesNotExist) {
+            /** We have a component but no content. Install the component */
+            await installComponent(webContents, component);
+          } else {
+            throw error;
+          }
         }
       }
-    }
-  }
+    })
+  );
 }
 
-async function installComponent(webContents, component) {
+async function installComponent(
+  webContents: Electron.WebContents,
+  component: Component
+) {
   const downloadUrl = component.content.package_info.download_url;
   if (!downloadUrl) {
     return;
   }
 
-  console.log('Installing ', component.content.name, downloadUrl);
+  log('Installing ', component.content.name, downloadUrl);
 
-  const sendInstalledMessage = (component, error) => {
+  const sendInstalledMessage = (
+    component: Component,
+    error?: { message: string; tag: string }
+  ) => {
     if (error) {
       console.error(
         `Error when installing component ${component.content.name}: ` +
           error.message
       );
+      console.log(error);
     } else {
-      console.log(`Installed component ${component.content.name}`);
+      log(`Installed component ${component.content.name}`);
     }
     webContents.send('install-component-complete', { component, error });
   };
 
   const paths = pathsForComponent(component);
   try {
-    console.log(`Downloading from ${downloadUrl}`);
+    log(`Downloading from ${downloadUrl}`);
     /** Download the zip and clear the component's directory in parallel */
     await Promise.all([
       downloadFile(downloadUrl, paths.downloadPath),
@@ -186,7 +238,7 @@ async function installComponent(webContents, component) {
       })()
     ]);
 
-    console.log('Extracting', paths.downloadPath, 'to', paths.absolutePath);
+    log('Extracting', paths.downloadPath, 'to', paths.absolutePath);
     await extractNestedZip(paths.downloadPath, paths.absolutePath);
 
     const packagePath = path.join(paths.absolutePath, 'package.json');
@@ -210,14 +262,17 @@ async function installComponent(webContents, component) {
 
     sendInstalledMessage(component);
   } catch (error) {
-    sendInstalledMessage(component, { tag: 'error-downloading' });
+    sendInstalledMessage(component, {
+      message: error.message,
+      tag: 'error-downloading'
+    });
   }
 }
 
-async function updateComponentLocation(componentId, location) {
+async function updateComponentLocation(componentId: string, location: string) {
   let componentMappings;
   try {
-    componentMappings = await readJSONFile(MappingFileLocation);
+    componentMappings = await getMapping();
   } catch (error) {
     if (error.code === FileDoesNotExist) {
       componentMappings = {};
@@ -234,7 +289,7 @@ async function updateComponentLocation(componentId, location) {
   await writeJSONFile(MappingFileLocation, componentMappings);
 }
 
-function pathsForComponent(component) {
+function pathsForComponent(component: Component) {
   const relativePath = path.join(
     ExtensionsFolderName,
     component.content.package_info.identifier
@@ -251,8 +306,8 @@ function pathsForComponent(component) {
   };
 }
 
-async function uninstallComponent(uuid) {
-  const mapping = await readJSONFile(MappingFileLocation);
+async function uninstallComponent(uuid: string) {
+  const mapping = await getMapping();
   const componentMapping = mapping[uuid];
   if (!componentMapping || !componentMapping.location) {
     /** No mapping for component */
@@ -264,7 +319,9 @@ async function uninstallComponent(uuid) {
   await writeJSONFile(MappingFileLocation, mapping);
 }
 
-async function getInstalledVersionForComponent(component) {
+async function getInstalledVersionForComponent(
+  component: Component
+): Promise<string> {
   /**
    * We check package.json version rather than
    * component.content.package_info.version because we want device specific
@@ -276,7 +333,15 @@ async function getInstalledVersionForComponent(component) {
   return response.version;
 }
 
-async function checkForUpdate(webContents, component) {
+interface Package {
+  version: string;
+  download_url: string;
+}
+
+async function checkForUpdate(
+  webContents: Electron.WebContents,
+  component: Component
+) {
   const latestURL = component.content.package_info.latest_url;
   if (!latestURL) {
     console.warn(
@@ -285,20 +350,17 @@ async function checkForUpdate(webContents, component) {
     return;
   }
 
-  console.log(`Checking for update for ${component.content.name}`);
   const [payload, installedVersion] = await Promise.all([
-    getJSON(latestURL),
+    getJSON(latestURL) as Promise<Package>,
     getInstalledVersionForComponent(component)
   ]);
-
-  // prettier-ignore
-  console.log(
-    `\tLatest:    ${payload.version}` +
-    `\n\tInstalled: ${installedVersion}`
+  log(
+    `Checking for update for ${component.content.name}\n` +
+      `Latest: ${payload.version} | Installed: ${installedVersion}`
   );
   if (compareVersions(payload.version, installedVersion) === 1) {
     /** Latest version is greater than installed version */
-    console.log('Downloading new version', payload.download_url);
+    log('Downloading new version', payload.download_url);
     component.content.package_info.download_url = payload.download_url;
     component.content.package_info.version = payload.version;
     await installComponent(webContents, component);

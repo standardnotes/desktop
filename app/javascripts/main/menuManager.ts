@@ -1,9 +1,10 @@
-import { StoreKeys } from './store';
-import { AppPaths } from './paths';
-const { app, Menu, dialog, shell } = require('electron');
-
-/** TODO(baptiste): precompute `process.platform` at compile-time */
-const isMac = process.platform === 'darwin';
+import { StoreKeys, Store } from './store';
+import { ArchiveManager } from './archiveManager';
+import { UpdateManager } from './updateManager';
+import { TrayManager } from './trayManager';
+import { SpellcheckerManager } from './spellcheckerManager';
+import { MenuItemConstructorOptions, app, Menu, dialog, shell } from 'electron';
+import { isMac } from './platforms';
 
 export function createMenuManager({
   window,
@@ -12,14 +13,17 @@ export function createMenuManager({
   trayManager,
   store,
   spellcheckerManager
+}: {
+  window: Electron.BrowserWindow;
+  archiveManager: ArchiveManager;
+  updateManager: UpdateManager;
+  trayManager: TrayManager;
+  store: Store;
+  spellcheckerManager: SpellcheckerManager;
 }) {
-  let menu = null;
+  let menu: Menu;
 
   function reload() {
-    loadMenu();
-  }
-
-  function loadMenu() {
     menu = Menu.buildFromTemplate([
       ...(isMac ? [macAppMenu(app.getName())] : []),
       editMenu(spellcheckerManager, reload),
@@ -31,47 +35,49 @@ export function createMenuManager({
     ]);
     Menu.setApplicationMenu(menu);
   }
+  reload() // initialization
 
   return {
-    loadMenu,
     reload,
-    popupMenu({ x, y }) {
-      if (menu) {
-        menu.popup(window, x, y);
+    popupMenu() {
+      if (process.env.NODE_ENV === 'development') {
+        /** Check the state */
+        if (!menu) throw new Error('called popupMenu() before loading');
       }
+      menu?.popup();
     }
   };
 }
 
-const Roles = {
-  Undo: 'undo',
-  Redo: 'redo',
-  Cut: 'cut',
-  Copy: 'copy',
-  Paste: 'paste',
-  PasteAndMatchStyle: 'pasteandmatchstyle',
-  SelectAll: 'selectall',
-  Reload: 'reload',
-  ToggleDevTools: 'toggledevtools',
-  ResetZoom: 'resetzoom',
-  ZoomIn: 'zoomin',
-  ZoomOut: 'zoomout',
-  ToggleFullScreen: 'togglefullscreen',
-  Window: 'window',
-  Minimize: 'minimize',
-  Close: 'close',
-  Help: 'help',
-  About: 'about',
-  Services: 'services',
-  Hide: 'hide',
-  HideOthers: 'hideothers',
-  UnHide: 'unhide',
-  Quit: 'quit',
-  StartSeeking: 'startspeaking',
-  StopSeeking: 'stopspeaking',
-  Zoom: 'zoom',
-  Front: 'front'
-};
+const enum Roles {
+  Undo = 'undo',
+  Redo = 'redo',
+  Cut = 'cut',
+  Copy = 'copy',
+  Paste = 'paste',
+  PasteAndMatchStyle = 'pasteAndMatchStyle',
+  SelectAll = 'selectAll',
+  Reload = 'reload',
+  ToggleDevTools = 'toggleDevTools',
+  ResetZoom = 'resetZoom',
+  ZoomIn = 'zoomIn',
+  ZoomOut = 'zoomOut',
+  ToggleFullScreen = 'togglefullscreen',
+  Window = 'window',
+  Minimize = 'minimize',
+  Close = 'close',
+  Help = 'help',
+  About = 'about',
+  Services = 'services',
+  Hide = 'hide',
+  HideOthers = 'hideOthers',
+  UnHide = 'unhide',
+  Quit = 'quit',
+  StartSeeking = 'startSpeaking',
+  StopSeeking = 'stopSpeaking',
+  Zoom = 'zoom',
+  Front = 'front'
+}
 
 const KeyCombinations = {
   CmdOrCtrlW: 'CmdOrCtrl + W',
@@ -114,22 +120,22 @@ const Labels = {
   DownloadingUpdate: 'Downloading Update…',
   ManuallyDownloadUpdate: 'Manually Download Update',
   SpellcheckerLanguages: 'Spellchecker Languages',
-  installPendingUpdate(versionNumber) {
+  installPendingUpdate(versionNumber: string) {
     return `Install Pending Update (${versionNumber})`;
   },
-  lastUpdateCheck(date) {
+  lastUpdateCheck(date: Date) {
     return `Last checked ${date.toLocaleString()}`;
   },
-  version(number) {
+  version(number: string) {
     return `Version: ${number}`;
   },
-  yourVersion(number) {
+  yourVersion(number: string) {
     return `Your Version: ${number}`;
   },
-  latestVersion(number) {
+  latestVersion(number: string) {
     return `Latest Version: ${number}`;
   },
-  viewReleaseNotes(versionNumber) {
+  viewReleaseNotes(versionNumber: string) {
     return `View ${versionNumber} Release Notes`;
   }
 };
@@ -143,12 +149,12 @@ const MessageBoxMessages = {
     'Please restart the application for the change to take effect.'
 };
 
-const MenuItemTypes = {
-  CheckBox: 'checkbox',
-  Radio: 'radio'
-};
+const enum MenuItemTypes {
+  CheckBox = 'checkbox',
+  Radio = 'radio'
+}
 
-const Separator = {
+const Separator: MenuItemConstructorOptions = {
   type: 'separator'
 };
 
@@ -161,7 +167,7 @@ const Urls = {
   GitHubReleases: 'https://github.com/standardnotes/desktop/releases'
 };
 
-function macAppMenu(appName) {
+function macAppMenu(appName: string): MenuItemConstructorOptions {
   return {
     label: appName,
     submenu: [
@@ -191,7 +197,10 @@ function macAppMenu(appName) {
   };
 }
 
-function editMenu(spellcheckerManager, reload) {
+function editMenu(
+  spellcheckerManager: SpellcheckerManager,
+  reload: () => any
+): MenuItemConstructorOptions {
   return {
     label: Labels.Edit,
     submenu: [
@@ -224,12 +233,12 @@ function editMenu(spellcheckerManager, reload) {
   };
 }
 
-function macSpeechMenu() {
+function macSpeechMenu(): MenuItemConstructorOptions {
   return {
     label: Labels.Speech,
     submenu: [
       {
-        role: Roles.StartSeeking
+        role: Roles.StopSeeking
       },
       {
         role: Roles.StopSeeking
@@ -238,28 +247,37 @@ function macSpeechMenu() {
   };
 }
 
-function spellcheckerMenu(spellcheckerManager, reload) {
+function spellcheckerMenu(
+  spellcheckerManager: SpellcheckerManager,
+  reload: () => any
+): MenuItemConstructorOptions {
   return {
     label: Labels.SpellcheckerLanguages,
-    submenu: spellcheckerManager.languages().map(({ name, code, enabled }) => {
-      return {
-        label: name,
-        type: MenuItemTypes.CheckBox,
-        checked: enabled,
-        click: () => {
-          if (enabled) {
-            spellcheckerManager.removeLanguage(code);
-          } else {
-            spellcheckerManager.addLanguage(code);
+    submenu: spellcheckerManager.languages().map(
+      ({ name, code, enabled }): MenuItemConstructorOptions => {
+        return {
+          label: name,
+          type: MenuItemTypes.CheckBox,
+          checked: enabled,
+          click: () => {
+            if (enabled) {
+              spellcheckerManager.removeLanguage(code);
+            } else {
+              spellcheckerManager.addLanguage(code);
+            }
+            reload();
           }
-          reload();
-        }
-      };
-    })
+        };
+      }
+    )
   };
 }
 
-function viewMenu(window, store, reload) {
+function viewMenu(
+  window: Electron.BrowserWindow,
+  store: Store,
+  reload: () => any
+): MenuItemConstructorOptions {
   return {
     label: Labels.View,
     submenu: [
@@ -267,7 +285,7 @@ function viewMenu(window, store, reload) {
         role: Roles.Reload
       },
       {
-        role: Roles.ToggleDevTools
+        role: 'toggleDevTools'
       },
       Separator,
       {
@@ -288,7 +306,11 @@ function viewMenu(window, store, reload) {
   };
 }
 
-function menuBarOptions(window, store, reload) {
+function menuBarOptions(
+  window: Electron.BrowserWindow,
+  store: Store,
+  reload: () => any
+) {
   const useSystemMenuBar = store.get(StoreKeys.UseSystemMenuBar);
   let isMenuBarVisible = store.get(StoreKeys.MenuBarVisible);
   window.setMenuBarVisibility(isMenuBarVisible);
@@ -319,7 +341,7 @@ function menuBarOptions(window, store, reload) {
   ];
 }
 
-function windowMenu(store, trayManager, reload) {
+function windowMenu(store: Store, trayManager: TrayManager, reload: () => any): MenuItemConstructorOptions {
   return {
     role: Roles.Window,
     submenu: [
@@ -337,7 +359,7 @@ function windowMenu(store, trayManager, reload) {
   };
 }
 
-function macWindowItems() {
+function macWindowItems(): MenuItemConstructorOptions[] {
   return [
     {
       label: Labels.Close,
@@ -346,7 +368,7 @@ function macWindowItems() {
     },
     {
       label: Labels.Minimize,
-      accelerator: Labels.CmdOrCtrlM,
+      accelerator: KeyCombinations.CmdOrCtrlM,
       role: Roles.Minimize
     },
     {
@@ -361,7 +383,11 @@ function macWindowItems() {
   ];
 }
 
-function minimizeToTrayItem(store, trayManager, reload) {
+function minimizeToTrayItem(
+  store: Store,
+  trayManager: TrayManager,
+  reload: () => any
+) {
   const minimizeToTray = trayManager.shouldMinimizeToTray();
   return {
     label: Labels.MinimizeToTrayOnClose,
@@ -379,7 +405,7 @@ function minimizeToTrayItem(store, trayManager, reload) {
   };
 }
 
-function backupsMenu(archiveManager, reload) {
+function backupsMenu(archiveManager: ArchiveManager, reload: () => any) {
   return {
     label: Labels.Backups,
     submenu: [
@@ -409,7 +435,7 @@ function backupsMenu(archiveManager, reload) {
   };
 }
 
-function updateMenu(updateManager) {
+function updateMenu(updateManager: UpdateManager) {
   const updateData = updateManager.getMetadata();
   const updateNeeded = updateManager.updateNeeded();
   let label;
@@ -420,7 +446,7 @@ function updateMenu(updateManager) {
   } else {
     label = Labels.Updates;
   }
-  const submenu = [];
+  const submenu: MenuItemConstructorOptions[] = [];
   const structure = { label, submenu };
 
   if (updateManager.autoupdateDownloaded()) {
@@ -510,7 +536,7 @@ function updateMenu(updateManager) {
   return structure;
 }
 
-function helpMenu(window, shell) {
+function helpMenu(window: Electron.BrowserWindow, shell: Electron.Shell) {
   return {
     role: Roles.Help,
     submenu: [
@@ -554,16 +580,15 @@ function helpMenu(window, shell) {
       {
         label: Labels.OpenDataDirectory,
         click() {
-          const userDataPath = app.getPath(AppPaths.UserData);
+          const userDataPath = app.getPath('userData');
           shell.openItem(userDataPath);
         }
       },
       {
         label: Labels.ClearCacheAndReload,
-        click() {
-          window.webContents.session.clearCache(() => {
-            window.reload();
-          });
+        async click() {
+          await window.webContents.session.clearCache();
+          window.reload();
         }
       },
       Separator,

@@ -106,7 +106,7 @@ async function configureDesktopManager(desktopManager, bridge) {
     bridge.sendIpcMessage(IpcMessages.InitialDataLoaded, {});
   });
 
-  desktopManager.desktop_setIpcMessages.MajorDataChangeHandler(() => {
+  desktopManager.desktop_setMajorDataChangeHandler(() => {
     bridge.sendIpcMessage(IpcMessages.MajorDataChange, {});
   });
 }

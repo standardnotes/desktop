@@ -24,7 +24,7 @@ const resolve = {
 
 const electronMainConfig = {
   entry: {
-    index: './app/index.js'
+    index: './app/index.ts'
   },
   output: {
     path: path.resolve(__dirname, 'app', 'dist'),

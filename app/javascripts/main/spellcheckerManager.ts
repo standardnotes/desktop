@@ -1,7 +1,11 @@
-import { StoreKeys } from './store';
 import buildEditorContextMenu from 'electron-editor-context-menu';
+import { Store, StoreKeys } from './store';
 
-function initializeContextMenuListener(webContents) {
+function log(...message: any) {
+  console.log('spellcheckerMaager:', ...message);
+}
+
+function initializeContextMenuListener(webContents: Electron.WebContents) {
   webContents.on('context-menu', (_event, params) => {
     /** Only show a context menu on editable items. */
     if (!params.isEditable) return;
@@ -9,32 +13,45 @@ function initializeContextMenuListener(webContents) {
       isMisspelled: params.misspelledWord.length > 0,
       spellingSuggestions: params.dictionarySuggestions
     });
-    menu.popup({ window: webContents });
+    menu.popup();
   });
 }
 
+export interface SpellcheckerManager {
+  languages(): Array<{
+    code: string;
+    name: string;
+    enabled: boolean;
+  }>;
+  addLanguage(code: string): void;
+  removeLanguage(code: string): void;
+}
+
 /**
- * @param {Store} store
- * @param {Electron.WebContents} webContents
- * @param {string} userLocale the current locale
+ * @param userLocale the current locale
+ * @returns `null` if we're on MacOS.
  */
-export function createSpellcheckerManager(store, webContents, userLocale) {
+export function createSpellcheckerManager(
+  store: Store,
+  webContents: Electron.WebContents,
+  userLocale: string
+): SpellcheckerManager | null {
   initializeContextMenuListener(webContents);
 
   /**
    * On MacOS the system spellchecker is used and every related Electron method
-   * is a no-op. Return early to prevent unnecessary code execution/allocation
+   * is a no-op. Return early to prevent unnecessary code execution/allocations
    */
   /** TODO(baptiste): precompute `process.platform` at compile-time */
-  if (process.platform === 'darwin') return;
+  if (process.platform === 'darwin') return null;
 
-  const { session } = webContents;
+  const session = webContents.session;
 
   /**
    * Mapping of language codes predominantly based on
    * https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
    */
-  const LanguageCodes = {
+  const LanguageCodes: Readonly<Record<string, string | undefined>> = {
     af: 'Afrikaans' /** Afrikaans */,
     id: 'Bahasa Indonesia' /** Indonesian */,
     ca: 'Català, Valencià' /** Catalan, Valencian */,
@@ -87,21 +104,20 @@ export function createSpellcheckerManager(store, webContents, userLocale) {
     ko: '한국어' /** Korean */
   };
 
-  /**
-   * All the available spellchecker language codes,
-   * sorted by their actual names.
-   */
-  const availableLanguageCodes = session.availableSpellCheckerLanguages.sort(
-    (code1, code2) => LanguageCodes[code1].localeCompare(LanguageCodes[code2])
-  );
-
   setSpellcheckerLanguages();
 
   function setSpellcheckerLanguages() {
     const { session } = webContents;
-    let selectedCodes = selectedLanguageCodes();
+    let selectedCodes = store.get(StoreKeys.SelectedSpellCheckerLanguageCodes);
 
-    if (selectedCodes instanceof Set) {
+    if (selectedCodes === null) {
+      /** First-time setup or corrupted data. Set a default language */
+      selectedCodes = determineDefaultSpellcheckerLanguageCodes(
+        session.availableSpellCheckerLanguages,
+        userLocale
+      );
+      store.set(StoreKeys.SelectedSpellCheckerLanguageCodes, selectedCodes);
+    } else {
       /**
        * Vet the codes. If for some reason (like data corruption) there is
        * an unsupported code, remove it from the list.
@@ -110,42 +126,29 @@ export function createSpellcheckerManager(store, webContents, userLocale) {
       if (modified) {
         store.set(StoreKeys.SelectedSpellCheckerLanguageCodes, selectedCodes);
       }
-    } else {
-      /** First-time setup or corrupted data. Set a default language */
-      selectedCodes = determineDefaultSpellcheckerLanguageCodes(
-        session.availableSpellCheckerLanguages,
-        userLocale
-      );
-      store.set(StoreKeys.SelectedSpellCheckerLanguageCodes, selectedCodes);
     }
     session.setSpellCheckerLanguages([...selectedCodes]);
   }
 
-  /**
-   * @param {Array<String>} availableSpellCheckerLanguages
-   * @param {String} userLocale
-   * @returns {Set<String>}
-   */
   function determineDefaultSpellcheckerLanguageCodes(
-    availableSpellCheckerLanguages,
-    userLocale
-  ) {
+    availableSpellCheckerLanguages: string[],
+    userLocale: string
+  ): Set<string> {
     const localeIsSupported = availableSpellCheckerLanguages.includes(
       userLocale
     );
     if (localeIsSupported) {
       return new Set([userLocale]);
     } else {
-      console.log(`Spellchecker doesn't support locale '${userLocale}'.`);
+      log(`Spellchecker doesn't support locale '${userLocale}'.`);
       return new Set();
     }
   }
 
   /**
-   * @param {Set<String>} codes
-   * @returns {boolean} true if the set was modified, false otherwise
+   * @returns true if the set was modified, false otherwise
    */
-  function deleteUnknownCodes(codes) {
+  function deleteUnknownCodes(codes: Set<string>): boolean {
     let modified = false;
     for (const code of codes) {
       if (!LanguageCodes[code]) {
@@ -156,29 +159,47 @@ export function createSpellcheckerManager(store, webContents, userLocale) {
     return modified;
   }
 
-  /**
-   * @returns {Set<String> | null}
-   */
-  function selectedLanguageCodes() {
-    return store.get(StoreKeys.SelectedSpellCheckerLanguageCodes);
+  function selectedLanguageCodes(): Set<string> {
+    return store.get(StoreKeys.SelectedSpellCheckerLanguageCodes) || new Set();
   }
+
+  if (process.env.NODE_ENV === 'development') {
+    /** Make sure every available language is accounted for. */
+    for (const code of session.availableSpellCheckerLanguages) {
+      if (!(code in LanguageCodes)) {
+        throw new Error(`Found unsupported language code: ${code}`);
+      }
+    }
+  }
+  /**
+   * All the available spellchecker language codes,
+   * sorted by their actual names. We use `!` knowing that we've already checked
+   * for unknown languages in `session.availableSpellCheckerLanguages`
+   */
+  const availableLanguageCodes = session.availableSpellCheckerLanguages.sort(
+    (code1, code2) => LanguageCodes[code1]!.localeCompare(LanguageCodes[code2]!)
+  );
 
   return {
     languages() {
       const codes = selectedLanguageCodes();
       return availableLanguageCodes.map(code => ({
         code,
-        name: LanguageCodes[code],
+        /**
+         * We use `!` here knowing that availableLanguageCodes
+         * has already been vetted.
+         */
+        name: LanguageCodes[code]!,
         enabled: codes.has(code)
       }));
     },
-    addLanguage(code) {
+    addLanguage(code: string) {
       const selectedCodes = selectedLanguageCodes();
       selectedCodes.add(code);
       store.set(StoreKeys.SelectedSpellCheckerLanguageCodes, selectedCodes);
       session.setSpellCheckerLanguages(Array.from(selectedCodes));
     },
-    removeLanguage(code) {
+    removeLanguage(code: string) {
       const selectedCodes = selectedLanguageCodes();
       selectedCodes.delete(code);
       store.set(StoreKeys.SelectedSpellCheckerLanguageCodes, selectedCodes);

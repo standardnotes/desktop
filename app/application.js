@@ -6,9 +6,11 @@ import {
   SearchManager,
   createTrayManager,
   UpdateManager,
-  ZoomManager,
-  createSpellcheckerManager
+  createSpellcheckerManager,
+  initializeZoomManager,
+  initializeSearchManager
 } from './javascripts/main';
+import { isWindows, isMac, isLinux } from './javascripts/main/platforms';
 import { Store, StoreKeys } from './javascripts/main/store';
 import { AppName } from './javascripts/main/strings';
 import { IpcMessages } from './javascripts/shared/ipcMessages';
@@ -24,29 +26,8 @@ const WINDOW_DEFAULT_HEIGHT = 800;
 const WINDOW_MIN_WIDTH = 300;
 const WINDOW_MIN_HEIGHT = 400;
 
-export const Platforms = {
-  Mac: 1,
-  Windows: 2,
-  Linux: 3
-};
-
-function determinePlatform(platform) {
-  switch (platform) {
-    case 'darwin':
-      return Platforms.Mac;
-    case 'win32':
-      return Platforms.Windows;
-    case 'linux':
-      return Platforms.Linux;
-    default:
-      throw `Unknown platform: ${platform}.`;
-  }
-}
-
 class DesktopApplication {
   constructor() {
-    this.platform = determinePlatform(process.platform);
-    this.isMac = this.platform === Platforms.Mac;
     app.name = AppName;
     app.allowRendererProcessReuse = true;
     this.registerAppEventListeners();
@@ -100,7 +81,7 @@ class DesktopApplication {
 
   registerAppEventListeners() {
     app.on('window-all-closed', () => {
-      if (!this.isMac) {
+      if (!isMac) {
         app.quit();
       }
     });
@@ -122,15 +103,11 @@ class DesktopApplication {
         this.createExtensionsServer();
         this.createWindow();
 
-        this.menuManager.loadMenu();
         this.updateManager.onNeedMenuReload = () => {
           this.menuManager.reload();
         };
 
-        const isWindowsOrLinux =
-          this.platform === Platforms.Windows ||
-          this.platform === Platforms.Linux;
-        if (isWindowsOrLinux && this.trayManager.shouldMinimizeToTray()) {
+        if ((isWindows || isLinux) && this.trayManager.shouldMinimizeToTray()) {
           this.trayManager.createTrayIcon();
         }
       }
@@ -149,9 +126,7 @@ class DesktopApplication {
     });
     const iconLocation = path.join(__dirname, '/icon/Icon-512x512.png');
     const useSystemMenuBar = Store.get(StoreKeys.UseSystemMenuBar);
-    const titleBarStyle = (this.isMac || useSystemMenuBar)
-      ? 'hiddenInset'
-      : null;
+    const titleBarStyle = isMac || useSystemMenuBar ? 'hiddenInset' : null;
 
     const isTesting = process.argv.includes(CommandLineArgs.Testing);
     this.window = new BrowserWindow({
@@ -164,7 +139,7 @@ class DesktopApplication {
       show: false,
       icon: iconLocation,
       titleBarStyle: titleBarStyle,
-      frame: this.isMac ? false : useSystemMenuBar,
+      frame: isMac ? false : useSystemMenuBar,
       webPreferences: {
         spellcheck: true,
         /**
@@ -202,7 +177,7 @@ class DesktopApplication {
       if (this.willQuitApp) {
         /* The user tried to quit the app */
         this.window = null;
-      } else if (this.isMac || this.trayManager.shouldMinimizeToTray()) {
+      } else if (isMac || this.trayManager.shouldMinimizeToTray()) {
         /* The user only tried to close the window */
         event.preventDefault();
         /* Handles Mac full screen issue where pressing close results in a black screen. */
@@ -274,25 +249,26 @@ class DesktopApplication {
   }
 
   createWindowDependentServices(window) {
-    initializePackageManager(window.webContents);
+    const store = Store.getInstance();
     this.archiveManager = new ArchiveManager(window);
-    this.searchManager = new SearchManager(window);
-    this.trayManager = createTrayManager(window, Store, this.platform);
     this.updateManager = new UpdateManager(window);
-    this.zoomManager = new ZoomManager(window);
+    this.trayManager = createTrayManager(window, store);
     const spellcheckerManager = createSpellcheckerManager(
-      Store.getInstance(),
-      this.window.webContents,
+      store,
+      window.webContents,
       app.getLocale()
     );
     this.menuManager = createMenuManager({
-      window: this.window,
+      window,
       archiveManager: this.archiveManager,
       updateManager: this.updateManager,
       trayManager: this.trayManager,
-      store: Store.getInstance(),
+      store,
       spellcheckerManager
     });
+    initializePackageManager(window.webContents);
+    initializeSearchManager(window.webContents);
+    initializeZoomManager(window.webContents, store);
   }
 
   openDevTools() {
