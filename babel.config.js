@@ -12,6 +12,7 @@ module.exports = function (api) {
   ];
 
   const plugins = [
+    "const-enum",
     "@babel/plugin-proposal-class-properties"
   ];
 

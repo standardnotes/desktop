@@ -1,21 +1,21 @@
+import fs from 'fs';
+import path from 'path';
 import yauzl from 'yauzl';
-const fs = require('fs');
-const path = require('path');
 
 export const FileDoesNotExist = 'ENOENT';
 export const FileAlreadyExists = 'EEXIST';
 
-export async function readJSONFile(path) {
+export async function readJSONFile(path: string) {
   const data = await fs.promises.readFile(path, 'utf8');
   return JSON.parse(data);
 }
 
-export async function writeJSONFile(filepath, data) {
+export async function writeJSONFile(filepath: string, data: any) {
   await ensureDirectoryExists(path.dirname(filepath));
   await fs.promises.writeFile(filepath, JSON.stringify(data, null, 2), 'utf8');
 }
 
-export async function ensureDirectoryExists(dirPath) {
+export async function ensureDirectoryExists(dirPath: string) {
   try {
     const stat = await fs.promises.lstat(dirPath);
     if (!stat.isDirectory()) {
@@ -42,7 +42,7 @@ export async function ensureDirectoryExists(dirPath) {
  * Deletes a directory (handling recursion.)
  * @param {string} dirPath the path of the directory
  */
-export async function deleteDir(dirPath) {
+export async function deleteDir(dirPath: string) {
   try {
     await deleteDirContents(dirPath);
   } catch (error) {
@@ -55,7 +55,7 @@ export async function deleteDir(dirPath) {
   await fs.promises.rmdir(dirPath);
 }
 
-export async function deleteDirContents(dirPath) {
+export async function deleteDirContents(dirPath: string) {
   const children = await fs.promises.readdir(dirPath, {
     withFileTypes: true
   });
@@ -70,20 +70,21 @@ export async function deleteDirContents(dirPath) {
   }
 }
 
-export async function extractNestedZip(source, dest) {
+export async function extractNestedZip(source: string, dest: string) {
   return new Promise((resolve, reject) => {
     yauzl.open(
       source,
       { lazyEntries: true, autoClose: true },
       (err, zipFile) => {
         let cancelled = false;
-        const tryReject = err => {
+        const tryReject = (err: Error) => {
           if (!cancelled) {
             cancelled = true;
             reject(err);
           }
         };
         if (err) return tryReject(err);
+        if (!zipFile) return tryReject(new Error('zipFile === undefined'));
 
         zipFile.readEntry();
         zipFile.on('close', resolve);
@@ -98,6 +99,7 @@ export async function extractNestedZip(source, dest) {
           zipFile.openReadStream(entry, async (err, stream) => {
             if (cancelled) return;
             if (err) return tryReject(err);
+            if (!stream) return tryReject(new Error('stream === undefined'));
             stream.on('error', tryReject);
             const filepath = path.join(
               dest,
