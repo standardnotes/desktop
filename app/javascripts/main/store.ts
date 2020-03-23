@@ -1,6 +1,6 @@
-const electron = require('electron');
-const path = require('path');
-const fs = require('fs');
+import electron from 'electron';
+import fs from 'fs';
+import path from 'path';
 
 export enum StoreKeys {
   ExtServerHost = 'extServerHost',

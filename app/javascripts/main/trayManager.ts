@@ -1,13 +1,8 @@
-import { app, Menu, Tray } from 'electron';
+import { Menu, Tray } from 'electron';
 import path from 'path';
-import { StoreKeys, Store } from './store';
-import {
-  AppName,
-  TrayLabelHide,
-  TrayLabelQuit,
-  TrayLabelShow
-} from './strings';
 import { isLinux, isWindows } from './platforms';
+import { Store, StoreKeys } from './store';
+import { AppName, tray as s } from './strings';
 
 const icon = path.join(__dirname, '/icon/Icon-256x256.png');
 

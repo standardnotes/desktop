@@ -3,7 +3,6 @@ import {
   createExtensionsServer,
   initializePackageManager,
   createMenuManager,
-  SearchManager,
   createTrayManager,
   UpdateManager,
   createSpellcheckerManager,
