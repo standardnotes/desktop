@@ -80,7 +80,7 @@ export class Store {
 
 function parseDataFile(filePath: string, defaults: StoreData) {
   try {
-    const userData = JSON.parse(fs.readFileSync(filePath));
+    const userData = JSON.parse(fs.readFileSync(filePath).toString());
 
     /** Convert spellchecker language codes array into a set. */
     if (userData[StoreKeys.SelectedSpellCheckerLanguageCodes]) {
