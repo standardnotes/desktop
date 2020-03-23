@@ -2,7 +2,7 @@ import { Menu, Tray } from 'electron';
 import path from 'path';
 import { isLinux, isWindows } from './platforms';
 import { Store, StoreKeys } from './store';
-import { AppName, tray as s } from './strings';
+import { AppName, tray as str } from './strings';
 
 const icon = path.join(__dirname, '/icon/Icon-256x256.png');
 
@@ -52,12 +52,12 @@ export function createTrayManager(
       const trayContextMenu = Menu.buildFromTemplate([
         {
           id: SHOW_WINDOW_ID,
-          label: s().show,
+          label: str().show,
           click: showWindow
         },
         {
           id: HIDE_WINDOW_ID,
-          label: s().hide,
+          label: str().hide,
           click() {
             window.hide();
           }
@@ -67,7 +67,7 @@ export function createTrayManager(
         },
         {
           role: 'quit',
-          label: s().quit
+          label: str().quit
         }
       ]);
 

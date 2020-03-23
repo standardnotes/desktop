@@ -19,7 +19,7 @@ export function initializeStrings(locale: string) {
   strings = stringsForLocale(locale);
 }
 
-export function s(): Strings {
+export function str(): Strings {
   if (process.env.NODE_ENV === 'development') {
     if (!strings) {
       throw new Error('tried to access strings before they were initialized.');
@@ -29,15 +29,15 @@ export function s(): Strings {
 }
 
 export function appMenu() {
-  return s().appMenu;
+  return str().appMenu;
 }
 
 export function tray() {
-  return s().tray;
+  return str().tray;
 }
 
 export function extensions() {
-  return s().extensions;
+  return str().extensions;
 }
 
 function stringsForLocale(locale: string): Strings {

@@ -5,7 +5,7 @@ import { TrayManager } from './trayManager';
 import { SpellcheckerManager } from './spellcheckerManager';
 import { MenuItemConstructorOptions, app, Menu, dialog, shell } from 'electron';
 import { isMac } from './platforms';
-import { appMenu as s } from './strings';
+import { appMenu as str } from './strings';
 
 export function createMenuManager({
   window,
@@ -36,7 +36,7 @@ export function createMenuManager({
     ]);
     Menu.setApplicationMenu(menu);
   }
-  reload() // initialization
+  reload(); // initialization
 
   updateManager.onNeedMenuReload = reload;
 
@@ -141,7 +141,7 @@ function editMenu(
   reload: () => any
 ): MenuItemConstructorOptions {
   return {
-    label: s().edit,
+    label: str().edit,
     submenu: [
       {
         role: Roles.Undo
@@ -174,7 +174,7 @@ function editMenu(
 
 function macSpeechMenu(): MenuItemConstructorOptions {
   return {
-    label: s().speech,
+    label: str().speech,
     submenu: [
       {
         role: Roles.StopSeeking
@@ -191,7 +191,7 @@ function spellcheckerMenu(
   reload: () => any
 ): MenuItemConstructorOptions {
   return {
-    label: s().spellcheckerLanguages,
+    label: str().spellcheckerLanguages,
     submenu: spellcheckerManager.languages().map(
       ({ name, code, enabled }): MenuItemConstructorOptions => {
         return {
@@ -218,7 +218,7 @@ function viewMenu(
   reload: () => any
 ): MenuItemConstructorOptions {
   return {
-    label: s().view,
+    label: str().view,
     submenu: [
       {
         role: Roles.Reload
@@ -256,7 +256,7 @@ function menuBarOptions(
   return [
     {
       visible: !isMac && useSystemMenuBar,
-      label: s().hideMenuBar,
+      label: str().hideMenuBar,
       accelerator: KeyCombinations.AltM,
       click: () => {
         isMenuBarVisible = !isMenuBarVisible;
@@ -265,22 +265,26 @@ function menuBarOptions(
       }
     },
     {
-      label: s().useThemedMenuBar,
+      label: str().useThemedMenuBar,
       type: MenuItemTypes.CheckBox,
       checked: !useSystemMenuBar,
       click: () => {
         store.set(StoreKeys.UseSystemMenuBar, !useSystemMenuBar);
         reload();
         dialog.showMessageBox({
-          title: s().preferencesChanged.title,
-          message: s().preferencesChanged.message
+          title: str().preferencesChanged.title,
+          message: str().preferencesChanged.message
         });
       }
     }
   ];
 }
 
-function windowMenu(store: Store, trayManager: TrayManager, reload: () => any): MenuItemConstructorOptions {
+function windowMenu(
+  store: Store,
+  trayManager: TrayManager,
+  reload: () => any
+): MenuItemConstructorOptions {
   return {
     role: Roles.Window,
     submenu: [
@@ -301,22 +305,22 @@ function windowMenu(store: Store, trayManager: TrayManager, reload: () => any): 
 function macWindowItems(): MenuItemConstructorOptions[] {
   return [
     {
-      label: s().close,
+      label: str().close,
       accelerator: KeyCombinations.CmdOrCtrlW,
       role: Roles.Close
     },
     {
-      label: s().minimize,
+      label: str().minimize,
       accelerator: KeyCombinations.CmdOrCtrlM,
       role: Roles.Minimize
     },
     {
-      label: s().zoom,
+      label: str().zoom,
       role: Roles.Zoom
     },
     Separator,
     {
-      label: s().bringAllToFront,
+      label: str().bringAllToFront,
       role: Roles.Front
     }
   ];
@@ -329,7 +333,7 @@ function minimizeToTrayItem(
 ) {
   const minimizeToTray = trayManager.shouldMinimizeToTray();
   return {
-    label: s().minimizeToTrayOnClose,
+    label: str().minimizeToTrayOnClose,
     type: MenuItemTypes.CheckBox,
     checked: minimizeToTray,
     click() {
@@ -346,12 +350,12 @@ function minimizeToTrayItem(
 
 function backupsMenu(archiveManager: ArchiveManager, reload: () => any) {
   return {
-    label: s().backups,
+    label: str().backups,
     submenu: [
       {
         label: archiveManager.isBackupsEnabled()
-          ? s().disableAutomaticBackups
-          : s().enableAutomaticBackups,
+          ? str().disableAutomaticBackups
+          : str().enableAutomaticBackups,
         click() {
           archiveManager.toggleBackupsStatus();
           reload();
@@ -359,13 +363,13 @@ function backupsMenu(archiveManager: ArchiveManager, reload: () => any) {
       },
       Separator,
       {
-        label: s().changeBackupsLocation,
+        label: str().changeBackupsLocation,
         click() {
           archiveManager.changeBackupsLocation();
         }
       },
       {
-        label: s().openBackupsLocation,
+        label: str().openBackupsLocation,
         click() {
           shell.openItem(archiveManager.getBackupsLocation());
         }
@@ -379,18 +383,18 @@ function updateMenu(updateManager: UpdateManager) {
   const updateNeeded = updateManager.updateNeeded();
   let label;
   if (updateData.checkingForUpdate) {
-    label = s().checkingForUpdate;
+    label = str().checkingForUpdate;
   } else if (updateNeeded) {
-    label = s().updateAvailable;
+    label = str().updateAvailable;
   } else {
-    label = s().updates;
+    label = str().updates;
   }
   const submenu: MenuItemConstructorOptions[] = [];
   const structure = { label, submenu };
 
   if (updateManager.autoupdateDownloaded()) {
     submenu.push({
-      label: s().installPendingUpdate(
+      label: str().installPendingUpdate(
         updateManager.autoupdateDownloadedVersion()
       ),
       click() {
@@ -401,8 +405,8 @@ function updateMenu(updateManager: UpdateManager) {
 
   submenu.push({
     label: updateManager.autoupdateEnabled()
-      ? s().automaticUpdatesEnabled
-      : s().automaticUpdatesDisabled,
+      ? str().automaticUpdatesEnabled
+      : str().automaticUpdatesDisabled,
     click() {
       updateManager.toggleAutoupdateStatus();
     }
@@ -412,14 +416,14 @@ function updateMenu(updateManager: UpdateManager) {
 
   if (updateData.lastCheck && !updateData.checkinForUpdate) {
     submenu.push({
-      label: s().lastUpdateCheck(updateData.lastCheck),
+      label: str().lastUpdateCheck(updateData.lastCheck),
       click: () => {}
     });
   }
 
   if (!updateData.checkinForUpdate) {
     submenu.push({
-      label: s().checkForUpdate,
+      label: str().checkForUpdate,
       click: () => {
         updateManager.checkForUpdate({ userTriggered: true });
       }
@@ -429,15 +433,15 @@ function updateMenu(updateManager: UpdateManager) {
   submenu.push(Separator);
 
   submenu.push({
-    label: s().yourVersion(updateData.currentVersion),
+    label: str().yourVersion(updateData.currentVersion),
     click: () => {}
   });
 
   const latestVersion = updateManager.latestVersion();
   submenu.push({
     label: latestVersion
-      ? s().latestVersion(latestVersion)
-      : s().errorRetrieving,
+      ? str().latestVersion(latestVersion)
+      : str().errorRetrieving,
     click() {
       updateManager.openChangelog();
     }
@@ -446,7 +450,7 @@ function updateMenu(updateManager: UpdateManager) {
   submenu.push(Separator);
 
   submenu.push({
-    label: s().viewReleaseNotes(latestVersion),
+    label: str().viewReleaseNotes(latestVersion),
     click() {
       updateManager.openChangelog();
     }
@@ -454,7 +458,7 @@ function updateMenu(updateManager: UpdateManager) {
 
   if (updateData.latestDownloaded) {
     submenu.push({
-      label: s().openDownloadLocation,
+      label: str().openDownloadLocation,
       click() {
         updateManager.openDownloadLocation();
       }
@@ -462,8 +466,8 @@ function updateMenu(updateManager: UpdateManager) {
   } else if (updateNeeded || updateData.downloadingUpdate) {
     submenu.push({
       label: updateData.downloadingUpdate
-        ? s().downloadingUpdate
-        : s().manuallyDownloadUpdate,
+        ? str().downloadingUpdate
+        : str().manuallyDownloadUpdate,
       click() {
         updateData.downloadingUpdate
           ? updateManager.openDownloadLocation()
@@ -480,51 +484,51 @@ function helpMenu(window: Electron.BrowserWindow, shell: Electron.Shell) {
     role: Roles.Help,
     submenu: [
       {
-        label: s().emailSupport,
+        label: str().emailSupport,
         click() {
           shell.openExternal(Urls.Support);
         }
       },
       {
-        label: s().website,
+        label: str().website,
         click() {
           shell.openExternal(Urls.Website);
         }
       },
       {
-        label: s().gitHub,
+        label: str().gitHub,
         click() {
           shell.openExternal(Urls.GitHub);
         }
       },
       {
-        label: s().slack,
+        label: str().slack,
         click() {
           shell.openExternal(Urls.Slack);
         }
       },
       {
-        label: s().twitter,
+        label: str().twitter,
         click() {
           shell.openExternal(Urls.Twitter);
         }
       },
       Separator,
       {
-        label: s().toggleErrorConsole,
+        label: str().toggleErrorConsole,
         click() {
           window.webContents.toggleDevTools();
         }
       },
       {
-        label: s().openDataDirectory,
+        label: str().openDataDirectory,
         click() {
           const userDataPath = app.getPath('userData');
           shell.openItem(userDataPath);
         }
       },
       {
-        label: s().clearCacheAndReload,
+        label: str().clearCacheAndReload,
         async click() {
           await window.webContents.session.clearCache();
           window.reload();
@@ -532,7 +536,7 @@ function helpMenu(window: Electron.BrowserWindow, shell: Electron.Shell) {
       },
       Separator,
       {
-        label: s().version(app.getVersion()),
+        label: str().version(app.getVersion()),
         click() {
           shell.openExternal(Urls.GitHubReleases);
         }

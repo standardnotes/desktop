@@ -5,7 +5,7 @@ import mime from 'mime-types';
 import path from 'path';
 import { URL } from 'url';
 import { FileDoesNotExist } from './fileUtils';
-import { extensions as s } from './strings';
+import { extensions as str } from './strings';
 
 const Protocol = 'http';
 const UserDataPath = app.getPath('userData');
@@ -66,7 +66,7 @@ function onRequestError(error: Error | { code: string }, res: ServerResponse) {
     responseCode = 500;
   }
   res.writeHead(responseCode);
-  res.write(s().unableToLoadExtension);
+  res.write(str().unableToLoadExtension);
   res.end();
 }
 
