@@ -1,5 +1,6 @@
 import buildEditorContextMenu from 'electron-editor-context-menu';
 import { Store, StoreKeys } from './store';
+import { isMac } from './platforms';
 
 function log(...message: any) {
   console.log('spellcheckerMaager:', ...message);
@@ -42,8 +43,7 @@ export function createSpellcheckerManager(
    * On MacOS the system spellchecker is used and every related Electron method
    * is a no-op. Return early to prevent unnecessary code execution/allocations
    */
-  /** TODO(baptiste): precompute `process.platform` at compile-time */
-  if (process.platform === 'darwin') return null;
+  if (isMac) return null;
 
   const session = webContents.session;
 
