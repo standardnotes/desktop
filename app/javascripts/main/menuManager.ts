@@ -37,6 +37,8 @@ export function createMenuManager({
   }
   reload() // initialization
 
+  updateManager.onNeedMenuReload = reload;
+
   return {
     reload,
     popupMenu() {

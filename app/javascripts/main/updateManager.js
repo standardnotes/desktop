@@ -19,6 +19,7 @@ export class UpdateManager {
   constructor(window) {
     this.window = window;
     this.metadata = {};
+    this.onNeedMenuReload = null;
 
     this.getUpdateInfoFile().then((data) => {
       if (!data) {
