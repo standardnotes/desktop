@@ -52,12 +52,12 @@ export function createTrayManager(
       const trayContextMenu = Menu.buildFromTemplate([
         {
           id: SHOW_WINDOW_ID,
-          label: TrayLabelShow,
+          label: s().show,
           click: showWindow
         },
         {
           id: HIDE_WINDOW_ID,
-          label: TrayLabelHide,
+          label: s().hide,
           click() {
             window.hide();
           }
@@ -66,10 +66,8 @@ export function createTrayManager(
           type: 'separator'
         },
         {
-          label: TrayLabelQuit,
-          click() {
-            app.quit();
-          }
+          role: 'quit',
+          label: s().quit
         }
       ]);
 
