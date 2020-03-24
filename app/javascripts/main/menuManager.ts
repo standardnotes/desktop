@@ -5,6 +5,7 @@ import { TrayManager } from './trayManager';
 import { SpellcheckerManager } from './spellcheckerManager';
 import { MenuItemConstructorOptions, app, Menu, dialog, shell } from 'electron';
 import { isMac } from './platforms';
+import { appMenu as str } from './strings';
 
 export function createMenuManager({
   window,
@@ -35,7 +36,7 @@ export function createMenuManager({
     ]);
     Menu.setApplicationMenu(menu);
   }
-  reload() // initialization
+  reload(); // initialization
 
   updateManager.onNeedMenuReload = reload;
 
@@ -85,70 +86,6 @@ const KeyCombinations = {
   CmdOrCtrlW: 'CmdOrCtrl + W',
   CmdOrCtrlM: 'CmdOrCtrl + M',
   AltM: 'Alt + m'
-};
-
-const Labels = {
-  Edit: 'Edit',
-  View: 'View',
-  HideMenuBar: 'Hide Menu Bar',
-  UseThemedMenuBar: 'Use Themed Menu Bar',
-  MinimizeToTrayOnClose: 'Minimize To Tray On Close',
-  Backups: 'Backups',
-  AutomaticUpdatesEnabled: 'Automatic Updates Enabled',
-  AutomaticUpdatesDisabled: 'Automatic Updates Disabled',
-  DisableAutomaticBackups: 'Disable Automatic Backups',
-  EnableAutomaticBackups: 'Enable Automatic Backups',
-  ChangeBackupsLocation: 'Change Backups Location',
-  OpenBackupsLocation: 'Open Backups Location',
-  EmailSupport: 'Email Support',
-  Website: 'Website',
-  GitHub: 'GitHub',
-  Slack: 'Slack',
-  Twitter: 'Twitter',
-  ToggleErrorConsole: 'Toggle Error Console',
-  OpenDataDirectory: 'Open Data Directory',
-  ClearCacheAndReload: 'Clear Cache and Reload',
-  Speech: 'Speech',
-  Close: 'Close',
-  Minimize: 'Minimize',
-  Zoom: 'Zoom',
-  BringAllToFront: 'Bring All to Front',
-  CheckForUpdate: 'Check for Update',
-  CheckingForUpdate: 'Checking for update…',
-  UpdateAvailable: '(1) Update Available',
-  Updates: 'Updates',
-  ErrorRetrieving: 'Error Retrieving',
-  OpenDownloadLocation: 'Open Download Location',
-  DownloadingUpdate: 'Downloading Update…',
-  ManuallyDownloadUpdate: 'Manually Download Update',
-  SpellcheckerLanguages: 'Spellchecker Languages',
-  installPendingUpdate(versionNumber: string) {
-    return `Install Pending Update (${versionNumber})`;
-  },
-  lastUpdateCheck(date: Date) {
-    return `Last checked ${date.toLocaleString()}`;
-  },
-  version(number: string) {
-    return `Version: ${number}`;
-  },
-  yourVersion(number: string) {
-    return `Your Version: ${number}`;
-  },
-  latestVersion(number: string) {
-    return `Latest Version: ${number}`;
-  },
-  viewReleaseNotes(versionNumber: string) {
-    return `View ${versionNumber} Release Notes`;
-  }
-};
-
-const MessageBoxTitles = {
-  PreferenceChanged: 'Preference Changed'
-};
-const MessageBoxMessages = {
-  MenuBarPreferenceSaved:
-    'Your menu bar preference has been saved. ' +
-    'Please restart the application for the change to take effect.'
 };
 
 const enum MenuItemTypes {
@@ -204,7 +141,7 @@ function editMenu(
   reload: () => any
 ): MenuItemConstructorOptions {
   return {
-    label: Labels.Edit,
+    label: str().edit,
     submenu: [
       {
         role: Roles.Undo
@@ -237,7 +174,7 @@ function editMenu(
 
 function macSpeechMenu(): MenuItemConstructorOptions {
   return {
-    label: Labels.Speech,
+    label: str().speech,
     submenu: [
       {
         role: Roles.StopSeeking
@@ -254,7 +191,7 @@ function spellcheckerMenu(
   reload: () => any
 ): MenuItemConstructorOptions {
   return {
-    label: Labels.SpellcheckerLanguages,
+    label: str().spellcheckerLanguages,
     submenu: spellcheckerManager.languages().map(
       ({ name, code, enabled }): MenuItemConstructorOptions => {
         return {
@@ -281,13 +218,13 @@ function viewMenu(
   reload: () => any
 ): MenuItemConstructorOptions {
   return {
-    label: Labels.View,
+    label: str().view,
     submenu: [
       {
         role: Roles.Reload
       },
       {
-        role: 'toggleDevTools'
+        role: Roles.ToggleDevTools
       },
       Separator,
       {
@@ -319,7 +256,7 @@ function menuBarOptions(
   return [
     {
       visible: !isMac && useSystemMenuBar,
-      label: Labels.HideMenuBar,
+      label: str().hideMenuBar,
       accelerator: KeyCombinations.AltM,
       click: () => {
         isMenuBarVisible = !isMenuBarVisible;
@@ -328,22 +265,26 @@ function menuBarOptions(
       }
     },
     {
-      label: Labels.UseThemedMenuBar,
+      label: str().useThemedMenuBar,
       type: MenuItemTypes.CheckBox,
       checked: !useSystemMenuBar,
       click: () => {
         store.set(StoreKeys.UseSystemMenuBar, !useSystemMenuBar);
         reload();
         dialog.showMessageBox({
-          title: MessageBoxTitles.PreferenceChanged,
-          message: MessageBoxMessages.MenuBarPreferenceSaved
+          title: str().preferencesChanged.title,
+          message: str().preferencesChanged.message
         });
       }
     }
   ];
 }
 
-function windowMenu(store: Store, trayManager: TrayManager, reload: () => any): MenuItemConstructorOptions {
+function windowMenu(
+  store: Store,
+  trayManager: TrayManager,
+  reload: () => any
+): MenuItemConstructorOptions {
   return {
     role: Roles.Window,
     submenu: [
@@ -364,22 +305,22 @@ function windowMenu(store: Store, trayManager: TrayManager, reload: () => any): 
 function macWindowItems(): MenuItemConstructorOptions[] {
   return [
     {
-      label: Labels.Close,
+      label: str().close,
       accelerator: KeyCombinations.CmdOrCtrlW,
       role: Roles.Close
     },
     {
-      label: Labels.Minimize,
+      label: str().minimize,
       accelerator: KeyCombinations.CmdOrCtrlM,
       role: Roles.Minimize
     },
     {
-      label: Labels.Zoom,
+      label: str().zoom,
       role: Roles.Zoom
     },
     Separator,
     {
-      label: Labels.BringAllToFront,
+      label: str().bringAllToFront,
       role: Roles.Front
     }
   ];
@@ -392,7 +333,7 @@ function minimizeToTrayItem(
 ) {
   const minimizeToTray = trayManager.shouldMinimizeToTray();
   return {
-    label: Labels.MinimizeToTrayOnClose,
+    label: str().minimizeToTrayOnClose,
     type: MenuItemTypes.CheckBox,
     checked: minimizeToTray,
     click() {
@@ -409,12 +350,12 @@ function minimizeToTrayItem(
 
 function backupsMenu(archiveManager: ArchiveManager, reload: () => any) {
   return {
-    label: Labels.Backups,
+    label: str().backups,
     submenu: [
       {
         label: archiveManager.isBackupsEnabled()
-          ? Labels.DisableAutomaticBackups
-          : Labels.EnableAutomaticBackups,
+          ? str().disableAutomaticBackups
+          : str().enableAutomaticBackups,
         click() {
           archiveManager.toggleBackupsStatus();
           reload();
@@ -422,13 +363,13 @@ function backupsMenu(archiveManager: ArchiveManager, reload: () => any) {
       },
       Separator,
       {
-        label: Labels.ChangeBackupsLocation,
+        label: str().changeBackupsLocation,
         click() {
           archiveManager.changeBackupsLocation();
         }
       },
       {
-        label: Labels.OpenBackupsLocation,
+        label: str().openBackupsLocation,
         click() {
           shell.openItem(archiveManager.getBackupsLocation());
         }
@@ -442,18 +383,18 @@ function updateMenu(updateManager: UpdateManager) {
   const updateNeeded = updateManager.updateNeeded();
   let label;
   if (updateData.checkingForUpdate) {
-    label = Labels.CheckingForUpdate;
+    label = str().checkingForUpdate;
   } else if (updateNeeded) {
-    label = Labels.UpdateAvailable;
+    label = str().updateAvailable;
   } else {
-    label = Labels.Updates;
+    label = str().updates;
   }
   const submenu: MenuItemConstructorOptions[] = [];
   const structure = { label, submenu };
 
   if (updateManager.autoupdateDownloaded()) {
     submenu.push({
-      label: Labels.installPendingUpdate(
+      label: str().installPendingUpdate(
         updateManager.autoupdateDownloadedVersion()
       ),
       click() {
@@ -464,8 +405,8 @@ function updateMenu(updateManager: UpdateManager) {
 
   submenu.push({
     label: updateManager.autoupdateEnabled()
-      ? Labels.AutomaticUpdatesEnabled
-      : Labels.AutomaticUpdatesDisabled,
+      ? str().automaticUpdatesEnabled
+      : str().automaticUpdatesDisabled,
     click() {
       updateManager.toggleAutoupdateStatus();
     }
@@ -475,14 +416,14 @@ function updateMenu(updateManager: UpdateManager) {
 
   if (updateData.lastCheck && !updateData.checkinForUpdate) {
     submenu.push({
-      label: Labels.lastUpdateCheck(updateData.lastCheck),
+      label: str().lastUpdateCheck(updateData.lastCheck),
       click: () => {}
     });
   }
 
   if (!updateData.checkinForUpdate) {
     submenu.push({
-      label: Labels.CheckForUpdate,
+      label: str().checkForUpdate,
       click: () => {
         updateManager.checkForUpdate({ userTriggered: true });
       }
@@ -492,15 +433,15 @@ function updateMenu(updateManager: UpdateManager) {
   submenu.push(Separator);
 
   submenu.push({
-    label: Labels.yourVersion(updateData.currentVersion),
+    label: str().yourVersion(updateData.currentVersion),
     click: () => {}
   });
 
   const latestVersion = updateManager.latestVersion();
   submenu.push({
     label: latestVersion
-      ? Labels.latestVersion(latestVersion)
-      : Labels.ErrorRetrieving,
+      ? str().latestVersion(latestVersion)
+      : str().errorRetrieving,
     click() {
       updateManager.openChangelog();
     }
@@ -509,7 +450,7 @@ function updateMenu(updateManager: UpdateManager) {
   submenu.push(Separator);
 
   submenu.push({
-    label: Labels.viewReleaseNotes(latestVersion),
+    label: str().viewReleaseNotes(latestVersion),
     click() {
       updateManager.openChangelog();
     }
@@ -517,7 +458,7 @@ function updateMenu(updateManager: UpdateManager) {
 
   if (updateData.latestDownloaded) {
     submenu.push({
-      label: Labels.OpenDownloadLocation,
+      label: str().openDownloadLocation,
       click() {
         updateManager.openDownloadLocation();
       }
@@ -525,8 +466,8 @@ function updateMenu(updateManager: UpdateManager) {
   } else if (updateNeeded || updateData.downloadingUpdate) {
     submenu.push({
       label: updateData.downloadingUpdate
-        ? Labels.DownloadingUpdate
-        : Labels.ManuallyDownloadUpdate,
+        ? str().downloadingUpdate
+        : str().manuallyDownloadUpdate,
       click() {
         updateData.downloadingUpdate
           ? updateManager.openDownloadLocation()
@@ -543,51 +484,51 @@ function helpMenu(window: Electron.BrowserWindow, shell: Electron.Shell) {
     role: Roles.Help,
     submenu: [
       {
-        label: Labels.EmailSupport,
+        label: str().emailSupport,
         click() {
           shell.openExternal(Urls.Support);
         }
       },
       {
-        label: Labels.Website,
+        label: str().website,
         click() {
           shell.openExternal(Urls.Website);
         }
       },
       {
-        label: Labels.GitHub,
+        label: str().gitHub,
         click() {
           shell.openExternal(Urls.GitHub);
         }
       },
       {
-        label: Labels.Slack,
+        label: str().slack,
         click() {
           shell.openExternal(Urls.Slack);
         }
       },
       {
-        label: Labels.Twitter,
+        label: str().twitter,
         click() {
           shell.openExternal(Urls.Twitter);
         }
       },
       Separator,
       {
-        label: Labels.ToggleErrorConsole,
+        label: str().toggleErrorConsole,
         click() {
           window.webContents.toggleDevTools();
         }
       },
       {
-        label: Labels.OpenDataDirectory,
+        label: str().openDataDirectory,
         click() {
           const userDataPath = app.getPath('userData');
           shell.openItem(userDataPath);
         }
       },
       {
-        label: Labels.ClearCacheAndReload,
+        label: str().clearCacheAndReload,
         async click() {
           await window.webContents.session.clearCache();
           window.reload();
@@ -595,7 +536,7 @@ function helpMenu(window: Electron.BrowserWindow, shell: Electron.Shell) {
       },
       Separator,
       {
-        label: Labels.version(app.getVersion()),
+        label: str().version(app.getVersion()),
         click() {
           shell.openExternal(Urls.GitHubReleases);
         }

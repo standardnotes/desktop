@@ -11,7 +11,7 @@ import {
 } from './javascripts/main';
 import { isWindows, isMac, isLinux } from './javascripts/main/platforms';
 import { Store, StoreKeys } from './javascripts/main/store';
-import { AppName } from './javascripts/main/strings';
+import { AppName, initializeStrings } from './javascripts/main/strings';
 import { IpcMessages } from './javascripts/shared/ipcMessages';
 import index from './index.html';
 import { CommandLineArgs } from './javascripts/shared/CommandLineArgs';
@@ -99,6 +99,7 @@ class DesktopApplication {
         console.warn('Quiting app and focusing existing instance.');
         app.quit();
       } else {
+        initializeStrings(app.getLocale());
         this.createExtensionsServer();
         this.createWindow();
 
