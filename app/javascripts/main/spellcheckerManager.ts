@@ -36,14 +36,14 @@ export function createSpellcheckerManager(
   store: Store,
   webContents: Electron.WebContents,
   userLocale: string
-): SpellcheckerManager | null {
+): SpellcheckerManager | undefined {
   initializeContextMenuListener(webContents);
 
   /**
    * On MacOS the system spellchecker is used and every related Electron method
    * is a no-op. Return early to prevent unnecessary code execution/allocations
    */
-  if (isMac) return null;
+  if (isMac) return;
 
   const session = webContents.session;
 

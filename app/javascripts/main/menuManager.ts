@@ -7,6 +7,11 @@ import { MenuItemConstructorOptions, app, Menu, dialog, shell } from 'electron';
 import { isMac } from './platforms';
 import { appMenu as str } from './strings';
 
+export interface MenuManager {
+  reload(): void;
+  popupMenu(): void;
+}
+
 export function createMenuManager({
   window,
   archiveManager,
@@ -20,8 +25,8 @@ export function createMenuManager({
   updateManager: UpdateManager;
   trayManager: TrayManager;
   store: Store;
-  spellcheckerManager: SpellcheckerManager;
-}) {
+  spellcheckerManager?: SpellcheckerManager;
+}): MenuManager {
   let menu: Menu;
 
   function reload() {
@@ -137,9 +142,16 @@ function macAppMenu(appName: string): MenuItemConstructorOptions {
 }
 
 function editMenu(
-  spellcheckerManager: SpellcheckerManager,
+  spellcheckerManager: SpellcheckerManager | undefined,
   reload: () => any
 ): MenuItemConstructorOptions {
+  if (process.env.NODE_ENV === 'development') {
+    /** Check for invalid state */
+    if (!isMac && spellcheckerManager === undefined) {
+      throw new Error("spellcheckerManager === undefined")
+    }
+  }
+
   return {
     label: str().edit,
     submenu: [
@@ -167,7 +179,7 @@ function editMenu(
       },
       ...(isMac
         ? [Separator, macSpeechMenu()]
-        : [spellcheckerMenu(spellcheckerManager, reload)])
+        : [spellcheckerMenu(spellcheckerManager!, reload)])
     ]
   };
 }

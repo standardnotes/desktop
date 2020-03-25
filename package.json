@@ -13,10 +13,11 @@
     "@babel/preset-env": "^7.8.4",
     "@babel/preset-typescript": "^7.8.3",
     "@types/mime-types": "^2.1.0",
+    "@types/mocha": "^7.0.2",
     "@types/node": "^12.12.30",
+    "@types/yauzl": "^2.9.1",
     "@typescript-eslint/eslint-plugin": "^2.23.0",
     "@typescript-eslint/parser": "^2.23.0",
-    "@types/yauzl": "^2.9.1",
     "babel-eslint": "^10.0.3",
     "babel-loader": "^8.0.6",
     "babel-plugin-const-enum": "0.0.5",
@@ -39,6 +40,7 @@
     "mocha": "^7.1.0",
     "rimraf": "^3.0.2",
     "spectron": "^10.0.1",
+    "ts-mocha": "^7.0.0",
     "typescript": "^3.8.3",
     "webpack": "^4.41.6",
     "webpack-cli": "^3.3.11",
@@ -104,7 +106,7 @@
     "clean": "rimraf app/dist/",
     "setup": "npm install && npm --prefix ./app install ./app && git submodule update --init --force --remote",
     "lint": "eslint app/index.js app/application.js app/javascripts/**/*.js test/*.js",
-    "test": "mocha",
+    "test": "ts-mocha test/*.ts",
     "check-types": "tsc"
   }
 }

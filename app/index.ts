@@ -1,5 +1,7 @@
 import log from 'electron-log';
-import { createDesktopApplication } from './application';
+import { app, shell, ipcMain } from 'electron';
+import { initializeApplication } from './application';
+import { Store } from './javascripts/main/store';
 
 log.transports.file.level = 'info';
 
@@ -7,4 +9,9 @@ process.on('uncaughtException', err => {
   console.error('Uncaught exception', err);
 });
 
-createDesktopApplication();
+initializeApplication({
+  app,
+  shell,
+  ipcMain,
+  store: Store.getInstance()
+});
