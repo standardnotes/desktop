@@ -16,8 +16,8 @@ export function createTrayManager(
   window: Electron.BrowserWindow,
   store: Store
 ): TrayManager {
-  let tray: Tray | null = null;
-  let updateContextMenu: (() => void) | null = null;
+  let tray: Tray | undefined;
+  let updateContextMenu: (() => void) | undefined;
 
   function showWindow() {
     window.show();
@@ -92,18 +92,18 @@ export function createTrayManager(
     destroyTrayIcon() {
       if (process.env.NODE_ENV === 'development') {
         /** Check our state */
-        if (updateContextMenu === null) {
-          throw new Error('updateContextMenu === null');
+        if (!updateContextMenu) {
+          throw new Error('updateContextMenu === undefined');
         }
-        if (tray === null) throw new Error('tray === null');
+        if (!tray) throw new Error('tray === undefined');
       }
 
       window.off('hide', updateContextMenu!);
       window.off('focus', updateContextMenu!);
       window.off('blur', updateContextMenu!);
       tray!.destroy();
-      tray = null;
-      updateContextMenu = null;
+      tray = undefined;
+      updateContextMenu = undefined;
     }
   };
 }

@@ -4,3 +4,8 @@ declare module "electron-editor-context-menu" {
       spellingSuggestions: string[]
     }): Electron.Menu
 }
+
+declare module "*.html" {
+  const content: string;
+  export default content;
+}
