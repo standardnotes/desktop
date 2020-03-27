@@ -2,6 +2,7 @@ export interface Strings {
   readonly appMenu: Readonly<AppMenuStrings>;
   readonly tray: Readonly<TrayStrings>;
   readonly extensions: Readonly<ExtensionsStrings>;
+  readonly updates: Readonly<UpdateStrings>;
 }
 
 interface AppMenuStrings {
@@ -58,5 +59,29 @@ interface TrayStrings {
 }
 
 interface ExtensionsStrings {
-  unableToLoadExtension: string
+  unableToLoadExtension: string;
+}
+
+interface UpdateStrings {
+  automaticUpdatesEnabled: {
+    title: string;
+    message: string;
+  };
+  finishedChecking: {
+    title: string;
+    error(description: string): string;
+    updateAvailable(newVersion: string): string;
+    noUpdateAvailable(currentVersion: string): string;
+  };
+  updateReady: {
+    title: string;
+    message(version: string): string;
+    quitAndInstall: string;
+    installLater: string;
+  };
+  errorDownloading: {
+    title: string;
+    message: string;
+  };
+  unknownVersionName: string;
 }

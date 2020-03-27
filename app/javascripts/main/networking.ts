@@ -18,7 +18,7 @@ export async function downloadFile(url: string, filePath: string) {
   await pipeline(response, fs.createWriteStream(filePath));
 }
 
-export async function getJSON(url: string) {
+export async function getJSON<T extends Object>(url: string): Promise<T> {
   const response = await get(url);
   response.setEncoding('utf-8');
   let data = '';

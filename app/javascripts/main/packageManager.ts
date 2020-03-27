@@ -351,7 +351,7 @@ async function checkForUpdate(
   }
 
   const [payload, installedVersion] = await Promise.all([
-    getJSON(latestURL) as Promise<Package>,
+    getJSON<Package>(latestURL),
     getInstalledVersionForComponent(component)
   ]);
   log(

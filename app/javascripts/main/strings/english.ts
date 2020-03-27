@@ -72,6 +72,49 @@ export function createEnglishStrings(): Strings {
         'Unable to load extension. Please restart the application and ' +
         'try again. If the issue persists, try uninstalling then ' +
         'reinstalling the extension.'
+    },
+    updates: {
+      automaticUpdatesEnabled: {
+        title: 'Automatic Updates Enabled.',
+        message:
+          'Automatic updates have been enabled. Please note that ' +
+          'this functionality is currently in beta, and that you are advised ' +
+          'to periodically check in and ensure you are running the ' +
+          'latest version.'
+      },
+      finishedChecking: {
+        title: 'Finished checking for updates.',
+        error(description: string) {
+          return 'An issue occurred while checking for updates. ' +
+            'Please try again.\nIf this issue persists please contact ' +
+            `support with the following information: ${description}`;
+        },
+        updateAvailable(newVersion: string) {
+          return (
+            `A new update is available (version ${newVersion}). ` +
+            'You can attempt upgrading through auto-update, or manually ' +
+            'download and install this update.'
+          );
+        },
+        noUpdateAvailable(currentVersion: string) {
+          return `Your version (${currentVersion}) is the latest available version.`;
+        }
+      },
+      updateReady: {
+        title: 'Update Ready',
+        message(version: string) {
+          return `A new update (version ${version}) is ready to install.`;
+        },
+        quitAndInstall: 'Quit and Install',
+        installLater: 'Install Later'
+      },
+      errorDownloading: {
+        title: 'Error Downloading',
+        message:
+          'An error occurred while trying to download your ' +
+          'update file. Please try again.'
+      },
+      unknownVersionName: 'Unknown'
     }
   };
 }

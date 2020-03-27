@@ -12,7 +12,7 @@ import { initializeSearchManager } from './searchManager';
 import { createSpellcheckerManager } from './spellcheckerManager';
 import { Store, StoreKeys } from './store';
 import { createTrayManager, TrayManager } from './trayManager';
-import { UpdateManager } from './updateManager';
+import { createUpdateManager, UpdateManager } from './updateManager';
 import { initializeZoomManager } from './zoomManager';
 
 const WINDOW_DEFAULT_WIDTH = 1100;
@@ -100,7 +100,7 @@ function createWindowServices(
   initializeSearchManager(window.webContents);
   initializeZoomManager(window.webContents, store);
   const archiveManager = new ArchiveManager(window);
-  const updateManager = new UpdateManager(window);
+  const updateManager = createUpdateManager(window);
   const trayManager = createTrayManager(window, store);
   const spellcheckerManager = createSpellcheckerManager(
     store,

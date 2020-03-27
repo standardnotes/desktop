@@ -148,7 +148,7 @@ function editMenu(
   if (process.env.NODE_ENV === 'development') {
     /** Check for invalid state */
     if (!isMac && spellcheckerManager === undefined) {
-      throw new Error("spellcheckerManager === undefined")
+      throw new Error('spellcheckerManager === undefined');
     }
   }
 
@@ -391,10 +391,9 @@ function backupsMenu(archiveManager: ArchiveManager, reload: () => any) {
 }
 
 function updateMenu(updateManager: UpdateManager) {
-  const updateData = updateManager.getMetadata();
   const updateNeeded = updateManager.updateNeeded();
   let label;
-  if (updateData.checkingForUpdate) {
+  if (updateManager.checkingForUpdate) {
     label = str().checkingForUpdate;
   } else if (updateNeeded) {
     label = str().updateAvailable;
@@ -404,19 +403,19 @@ function updateMenu(updateManager: UpdateManager) {
   const submenu: MenuItemConstructorOptions[] = [];
   const structure = { label, submenu };
 
-  if (updateManager.autoupdateDownloaded()) {
+  if (updateManager.autoUpdateDownloaded) {
     submenu.push({
       label: str().installPendingUpdate(
-        updateManager.autoupdateDownloadedVersion()
+        updateManager.autoUpdateDownloadedVersion()
       ),
       click() {
-        updateManager.installAutoupdateNow();
+        updateManager.showAutoUpdateInstallationDialog();
       }
     });
   }
 
   submenu.push({
-    label: updateManager.autoupdateEnabled()
+    label: updateManager.autoUpdateEnabled
       ? str().automaticUpdatesEnabled
       : str().automaticUpdatesDisabled,
     click() {
@@ -426,14 +425,14 @@ function updateMenu(updateManager: UpdateManager) {
 
   submenu.push(Separator);
 
-  if (updateData.lastCheck && !updateData.checkinForUpdate) {
+  if (updateManager.lastCheck && !updateManager.checkingForUpdate) {
     submenu.push({
-      label: str().lastUpdateCheck(updateData.lastCheck),
+      label: str().lastUpdateCheck(updateManager.lastCheck),
       click: () => {}
     });
   }
 
-  if (!updateData.checkinForUpdate) {
+  if (!updateManager.checkingForUpdate) {
     submenu.push({
       label: str().checkForUpdate,
       click: () => {
@@ -445,11 +444,11 @@ function updateMenu(updateManager: UpdateManager) {
   submenu.push(Separator);
 
   submenu.push({
-    label: str().yourVersion(updateData.currentVersion),
+    label: str().yourVersion(updateManager.currentVersion),
     click: () => {}
   });
 
-  const latestVersion = updateManager.latestVersion();
+  const latestVersion = updateManager.latestVersion;
   submenu.push({
     label: latestVersion
       ? str().latestVersion(latestVersion)
@@ -461,27 +460,29 @@ function updateMenu(updateManager: UpdateManager) {
 
   submenu.push(Separator);
 
-  submenu.push({
-    label: str().viewReleaseNotes(latestVersion),
-    click() {
-      updateManager.openChangelog();
-    }
-  });
+  if (latestVersion) {
+    submenu.push({
+      label: str().viewReleaseNotes(latestVersion),
+      click() {
+        updateManager.openChangelog();
+      }
+    });
+  }
 
-  if (updateData.latestDownloaded) {
+  if (updateManager.manualUpdateDownloaded) {
     submenu.push({
       label: str().openDownloadLocation,
       click() {
         updateManager.openDownloadLocation();
       }
     });
-  } else if (updateNeeded || updateData.downloadingUpdate) {
+  } else if (updateNeeded || updateManager.downloadingUpdate) {
     submenu.push({
-      label: updateData.downloadingUpdate
+      label: updateManager.downloadingUpdate
         ? str().downloadingUpdate
         : str().manuallyDownloadUpdate,
       click() {
-        updateData.downloadingUpdate
+        updateManager.downloadingUpdate
           ? updateManager.openDownloadLocation()
           : updateManager.downloadUpdateFile();
       }
