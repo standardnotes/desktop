@@ -9,5 +9,6 @@ export enum IpcMessages {
     WindowBlurred = 'window-blurred',
     WindowFocused = 'window-focused',
     InstallComponentComplete = 'install-component-complete',
-    DisplayAppMenu = 'display-app-menu'
+    DisplayAppMenu = 'display-app-menu',
+    DataArchive = 'data-archive'
 };

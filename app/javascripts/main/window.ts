@@ -1,10 +1,10 @@
-import { BrowserWindow, Shell } from 'electron';
+import { BrowserWindow, Shell, ipcMain } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 import path from 'path';
 import { AppState } from '../../application';
 import { CommandLineArgs } from '../shared/CommandLineArgs';
 import { IpcMessages } from '../shared/ipcMessages';
-import { ArchiveManager } from './archiveManager';
+import { ArchiveManager, createArchiveManager } from './archiveManager';
 import { createMenuManager, MenuManager } from './menuManager';
 import { initializePackageManager } from './packageManager';
 import { isMac } from './platforms';
@@ -99,7 +99,7 @@ function createWindowServices(
   initializePackageManager(window.webContents);
   initializeSearchManager(window.webContents);
   initializeZoomManager(window.webContents, store);
-  const archiveManager = new ArchiveManager(window);
+  const archiveManager = createArchiveManager(window.webContents, store, ipcMain);
   const updateManager = createUpdateManager(window);
   const trayManager = createTrayManager(window, store);
   const spellcheckerManager = createSpellcheckerManager(

@@ -365,7 +365,7 @@ function backupsMenu(archiveManager: ArchiveManager, reload: () => any) {
     label: str().backups,
     submenu: [
       {
-        label: archiveManager.isBackupsEnabled()
+        label: archiveManager.backupsAreEnabled
           ? str().disableAutomaticBackups
           : str().enableAutomaticBackups,
         click() {
@@ -383,7 +383,7 @@ function backupsMenu(archiveManager: ArchiveManager, reload: () => any) {
       {
         label: str().openBackupsLocation,
         click() {
-          shell.openItem(archiveManager.getBackupsLocation());
+          shell.openItem(archiveManager.backupsLocation);
         }
       }
     ]
