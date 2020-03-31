@@ -3,8 +3,6 @@
  * (requires one webpack build per platform)
  */
 
-import { platform } from "os";
-
 export const isWindows = process.platform === 'win32';
 export const isMac = process.platform === 'darwin';
 export const isLinux = process.platform === 'linux';
@@ -19,9 +17,9 @@ function getInstallerKey(): InstallerKey {
     return 'mac';
   } else if (isLinux) {
     if (process.arch === 'x32') {
-      return 'appimage_32'
+      return 'appimage_32';
     } else {
-      return 'appimage_64'
+      return 'appimage_64';
     }
   } else {
     throw new Error(`Unknown platform: ${process.platform}`);

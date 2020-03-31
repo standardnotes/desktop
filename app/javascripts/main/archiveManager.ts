@@ -80,7 +80,7 @@ export function createArchiveManager(
 
   return {
     get backupsAreEnabled() {
-      return !backupsDisabled
+      return !backupsDisabled;
     },
     get backupsLocation() {
       return backupsLocation;

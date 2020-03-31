@@ -1,11 +1,11 @@
 import { ensureDirectoryExists } from './fileUtils';
 import https from 'https';
 import { IncomingMessage } from 'http';
-const fs = require('fs');
-const path = require('path');
-const { promisify } = require('util');
-let { pipeline } = require('stream');
-pipeline = promisify(pipeline);
+import fs from 'fs';
+import path from 'path';
+import { promisify } from 'util';
+import { pipeline as pipelineFn } from 'stream';
+const pipeline = promisify(pipelineFn);
 
 /**
  * Downloads a file to the specified destination.
@@ -18,7 +18,7 @@ export async function downloadFile(url: string, filePath: string) {
   await pipeline(response, fs.createWriteStream(filePath));
 }
 
-export async function getJSON<T extends Object>(url: string): Promise<T> {
+export async function getJSON<T>(url: string): Promise<T> {
   const response = await get(url);
   response.setEncoding('utf-8');
   let data = '';

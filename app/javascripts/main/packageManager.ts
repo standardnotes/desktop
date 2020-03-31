@@ -21,6 +21,7 @@ function log(...message: any) {
   console.log('PackageManager:', ...message);
 }
 
+/* eslint-disable camelcase */
 interface Component {
   uuid: string;
   deleted: boolean;
@@ -36,6 +37,7 @@ interface Component {
     };
   };
 }
+/* eslint-enable camelcase */
 
 interface SyncTask {
   components: Component[];
@@ -335,6 +337,7 @@ async function getInstalledVersionForComponent(
 
 interface Package {
   version: string;
+  // eslint-disable-next-line camelcase
   download_url: string;
 }
 

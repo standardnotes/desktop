@@ -1,12 +1,12 @@
-import path from 'path';
-import { readJSONFile, writeJSONFile, FileDoesNotExist } from './fileUtils';
-import { downloadFile, getJSON } from './networking';
-import { updates as str } from './strings';
-import { InstallerKey, installerKey } from './platforms';
-import { dialog, app, shell, App, BrowserWindow } from 'electron';
 import compareVersions from 'compare-versions';
-import { autoUpdater } from 'electron-updater';
+import { app, BrowserWindow, dialog, shell } from 'electron';
 import electronLog from 'electron-log';
+import { autoUpdater } from 'electron-updater';
+import path from 'path';
+import { readJSONFile, writeJSONFile } from './fileUtils';
+import { downloadFile, getJSON } from './networking';
+import { InstallerKey, installerKey } from './platforms';
+import { updates as str } from './strings';
 
 const DefaultUpdateEndpoint =
   process.env.UPDATE_ENDPOINT ||
@@ -16,10 +16,12 @@ const appPath = app.getPath('userData');
 const folderPath = path.join(appPath, 'Updates');
 const settingsFilePath = path.join(folderPath, 'settings.json');
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function log(...message: any) {
   console.log('updateManager:', ...message);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function logError(...message: any) {
   console.error('updateManager:', ...message);
 }
@@ -82,7 +84,7 @@ export interface UpdateManager {
 }
 
 export function createUpdateManager(window: BrowserWindow): UpdateManager {
-  let settings: UpdateSettings = {
+  const settings: UpdateSettings = {
     endpoint: DefaultUpdateEndpoint,
     autoupdateEnabled: false
   };
@@ -108,6 +110,7 @@ export function createUpdateManager(window: BrowserWindow): UpdateManager {
   }
 
   function triggerMenuReload() {
+    // eslint-disable-next-line no-unused-expressions
     onNeedMenuReload?.();
   }
 

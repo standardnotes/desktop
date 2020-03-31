@@ -1,5 +1,4 @@
 import { strict as assert } from 'assert';
-import 'mocha';
 import { Suite } from 'mocha';
 import { Application } from 'spectron';
 import { CommandLineArgs } from '../app/javascripts/shared/CommandLineArgs';

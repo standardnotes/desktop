@@ -52,6 +52,7 @@ export function createMenuManager({
         /** Check the state */
         if (!menu) throw new Error('called popupMenu() before loading');
       }
+      // eslint-disable-next-line no-unused-expressions
       menu?.popup();
     }
   };
@@ -427,15 +428,14 @@ function updateMenu(updateManager: UpdateManager) {
 
   if (updateManager.lastCheck && !updateManager.checkingForUpdate) {
     submenu.push({
-      label: str().lastUpdateCheck(updateManager.lastCheck),
-      click: () => {}
+      label: str().lastUpdateCheck(updateManager.lastCheck)
     });
   }
 
   if (!updateManager.checkingForUpdate) {
     submenu.push({
       label: str().checkForUpdate,
-      click: () => {
+      click() {
         updateManager.checkForUpdate({ userTriggered: true });
       }
     });
@@ -444,8 +444,7 @@ function updateMenu(updateManager: UpdateManager) {
   submenu.push(Separator);
 
   submenu.push({
-    label: str().yourVersion(updateManager.currentVersion),
-    click: () => {}
+    label: str().yourVersion(updateManager.currentVersion)
   });
 
   const latestVersion = updateManager.latestVersion;
