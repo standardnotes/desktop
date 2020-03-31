@@ -105,7 +105,7 @@
     "start": "electron . --enable-logging --icon _icon/icon.png",
     "clean": "rimraf app/dist/",
     "setup": "npm install && npm --prefix ./app install ./app && git submodule update --init --force --remote",
-    "lint": "eslint app/index.js app/application.js app/javascripts/**/*.js test/*.js",
+    "lint": "eslint app/index.ts app/application.ts app/javascripts/**/*.ts test/*.ts",
     "test": "ts-mocha test/*.ts",
     "check-types": "tsc"
   }
