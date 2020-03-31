@@ -1,5 +1,4 @@
 import electronBinary from 'electron';
-import 'mocha';
 import { Suite } from 'mocha';
 import path from 'path';
 import { Application } from 'spectron';

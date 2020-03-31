@@ -40,6 +40,10 @@ export function extensions() {
   return str().extensions;
 }
 
+export function updates() {
+  return str().updates;
+}
+
 function stringsForLocale(locale: string): Strings {
   if (locale === 'en' || locale.startsWith('en-')) {
     return createEnglishStrings();

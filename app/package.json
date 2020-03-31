@@ -6,17 +6,13 @@
   "version": "3.3.3",
   "main": "./dist/index.js",
   "dependencies": {
-    "compare-versions": "^3.5.1",
-    "electron": "^8.0.1",
+    "compare-versions": "^3.6.0",
+    "electron": "^8.2.0",
     "electron-editor-context-menu": "^1.1.1",
-    "electron-is-dev": "^0.1.2",
-    "electron-log": "^4.1.0",
-    "electron-updater": "^4.2.0",
+    "electron-log": "^4.1.1",
+    "electron-updater": "^4.2.5",
     "electron-window-state": "^5.0.3",
     "mime-types": "^2.1.26",
-    "os": "^0.1.1",
-    "os-locale": "^2.1.0",
-    "request": "^2.88.0",
     "sn-electron-valence": "0.0.4",
     "standard-notes-web": "github:standardnotes/web#f2fb71662227e0fbab5b3e8f16b95a68e7b69780"
   }

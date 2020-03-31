@@ -71,10 +71,7 @@ const electronRendererConfig = {
   resolve,
   module: moduleConfig,
   externals: {
-    spellchecker: 'commonjs spellchecker',
     electron: 'commonjs electron',
-    'os-locale': 'commonjs os-locale',
-    path: 'commonjs path',
     'sn-electron-valence/Transmitter':
       'commonjs sn-electron-valence/Transmitter'
   }

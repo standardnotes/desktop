@@ -21,6 +21,7 @@ export function createFrenchStrings(): Strings {
       hide: 'Masquer',
       quit: 'Quitter'
     },
-    extensions: fallback.extensions
+    extensions: fallback.extensions,
+    updates: fallback.updates
   };
 }
