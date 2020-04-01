@@ -19,6 +19,6 @@
     "semver": "^5.5.0",
     "sn-electron-valence": "0.0.4",
     "spellchecker": "github:mobitar/node-spellchecker",
-    "standard-notes-web": "github:standardnotes/web#0ac6fd9c23f3a267433e4059b0f1f1cedcdd83dd"
+    "standard-notes-web": "github:standardnotes/web#b79c366ee990ab298a5f9411dfeb95326a2c284c"
   }
 }
