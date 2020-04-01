@@ -2,7 +2,6 @@ module.exports = function (api) {
   api.cache(true);
 
   const presets = [
-    "@babel/typescript",
     [
       "@babel/preset-env", {
       "targets": {
@@ -12,7 +11,6 @@ module.exports = function (api) {
   ];
 
   const plugins = [
-    "const-enum",
     "@babel/plugin-proposal-class-properties"
   ];
 
