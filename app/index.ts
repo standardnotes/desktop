@@ -12,6 +12,5 @@ process.on('uncaughtException', err => {
 initializeApplication({
   app,
   shell,
-  ipcMain,
-  store: Store.getInstance()
+  ipcMain
 });

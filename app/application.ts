@@ -23,9 +23,8 @@ export function initializeApplication(args: {
   app: Electron.App;
   ipcMain: Electron.IpcMain;
   shell: Shell;
-  store: Store;
 }) {
-  const { app, store } = args;
+  const { app } = args;
 
   app.name = AppName;
   app.allowRendererProcessReuse = true;
@@ -33,7 +32,7 @@ export function initializeApplication(args: {
   const isPrimaryInstance = app.requestSingleInstanceLock();
 
   const state: AppState = {
-    store,
+    store: new Store(app.getPath('userData')),
     startUrl: determineStartUrl(),
     isPrimaryInstance,
     willQuitApp: false
@@ -43,6 +42,11 @@ export function initializeApplication(args: {
     ...args,
     state
   });
+
+  if (process.env.NODE_ENV === 'development') {
+    /** Expose the app's state as a global variable. Useful for debugging */
+    (global as any).appState = state;
+  }
 }
 
 function determineStartUrl(): string {

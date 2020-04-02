@@ -2,6 +2,63 @@ import buildEditorContextMenu from 'electron-editor-context-menu';
 import { Store, StoreKeys } from './store';
 import { isMac } from './platforms';
 
+export enum Language {
+  AF = 'af',
+  ID = 'id',
+  CA = 'ca',
+  CS = 'cs',
+  CY = 'cy',
+  DA = 'da',
+  DE = 'de',
+  SH = 'sh',
+  ET = 'et',
+  EN_AU = 'en-AU',
+  EN_CA = 'en-CA',
+  EN_GB = 'en-GB',
+  EN_US = 'en-US',
+  ES = 'es',
+  ES_419 = 'es-419',
+  ES_ES = 'es-ES',
+  ES_US = 'es-US',
+  ES_MX = 'es-MX',
+  ES_AR = 'es-AR',
+  FO = 'fo',
+  FR = 'fr',
+  HR = 'hr',
+  IT = 'it',
+  PL = 'pl',
+  LV = 'lv',
+  LT = 'lt',
+  HU = 'hu',
+  NL = 'nl',
+  NB = 'nb',
+  PT_BR = 'pt-BR',
+  PT_PT = 'pt-PT',
+  RO = 'ro',
+  SQ = 'sq',
+  SK = 'sk',
+  SL = 'sl',
+  SV = 'sv',
+  VI = 'vi',
+  TR = 'tr',
+  EL = 'el',
+  BG = 'bg',
+  RU = 'ru',
+  SR = 'sr',
+  TG = 'tg',
+  UK = 'uk',
+  HY = 'hy',
+  HE = 'he',
+  FA = 'fa',
+  HI = 'hi',
+  TA = 'ta',
+  KO = 'ko'
+}
+
+function isLanguage(language: any): language is Language {
+  return Object.values(Language).includes(language);
+}
+
 function log(...message: any) {
   console.log('spellcheckerMaager:', ...message);
 }
@@ -51,7 +108,7 @@ export function createSpellcheckerManager(
    * Mapping of language codes predominantly based on
    * https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
    */
-  const LanguageCodes: Readonly<Record<string, string | undefined>> = {
+  const LanguageCodes: Readonly<Record<Language, string>> = {
     af: 'Afrikaans' /** Afrikaans */,
     id: 'Bahasa Indonesia' /** Indonesian */,
     ca: 'Català, Valencià' /** Catalan, Valencian */,
@@ -104,6 +161,26 @@ export function createSpellcheckerManager(
     ko: '한국어' /** Korean */
   };
 
+  const availableSpellCheckerLanguages = Object.values(
+    Language
+  ).filter(language =>
+    session.availableSpellCheckerLanguages.includes(language)
+  );
+
+  if (
+    process.env.NODE_ENV === 'development' &&
+    availableSpellCheckerLanguages.length !==
+      session.availableSpellCheckerLanguages.length
+  ) {
+    /** This means that not every available language has been accounted for. */
+    const firstOutlier = session.availableSpellCheckerLanguages.find(
+      (language, index) => {
+        availableSpellCheckerLanguages[index] !== language;
+      }
+    );
+    throw new Error(`Found unsupported language code: ${firstOutlier}`);
+  }
+
   setSpellcheckerLanguages();
 
   function setSpellcheckerLanguages() {
@@ -111,21 +188,12 @@ export function createSpellcheckerManager(
     let selectedCodes = store.get(StoreKeys.SelectedSpellCheckerLanguageCodes);
 
     if (selectedCodes === null) {
-      /** First-time setup or corrupted data. Set a default language */
+      /** First-time setup. Set a default language */
       selectedCodes = determineDefaultSpellcheckerLanguageCodes(
         session.availableSpellCheckerLanguages,
         userLocale
       );
       store.set(StoreKeys.SelectedSpellCheckerLanguageCodes, selectedCodes);
-    } else {
-      /**
-       * Vet the codes. If for some reason (like data corruption) there is
-       * an unsupported code, remove it from the list.
-       */
-      const modified = deleteUnknownCodes(selectedCodes);
-      if (modified) {
-        store.set(StoreKeys.SelectedSpellCheckerLanguageCodes, selectedCodes);
-      }
     }
     session.setSpellCheckerLanguages([...selectedCodes]);
   }
@@ -133,11 +201,11 @@ export function createSpellcheckerManager(
   function determineDefaultSpellcheckerLanguageCodes(
     availableSpellCheckerLanguages: string[],
     userLocale: string
-  ): Set<string> {
+  ): Set<Language> {
     const localeIsSupported = availableSpellCheckerLanguages.includes(
       userLocale
     );
-    if (localeIsSupported) {
+    if (localeIsSupported && isLanguage(userLocale)) {
       return new Set([userLocale]);
     } else {
       log(`Spellchecker doesn't support locale '${userLocale}'.`);
@@ -145,61 +213,26 @@ export function createSpellcheckerManager(
     }
   }
 
-  /**
-   * @returns true if the set was modified, false otherwise
-   */
-  function deleteUnknownCodes(codes: Set<string>): boolean {
-    let modified = false;
-    for (const code of codes) {
-      if (!LanguageCodes[code]) {
-        codes.delete(code);
-        modified = true;
-      }
-    }
-    return modified;
-  }
-
-  function selectedLanguageCodes(): Set<string> {
+  function selectedLanguageCodes(): Set<Language> {
     return store.get(StoreKeys.SelectedSpellCheckerLanguageCodes) || new Set();
   }
-
-  if (process.env.NODE_ENV === 'development') {
-    /** Make sure every available language is accounted for. */
-    for (const code of session.availableSpellCheckerLanguages) {
-      if (!(code in LanguageCodes)) {
-        throw new Error(`Found unsupported language code: ${code}`);
-      }
-    }
-  }
-  /**
-   * All the available spellchecker language codes,
-   * sorted by their actual names. We use `!` knowing that we've already checked
-   * for unknown languages in `session.availableSpellCheckerLanguages`
-   */
-  const availableLanguageCodes = session.availableSpellCheckerLanguages.sort(
-    (code1, code2) => LanguageCodes[code1]!.localeCompare(LanguageCodes[code2]!)
-  );
 
   return {
     languages() {
       const codes = selectedLanguageCodes();
-      return availableLanguageCodes.map(code => ({
+      return availableSpellCheckerLanguages.map(code => ({
         code,
-        /**
-         * We use `!` here knowing that availableLanguageCodes
-         * has already been vetted.
-         */
-        name: LanguageCodes[code]!,
+        name: LanguageCodes[code],
         enabled: codes.has(code)
       }));
     },
-    addLanguage(code: string) {
+    addLanguage(code: Language) {
       const selectedCodes = selectedLanguageCodes();
       selectedCodes.add(code);
       store.set(StoreKeys.SelectedSpellCheckerLanguageCodes, selectedCodes);
       session.setSpellCheckerLanguages(Array.from(selectedCodes));
     },
-    removeLanguage(code: string) {
+    removeLanguage(code: Language) {
       const selectedCodes = selectedLanguageCodes();
       selectedCodes.delete(code);
       store.set(StoreKeys.SelectedSpellCheckerLanguageCodes, selectedCodes);

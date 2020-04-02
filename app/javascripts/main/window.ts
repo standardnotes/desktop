@@ -14,6 +14,7 @@ import { Store, StoreKeys } from './store';
 import { createTrayManager, TrayManager } from './trayManager';
 import { createUpdateManager, UpdateManager } from './updateManager';
 import { initializeZoomManager } from './zoomManager';
+import { isTesting } from './utils';
 
 const WINDOW_DEFAULT_WIDTH = 1100;
 const WINDOW_DEFAULT_HEIGHT = 800;
@@ -39,7 +40,7 @@ export function createWindowState({
   appState: Pick<AppState, 'willQuitApp' | 'startUrl' | 'store'>;
   teardown: () => void;
 }): WindowState {
-  const window = createWindow();
+  const window = createWindow(appState.store);
   const services = createWindowServices(window, appState.store, appLocale);
   registerWindowEventListeners({
     shell,
@@ -56,14 +57,13 @@ export function createWindowState({
   };
 }
 
-function createWindow(): Electron.BrowserWindow {
+function createWindow(store: Store): Electron.BrowserWindow {
   const winState = windowStateKeeper({
     defaultWidth: WINDOW_DEFAULT_WIDTH,
     defaultHeight: WINDOW_DEFAULT_HEIGHT
   });
-  const useSystemMenuBar = Store.get(StoreKeys.UseSystemMenuBar);
+  const useSystemMenuBar = store.get(StoreKeys.UseSystemMenuBar);
 
-  const isTesting = process.argv.includes(CommandLineArgs.Testing);
   const window = new BrowserWindow({
     x: winState.x,
     y: winState.y,
@@ -81,8 +81,8 @@ function createWindow(): Electron.BrowserWindow {
        * During testing, we expose unsafe node apis to the browser window as
        * required by spectron (^10.0.0)
        */
-      nodeIntegration: isTesting,
-      contextIsolation: !isTesting,
+      nodeIntegration: isTesting(),
+      contextIsolation: !isTesting(),
       preload: path.join(__dirname, 'javascripts/renderer/preload.js')
     }
   });
