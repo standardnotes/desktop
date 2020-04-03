@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { TestIpcMessages } from '../../../test/TestIpcMessages';
 import { Language } from './spellcheckerManager';
-import { isTesting } from './utils';
+import { ensureIsBoolean, isTesting, stringOrNull } from './utils';
 
 function logError(...message: any) {
   console.error('store:', ...message);
@@ -33,26 +33,23 @@ interface StoreData {
 
 function createSanitizedStoreData(data: any = {}): StoreData {
   return {
-    [StoreKeys.MenuBarVisible]:
-      typeof data[StoreKeys.MenuBarVisible] === 'boolean'
-        ? data[StoreKeys.MenuBarVisible]
-        : true,
-    [StoreKeys.UseSystemMenuBar]:
-      typeof data[StoreKeys.UseSystemMenuBar] === 'boolean'
-        ? data[StoreKeys.UseSystemMenuBar]
-        : false,
-    [StoreKeys.BackupsDisabled]:
-      typeof data[StoreKeys.BackupsDisabled] === 'boolean'
-        ? data[StoreKeys.BackupsDisabled]
-        : false,
-    [StoreKeys.MinimizeToTray]:
-      typeof data[StoreKeys.MinimizeToTray] === 'boolean'
-        ? data[StoreKeys.MinimizeToTray]
-        : false,
-    [StoreKeys.ExtServerHost]:
-      typeof data[StoreKeys.ExtServerHost] === 'string'
-        ? data[StoreKeys.ExtServerHost]
-        : undefined,
+    [StoreKeys.MenuBarVisible]: ensureIsBoolean(
+      data[StoreKeys.MenuBarVisible],
+      true
+    ),
+    [StoreKeys.UseSystemMenuBar]: ensureIsBoolean(
+      data[StoreKeys.UseSystemMenuBar],
+      false
+    ),
+    [StoreKeys.BackupsDisabled]: ensureIsBoolean(
+      data[StoreKeys.BackupsDisabled],
+      false
+    ),
+    [StoreKeys.MinimizeToTray]: ensureIsBoolean(
+      data[StoreKeys.MinimizeToTray],
+      false
+    ),
+    [StoreKeys.ExtServerHost]: stringOrNull(data[StoreKeys.ExtServerHost]),
     [StoreKeys.BackupsLocation]: sanitizeBackupsLocation(
       data[StoreKeys.BackupsLocation]
     ),
