@@ -9,6 +9,7 @@ import { Store, StoreKeys } from './javascripts/main/store';
 import { AppName, initializeStrings } from './javascripts/main/strings';
 import { createWindowState, WindowState } from './javascripts/main/window';
 import { IpcMessages } from './javascripts/shared/ipcMessages';
+import { isDev } from './javascripts/main/utils';
 
 export interface AppState {
   readonly store: Store;
@@ -43,7 +44,7 @@ export function initializeApplication(args: {
     state
   });
 
-  if (process.env.NODE_ENV === 'development') {
+  if (isDev()) {
     /** Expose the app's state as a global variable. Useful for debugging */
     (global as any).appState = state;
   }

@@ -1,6 +1,7 @@
 import buildEditorContextMenu from 'electron-editor-context-menu';
 import { Store, StoreKeys } from './store';
 import { isMac } from './platforms';
+import { isDev } from './utils';
 
 export enum Language {
   AF = 'af',
@@ -168,7 +169,7 @@ export function createSpellcheckerManager(
   );
 
   if (
-    process.env.NODE_ENV === 'development' &&
+    isDev() &&
     availableSpellCheckerLanguages.length !==
       session.availableSpellCheckerLanguages.length
   ) {

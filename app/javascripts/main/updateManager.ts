@@ -7,6 +7,7 @@ import { readJSONFile, writeJSONFile } from './fileUtils';
 import { downloadFile, getJSON } from './networking';
 import { InstallerKey, installerKey } from './platforms';
 import { updates as str } from './strings';
+import { isDev } from './utils';
 
 const DefaultUpdateEndpoint =
   process.env.UPDATE_ENDPOINT ||
@@ -115,7 +116,7 @@ export function createUpdateManager(window: BrowserWindow): UpdateManager {
   }
 
   async function checkForAutoUpdate(force = false) {
-    if (process.env.NODE_ENV === 'development') return;
+    if (isDev()) return;
 
     if (settings.autoupdateEnabled || force) {
       try {
