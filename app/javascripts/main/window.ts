@@ -1,8 +1,7 @@
-import { BrowserWindow, Shell, ipcMain } from 'electron';
+import { BrowserWindow, ipcMain, Shell } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 import path from 'path';
 import { AppState } from '../../application';
-import { CommandLineArgs } from '../shared/CommandLineArgs';
 import { IpcMessages } from '../shared/ipcMessages';
 import { ArchiveManager, createArchiveManager } from './archiveManager';
 import { createMenuManager, MenuManager } from './menuManager';
@@ -13,8 +12,8 @@ import { createSpellcheckerManager } from './spellcheckerManager';
 import { Store, StoreKeys } from './store';
 import { createTrayManager, TrayManager } from './trayManager';
 import { createUpdateManager, UpdateManager } from './updateManager';
-import { initializeZoomManager } from './zoomManager';
 import { isTesting } from './utils';
+import { initializeZoomManager } from './zoomManager';
 
 const WINDOW_DEFAULT_WIDTH = 1100;
 const WINDOW_DEFAULT_HEIGHT = 800;
@@ -99,7 +98,11 @@ function createWindowServices(
   initializePackageManager(window.webContents);
   initializeSearchManager(window.webContents);
   initializeZoomManager(window.webContents, store);
-  const archiveManager = createArchiveManager(window.webContents, store, ipcMain);
+  const archiveManager = createArchiveManager(
+    window.webContents,
+    store,
+    ipcMain
+  );
   const updateManager = createUpdateManager(window);
   const trayManager = createTrayManager(window, store);
   const spellcheckerManager = createSpellcheckerManager(

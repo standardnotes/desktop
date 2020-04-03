@@ -1,4 +1,4 @@
-import { app, dialog, IpcMain, WebContents } from 'electron';
+import { dialog, IpcMain, WebContents } from 'electron';
 import fs from 'fs';
 import path from 'path';
 import { IpcMessages } from '../shared/ipcMessages';
@@ -11,7 +11,7 @@ function log(...message: any) {
 
 function logError(...message: any) {
   console.error('archiveManager:', ...message);
-};
+}
 
 export interface ArchiveManager {
   backupsAreEnabled: boolean;

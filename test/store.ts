@@ -1,11 +1,10 @@
 import { strict as assert } from 'assert';
+import fs from 'fs';
 import { Suite } from 'mocha';
 import { Application } from 'spectron';
-import { CommandLineArgs } from '../app/javascripts/shared/CommandLineArgs';
-import { launchApp, setDefaults } from './utils';
-import fs from 'fs';
-import { TestIpcMessages } from './TestIpcMessages';
 import { serializeStoreData } from '../app/javascripts/main/store';
+import { TestIpcMessages } from './TestIpcMessages';
+import { launchApp, setDefaults } from './utils';
 
 function getDataLocation(app: Application) {
   return app.electron.ipcRenderer.invoke(TestIpcMessages.StoreSettingsLocation);
@@ -20,7 +19,6 @@ async function validateData(app: Application) {
   const data = JSON.parse(
     await app.electron.ipcRenderer.invoke(TestIpcMessages.StoreData)
   );
-
 
   /**
    * There should always be 8 values in the store.

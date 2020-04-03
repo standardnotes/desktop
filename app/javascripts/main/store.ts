@@ -1,9 +1,9 @@
-import { app, remote, ipcMain, App } from 'electron';
+import { app, ipcMain, remote } from 'electron';
 import fs from 'fs';
 import path from 'path';
+import { TestIpcMessages } from '../../../test/TestIpcMessages';
 import { Language } from './spellcheckerManager';
 import { isTesting } from './utils';
-import { TestIpcMessages } from '../../../test/TestIpcMessages';
 
 function logError(...message: any) {
   console.error('store:', ...message);
@@ -140,7 +140,7 @@ export class Store {
        * app data directory path.
        * TODO(baptiste): stop using Store in the renderer process.
        */
-      const userDataPath = (app || remote.app).getPath('userData')
+      const userDataPath = (app || remote.app).getPath('userData');
       this.instance = new Store(userDataPath);
     }
     return this.instance;
@@ -161,7 +161,7 @@ export class Store {
       );
       ipcMain.handle(TestIpcMessages.StoreSettingsLocation, () => this.path);
       ipcMain.handle(TestIpcMessages.StoreSet, (_e, key, value) => {
-        this.set(key, value)
+        this.set(key, value);
       });
     }
   }

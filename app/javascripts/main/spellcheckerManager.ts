@@ -175,9 +175,7 @@ export function createSpellcheckerManager(
   ) {
     /** This means that not every available language has been accounted for. */
     const firstOutlier = session.availableSpellCheckerLanguages.find(
-      (language, index) => {
-        availableSpellCheckerLanguages[index] !== language;
-      }
+      (language, index) => availableSpellCheckerLanguages[index] !== language
     );
     throw new Error(`Found unsupported language code: ${firstOutlier}`);
   }
