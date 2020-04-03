@@ -1,4 +1,4 @@
-import { app, dialog, IpcMain, WebContents } from 'electron';
+import { dialog, IpcMain, WebContents } from 'electron';
 import fs from 'fs';
 import path from 'path';
 import { IpcMessages } from '../shared/ipcMessages';
@@ -12,11 +12,6 @@ function log(...message: any) {
 function logError(...message: any) {
   console.error('archiveManager:', ...message);
 }
-
-const defaultLocation = path.join(
-  app.getPath('home'),
-  'Standard Notes Backups'
-);
 
 export interface ArchiveManager {
   backupsAreEnabled: boolean;
@@ -33,8 +28,8 @@ export function createArchiveManager(
   store: Store,
   ipcMain: IpcMain
 ): ArchiveManager {
-  let backupsLocation = store.get(StoreKeys.BackupsLocation) || defaultLocation;
-  let backupsDisabled = store.get(StoreKeys.BackupsDisabled) ?? false;
+  let backupsLocation = store.get(StoreKeys.BackupsLocation);
+  let backupsDisabled = store.get(StoreKeys.BackupsDisabled);
   let needsBackup = false;
 
   ipcMain.on(IpcMessages.DataArchive, async (_event, data) => {

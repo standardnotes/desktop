@@ -1,7 +1,6 @@
+import { app, ipcMain, shell } from 'electron';
 import log from 'electron-log';
-import { app, shell, ipcMain } from 'electron';
 import { initializeApplication } from './application';
-import { Store } from './javascripts/main/store';
 
 log.transports.file.level = 'info';
 
@@ -12,6 +11,5 @@ process.on('uncaughtException', err => {
 initializeApplication({
   app,
   shell,
-  ipcMain,
-  store: Store.getInstance()
+  ipcMain
 });

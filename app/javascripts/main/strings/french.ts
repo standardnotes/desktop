@@ -1,9 +1,10 @@
 import { Strings } from './types';
 import { createEnglishStrings } from './english';
+import { isDev } from '../utils';
 
 export function createFrenchStrings(): Strings {
   const fallback = createEnglishStrings();
-  if (process.env.NODE_ENV !== 'development') {
+  if (isDev()) {
     /**
      * Le Français est une langue expérimentale.
      * Don't show it in production yet.

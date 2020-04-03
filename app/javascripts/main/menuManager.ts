@@ -6,6 +6,7 @@ import { SpellcheckerManager } from './spellcheckerManager';
 import { MenuItemConstructorOptions, app, Menu, dialog, shell } from 'electron';
 import { isMac } from './platforms';
 import { appMenu as str } from './strings';
+import { isDev } from './utils';
 
 export interface MenuManager {
   reload(): void;
@@ -48,7 +49,7 @@ export function createMenuManager({
   return {
     reload,
     popupMenu() {
-      if (process.env.NODE_ENV === 'development') {
+      if (isDev()) {
         /** Check the state */
         if (!menu) throw new Error('called popupMenu() before loading');
       }
@@ -146,7 +147,7 @@ function editMenu(
   spellcheckerManager: SpellcheckerManager | undefined,
   reload: () => any
 ): MenuItemConstructorOptions {
-  if (process.env.NODE_ENV === 'development') {
+  if (isDev()) {
     /** Check for invalid state */
     if (!isMac && spellcheckerManager === undefined) {
       throw new Error('spellcheckerManager === undefined');

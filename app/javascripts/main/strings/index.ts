@@ -1,6 +1,7 @@
 import { createEnglishStrings } from './english';
 import { createFrenchStrings } from './french';
 import { Strings } from './types';
+import { isDev } from '../utils';
 
 let strings: Strings;
 
@@ -10,7 +11,7 @@ let strings: Strings;
  * @see https://www.electronjs.org/docs/api/locales
  */
 export function initializeStrings(locale: string) {
-  if (process.env.NODE_ENV === 'development') {
+  if (isDev()) {
     if (strings) {
       throw new Error('`strings` has already been initialized');
     }
@@ -20,7 +21,7 @@ export function initializeStrings(locale: string) {
 }
 
 export function str(): Strings {
-  if (process.env.NODE_ENV === 'development') {
+  if (isDev()) {
     if (!strings) {
       throw new Error('tried to access strings before they were initialized.');
     }

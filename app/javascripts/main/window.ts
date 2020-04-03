@@ -1,8 +1,7 @@
-import { BrowserWindow, Shell, ipcMain } from 'electron';
+import { BrowserWindow, ipcMain, Shell } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 import path from 'path';
 import { AppState } from '../../application';
-import { CommandLineArgs } from '../shared/CommandLineArgs';
 import { IpcMessages } from '../shared/ipcMessages';
 import { ArchiveManager, createArchiveManager } from './archiveManager';
 import { createMenuManager, MenuManager } from './menuManager';
@@ -13,6 +12,7 @@ import { createSpellcheckerManager } from './spellcheckerManager';
 import { Store, StoreKeys } from './store';
 import { createTrayManager, TrayManager } from './trayManager';
 import { createUpdateManager, UpdateManager } from './updateManager';
+import { isTesting } from './utils';
 import { initializeZoomManager } from './zoomManager';
 
 const WINDOW_DEFAULT_WIDTH = 1100;
@@ -39,7 +39,7 @@ export function createWindowState({
   appState: Pick<AppState, 'willQuitApp' | 'startUrl' | 'store'>;
   teardown: () => void;
 }): WindowState {
-  const window = createWindow();
+  const window = createWindow(appState.store);
   const services = createWindowServices(window, appState.store, appLocale);
   registerWindowEventListeners({
     shell,
@@ -56,14 +56,13 @@ export function createWindowState({
   };
 }
 
-function createWindow(): Electron.BrowserWindow {
+function createWindow(store: Store): Electron.BrowserWindow {
   const winState = windowStateKeeper({
     defaultWidth: WINDOW_DEFAULT_WIDTH,
     defaultHeight: WINDOW_DEFAULT_HEIGHT
   });
-  const useSystemMenuBar = Store.get(StoreKeys.UseSystemMenuBar);
+  const useSystemMenuBar = store.get(StoreKeys.UseSystemMenuBar);
 
-  const isTesting = process.argv.includes(CommandLineArgs.Testing);
   const window = new BrowserWindow({
     x: winState.x,
     y: winState.y,
@@ -81,8 +80,8 @@ function createWindow(): Electron.BrowserWindow {
        * During testing, we expose unsafe node apis to the browser window as
        * required by spectron (^10.0.0)
        */
-      nodeIntegration: isTesting,
-      contextIsolation: !isTesting,
+      nodeIntegration: isTesting(),
+      contextIsolation: !isTesting(),
       preload: path.join(__dirname, 'javascripts/renderer/preload.js')
     }
   });
@@ -99,7 +98,11 @@ function createWindowServices(
   initializePackageManager(window.webContents);
   initializeSearchManager(window.webContents);
   initializeZoomManager(window.webContents, store);
-  const archiveManager = createArchiveManager(window.webContents, store, ipcMain);
+  const archiveManager = createArchiveManager(
+    window.webContents,
+    store,
+    ipcMain
+  );
   const updateManager = createUpdateManager(window);
   const trayManager = createTrayManager(window, store);
   const spellcheckerManager = createSpellcheckerManager(

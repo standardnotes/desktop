@@ -3,6 +3,7 @@ import path from 'path';
 import { isLinux, isWindows } from './platforms';
 import { Store, StoreKeys } from './store';
 import { AppName, tray as str } from './strings';
+import { isDev } from './utils';
 
 const icon = path.join(__dirname, '/icon/Icon-256x256.png');
 
@@ -90,7 +91,7 @@ export function createTrayManager(
     },
 
     destroyTrayIcon() {
-      if (process.env.NODE_ENV === 'development') {
+      if (isDev()) {
         /** Check our state */
         if (!updateContextMenu) {
           throw new Error('updateContextMenu === undefined');

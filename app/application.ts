@@ -9,6 +9,7 @@ import { Store, StoreKeys } from './javascripts/main/store';
 import { AppName, initializeStrings } from './javascripts/main/strings';
 import { createWindowState, WindowState } from './javascripts/main/window';
 import { IpcMessages } from './javascripts/shared/ipcMessages';
+import { isDev } from './javascripts/main/utils';
 
 export interface AppState {
   readonly store: Store;
@@ -23,9 +24,8 @@ export function initializeApplication(args: {
   app: Electron.App;
   ipcMain: Electron.IpcMain;
   shell: Shell;
-  store: Store;
 }) {
-  const { app, store } = args;
+  const { app } = args;
 
   app.name = AppName;
   app.allowRendererProcessReuse = true;
@@ -33,7 +33,7 @@ export function initializeApplication(args: {
   const isPrimaryInstance = app.requestSingleInstanceLock();
 
   const state: AppState = {
-    store,
+    store: new Store(app.getPath('userData')),
     startUrl: determineStartUrl(),
     isPrimaryInstance,
     willQuitApp: false
@@ -43,6 +43,11 @@ export function initializeApplication(args: {
     ...args,
     state
   });
+
+  if (isDev()) {
+    /** Expose the app's state as a global variable. Useful for debugging */
+    (global as any).appState = state;
+  }
 }
 
 function determineStartUrl(): string {
