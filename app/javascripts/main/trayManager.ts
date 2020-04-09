@@ -23,7 +23,7 @@ export function createTrayManager(
   function showWindow() {
     window.show();
 
-    if (isLinux) {
+    if (isLinux()) {
       /* On some versions of GNOME the window may not be on top when
       restored. */
       window.setAlwaysOnTop(true);
@@ -41,7 +41,7 @@ export function createTrayManager(
       tray = new Tray(icon);
       tray.setToolTip(AppName);
 
-      if (isWindows) {
+      if (isWindows()) {
         /* On Windows, right-clicking invokes the menu, as opposed to
         left-clicking for the other platforms. So we map left-clicking
         to the conventional action of showing the app. */

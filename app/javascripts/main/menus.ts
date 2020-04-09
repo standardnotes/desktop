@@ -1,12 +1,88 @@
-import { StoreKeys, Store } from './store';
+import {
+  app,
+  dialog,
+  ipcMain,
+  Menu,
+  MenuItemConstructorOptions,
+  shell,
+  WebContents,
+} from 'electron';
+import { TestIpcMessages } from '../../../test/TestIpcMessages';
 import { ArchiveManager } from './archiveManager';
-import { UpdateManager } from './updateManager';
-import { TrayManager } from './trayManager';
-import { SpellcheckerManager } from './spellcheckerManager';
-import { MenuItemConstructorOptions, app, Menu, dialog, shell } from 'electron';
 import { isMac } from './platforms';
+import { SpellcheckerManager } from './spellcheckerManager';
+import { Store, StoreKeys } from './store';
 import { appMenu as str } from './strings';
-import { isDev } from './utils';
+import { TrayManager } from './trayManager';
+import { UpdateManager } from './updateManager';
+import { isDev, isTesting } from './utils';
+
+export function editorContextMenu(
+  misspelledWord: string,
+  dictionarySuggestions: string[],
+  webContents: WebContents
+): MenuItemConstructorOptions[] {
+  return [
+    ...suggestionsMenu(misspelledWord, dictionarySuggestions, webContents),
+    {
+      role: 'undo',
+    },
+    {
+      role: 'redo',
+    },
+    {
+      type: 'separator',
+    },
+    {
+      role: 'cut',
+    },
+    {
+      role: 'copy',
+    },
+    {
+      role: 'paste',
+    },
+    {
+      role: 'pasteAndMatchStyle',
+    },
+    {
+      role: 'selectAll',
+    },
+  ];
+}
+
+function suggestionsMenu(
+  misspelledWord: string,
+  suggestions: string[],
+  webContents: WebContents
+): MenuItemConstructorOptions[] {
+  if (misspelledWord.length === 0) {
+    return [];
+  }
+  if (suggestions.length === 0) {
+    return [
+      {
+        label: 'No suggestions',
+        enabled: false,
+      },
+      {
+        type: 'separator',
+      },
+    ];
+  }
+
+  return [
+    ...suggestions.map((suggestion) => ({
+      label: suggestion,
+      click() {
+        webContents.replaceMisspelling(suggestion);
+      },
+    })),
+    {
+      type: 'separator',
+    },
+  ];
+}
 
 export interface MenuManager {
   reload(): void;
@@ -32,7 +108,7 @@ export function createMenuManager({
 
   function reload() {
     menu = Menu.buildFromTemplate([
-      ...(isMac ? [macAppMenu(app.getName())] : []),
+      ...(isMac() ? [macAppMenu(app.getName())] : []),
       editMenu(spellcheckerManager, reload),
       viewMenu(window, store, reload),
       windowMenu(store, trayManager, reload),
@@ -45,6 +121,13 @@ export function createMenuManager({
   reload(); // initialization
 
   updateManager.onNeedMenuReload = reload;
+
+  if (isTesting()) {
+    ipcMain.handle(TestIpcMessages.AppMenuItems, () => menu.items);
+    ipcMain.handle(TestIpcMessages.ClickLanguage, (_event, code) => {
+      menu.getMenuItemById(TestIpcMessages.ClickLanguage + code)!.click();
+    });
+  }
 
   return {
     reload,
@@ -149,7 +232,7 @@ function editMenu(
 ): MenuItemConstructorOptions {
   if (isDev()) {
     /** Check for invalid state */
-    if (!isMac && spellcheckerManager === undefined) {
+    if (!isMac() && spellcheckerManager === undefined) {
       throw new Error('spellcheckerManager === undefined');
     }
   }
@@ -179,7 +262,7 @@ function editMenu(
       {
         role: Roles.SelectAll
       },
-      ...(isMac
+      ...(isMac()
         ? [Separator, macSpeechMenu()]
         : [spellcheckerMenu(spellcheckerManager!, reload)])
     ]
@@ -207,21 +290,20 @@ function spellcheckerMenu(
   return {
     label: str().spellcheckerLanguages,
     submenu: spellcheckerManager.languages().map(
-      ({ name, code, enabled }): MenuItemConstructorOptions => {
-        return {
-          label: name,
-          type: MenuItemTypes.CheckBox,
-          checked: enabled,
-          click: () => {
-            if (enabled) {
-              spellcheckerManager.removeLanguage(code);
-            } else {
-              spellcheckerManager.addLanguage(code);
-            }
-            reload();
+      ({ name, code, enabled }): MenuItemConstructorOptions => ({
+        ...(isTesting() ? { id: TestIpcMessages.ClickLanguage + code } : {}),
+        label: name,
+        type: MenuItemTypes.CheckBox,
+        checked: enabled,
+        click: () => {
+          if (enabled) {
+            spellcheckerManager.removeLanguage(code);
+          } else {
+            spellcheckerManager.addLanguage(code);
           }
-        };
-      }
+          reload();
+        },
+      })
     )
   };
 }
@@ -254,7 +336,7 @@ function viewMenu(
       {
         role: Roles.ToggleFullScreen
       },
-      ...(isMac ? [] : [Separator, ...menuBarOptions(window, store, reload)])
+      ...(isMac() ? [] : [Separator, ...menuBarOptions(window, store, reload)])
     ]
   };
 }
@@ -269,7 +351,7 @@ function menuBarOptions(
   window.setMenuBarVisibility(isMenuBarVisible);
   return [
     {
-      visible: !isMac && useSystemMenuBar,
+      visible: !isMac() && useSystemMenuBar,
       label: str().hideMenuBar,
       accelerator: KeyCombinations.AltM,
       click: () => {
@@ -309,7 +391,7 @@ function windowMenu(
         role: Roles.Close
       },
       Separator,
-      ...(isMac
+      ...(isMac()
         ? macWindowItems()
         : [minimizeToTrayItem(store, trayManager, reload)])
     ]

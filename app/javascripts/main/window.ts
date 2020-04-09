@@ -4,7 +4,7 @@ import path from 'path';
 import { AppState } from '../../application';
 import { IpcMessages } from '../shared/ipcMessages';
 import { ArchiveManager, createArchiveManager } from './archiveManager';
-import { createMenuManager, MenuManager } from './menuManager';
+import { createMenuManager, MenuManager } from './menus';
 import { initializePackageManager } from './packageManager';
 import { isMac } from './platforms';
 import { initializeSearchManager } from './searchManager';
@@ -14,6 +14,7 @@ import { createTrayManager, TrayManager } from './trayManager';
 import { createUpdateManager, UpdateManager } from './updateManager';
 import { isTesting } from './utils';
 import { initializeZoomManager } from './zoomManager';
+import { TestIpcMessages } from '../../../test/TestIpcMessages';
 
 const WINDOW_DEFAULT_WIDTH = 1100;
 const WINDOW_DEFAULT_HEIGHT = 800;
@@ -72,8 +73,8 @@ function createWindow(store: Store): Electron.BrowserWindow {
     minHeight: WINDOW_MIN_HEIGHT,
     show: false,
     icon: path.join(__dirname, '/icon/Icon-512x512.png'),
-    titleBarStyle: isMac || useSystemMenuBar ? 'hiddenInset' : undefined,
-    frame: isMac ? false : useSystemMenuBar,
+    titleBarStyle: isMac() || useSystemMenuBar ? 'hiddenInset' : undefined,
+    frame: isMac() ? false : useSystemMenuBar,
     webPreferences: {
       spellcheck: true,
       /**
@@ -87,6 +88,13 @@ function createWindow(store: Store): Electron.BrowserWindow {
   });
 
   winState.manage(window);
+
+  if (isTesting()) {
+    ipcMain.handle(TestIpcMessages.SpellCheckerLanguages, () =>
+      window.webContents.session.getSpellCheckerLanguages()
+    );
+  }
+
   return window;
 }
 
@@ -95,9 +103,9 @@ function createWindowServices(
   store: Store,
   appLocale: string
 ) {
-  initializePackageManager(window.webContents);
+  initializePackageManager(ipcMain, window.webContents);
   initializeSearchManager(window.webContents);
-  initializeZoomManager(window.webContents, store);
+  initializeZoomManager(window, store);
   const archiveManager = createArchiveManager(
     window.webContents,
     store,
@@ -110,6 +118,9 @@ function createWindowServices(
     window.webContents,
     appLocale
   );
+  if (isTesting()) {
+    ipcMain.handle(TestIpcMessages.SpellCheckerManager, () => spellcheckerManager);
+  }
   const menuManager = createMenuManager({
     window,
     archiveManager,
@@ -183,7 +194,7 @@ function registerWindowEventListeners({
   window.on('close', event => {
     if (
       !appState.willQuitApp &&
-      (isMac || trayManager.shouldMinimizeToTray())
+      (isMac() || trayManager.shouldMinimizeToTray())
     ) {
       /**
        * On MacOS, closing a window does not quit the app. On Window and Linux,

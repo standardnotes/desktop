@@ -1,7 +1,8 @@
-import buildEditorContextMenu from 'electron-editor-context-menu';
-import { Store, StoreKeys } from './store';
+import { Menu } from 'electron';
 import { isMac } from './platforms';
+import { Store, StoreKeys } from './store';
 import { isDev } from './utils';
+import { editorContextMenu } from './menus';
 
 export enum Language {
   AF = 'af',
@@ -53,7 +54,7 @@ export enum Language {
   FA = 'fa',
   HI = 'hi',
   TA = 'ta',
-  KO = 'ko'
+  KO = 'ko',
 }
 
 function isLanguage(language: any): language is Language {
@@ -65,15 +66,16 @@ function log(...message: any) {
 }
 
 function initializeContextMenuListener(webContents: Electron.WebContents) {
-  webContents.on('context-menu', (_event, params) => {
-    /** Only show a context menu on editable items. */
-    if (!params.isEditable) return;
-    const menu = buildEditorContextMenu({
-      isMisspelled: params.misspelledWord.length > 0,
-      spellingSuggestions: params.dictionarySuggestions
-    });
-    menu.popup();
-  });
+  webContents.on(
+    'context-menu',
+    (_event, { isEditable, misspelledWord, dictionarySuggestions }) => {
+      /** Only show a context menu on editable items. */
+      if (!isEditable) return;
+      Menu.buildFromTemplate(
+        editorContextMenu(misspelledWord, dictionarySuggestions, webContents)
+      ).popup();
+    }
+  );
 }
 
 export interface SpellcheckerManager {
@@ -86,10 +88,6 @@ export interface SpellcheckerManager {
   removeLanguage(code: string): void;
 }
 
-/**
- * @param userLocale the current locale
- * @returns `null` if we're on MacOS.
- */
 export function createSpellcheckerManager(
   store: Store,
   webContents: Electron.WebContents,
@@ -101,7 +99,7 @@ export function createSpellcheckerManager(
    * On MacOS the system spellchecker is used and every related Electron method
    * is a no-op. Return early to prevent unnecessary code execution/allocations
    */
-  if (isMac) return;
+  if (isMac()) return;
 
   const session = webContents.session;
 
@@ -159,12 +157,12 @@ export function createSpellcheckerManager(
     fa: 'فارسی' /** Persian */,
     hi: 'हिन्दी, हिंदी' /** Hindi */,
     ta: 'தமிழ்' /** Tamil */,
-    ko: '한국어' /** Korean */
+    ko: '한국어' /** Korean */,
   };
 
   const availableSpellCheckerLanguages = Object.values(
     Language
-  ).filter(language =>
+  ).filter((language) =>
     session.availableSpellCheckerLanguages.includes(language)
   );
 
@@ -219,10 +217,10 @@ export function createSpellcheckerManager(
   return {
     languages() {
       const codes = selectedLanguageCodes();
-      return availableSpellCheckerLanguages.map(code => ({
+      return availableSpellCheckerLanguages.map((code) => ({
         code,
         name: LanguageCodes[code],
-        enabled: codes.has(code)
+        enabled: codes.has(code),
       }));
     },
     addLanguage(code: Language) {
@@ -236,6 +234,6 @@ export function createSpellcheckerManager(
       selectedCodes.delete(code);
       store.set(StoreKeys.SelectedSpellCheckerLanguageCodes, selectedCodes);
       session.setSpellCheckerLanguages(Array.from(selectedCodes));
-    }
+    },
   };
 }

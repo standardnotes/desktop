@@ -1,19 +1,16 @@
+import { BrowserWindow } from 'electron';
 import { Store, StoreKeys } from './store';
-import { WebContents } from 'electron';
 
-export function initializeZoomManager(
-  webContents: WebContents,
-  store: Store
-) {
-  webContents.on('dom-ready', () => {
+export function initializeZoomManager(window: BrowserWindow, store: Store) {
+  window.webContents.on('dom-ready', () => {
     const zoomFactor = store.get(StoreKeys.ZoomFactor);
     if (zoomFactor) {
-      webContents.zoomFactor = zoomFactor;
+      window.webContents.zoomFactor = zoomFactor;
     }
   });
 
-  webContents.on('zoom-changed', () => {
-    const zoomFactor = webContents.zoomFactor;
+  window.on('close', () => {
+    const zoomFactor = window.webContents.zoomFactor;
     store.set(StoreKeys.ZoomFactor, zoomFactor);
   });
 }

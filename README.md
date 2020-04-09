@@ -7,14 +7,18 @@ npm run setup
 npm run dev
 
 # In another terminal
-npm run start
+npm start
 ```
 
-Before commiting, make sure the code is correctly typed:
+Before making a pull request, make sure to check the output of the following commands:
 
-```
+```bash
 npm run check-types
+npm run lint
+npm test
 ```
+
+Pull requests should target the `dev` branch.
 
 ## Building
 

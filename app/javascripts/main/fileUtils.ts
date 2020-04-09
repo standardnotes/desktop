@@ -10,7 +10,7 @@ export async function readJSONFile(path: string) {
   return JSON.parse(data);
 }
 
-export async function writeJSONFile(filepath: string, data: any) {
+export async function writeJSONFile<T>(filepath: string, data: T) {
   await ensureDirectoryExists(path.dirname(filepath));
   await fs.promises.writeFile(filepath, JSON.stringify(data, null, 2), 'utf8');
 }
@@ -57,7 +57,7 @@ export async function deleteDir(dirPath: string) {
 
 export async function deleteDirContents(dirPath: string) {
   const children = await fs.promises.readdir(dirPath, {
-    withFileTypes: true
+    withFileTypes: true,
   });
   for (const child of children) {
     const childPath = path.join(dirPath, child.name);
@@ -68,6 +68,24 @@ export async function deleteDirContents(dirPath: string) {
       await fs.promises.unlink(childPath);
     }
   }
+}
+
+export async function moveDirContents(
+  srcDir: string,
+  destDir: string
+) {
+  const [fileNames] = await Promise.all([
+    fs.promises.readdir(srcDir),
+    ensureDirectoryExists(destDir),
+  ]);
+  return Promise.all(
+    fileNames.map(async (fileName) =>
+      fs.promises.rename(
+        path.join(srcDir, fileName),
+        path.join(destDir, fileName)
+      )
+    )
+  );
 }
 
 export async function extractNestedZip(source: string, dest: string) {
@@ -88,7 +106,7 @@ export async function extractNestedZip(source: string, dest: string) {
 
         zipFile.readEntry();
         zipFile.on('close', resolve);
-        zipFile.on('entry', entry => {
+        zipFile.on('entry', (entry) => {
           if (cancelled) return;
           if (entry.fileName.endsWith('/')) {
             /** entry is a directory, skip and read next entry */
