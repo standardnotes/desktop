@@ -3,7 +3,7 @@ import path from 'path';
 import index from './index.html';
 import { ArchiveManager } from './javascripts/main/archiveManager';
 import { createExtensionsServer } from './javascripts/main/extServer';
-import { MenuManager } from './javascripts/main/menuManager';
+import { MenuManager } from './javascripts/main/menus';
 import { isLinux, isMac, isWindows } from './javascripts/main/platforms';
 import { Store, StoreKeys } from './javascripts/main/store';
 import { AppName, initializeStrings } from './javascripts/main/strings';
@@ -90,7 +90,7 @@ function registerAppEventListeners(args: {
   const { app, state } = args;
 
   app.on('window-all-closed', () => {
-    if (!isMac) {
+    if (!isMac()) {
       app.quit();
     }
   });
@@ -144,7 +144,7 @@ function finishApplicationInitialization({
   );
 
   if (
-    (isWindows || isLinux) &&
+    (isWindows() || isLinux()) &&
     state.windowState.trayManager.shouldMinimizeToTray()
   ) {
     state.windowState.trayManager.createTrayIcon();

@@ -1,10 +1,10 @@
-import { ensureDirectoryExists } from './fileUtils';
-import https from 'https';
-import { IncomingMessage } from 'http';
 import fs from 'fs';
+import { IncomingMessage } from 'http';
+import https from 'https';
 import path from 'path';
-import { promisify } from 'util';
 import { pipeline as pipelineFn } from 'stream';
+import { promisify } from 'util';
+import { ensureDirectoryExists } from './fileUtils';
 const pipeline = promisify(pipelineFn);
 
 /**
@@ -39,7 +39,10 @@ export async function getJSON<T>(url: string): Promise<T> {
  * DOES NOT handle compressed responses.
  * @param {string} url the url of the file to get
  */
-async function get(url: string, maxRedirects = 3) {
+export async function get(
+  url: string,
+  maxRedirects = 3
+): Promise<IncomingMessage> {
   let redirects = 0;
   let response = await promiseGet(url);
   while (

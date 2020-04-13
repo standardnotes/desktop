@@ -14,6 +14,7 @@
     "@types/mime-types": "^2.1.0",
     "@types/mocha": "^7.0.2",
     "@types/node": "^12.12.30",
+    "@types/proxyquire": "^1.3.28",
     "@types/yauzl": "^2.9.1",
     "@typescript-eslint/eslint-plugin": "^2.26.0",
     "@typescript-eslint/parser": "^2.26.0",
@@ -36,10 +37,11 @@
     "file-loader": "^6.0.0",
     "mime-types": "^2.1.26",
     "mocha": "^7.1.1",
+    "proxyquire": "^2.1.3",
     "rimraf": "^3.0.2",
     "spectron": "^10.0.1",
     "ts-loader": "^6.2.2",
-    "ts-mocha": "^7.0.0",
+    "ts-node": "^8.8.2",
     "typescript": "^3.8.3",
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11",
@@ -63,11 +65,6 @@
       "hardenedRuntime": true,
       "entitlements": "./build/entitlements.mac.inherit.plist",
       "entitlementsInherit": "./build/entitlements.mac.inherit.plist"
-    },
-    "win": {
-      "certificateSubjectName": "Standard Notes Ltd.",
-      "publisherName": "Standard Notes Ltd.",
-      "signDlls": true
     },
     "linux": {
       "category": "Office",
@@ -101,11 +98,11 @@
     "postinstall": "electron-builder install-app-deps",
     "build": "rimraf app/dist/ && webpack --config webpack.prod.js",
     "dev": "webpack --config webpack.dev.js --watch",
-    "start": "electron . --enable-logging --icon _icon/icon.png",
+    "start": "electron . --enable-logging --icon _icon/icon.png --testing-INSECURE",
     "clean": "rimraf app/dist/",
     "setup": "npm install && npm --prefix ./app install ./app && git submodule update --init --force --remote",
     "lint": "eslint app/index.ts app/application.ts app/javascripts/**/*.ts test/*.ts",
-    "test": "ts-mocha test/*.ts",
+    "test": "mocha",
     "check-types": "tsc --noEmit"
   }
 }

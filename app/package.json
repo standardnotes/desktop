@@ -7,8 +7,6 @@
   "main": "./dist/index.js",
   "dependencies": {
     "compare-versions": "^3.6.0",
-    "electron": "^8.2.0",
-    "electron-editor-context-menu": "^1.1.1",
     "electron-log": "^4.1.1",
     "electron-updater": "^4.2.5",
     "electron-window-state": "^5.0.3",

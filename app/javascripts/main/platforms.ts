@@ -3,19 +3,23 @@
  * (requires one webpack build per platform)
  */
 
-export const isWindows = process.platform === 'win32';
-export const isMac = process.platform === 'darwin';
-export const isLinux = process.platform === 'linux';
+export function isWindows(): boolean {
+  return process.platform === 'win32';
+}
+export function isMac(): boolean {
+  return process.platform === 'darwin';
+}
+export function isLinux(): boolean {
+  return process.platform === 'linux';
+}
 
 export type InstallerKey = 'mac' | 'windows' | 'appimage_64' | 'appimage_32';
-export const installerKey = getInstallerKey();
-
-function getInstallerKey(): InstallerKey {
-  if (isWindows) {
+export function getInstallerKey(): InstallerKey {
+  if (isWindows()) {
     return 'windows';
-  } else if (isMac) {
+  } else if (isMac()) {
     return 'mac';
-  } else if (isLinux) {
+  } else if (isLinux()) {
     if (process.arch === 'x32') {
       return 'appimage_32';
     } else {

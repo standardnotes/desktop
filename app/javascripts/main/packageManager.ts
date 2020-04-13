@@ -1,5 +1,5 @@
 import compareVersions from 'compare-versions';
-import { app, ipcMain } from 'electron';
+import { app, IpcMain } from 'electron';
 import fs from 'fs';
 import path from 'path';
 import { IpcMessages } from '../shared/ipcMessages';
@@ -28,7 +28,7 @@ interface Component {
   content: {
     name: string;
     autoupdateDisabled: boolean;
-    local_url: string;
+    local_url?: string;
     package_info: {
       identifier: string;
       version: string;
@@ -39,7 +39,7 @@ interface Component {
 }
 /* eslint-enable camelcase */
 
-interface SyncTask {
+export interface SyncTask {
   components: Component[];
 }
 
@@ -58,7 +58,10 @@ async function getMapping() {
   }
 }
 
-export function initializePackageManager(webContents: Electron.WebContents) {
+export function initializePackageManager(
+  ipcMain: IpcMain,
+  webContents: Electron.WebContents
+) {
   const syncTasks: SyncTask[] = [];
   let isRunningTasks = false;
 
@@ -78,7 +81,7 @@ export function initializePackageManager(webContents: Electron.WebContents) {
   );
 }
 
-async function runTasks(webContents: Electron.WebContents, tasks: SyncTask[]) {
+export async function runTasks(webContents: Electron.WebContents, tasks: SyncTask[]) {
   while (tasks.length > 0) {
     try {
       const oppositeTask = await runTask(webContents, tasks[0], tasks.slice(1));
@@ -315,9 +318,8 @@ async function uninstallComponent(uuid: string) {
     /** No mapping for component */
     return;
   }
-
   await deleteDir(path.join(appPath, componentMapping.location));
-  delete mapping[componentMapping.uuid];
+  delete mapping[uuid];
   await writeJSONFile(MappingFileLocation, mapping);
 }
 

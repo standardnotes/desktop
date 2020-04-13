@@ -1,9 +1,15 @@
-import { dialog, IpcMain, WebContents } from 'electron';
+import {
+  dialog,
+  IpcMain,
+  WebContents
+} from 'electron';
 import fs from 'fs';
 import path from 'path';
 import { IpcMessages } from '../shared/ipcMessages';
-import { ensureDirectoryExists } from './fileUtils';
+import { ensureDirectoryExists, moveDirContents } from './fileUtils';
 import { Store, StoreKeys } from './store';
+import { isTesting } from './utils';
+import { TestIpcMessages } from '../../../test/TestIpcMessages';
 
 function log(...message: any) {
   console.log('archiveManager:', ...message);
@@ -32,11 +38,23 @@ export function createArchiveManager(
   let backupsDisabled = store.get(StoreKeys.BackupsDisabled);
   let needsBackup = false;
 
+  async function setBackupsLocation(location: string) {
+    const previousLocation = backupsLocation;
+    backupsLocation = location;
+    store.set(StoreKeys.BackupsLocation, backupsLocation);
+    try {
+      await moveDirContents(previousLocation, backupsLocation);
+    } catch (error) {
+      logError(error);
+    }
+  }
+
   ipcMain.on(IpcMessages.DataArchive, async (_event, data) => {
     if (backupsDisabled) return;
     let success: boolean;
+    let name: string | undefined;
     try {
-      const name = await writeDataToFile(data);
+      name = await writeDataToFile(data);
       log(`Data backup succesfully saved: ${name}`);
       success = true;
     } catch (err) {
@@ -44,6 +62,7 @@ export function createArchiveManager(
       logError('An error ocurred saving backup file', err);
     }
     webContents.send(IpcMessages.FinishedSavingBackup, { success });
+    return name;
   });
 
   function performBackup() {
@@ -73,6 +92,25 @@ export function createArchiveManager(
     interval = setInterval(performBackup, milliseconds);
   }
 
+  function toggleBackupsStatus() {
+    backupsDisabled = !backupsDisabled;
+    store.set(StoreKeys.BackupsDisabled, backupsDisabled);
+    /** Create a backup on reactivation. */
+    if (!backupsDisabled) {
+      performBackup();
+    }
+  }
+
+  if (isTesting()) {
+    ipcMain.handle(TestIpcMessages.BackupsAreEnabled, () => !backupsDisabled);
+    ipcMain.handle(TestIpcMessages.ToggleBackupsEnabled, toggleBackupsStatus);
+    ipcMain.handle(TestIpcMessages.BackupsLocation, () => backupsLocation);
+    ipcMain.handle(TestIpcMessages.PerformBackup, performBackup);
+    ipcMain.handle(TestIpcMessages.ChangeBackupsLocation, (_event, location) =>
+      setBackupsLocation(location)
+    );
+  }
+
   return {
     get backupsAreEnabled() {
       return !backupsDisabled;
@@ -82,6 +120,7 @@ export function createArchiveManager(
     },
     performBackup,
     beginBackups,
+    toggleBackupsStatus,
     applicationDidBlur() {
       if (needsBackup) {
         needsBackup = false;
@@ -90,16 +129,11 @@ export function createArchiveManager(
     },
     async changeBackupsLocation() {
       const result = await dialog.showOpenDialog({
-        properties: ['openDirectory', 'showHiddenFiles', 'createDirectory']
+        properties: ['openDirectory', 'showHiddenFiles', 'createDirectory'],
       });
       const path = result.filePaths[0];
-      backupsLocation = path;
-      store.set(StoreKeys.BackupsLocation, path);
+      setBackupsLocation(path);
       performBackup();
     },
-    toggleBackupsStatus() {
-      backupsDisabled = !backupsDisabled;
-      store.set(StoreKeys.BackupsDisabled, backupsDisabled);
-    }
   };
 }

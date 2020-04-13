@@ -21,3 +21,8 @@ export function stringOrNull(arg: any): string | null {
   }
   return null;
 }
+
+/** Ensures a path's drive letter is lowercase. */
+export function lowercaseDriveLetter(filePath: string) {
+  return filePath.replace(/^\/[A-Z]:\//, letter => letter.toLowerCase())
+}

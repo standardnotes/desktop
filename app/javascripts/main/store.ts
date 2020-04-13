@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { TestIpcMessages } from '../../../test/TestIpcMessages';
 import { Language } from './spellcheckerManager';
-import { ensureIsBoolean, isTesting, stringOrNull } from './utils';
+import { ensureIsBoolean, isTesting, stringOrNull, isDev } from './utils';
 
 function logError(...message: any) {
   console.error('store:', ...message);
@@ -70,7 +70,9 @@ function sanitizeZoomFactor(factor?: any): number {
 
 function sanitizeBackupsLocation(location?: unknown): string {
   const defaultPath = path.join(
-    (app || remote.app).getPath('home'),
+    isDev()
+      ? (app || remote.app).getPath('userData')
+      : (app || remote.app).getPath('home'),
     'Standard Notes Backups'
   );
   if (typeof location !== 'string') {

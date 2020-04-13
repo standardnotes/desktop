@@ -9,16 +9,25 @@
   ],
   "parser": "@typescript-eslint/parser",
   "rules": {
-    "no-console": "off",
+    /** Style */
     "semi": 1,
     "quotes": ["error", "single"],
+
+    /** Preferences */
+    "no-console": "off",
     "accessor-pairs": 0,
     "@typescript-eslint/explicit-function-return-type": 0,
-    "@typescript-eslint/no-use-before-define": 0,
+    "@typescript-eslint/no-use-before-define": ["error", "nofunc"],
     "@typescript-eslint/no-non-null-assertion": 0,
     "@typescript-eslint/no-explicit-any": 0,
     "mocha/no-hooks-for-single-case": 0,
     "mocha/no-setup-in-describe": 0,
+
+    /**
+     * The following rules are disabled because they are already implemented
+     * in the TypeScript configuration or vice-versa
+     */
+    "no-unused-vars": 0,
     "@typescript-eslint/camelcase": 0
   },
   "plugins": ["@typescript-eslint", "mocha"],

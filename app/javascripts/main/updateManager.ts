@@ -1,13 +1,14 @@
 import compareVersions from 'compare-versions';
-import { app, BrowserWindow, dialog, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import electronLog from 'electron-log';
 import { autoUpdater } from 'electron-updater';
 import path from 'path';
-import { readJSONFile, writeJSONFile } from './fileUtils';
+import { TestIpcMessages } from '../../../test/TestIpcMessages';
+import { FileDoesNotExist, readJSONFile, writeJSONFile } from './fileUtils';
 import { downloadFile, getJSON } from './networking';
-import { InstallerKey, installerKey } from './platforms';
+import { getInstallerKey, InstallerKey } from './platforms';
 import { updates as str } from './strings';
-import { isDev } from './utils';
+import { isDev, isTesting } from './utils';
 
 const DefaultUpdateEndpoint =
   process.env.UPDATE_ENDPOINT ||
@@ -33,7 +34,7 @@ interface LatestUpdate {
   downloads: Record<InstallerKey, string>;
 }
 
-interface UpdateSettings {
+export interface UpdateSettings {
   endpoint: string;
   autoupdateEnabled: boolean;
 
@@ -44,9 +45,16 @@ interface UpdateSettings {
 async function updateSettingsFromDisk(settings: UpdateSettings) {
   try {
     const data = await readJSONFile(settingsFilePath);
+    if (data.lastCheck) {
+      data.lastCheck = new Date(data.lastCheck);
+    }
     Object.assign(settings, data);
   } catch (error) {
-    logError(error);
+    if (error.code === FileDoesNotExist) {
+      await writeJSONFile(settingsFilePath, settings);
+    } else {
+      logError(error);
+    }
   }
 }
 function updateSettings(
@@ -87,7 +95,7 @@ export interface UpdateManager {
 export function createUpdateManager(window: BrowserWindow): UpdateManager {
   const settings: UpdateSettings = {
     endpoint: DefaultUpdateEndpoint,
-    autoupdateEnabled: false
+    autoupdateEnabled: false,
   };
   const currentVersion = app.getVersion();
   let checkingForUpdate = false;
@@ -98,6 +106,18 @@ export function createUpdateManager(window: BrowserWindow): UpdateManager {
 
   updateSettingsFromDisk(settings).then(() => checkForUpdate());
   setupAutoUpdater();
+
+  if (isTesting()) {
+    // eslint-disable-next-line no-var
+    var menuReloadTriggered = false;
+    ipcMain.handle(TestIpcMessages.UpdateSettings, () => settings);
+    ipcMain.handle(TestIpcMessages.UpdateSettingsPath, () => settingsFilePath);
+    ipcMain.handle(TestIpcMessages.CheckForUpdate, () => checkForUpdate());
+    ipcMain.handle(
+      TestIpcMessages.UpdateManagerTriggeredMenuReload,
+      () => menuReloadTriggered
+    );
+  }
 
   function setupAutoUpdater() {
     autoUpdater.logger = electronLog;
@@ -111,6 +131,9 @@ export function createUpdateManager(window: BrowserWindow): UpdateManager {
   }
 
   function triggerMenuReload() {
+    if (isTesting()) {
+      menuReloadTriggered = true;
+    }
     // eslint-disable-next-line no-unused-expressions
     onNeedMenuReload?.();
   }
@@ -137,7 +160,7 @@ export function createUpdateManager(window: BrowserWindow): UpdateManager {
       const latest: LatestUpdate = await getJSON(settings.endpoint);
       updateSettings(settings, {
         latest,
-        lastCheck: new Date()
+        lastCheck: new Date(),
       });
 
       log(
@@ -155,14 +178,14 @@ export function createUpdateManager(window: BrowserWindow): UpdateManager {
 
         dialog.showMessageBox({
           title: str().finishedChecking.title,
-          message
+          message,
         });
       }
     } catch (error) {
       logError(error);
       dialog.showMessageBox({
         title: str().finishedChecking.title,
-        message: str().finishedChecking.error(JSON.stringify(error))
+        message: str().finishedChecking.error(JSON.stringify(error)),
       });
     } finally {
       checkingForUpdate = false;
@@ -228,8 +251,8 @@ export function createUpdateManager(window: BrowserWindow): UpdateManager {
         message: str().updateReady.message(autoupdateVersion),
         buttons: [
           str().updateReady.quitAndInstall,
-          str().updateReady.installLater
-        ]
+          str().updateReady.installLater,
+        ],
       });
 
       const buttonIndex = result.response;
@@ -248,19 +271,19 @@ export function createUpdateManager(window: BrowserWindow): UpdateManager {
     },
     toggleAutoupdateStatus() {
       updateSettings(settings, {
-        autoupdateEnabled: !settings.autoupdateEnabled
+        autoupdateEnabled: !settings.autoupdateEnabled,
       });
       triggerMenuReload();
 
       if (settings.autoupdateEnabled) {
         dialog.showMessageBox({
           title: str().automaticUpdatesEnabled.title,
-          message: str().automaticUpdatesEnabled.message
+          message: str().automaticUpdatesEnabled.message,
         });
       }
     },
     async downloadUpdateFile() {
-      const url = settings.latest?.downloads?.[installerKey];
+      const url = settings.latest?.downloads?.[getInstallerKey()];
       if (!url) {
         // Open GitHub releases
         openChangelog();
@@ -281,12 +304,12 @@ export function createUpdateManager(window: BrowserWindow): UpdateManager {
       } catch (error) {
         dialog.showMessageBox({
           title: str().errorDownloading.title,
-          message: str().errorDownloading.message
+          message: str().errorDownloading.message,
         });
       } finally {
         downloadingUpdate = false;
         triggerMenuReload();
       }
-    }
+    },
   };
 }

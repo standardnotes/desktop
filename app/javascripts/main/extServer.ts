@@ -18,24 +18,27 @@ function log(...message: any) {
   console.log('extServer:', ...message);
 }
 
-function normalizeFilePath(requestUrl: string, host: string) {
-  const url = new URL(requestUrl, `${Protocol}://${host}`);
+export function normalizeFilePath(requestUrl: string, host: string) {
+  if (!requestUrl.startsWith('/Extensions')) {
+    throw new Error(
+      `URL '${requestUrl}' falls outside of the Extensions domain.`
+    );
+  }
+  const url = new URL(
+    requestUrl.replace('/Extensions', ''),
+    `${Protocol}://${host}`
+  );
   /**
    * Normalize path (parse '..' and '.') so that we prevent path traversal by
    * joining a fully resolved path to the Extensions dir.
    */
   const modifiedReqUrl = path.normalize(url.pathname);
-  return path.join(UserDataPath, modifiedReqUrl);
+  return path.join(UserDataPath, 'Extensions', modifiedReqUrl);
 }
 
 async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   try {
     if (!req.url) throw new Error('No url.');
-    if (!req.url.startsWith('/Extensions')) {
-      throw new Error(
-        'Client tried to access a path outside the /Extensions domain.'
-      );
-    }
     if (!req.headers.host) throw new Error('No `host` header.');
 
     const filePath = normalizeFilePath(req.url, req.headers.host);
@@ -47,7 +50,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     const mimeType = mime.lookup(ext);
     res.setHeader('Content-Type', `${mimeType}; charset=utf-8`);
     res.writeHead(200, {
-      'Access-Control-Allow-Origin': '*'
+      'Access-Control-Allow-Origin': '*',
     });
     const stream = fs.createReadStream(filePath);
     stream.on('error', (error: Error) => onRequestError(error, res));
@@ -70,12 +73,15 @@ function onRequestError(error: Error | { code: string }, res: ServerResponse) {
   res.end();
 }
 
-export function createExtensionsServer() {
+export function createExtensionsServer(done?: () => void) {
   const port = 45653;
   const ip = '127.0.0.1';
   const host = `${Protocol}://${ip}:${port}/`;
   http.createServer(handleRequest).listen(port, ip, () => {
     log(`Server started at ${host}`);
+    if (done) {
+      done();
+    }
   });
   return host;
 }

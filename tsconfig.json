@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES2019",
     /** Search under node_modules for non-relative imports. */
     "moduleResolution": "node",
     /** Process & infer types from .js files. */
@@ -12,5 +12,8 @@
     /** Import non-ES modules as default imports. */
     "esModuleInterop": true,
     "typeRoots" : ["./app/@types"]
-  }
+  },
+  "files": [
+    "app/index.ts"
+  ]
 }
