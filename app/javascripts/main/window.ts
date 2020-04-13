@@ -6,13 +6,13 @@ import { IpcMessages } from '../shared/ipcMessages';
 import { ArchiveManager, createArchiveManager } from './archiveManager';
 import { createMenuManager, MenuManager } from './menus';
 import { initializePackageManager } from './packageManager';
-import { isMac } from './platforms';
+import { isMac, isWindows } from './platforms';
 import { initializeSearchManager } from './searchManager';
 import { createSpellcheckerManager } from './spellcheckerManager';
 import { Store, StoreKeys } from './store';
 import { createTrayManager, TrayManager } from './trayManager';
 import { createUpdateManager, UpdateManager } from './updateManager';
-import { isTesting } from './utils';
+import { isTesting, lowercaseDriveLetter } from './utils';
 import { initializeZoomManager } from './zoomManager';
 import { TestIpcMessages } from '../../../test/TestIpcMessages';
 
@@ -138,6 +138,31 @@ function createWindowServices(
   };
 }
 
+/**
+ * Check file urls for equality by decoding components
+ * In packaged app, spaces in navigation events urls can contain %20
+ * but not in windowUrl.
+ */
+function fileUrlsAreEqual(a: string, b: string): boolean {
+  /** Catch exceptions in case of malformed urls. */
+  try {
+    /**
+     * Craft URL objects to eliminate production URL values that can
+     * contain "#!/" suffixes (on Windows)
+     */
+    let aPath = new URL(decodeURIComponent(a)).pathname;
+    let bPath = new URL(decodeURIComponent(b)).pathname;
+    if (isWindows()) {
+      /** On Windows, drive letter casing is inconsistent */
+      aPath = lowercaseDriveLetter(aPath);
+      bPath = lowercaseDriveLetter(bPath);
+    }
+    return aPath === bPath;
+  } catch (error) {
+    return false;
+  }
+};
+
 function registerWindowEventListeners({
   shell,
   appState,
@@ -155,26 +180,6 @@ function registerWindowEventListeners({
 }) {
   const shouldOpenUrl = (url: string) =>
     url.startsWith('http') || url.startsWith('mailto');
-
-  /**
-   * Check file urls for equality by decoding components
-   * In packaged app, spaces in navigation events urls can contain %20
-   * but not in windowUrl.
-   */
-  const safeFileUrlCompare = (a: string, b: string) => {
-    /** Catch exceptions in case of malformed urls. */
-    try {
-      /**
-       * Craft URL objects to eliminate production URL values that can
-       * contain "#!/" suffixes (on Windows)
-       */
-      const aPath = new URL(decodeURIComponent(a)).pathname;
-      const bPath = new URL(decodeURIComponent(b)).pathname;
-      return aPath === bPath;
-    } catch (error) {
-      return false;
-    }
-  };
 
   window.on('closed', onClosed);
 
@@ -226,7 +231,7 @@ function registerWindowEventListeners({
    */
   window.webContents.on('will-navigate', (event, url) => {
     /** Check for windowUrl equality in the case of window.reload() calls. */
-    if (safeFileUrlCompare(url, appState.startUrl) === true) {
+    if (fileUrlsAreEqual(url, appState.startUrl)) {
       return;
     }
     if (shouldOpenUrl(url)) {
