@@ -34,9 +34,13 @@ async function validateData() {
 
   assert.equal(typeof data.backupsLocation, 'string');
 
-  assert(Array.isArray(data.selectedSpellCheckerLanguageCodes));
-  for (const language of data.selectedSpellCheckerLanguageCodes) {
-    assert.equal(typeof language, 'string');
+  if (process.platform === 'darwin') {
+    assert(data.selectedSpellCheckerLanguageCodes === null);
+  } else {
+    assert(Array.isArray(data.selectedSpellCheckerLanguageCodes));
+    for (const language of data.selectedSpellCheckerLanguageCodes) {
+      assert.equal(typeof language, 'string');
+    }
   }
 }
 
@@ -51,19 +55,17 @@ describe('Store', function (this: Suite) {
 
   it('recreates a missing data file', async function () {
     const location = await tools.store.diskLocation();
-    await tools.app.stop();
     /** Delete the store's backing file */
-    fs.unlinkSync(location);
-    await tools.app.start();
+    await fs.promises.unlink(location);
+    await tools.app.restart();
     await validateData();
   });
 
   it('recovers from corrupted data', async function () {
     const location = await tools.store.diskLocation();
-    await tools.app.stop();
     /** Write bad data in the store's file */
     fs.writeFileSync(location, '\uFFFF'.repeat(300));
-    await tools.app.start();
+    await tools.app.restart();
     await validateData();
   });
 
