@@ -31,7 +31,22 @@ export async function ensureDirectoryExists(dirPath: string) {
        * create it.
        */
       await ensureDirectoryExists(path.dirname(dirPath));
-      await fs.promises.mkdir(dirPath);
+
+      /** Now that its parent(s) exist, create the directory */
+      try {
+        await fs.promises.mkdir(dirPath);
+      } catch (error) {
+        if (error.code === FileAlreadyExists) {
+          /**
+           * A concurrent process must have created the directory already.
+           * Make sure it *is* a directory and not something else.
+           */
+          await ensureDirectoryExists(dirPath);
+        } else {
+          throw error;
+        }
+      }
+
     } else {
       throw error;
     }
