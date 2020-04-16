@@ -9,8 +9,9 @@ import { IpcMessages } from '../shared/ipcMessages';
 import { ensureDirectoryExists, moveDirContents, deleteDir } from './fileUtils';
 import { Store, StoreKeys } from './store';
 import { isTesting } from './utils';
-import { TestIpcMessages } from '../../../test/TestIpcMessages';
 import { backups as str } from './strings';
+import { MessageType } from '../../../test/TestIpcMessage';
+import { handle } from './testing';
 
 function log(...message: any) {
   console.log('archiveManager:', ...message);
@@ -53,7 +54,11 @@ export function createArchiveManager(
     store.set(StoreKeys.BackupsLocation, backupsLocation);
   }
 
-  ipcMain.on(IpcMessages.DataArchive, async (_event, data) => {
+  ipcMain.on(IpcMessages.DataArchive, (_event, data) => {
+    archiveData(data);
+  });
+
+  async function archiveData(data: any) {
     if (backupsDisabled) return;
     let success: boolean;
     let name: string | undefined;
@@ -67,7 +72,7 @@ export function createArchiveManager(
     }
     webContents.send(IpcMessages.FinishedSavingBackup, { success });
     return name;
-  });
+  }
 
   function performBackup() {
     if (backupsDisabled) return;
@@ -106,13 +111,12 @@ export function createArchiveManager(
   }
 
   if (isTesting()) {
-    ipcMain.handle(TestIpcMessages.BackupsAreEnabled, () => !backupsDisabled);
-    ipcMain.handle(TestIpcMessages.ToggleBackupsEnabled, toggleBackupsStatus);
-    ipcMain.handle(TestIpcMessages.BackupsLocation, () => backupsLocation);
-    ipcMain.handle(TestIpcMessages.PerformBackup, performBackup);
-    ipcMain.handle(TestIpcMessages.ChangeBackupsLocation, (_event, location) =>
-      setBackupsLocation(location)
-    );
+    handle(MessageType.DataArchive, (data: any) => archiveData(data));
+    handle(MessageType.BackupsAreEnabled, () => !backupsDisabled);
+    handle(MessageType.ToggleBackupsEnabled, toggleBackupsStatus);
+    handle(MessageType.BackupsLocation, () => backupsLocation);
+    handle(MessageType.PerformBackup, performBackup);
+    handle(MessageType.ChangeBackupsLocation, setBackupsLocation);
   }
 
   return {

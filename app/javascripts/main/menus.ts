@@ -1,13 +1,12 @@
 import {
   app,
   dialog,
-  ipcMain,
   Menu,
   MenuItemConstructorOptions,
   shell,
   WebContents,
 } from 'electron';
-import { TestIpcMessages } from '../../../test/TestIpcMessages';
+import { MessageType } from '../../../test/TestIpcMessage';
 import { ArchiveManager } from './archiveManager';
 import { isMac } from './platforms';
 import { SpellcheckerManager } from './spellcheckerManager';
@@ -16,6 +15,7 @@ import { appMenu as str } from './strings';
 import { TrayManager } from './trayManager';
 import { UpdateManager } from './updateManager';
 import { isDev, isTesting } from './utils';
+import { handle } from './testing';
 
 export const enum MenuId {
   SpellcheckerLanguages = 'SpellcheckerLanguages'
@@ -127,9 +127,19 @@ export function createMenuManager({
   updateManager.onNeedMenuReload = reload;
 
   if (isTesting()) {
-    ipcMain.handle(TestIpcMessages.AppMenuItems, () => menu.items);
-    ipcMain.handle(TestIpcMessages.ClickLanguage, (_event, code) => {
-      menu.getMenuItemById(TestIpcMessages.ClickLanguage + code)!.click();
+    handle(MessageType.AppMenuItems, () =>
+      menu.items.map((item) => ({
+        role: item.role,
+        submenu: {
+          items: item.submenu?.items?.map((subItem) => ({
+            id: subItem.id,
+            label: subItem.label,
+          })),
+        },
+      }))
+    );
+    handle(MessageType.ClickLanguage, (code) => {
+      menu.getMenuItemById(MessageType.ClickLanguage + code)!.click();
     });
   }
 
@@ -298,7 +308,7 @@ function spellcheckerMenu(
     label: str().spellcheckerLanguages,
     submenu: spellcheckerManager.languages().map(
       ({ name, code, enabled }): MenuItemConstructorOptions => ({
-        ...(isTesting() ? { id: TestIpcMessages.ClickLanguage + code } : {}),
+        ...(isTesting() ? { id: MessageType.ClickLanguage + code } : {}),
         label: name,
         type: MenuItemTypes.CheckBox,
         checked: enabled,

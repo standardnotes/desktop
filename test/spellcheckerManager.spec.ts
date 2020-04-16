@@ -1,35 +1,45 @@
-import { strict as assert } from 'assert';
-import 'mocha';
 import { Language } from '../app/javascripts/main/spellcheckerManager';
 import { StoreKeys } from '../app/javascripts/main/store';
-import { tools, setDefaults } from './tools';
+import anyTest, { TestInterface } from 'ava';
+import { Driver, createDriver } from './driver';
 
-describe('Spellchecker', function () {
-  setDefaults(this);
-  before(tools.launchApp);
-  after(tools.stopApp);
+const test = anyTest as TestInterface<Driver>;
 
-  if (process.platform === 'darwin') {
-    it('Does not create a manager on Mac', async function () {
-      assert(!(await tools.spellchecker.manager()));
-    });
-  } else {
-    const language = Language.CS;
-    it('adds a clicked language menu item to the store and session\'s languages', async function () {
-      await tools.appMenu.clickLanguage(language);
-      const data = await tools.store.diskData();
-      assert(
+test.before(async (t) => {
+  t.context = await createDriver();
+});
+test.after.always(async (t) => {
+  await t.context.stop();
+});
+
+if (process.platform === 'darwin') {
+  test('does not create a manager on Mac', async (t) => {
+    t.falsy(await t.context.spellchecker.manager());
+  });
+} else {
+  const language = Language.CS;
+
+  test.serial(
+    "adds a clicked language menu item to the store and session's languages",
+    async (t) => {
+      await t.context.appMenu.clickLanguage(language);
+      const data = await t.context.store.dataOnDisk();
+      t.true(
         data[StoreKeys.SelectedSpellCheckerLanguageCodes].includes(language)
       );
-      assert((await tools.spellchecker.languages()).includes(language));
-    });
-    it('Removes a clicked language menu item to the store\'s and session\'s languages', async function () {
-      await tools.appMenu.clickLanguage(language);
-      const data = await tools.store.diskData();
-      assert(
-        !data[StoreKeys.SelectedSpellCheckerLanguageCodes].includes(language)
+      t.true((await t.context.spellchecker.languages()).includes(language));
+    }
+  );
+
+  test.serial(
+    "removes a clicked language menu item to the store's and session's languages",
+    async (t) => {
+      await t.context.appMenu.clickLanguage(language);
+      const data = await t.context.store.dataOnDisk();
+      t.false(
+        data[StoreKeys.SelectedSpellCheckerLanguageCodes].includes(language)
       );
-      assert(!(await tools.spellchecker.languages()).includes(language));
-    });
-  }
-});
+      t.false((await t.context.spellchecker.languages()).includes(language));
+    }
+  );
+}

@@ -1,11 +1,12 @@
-import { app, ipcMain, remote } from 'electron';
+import { app, remote } from 'electron';
 import fs from 'fs';
 import path from 'path';
-import { TestIpcMessages } from '../../../test/TestIpcMessages';
+import { MessageType } from '../../../test/TestIpcMessage';
 import { Language } from './spellcheckerManager';
 import { ensureIsBoolean, isTesting, stringOrNull, isDev } from './utils';
 import { FileDoesNotExist } from './fileUtils';
 import { BackupsDirectoryName } from './archiveManager';
+import { handle } from './testing';
 
 function logError(...message: any) {
   console.error('store:', ...message);
@@ -160,12 +161,8 @@ export class Store {
     this.data = parseDataFile(this.path);
 
     if (isTesting()) {
-      /** Set up test utility methods. */
-      ipcMain.handle(TestIpcMessages.StoreData, () =>
-        serializeStoreData(this.data)
-      );
-      ipcMain.handle(TestIpcMessages.StoreSettingsLocation, () => this.path);
-      ipcMain.handle(TestIpcMessages.StoreSet, (_e, key, value) => {
+      handle(MessageType.StoreSettingsLocation, () => this.path);
+      handle(MessageType.StoreSet, (key, value) => {
         this.set(key, value);
       });
     }

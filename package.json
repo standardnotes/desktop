@@ -12,12 +12,12 @@
     "@babel/plugin-proposal-class-properties": "^7.8.3",
     "@babel/preset-env": "^7.9.0",
     "@types/mime-types": "^2.1.0",
-    "@types/mocha": "^7.0.2",
     "@types/node": "^12.12.30",
     "@types/proxyquire": "^1.3.28",
     "@types/yauzl": "^2.9.1",
     "@typescript-eslint/eslint-plugin": "^2.26.0",
     "@typescript-eslint/parser": "^2.26.0",
+    "ava": "^3.7.0",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.1.0",
     "copy-webpack-plugin": "^5.1.1",
@@ -30,13 +30,11 @@
     "eslint-config-standard": "^14.1.1",
     "eslint-loader": "^3.0.3",
     "eslint-plugin-import": "^2.20.2",
-    "eslint-plugin-mocha": "^6.3.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
     "file-loader": "^6.0.0",
     "mime-types": "^2.1.26",
-    "mocha": "^7.1.1",
     "npm-run-all": "^4.1.5",
     "proxyquire": "^2.1.3",
     "rimraf": "^3.0.2",
@@ -103,6 +101,19 @@
     "lint": "npm-run-all --parallel lint:*",
     "lint:eslint": "eslint app/index.ts app/application.ts app/javascripts/**/*.ts test/*.ts",
     "lint:types": "tsc --noEmit",
-    "test": "mocha"
+    "test": "ava"
+  },
+  "ava": {
+    "concurrency": 2,
+    "extensions": [
+      "ts"
+    ],
+    "files": [
+      "test/*.spec.ts"
+    ],
+    "require": [
+      "ts-node/register/transpile-only"
+    ],
+    "verbose": true
   }
 }

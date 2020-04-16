@@ -1,89 +1,91 @@
-import { strict as assert } from 'assert';
+import anyTest, { TestInterface, ExecutionContext } from 'ava';
 import fs from 'fs';
-import { Suite } from 'mocha';
 import { serializeStoreData } from '../app/javascripts/main/store';
-import { setDefaults, tools } from './tools';
+import { createDriver, Driver } from './driver';
 
-async function validateData() {
-  const data = await tools.store.diskData();
+async function validateData(t: ExecutionContext<Driver>) {
+  const data = await t.context.store.dataOnDisk();
 
   /**
    * There should always be 8 values in the store.
    * If one was added/removed intentionally, update this number
    */
   const numberOfStoreKeys = 8;
-  assert.equal(Object.keys(data).length, numberOfStoreKeys);
+  t.is(Object.keys(data).length, numberOfStoreKeys);
 
-  assert.equal(typeof data.isMenuBarVisible, 'boolean');
+  t.is(typeof data.isMenuBarVisible, 'boolean');
 
-  assert.equal(typeof data.useSystemMenuBar, 'boolean');
+  t.is(typeof data.useSystemMenuBar, 'boolean');
 
-  assert.equal(typeof data.backupsDisabled, 'boolean');
+  t.is(typeof data.backupsDisabled, 'boolean');
 
-  assert.equal(typeof data.minimizeToTray, 'boolean');
+  t.is(typeof data.minimizeToTray, 'boolean');
 
-  assert.equal(typeof data.zoomFactor, 'number');
-  assert(data.zoomFactor > 0);
+  t.is(typeof data.zoomFactor, 'number');
+  t.true(data.zoomFactor > 0);
 
-  assert.equal(typeof data.extServerHost, 'string');
+  t.is(typeof data.extServerHost, 'string');
   /** Must not throw */
   const extServerHost = new URL(data.extServerHost);
-  assert.equal(extServerHost.hostname, '127.0.0.1');
-  assert.equal(extServerHost.protocol, 'http:');
-  assert.equal(extServerHost.port, '45653');
+  t.is(extServerHost.hostname, '127.0.0.1');
+  t.is(extServerHost.protocol, 'http:');
+  t.is(extServerHost.port, '45653');
 
-  assert.equal(typeof data.backupsLocation, 'string');
+  t.is(typeof data.backupsLocation, 'string');
 
   if (process.platform === 'darwin') {
-    assert(data.selectedSpellCheckerLanguageCodes === null);
+    t.is(data.selectedSpellCheckerLanguageCodes, null);
   } else {
-    assert(Array.isArray(data.selectedSpellCheckerLanguageCodes));
+    t.true(Array.isArray(data.selectedSpellCheckerLanguageCodes));
     for (const language of data.selectedSpellCheckerLanguageCodes) {
-      assert.equal(typeof language, 'string');
+      t.is(typeof language, 'string');
     }
   }
 }
 
-describe('Store', function (this: Suite) {
-  setDefaults(this);
-  before(tools.launchApp);
-  after(tools.stopApp);
+const test = anyTest as TestInterface<Driver>;
 
-  it('has valid data', async function () {
-    await validateData();
-  });
+test.beforeEach(async (t) => {
+  t.context = await createDriver();
+});
+test.afterEach.always((t) => {
+  return t.context.stop();
+});
 
-  it('recreates a missing data file', async function () {
-    const location = await tools.store.diskLocation();
-    /** Delete the store's backing file */
-    await fs.promises.unlink(location);
-    await tools.app.restart();
-    await validateData();
-  });
+test('has valid data', async (t) => {
+  await validateData(t);
+});
 
-  it('recovers from corrupted data', async function () {
-    const location = await tools.store.diskLocation();
-    /** Write bad data in the store's file */
-    fs.writeFileSync(location, '\uFFFF'.repeat(300));
-    await tools.app.restart();
-    await validateData();
-  });
+test('recreates a missing data file', async (t) => {
+  const location = await t.context.store.dataLocation();
+  /** Delete the store's backing file */
+  await fs.promises.unlink(location);
+  await t.context.restart();
+  await validateData(t);
+});
 
-  it('persists changes to disk after setting a value', async function () {
-    const factor = 4.8;
-    await tools.setZoomFactor(factor);
-    const diskData = await tools.store.diskData();
-    assert.equal(diskData.zoomFactor, factor);
-  });
+test('recovers from corrupted data', async (t) => {
+  const location = await t.context.store.dataLocation();
+  /** Write bad data in the store's file */
+  await fs.promises.writeFile(location, '\uFFFF'.repeat(300));
+  await t.context.restart();
+  await validateData(t);
+});
 
-  it('serializes string sets to an array', async function () {
-    assert.deepStrictEqual(
-      serializeStoreData({
-        set: new Set(['value']),
-      } as any),
-      JSON.stringify({
-        set: ['value'],
-      })
-    );
-  });
+test('persists changes to disk after setting a value', async (t) => {
+  const factor = 4.8;
+  await t.context.store.setZoomFactor(factor);
+  const diskData = await t.context.store.dataOnDisk();
+  t.is(diskData.zoomFactor, factor);
+});
+
+test('serializes string sets to an array', (t) => {
+  t.deepEqual(
+    serializeStoreData({
+      set: new Set(['value']),
+    } as any),
+    JSON.stringify({
+      set: ['value'],
+    })
+  );
 });

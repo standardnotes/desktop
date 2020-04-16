@@ -1,13 +1,15 @@
-import { strict as assert } from 'assert';
-import 'mocha';
-import { tools, setDefaults } from './tools';
+import anyTest, { TestInterface } from 'ava';
+import { createDriver, Driver } from './driver';
 
-describe('Single-window behavior', function () {
-  setDefaults(this);
-  before(tools.launchApp);
-  after(tools.stopApp);
+const test = anyTest as TestInterface<Driver>;
 
-  it('only has one window', async function () {
-    assert.equal(await tools.app.client.getWindowCount(), 1);
-  });
+test.before(async (t) => {
+  t.context = await createDriver();
+});
+test.after.always((t) => {
+  return t.context.stop();
+});
+
+test('Only has one window', async (t) => {
+  t.is(await t.context.windowCount(), 1);
 });

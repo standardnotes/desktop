@@ -1,28 +1,14 @@
-import { strict as assert } from 'assert';
-import 'mocha';
+import test from 'ava';
 import { lowercaseDriveLetter } from '../app/javascripts/main/utils';
 
-describe('Utilities', function () {
-  describe('lowerCaseDriveLetter', function () {
-    it('converts the drive letter of a given file\'s path to lower case', function () {
-      assert.equal(lowercaseDriveLetter('/C:/Lansing'), '/c:/Lansing');
-      assert.equal(lowercaseDriveLetter('/c:/Bone Rage'), '/c:/Bone Rage');
-      assert.equal(
-        lowercaseDriveLetter('/C:/Give/Us/the/Gold'),
-        '/c:/Give/Us/the/Gold'
-      );
-    });
+test("lowerCaseDriverLetter converts the drive letter of a given file's path to lower case", (t) => {
+  t.is(lowercaseDriveLetter('/C:/Lansing'), '/c:/Lansing');
+  t.is(lowercaseDriveLetter('/c:/Bone Rage'), '/c:/Bone Rage');
+  t.is(lowercaseDriveLetter('/C:/Give/Us/the/Gold'), '/c:/Give/Us/the/Gold');
+});
 
-    it('only changes the drive letter', function () {
-      assert.equal(lowercaseDriveLetter('C:/Hold Me In'), 'C:/Hold Me In');
-      assert.equal(
-        lowercaseDriveLetter('/Cd:/Egg Replacer'),
-        '/Cd:/Egg Replacer'
-      );
-      assert.equal(
-        lowercaseDriveLetter('/C:radle of Rocks'),
-        '/C:radle of Rocks'
-      );
-    });
-  });
+test('lowerCaseDriverLetter only changes a single drive letter', (t) => {
+  t.is(lowercaseDriveLetter('C:/Hold Me In'), 'C:/Hold Me In');
+  t.is(lowercaseDriveLetter('/Cd:/Egg Replacer'), '/Cd:/Egg Replacer');
+  t.is(lowercaseDriveLetter('/C:radle of Rocks'), '/C:radle of Rocks');
 });
