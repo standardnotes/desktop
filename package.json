@@ -66,6 +66,11 @@
       "entitlements": "./build/entitlements.mac.inherit.plist",
       "entitlementsInherit": "./build/entitlements.mac.inherit.plist"
     },
+    "win": {
+      "certificateSubjectName": "Standard Notes Ltd.",
+      "publisherName": "Standard Notes Ltd.",
+      "signDlls": true
+    },
     "linux": {
       "category": "Office",
       "icon": "build/icon/",
