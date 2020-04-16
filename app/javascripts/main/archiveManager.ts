@@ -19,6 +19,8 @@ function logError(...message: any) {
   console.error('archiveManager:', ...message);
 }
 
+export const BackupsDirectoryName = 'Standard Notes Backups';
+
 export interface ArchiveManager {
   backupsAreEnabled: boolean;
   toggleBackupsStatus(): void;
@@ -40,7 +42,7 @@ export function createArchiveManager(
 
   async function setBackupsLocation(location: string) {
     const previousLocation = backupsLocation;
-    backupsLocation = location;
+    backupsLocation = path.join(location, BackupsDirectoryName);
     store.set(StoreKeys.BackupsLocation, backupsLocation);
     try {
       await moveDirContents(previousLocation, backupsLocation);

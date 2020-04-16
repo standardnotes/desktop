@@ -5,6 +5,7 @@ import { strict as assert } from 'assert';
 import path from 'path';
 import { StoreKeys } from '../app/javascripts/main/store';
 import { FileDoesNotExist } from '../app/javascripts/main/fileUtils';
+import { BackupsDirectoryName } from '../app/javascripts/main/archiveManager';
 
 const BackupDuration = 1000;
 describe('Archive Manager', function () {
@@ -34,11 +35,15 @@ describe('Archive Manager', function () {
   });
   it('changes backups folder location', async function () {
     await tools.backups.perform();
-    const newLocation = path.join(await tools.paths.userData(), 'newLocation');
+    let newLocation = path.join(await tools.paths.userData(), 'newLocation');
     const currentLocation = await tools.backups.location();
     const fileNames = await fs.readdir(currentLocation);
     await tools.backups.changeLocation(newLocation);
-    assert.deepEqual(fileNames, await fs.readdir(newLocation));
+    newLocation = path.join(newLocation, BackupsDirectoryName);
+    assert.deepEqual(
+      fileNames,
+      await fs.readdir(newLocation)
+    );
 
     /** Assert that the setting was saved */
     const data = await tools.store.diskData();

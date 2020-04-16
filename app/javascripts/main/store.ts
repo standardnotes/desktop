@@ -5,6 +5,7 @@ import { TestIpcMessages } from '../../../test/TestIpcMessages';
 import { Language } from './spellcheckerManager';
 import { ensureIsBoolean, isTesting, stringOrNull, isDev } from './utils';
 import { FileDoesNotExist } from './fileUtils';
+import { BackupsDirectoryName } from './archiveManager';
 
 function logError(...message: any) {
   console.error('store:', ...message);
@@ -74,7 +75,7 @@ function sanitizeBackupsLocation(location?: unknown): string {
     isDev()
       ? (app || remote.app).getPath('userData')
       : (app || remote.app).getPath('home'),
-    'Standard Notes Backups'
+    BackupsDirectoryName
   );
   if (typeof location !== 'string') {
     return defaultPath;
@@ -84,8 +85,10 @@ function sanitizeBackupsLocation(location?: unknown): string {
     if (stat.isDirectory()) {
       return location;
     }
+    /** Path points to something other than a directory */
     return defaultPath;
   } catch (e) {
+    /** Path does not point to a valid directory */
     logError(e);
     return defaultPath;
   }
