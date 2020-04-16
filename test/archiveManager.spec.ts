@@ -8,7 +8,7 @@ import { FileDoesNotExist } from '../app/javascripts/main/fileUtils';
 import { BackupsDirectoryName } from '../app/javascripts/main/archiveManager';
 
 const BackupDuration = 1000;
-describe('Archive Manager', function () {
+describe('Archive manager', function () {
   setDefaults(this);
 
   beforeEach(tools.launchApp);
