@@ -70,7 +70,12 @@ export function initializePackageManager(
     async (_event, data: { componentsData: Component[] }) => {
       const components = data.componentsData;
 
-      log('sync:', components.map(c => c.content.name).join(', '));
+      log(
+        'received sync event for:',
+        components.map(c =>
+          `${c.content.name} (${c.content.package_info.version}) (deleted: ${c.deleted})`
+        ).join(', ')
+      );
       syncTasks.push({ components });
 
       if (isRunningTasks) return;
@@ -162,7 +167,6 @@ async function syncComponents(
    * check the filesystem and see if that component is installed. If not,
    * install it.
    */
-  log(`Syncing components: ${components.length}`);
   await Promise.all(
     components.map(async component => {
       if (component.deleted) {
@@ -209,6 +213,7 @@ async function installComponent(
 ) {
   const downloadUrl = component.content.package_info.download_url;
   if (!downloadUrl) {
+    log('Tried to install a component with no download url:', component.content.name)
     return;
   }
 

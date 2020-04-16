@@ -61,11 +61,11 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
 }
 
 function onRequestError(error: Error | { code: string }, res: ServerResponse) {
-  logError(error);
   let responseCode;
   if ('code' in error && error.code === FileDoesNotExist) {
     responseCode = 404;
   } else {
+    logError(error);
     responseCode = 500;
   }
   res.writeHead(responseCode);
