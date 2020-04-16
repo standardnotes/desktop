@@ -4,6 +4,7 @@ import path from 'path';
 import { TestIpcMessages } from '../../../test/TestIpcMessages';
 import { Language } from './spellcheckerManager';
 import { ensureIsBoolean, isTesting, stringOrNull, isDev } from './utils';
+import { FileDoesNotExist } from './fileUtils';
 
 function logError(...message: any) {
   console.error('store:', ...message);
@@ -121,7 +122,9 @@ function parseDataFile(filePath: string) {
     const userData = JSON.parse(fileData.toString());
     return createSanitizedStoreData(userData);
   } catch (error) {
-    logError(error);
+    if (error.code !== FileDoesNotExist) {
+      logError(error);
+    }
     return createSanitizedStoreData({});
   }
 }
