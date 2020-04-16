@@ -95,7 +95,7 @@ export interface UpdateManager {
 export function createUpdateManager(window: BrowserWindow): UpdateManager {
   const settings: UpdateSettings = {
     endpoint: DefaultUpdateEndpoint,
-    autoupdateEnabled: false,
+    autoupdateEnabled: true,
   };
   const currentVersion = app.getVersion();
   let checkingForUpdate = false;

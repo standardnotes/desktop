@@ -17,6 +17,11 @@ describe('Update manager', function () {
   beforeEach(tools.launchApp);
   afterEach(tools.stopApp);
 
+  it('has auto-updates enabled by default', async function () {
+    const settings = await tools.updates.settings();
+    assert.equal(settings.autoupdateEnabled, true);
+  });
+
   it('recovers its settings when the data is corrupted', async function () {
     const settingsFilePath = await tools.paths.updates();
     await fs.writeFile(settingsFilePath, '0xFF'.repeat(300));
