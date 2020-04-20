@@ -11,7 +11,7 @@
   "rules": {
     /** Style */
     "semi": 1,
-    "quotes": ["error", "single"],
+    "quotes": ["error", "single", { "avoidEscape": true }],
 
     /** Preferences */
     "no-console": "off",

@@ -23,6 +23,16 @@ export function createFrenchStrings(): Strings {
       quit: 'Quitter'
     },
     extensions: fallback.extensions,
-    updates: fallback.updates
+    updates: fallback.updates,
+    backups: {
+      errorChangingDirectory(error: any): string {
+        return (
+          "Une erreur s'est produite lors du déplacement du dossier de " +
+          'sauvegardes. Si le problème est récurrent, contactez le support ' +
+          'technique (en anglais) avec les informations suivantes:\n' +
+          JSON.stringify(error)
+        );
+      },
+    },
   };
 }

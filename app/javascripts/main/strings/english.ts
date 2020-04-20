@@ -115,6 +115,16 @@ export function createEnglishStrings(): Strings {
           'update file. Please try again.'
       },
       unknownVersionName: 'Unknown'
-    }
+    },
+    backups: {
+      errorChangingDirectory(error: any): string {
+        return (
+          'An error occured while changing your backups directory. ' +
+          'If this issue persists, please contact support with the following ' +
+          'information: \n' +
+          JSON.stringify(error)
+        );
+      },
+    },
   };
 }

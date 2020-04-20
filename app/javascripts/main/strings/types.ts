@@ -3,6 +3,7 @@ export interface Strings {
   readonly tray: Readonly<TrayStrings>;
   readonly extensions: Readonly<ExtensionsStrings>;
   readonly updates: Readonly<UpdateStrings>;
+  readonly backups: Readonly<BackupsStrings>;
 }
 
 interface AppMenuStrings {
@@ -84,4 +85,8 @@ interface UpdateStrings {
     message: string;
   };
   unknownVersionName: string;
+}
+
+interface BackupsStrings {
+  errorChangingDirectory(error: any): string;
 }

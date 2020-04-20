@@ -6,10 +6,11 @@ import {
 import fs from 'fs';
 import path from 'path';
 import { IpcMessages } from '../shared/ipcMessages';
-import { ensureDirectoryExists, moveDirContents } from './fileUtils';
+import { ensureDirectoryExists, moveDirContents, deleteDir } from './fileUtils';
 import { Store, StoreKeys } from './store';
 import { isTesting } from './utils';
 import { TestIpcMessages } from '../../../test/TestIpcMessages';
+import { backups as str } from './strings';
 
 function log(...message: any) {
   console.log('archiveManager:', ...message);
@@ -42,13 +43,14 @@ export function createArchiveManager(
 
   async function setBackupsLocation(location: string) {
     const previousLocation = backupsLocation;
-    backupsLocation = path.join(location, BackupsDirectoryName);
+    const newLocation = path.join(location, BackupsDirectoryName);
+
+    await moveDirContents(previousLocation, newLocation);
+    await deleteDir(previousLocation);
+
+    /** Wait for the operation to be successful before saving new location */
+    backupsLocation = newLocation;
     store.set(StoreKeys.BackupsLocation, backupsLocation);
-    try {
-      await moveDirContents(previousLocation, backupsLocation);
-    } catch (error) {
-      logError(error);
-    }
   }
 
   ipcMain.on(IpcMessages.DataArchive, async (_event, data) => {
@@ -134,8 +136,15 @@ export function createArchiveManager(
         properties: ['openDirectory', 'showHiddenFiles', 'createDirectory'],
       });
       const path = result.filePaths[0];
-      setBackupsLocation(path);
-      performBackup();
+      try {
+        await setBackupsLocation(path);
+        performBackup();
+      } catch (e) {
+        logError(e);
+        dialog.showMessageBox({
+          message: str().errorChangingDirectory(e)
+        });
+      }
     },
   };
 }

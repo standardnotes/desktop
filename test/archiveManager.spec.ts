@@ -36,6 +36,7 @@ describe('Archive manager', function () {
   it('changes backups folder location', async function () {
     await tools.backups.perform();
     let newLocation = path.join(await tools.paths.userData(), 'newLocation');
+    await fs.mkdir(newLocation);
     const currentLocation = await tools.backups.location();
     const fileNames = await fs.readdir(currentLocation);
     await tools.backups.changeLocation(newLocation);
