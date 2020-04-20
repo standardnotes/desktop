@@ -4,7 +4,7 @@ import { lowercaseDriveLetter } from '../app/javascripts/main/utils';
 
 describe('Utilities', function () {
   describe('lowerCaseDriveLetter', function () {
-    it("converts the drive letter of a given file's path to lower case", function () {
+    it('converts the drive letter of a given file\'s path to lower case', function () {
       assert.equal(lowercaseDriveLetter('/C:/Lansing'), '/c:/Lansing');
       assert.equal(lowercaseDriveLetter('/c:/Bone Rage'), '/c:/Bone Rage');
       assert.equal(

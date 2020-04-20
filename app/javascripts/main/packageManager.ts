@@ -213,7 +213,7 @@ async function installComponent(
 ) {
   const downloadUrl = component.content.package_info.download_url;
   if (!downloadUrl) {
-    log('Tried to install a component with no download url:', component.content.name)
+    log('Tried to install a component with no download url:', component.content.name);
     return;
   }
 
