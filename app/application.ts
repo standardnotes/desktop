@@ -100,8 +100,10 @@ function registerAppEventListeners(args: {
   });
 
   app.on('activate', () => {
-    state.windowState!.window.focus();
-    state.windowState!.updateManager.checkForUpdate();
+    const windowState = state.windowState;
+    if (!windowState) return;
+    windowState.window.show();
+    windowState.updateManager.checkForUpdate();
   });
 
   app.on('ready', () => {
