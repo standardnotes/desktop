@@ -61,15 +61,18 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
 }
 
 function onRequestError(error: Error | { code: string }, res: ServerResponse) {
-  let responseCode;
+  let responseCode: number;
+  let message: string;
   if ('code' in error && error.code === FileDoesNotExist) {
     responseCode = 404;
+    message = str().missingExtension;
   } else {
     logError(error);
     responseCode = 500;
+    message = str().unableToLoadExtension;
   }
   res.writeHead(responseCode);
-  res.write(str().unableToLoadExtension);
+  res.write(message);
   res.end();
 }
 

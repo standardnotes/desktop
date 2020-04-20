@@ -61,6 +61,7 @@ interface TrayStrings {
 
 interface ExtensionsStrings {
   unableToLoadExtension: string;
+  missingExtension: string;
 }
 
 interface UpdateStrings {

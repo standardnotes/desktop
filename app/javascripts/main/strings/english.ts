@@ -68,6 +68,10 @@ export function createEnglishStrings(): Strings {
       quit: 'Quit'
     },
     extensions: {
+      missingExtension:
+        'The extension was not found on your system, likely because it is ' +
+        "still downloading. If the extension doesn't load after a long time, " +
+        'try uninstalling then reinstalling the extension.',
       unableToLoadExtension:
         'Unable to load extension. Please restart the application and ' +
         'try again. If the issue persists, try uninstalling then ' +
