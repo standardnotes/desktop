@@ -44,7 +44,9 @@ export interface UpdateSettings {
 }
 async function updateSettingsFromDisk(settings: UpdateSettings) {
   try {
-    const data = await readJSONFile(settingsFilePath);
+    const data = await readJSONFile<{ lastCheck?: string | Date }>(
+      settingsFilePath
+    );
     if (data.lastCheck) {
       data.lastCheck = new Date(data.lastCheck);
     }
