@@ -39,17 +39,18 @@ const { runTasks } = proxyquire('../app/javascripts/main/packageManager', {
 const name = 'Fake Component';
 const identifier = 'fake.component';
 const uuid = 'fake-component';
+const modifiers = ['a', 'b', 'c', 'd'];
 
-function fakeComponent({ deleted = false } = {}) {
+function fakeComponent({ deleted = false, modifier = '' } = {}) {
   return {
-    uuid,
+    uuid: uuid + modifier,
     deleted,
     content: {
-      name,
+      name: name + modifier,
       autoupdateDisabled: false,
       package_info: {
         version: '0.0.1',
-        identifier,
+        identifier: identifier + modifier,
         download_url: 'https://standardnotes.org',
       },
     },
@@ -75,14 +76,17 @@ function launchRunTasks(tasks: SyncTask[]) {
 
 describe('Package manager', function () {
   const log = console.log;
+  const error = console.error;
   before(async function () {
     /** Silence the package manager's output. */
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     console.log = () => {};
+    console.error = () => {};
     await ensureDirectoryExists(contentDir);
   });
   after(async function () {
     console.log = log;
+    console.error = error;
     await tools.tmpDir.remove();
   });
 
@@ -90,33 +94,47 @@ describe('Package manager', function () {
     downloadFileCallCount = 0;
   });
 
-  it('installs a component', async function () {
-    await launchRunTasks([{ components: [fakeComponent()] }]);
+  it('installs multiple components', async function () {
+    await launchRunTasks([
+      { components: modifiers.map((modifier) => fakeComponent({ modifier })) },
+    ]);
 
     const files = await fs.readdir(contentDir);
-    assert.equal(files.length, 3);
+    assert.equal(files.length, 2 + modifiers.length);
     assert(files.includes('downloads'));
-    assert(files.includes(identifier));
+    for (const modifier of modifiers) {
+      assert(files.includes(identifier + modifier));
+    }
     assert(files.includes('mapping.json'));
     assert.deepEqual(
       await readJSONFile(path.join(contentDir, 'mapping.json')),
-      {
-        [uuid]: {
-          location: path.join('Extensions', identifier),
-        },
-      }
+      modifiers.reduce((acc, modifier) => {
+        acc[uuid + modifier] = {
+          location: path.join('Extensions', identifier + modifier),
+        };
+        return acc;
+      }, {})
     );
-    assert.deepEqual(await fs.readdir(path.join(contentDir, 'downloads')), [
-      `${name}.zip`,
-    ]);
+    assert.deepEqual(
+      await fs.readdir(path.join(contentDir, 'downloads')),
+      modifiers.map((modifier) => `${name + modifier}.zip`)
+    );
 
-    const componentFiles = await fs.readdir(path.join(contentDir, identifier));
-    assert.equal(componentFiles.length, 2);
+    for (const modifier of modifiers) {
+      const componentFiles = await fs.readdir(
+        path.join(contentDir, identifier + modifier)
+      );
+      assert.equal(componentFiles.length, 2);
+    }
   });
 
-  it('uninstalls a component', async function () {
+  it('uninstalls multiple components', async function () {
     await runTasks(undefined /** Webcontents aren't used during uninstall */, [
-      { components: [fakeComponent({ deleted: true })] },
+      {
+        components: modifiers.map((modifier) =>
+          fakeComponent({ deleted: true, modifier })
+        ),
+      },
     ]);
 
     const files = await fs.readdir(contentDir);
@@ -130,7 +148,7 @@ describe('Package manager', function () {
     );
   });
 
-  it('doesn\'t download anything when two install/uninstall tasks are queued', async function () {
+  it("doesn't download anything when two install/uninstall tasks are queued", async function () {
     await runTasks(undefined, [
       {
         components: [fakeComponent({ deleted: false })],

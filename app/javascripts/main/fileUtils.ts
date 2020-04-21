@@ -5,14 +5,23 @@ import yauzl from 'yauzl';
 export const FileDoesNotExist = 'ENOENT';
 export const FileAlreadyExists = 'EEXIST';
 
-export async function readJSONFile(path: string) {
-  const data = await fs.promises.readFile(path, 'utf8');
+export async function readJSONFile<T>(filepath: string): Promise<T> {
+  const data = await fs.promises.readFile(filepath, 'utf8');
   return JSON.parse(data);
 }
 
-export async function writeJSONFile<T>(filepath: string, data: T) {
+export function readJSONFileSync<T>(filepath: string): T {
+  const data = fs.readFileSync(filepath, 'utf8');
+  return JSON.parse(data);
+}
+
+export async function writeJSONFile(filepath: string, data: any) {
   await ensureDirectoryExists(path.dirname(filepath));
   await fs.promises.writeFile(filepath, JSON.stringify(data, null, 2), 'utf8');
+}
+
+export function writeJSONFileSync(filepath: string, data: any) {
+  fs.writeFileSync(filepath, JSON.stringify(data, null, 2), 'utf8')
 }
 
 export async function ensureDirectoryExists(dirPath: string) {
