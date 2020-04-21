@@ -112,7 +112,7 @@ export function createMenuManager({
 
   function reload() {
     menu = Menu.buildFromTemplate([
-      ...(isMac() ? [macAppMenu(app.getName())] : []),
+      ...(isMac() ? [macAppMenu(app.name)] : []),
       editMenu(spellcheckerManager, reload),
       viewMenu(window, store, reload),
       windowMenu(store, trayManager, reload),
@@ -202,6 +202,7 @@ const Urls = {
 
 function macAppMenu(appName: string): MenuItemConstructorOptions {
   return {
+    role: 'appMenu',
     label: appName,
     submenu: [
       {
