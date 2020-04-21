@@ -21,7 +21,7 @@ export async function writeJSONFile(filepath: string, data: any) {
 }
 
 export function writeJSONFileSync(filepath: string, data: any) {
-  fs.writeFileSync(filepath, JSON.stringify(data, null, 2), 'utf8')
+  fs.writeFileSync(filepath, JSON.stringify(data, null, 2), 'utf8');
 }
 
 export async function ensureDirectoryExists(dirPath: string) {

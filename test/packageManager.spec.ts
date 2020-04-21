@@ -81,6 +81,7 @@ describe('Package manager', function () {
     /** Silence the package manager's output. */
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     console.log = () => {};
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     console.error = () => {};
     await ensureDirectoryExists(contentDir);
   });
