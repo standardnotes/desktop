@@ -20,7 +20,7 @@ describe('Menus', function () {
 
   function findSpellCheckerLanguagesMenu() {
     return menuItems.find((item) => {
-      if (item.role.toLowerCase() === 'editmenu') {
+      if (item.role?.toLowerCase() === 'editmenu') {
         return item?.submenu?.items?.find(
           (item) => item.id === MenuId.SpellcheckerLanguages
         );
