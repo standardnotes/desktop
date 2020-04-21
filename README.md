@@ -13,7 +13,6 @@ npm start
 Before making a pull request, make sure to check the output of the following commands:
 
 ```bash
-npm run check-types
 npm run lint
 npm test
 ```
