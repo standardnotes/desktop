@@ -11,14 +11,16 @@ import {
   FileDoesNotExist,
   readJSONFile,
   readJSONFileSync,
-  writeJSONFileSync
+  writeJSONFileSync,
 } from './fileUtils';
 import { downloadFile, getJSON } from './networking';
 
 const appPath = app.getPath('userData');
 const ExtensionsFolderName = 'Extensions';
 const MappingFileLocation = path.join(
-  appPath, ExtensionsFolderName, 'mapping.json'
+  appPath,
+  ExtensionsFolderName,
+  'mapping.json'
 );
 
 function log(...message: any) {
@@ -32,7 +34,7 @@ function logError(...message: any) {
 interface MappingFile {
   [key: string]: {
     location: string;
-  }
+  };
 }
 
 /* eslint-disable camelcase */
@@ -85,9 +87,12 @@ export async function initializePackageManager(
 
       log(
         'received sync event for:',
-        components.map(c =>
-          `${c.content.name} (${c.content.package_info.version}) (deleted: ${c.deleted})`
-        ).join(', ')
+        components
+          .map(
+            (c) =>
+              `${c.content.name} (${c.content.package_info.version}) (deleted: ${c.deleted})`
+          )
+          .join(', ')
       );
       syncTasks.push({ components });
 
@@ -99,7 +104,10 @@ export async function initializePackageManager(
   );
 }
 
-export async function runTasks(webContents: Electron.WebContents, tasks: SyncTask[]) {
+export async function runTasks(
+  webContents: Electron.WebContents,
+  tasks: SyncTask[]
+) {
   while (tasks.length > 0) {
     try {
       const oppositeTask = await runTask(webContents, tasks[0], tasks.slice(1));
@@ -142,7 +150,7 @@ async function runTask(
          * See if there is a task opposite to this one, to avoid doing
          * unnecessary processing
          */
-        const oppositeTask = nextTasks.find(otherTask => {
+        const oppositeTask = nextTasks.find((otherTask) => {
           if (otherTask.components.length > 1) {
             /** Only check single-component tasks. */
             return false;
@@ -181,7 +189,7 @@ async function syncComponents(
    * install it.
    */
   await Promise.all(
-    components.map(async component => {
+    components.map(async (component) => {
       if (component.deleted) {
         /** Uninstall */
         log(`Uninstalling ${component.content.name}`);
@@ -226,7 +234,10 @@ async function installComponent(
 ) {
   const downloadUrl = component.content.package_info.download_url;
   if (!downloadUrl) {
-    log('Tried to install a component with no download url:', component.content.name);
+    log(
+      'Tried to install a component with no download url:',
+      component.content.name
+    );
     return;
   }
 
@@ -258,7 +269,7 @@ async function installComponent(
         /** Clear the component's directory before extracting the zip. */
         await ensureDirectoryExists(paths.absolutePath);
         await deleteDirContents(paths.absolutePath);
-      })()
+      })(),
     ]);
 
     log('Extracting', paths.downloadPath, 'to', paths.absolutePath);
@@ -289,7 +300,7 @@ async function installComponent(
   } catch (error) {
     sendInstalledMessage(component, {
       message: error.message,
-      tag: 'error-downloading'
+      tag: 'error-downloading',
     });
   }
 }
@@ -307,16 +318,16 @@ function pathsForComponent(component: Component) {
       ExtensionsFolderName,
       'downloads',
       component.content.name + '.zip'
-    )
+    ),
   };
 }
 
 function updateComponentLocationSync(componentId: string, location: string) {
-  updateMappingSync(mapping => {
+  updateMappingSync((mapping) => {
     /** Update the component's location. */
     mapping[componentId] = {
       ...mapping[componentId],
-      location
+      location,
     };
     return mapping;
   });
@@ -329,7 +340,7 @@ function updateMappingSync(cb: (mapping: MappingFile) => MappingFile) {
     mapping = readJSONFileSync(MappingFileLocation);
   } catch (error) {
     if (error.code !== FileDoesNotExist /** First launch */) {
-      logError(error)
+      logError(error);
     }
     mapping = {};
   }
@@ -345,7 +356,7 @@ async function uninstallComponent(uuid: string) {
     return;
   }
   await deleteDir(path.join(appPath, componentMapping.location));
-  updateMappingSync(mapping => {
+  updateMappingSync((mapping) => {
     delete mapping[uuid];
     return mapping;
   });
@@ -385,7 +396,7 @@ async function checkForUpdate(
 
   const [payload, installedVersion] = await Promise.all([
     getJSON<Package>(latestURL),
-    getInstalledVersionForComponent(component)
+    getInstalledVersionForComponent(component),
   ]);
   log(
     `Checking for update for ${component.content.name}\n` +
