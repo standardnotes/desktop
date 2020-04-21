@@ -17,6 +17,10 @@ import { TrayManager } from './trayManager';
 import { UpdateManager } from './updateManager';
 import { isDev, isTesting } from './utils';
 
+export const enum MenuId {
+  SpellcheckerLanguages = 'SpellcheckerLanguages'
+}
+
 export function editorContextMenu(
   misspelledWord: string,
   dictionarySuggestions: string[],
@@ -238,6 +242,7 @@ function editMenu(
   }
 
   return {
+    role: 'editMenu',
     label: str().edit,
     submenu: [
       {
@@ -288,6 +293,7 @@ function spellcheckerMenu(
   reload: () => any
 ): MenuItemConstructorOptions {
   return {
+    id: MenuId.SpellcheckerLanguages,
     label: str().spellcheckerLanguages,
     submenu: spellcheckerManager.languages().map(
       ({ name, code, enabled }): MenuItemConstructorOptions => ({

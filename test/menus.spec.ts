@@ -1,18 +1,14 @@
 import { strict as assert } from 'assert';
 import { MenuItem } from 'electron';
 import 'mocha';
-import {
-  AppName,
-  initializeStrings,
-  str,
-} from '../app/javascripts/main/strings';
-import { tools, setDefaults } from './tools';
+import { MenuId } from '../app/javascripts/main/menus';
+import { AppName } from '../app/javascripts/main/strings';
+import { setDefaults, tools } from './tools';
 
 describe('Menus', function () {
   setDefaults(this);
   before(async function () {
     await tools.launchApp();
-    initializeStrings('en');
   });
   after(tools.stopApp);
 
@@ -24,9 +20,9 @@ describe('Menus', function () {
 
   function findSpellCheckerLanguagesMenu() {
     return menuItems.find((item) => {
-      if (item.label === str().appMenu.edit) {
+      if (item.role.toLowerCase() === 'editmenu') {
         return item?.submenu?.items?.find(
-          (item) => item.label === str().appMenu.spellcheckerLanguages
+          (item) => item.id === MenuId.SpellcheckerLanguages
         );
       }
     });
@@ -41,7 +37,7 @@ describe('Menus', function () {
     });
   } else {
     it('hides the App menu on Windows/Linux', function () {
-      assert.equal(menuItems[0].label, str().appMenu.edit);
+      assert.equal(menuItems[0].role, 'editmenu');
     });
 
     it('shows the spellchecking submenu on Windows/Linux', function () {

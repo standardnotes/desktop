@@ -4,7 +4,7 @@ import { isDev } from '../utils';
 
 export function createFrenchStrings(): Strings {
   const fallback = createEnglishStrings();
-  if (isDev()) {
+  if (!isDev()) {
     /**
      * Le Français est une langue expérimentale.
      * Don't show it in production yet.
