@@ -169,7 +169,7 @@ class Driver {
     this.appProcess.kill();
 
     /** Give the process a little time before cleaning up */
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 150));
 
     /**
      * Windows can throw EPERM or EBUSY errors when we try to delete the
