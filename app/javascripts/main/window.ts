@@ -15,7 +15,7 @@ import { createUpdateManager, UpdateManager } from './updateManager';
 import { isTesting, lowercaseDriveLetter } from './utils';
 import { initializeZoomManager } from './zoomManager';
 import { MessageType } from '../../../test/TestIpcMessage';
-import { handle } from './testing';
+import { handle, send } from './testing';
 
 const WINDOW_DEFAULT_WIDTH = 1100;
 const WINDOW_DEFAULT_HEIGHT = 800;
@@ -95,7 +95,7 @@ function createWindow(store: Store): Electron.BrowserWindow {
       window.webContents.session.getSpellCheckerLanguages()
     );
     window.webContents.once('did-finish-load', () => {
-      process.send!({ type: MessageType.WindowLoaded });
+      send(MessageType.WindowLoaded);
     });
   }
 

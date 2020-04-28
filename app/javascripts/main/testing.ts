@@ -13,6 +13,11 @@ export function handle(type: MessageType, handler: (...args: any) => unknown) {
   messageHandlers[type] = handler;
 }
 
+export function send(type: MessageType) {
+  if (!isTesting()) return;
+  process.send!({ type });
+}
+
 export function setupTesting() {
   /** Allow a custom userData path to be used. */
   const userDataPathIndex = process.argv.indexOf(CommandLineArgs.UserDataPath);
@@ -56,6 +61,6 @@ export function setupTesting() {
   handle(MessageType.WindowCount, () => BrowserWindow.getAllWindows().length);
 
   setTimeout(() => {
-    process.send!({ type: MessageType.Ready });
+    send(MessageType.Ready);
   }, 100);
 }
