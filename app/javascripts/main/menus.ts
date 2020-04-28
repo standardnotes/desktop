@@ -129,6 +129,7 @@ export function createMenuManager({
   if (isTesting()) {
     handle(MessageType.AppMenuItems, () =>
       menu.items.map((item) => ({
+        label: item.label,
         role: item.role,
         submenu: {
           items: item.submenu?.items?.map((subItem) => ({

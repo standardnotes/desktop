@@ -62,5 +62,5 @@ export function setupTesting() {
 
   setTimeout(() => {
     send(MessageType.Ready);
-  }, 100);
+  }, 200);
 }

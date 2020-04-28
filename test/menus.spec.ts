@@ -32,6 +32,7 @@ function findSpellCheckerLanguagesMenu(menuItems: MenuItem[]) {
 }
 if (process.platform === 'darwin') {
   test('shows the App menu on Mac', (t) => {
+    t.is(t.context.menuItems[0].role.toLowerCase(), 'appmenu');
     t.is(t.context.menuItems[0].label, AppName);
   });
 

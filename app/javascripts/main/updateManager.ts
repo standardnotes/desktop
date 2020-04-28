@@ -107,7 +107,15 @@ export function createUpdateManager(window: BrowserWindow): UpdateManager {
   let autoupdateVersion: string | undefined;
   let onNeedMenuReload: (() => void) | undefined;
 
-  updateSettingsFromDisk(settings).then(() => checkForUpdate());
+  updateSettingsFromDisk(settings).then(() => {
+    if (!isTesting()) {
+      /**
+       * The app can quit too quickly during testing, causing an error popup
+       * to appear because the request has been canceled
+       */
+      checkForUpdate();
+    }
+  });
   setupAutoUpdater();
 
   if (isTesting()) {
