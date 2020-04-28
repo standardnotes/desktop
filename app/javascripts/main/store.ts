@@ -20,7 +20,7 @@ export enum StoreKeys {
   BackupsDisabled = 'backupsDisabled',
   MinimizeToTray = 'minimizeToTray',
   ZoomFactor = 'zoomFactor',
-  SelectedSpellCheckerLanguageCodes = 'selectedSpellCheckerLanguageCodes'
+  SelectedSpellCheckerLanguageCodes = 'selectedSpellCheckerLanguageCodes',
 }
 
 interface StoreData {
@@ -59,7 +59,7 @@ function createSanitizedStoreData(data: any = {}): StoreData {
     [StoreKeys.ZoomFactor]: sanitizeZoomFactor(data[StoreKeys.ZoomFactor]),
     [StoreKeys.SelectedSpellCheckerLanguageCodes]: sanitizeSpellCheckerLanguageCodes(
       data[StoreKeys.SelectedSpellCheckerLanguageCodes]
-    )
+    ),
   };
 }
 

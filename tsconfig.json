@@ -11,9 +11,7 @@
     "strict": true,
     /** Import non-ES modules as default imports. */
     "esModuleInterop": true,
-    "typeRoots" : ["./app/@types"]
+    "typeRoots": ["./app/@types"]
   },
-  "files": [
-    "app/index.ts"
-  ]
+  "files": ["app/index.ts"]
 }

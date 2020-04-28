@@ -54,22 +54,22 @@ export function createTrayManager(
         {
           id: SHOW_WINDOW_ID,
           label: str().show,
-          click: showWindow
+          click: showWindow,
         },
         {
           id: HIDE_WINDOW_ID,
           label: str().hide,
           click() {
             window.hide();
-          }
+          },
         },
         {
-          type: 'separator'
+          type: 'separator',
         },
         {
           role: 'quit',
-          label: str().quit
-        }
+          label: str().quit,
+        },
       ]);
 
       updateContextMenu = function updateContextMenu() {
@@ -105,6 +105,6 @@ export function createTrayManager(
       tray!.destroy();
       tray = undefined;
       updateContextMenu = undefined;
-    }
+    },
   };
 }

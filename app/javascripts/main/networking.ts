@@ -24,7 +24,7 @@ export async function getJSON<T>(url: string): Promise<T> {
   let data = '';
   return new Promise((resolve, reject) => {
     response
-      .on('data', chunk => {
+      .on('data', (chunk) => {
         data += chunk;
       })
       .on('error', reject)

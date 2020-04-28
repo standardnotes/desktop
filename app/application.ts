@@ -36,12 +36,12 @@ export function initializeApplication(args: {
     store: new Store(app.getPath('userData')),
     startUrl: determineStartUrl(),
     isPrimaryInstance,
-    willQuitApp: false
+    willQuitApp: false,
   };
   registerSingleInstanceHandler(app, state);
   registerAppEventListeners({
     ...args,
-    state
+    state,
   });
 
   if (isDev()) {
@@ -121,7 +121,7 @@ function finishApplicationInitialization({
   app,
   ipcMain,
   shell,
-  state
+  state,
 }: {
   app: App;
   ipcMain: IpcMain;
@@ -136,7 +136,7 @@ function finishApplicationInitialization({
     appLocale: app.getLocale(),
     teardown() {
       state.windowState = undefined;
-    }
+    },
   });
   state.windowState = windowState;
   registerIpcEventListeners(

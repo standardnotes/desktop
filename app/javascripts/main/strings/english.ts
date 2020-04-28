@@ -59,13 +59,13 @@ export function createEnglishStrings(): Strings {
         title: 'Preference Changed',
         message:
           'Your menu bar preference has been saved. Please restart the ' +
-          'application for the change to take effect.'
-      }
+          'application for the change to take effect.',
+      },
     },
     tray: {
       show: 'Show',
       hide: 'Hide',
-      quit: 'Quit'
+      quit: 'Quit',
     },
     extensions: {
       missingExtension:
@@ -75,7 +75,7 @@ export function createEnglishStrings(): Strings {
       unableToLoadExtension:
         'Unable to load extension. Please restart the application and ' +
         'try again. If the issue persists, try uninstalling then ' +
-        'reinstalling the extension.'
+        'reinstalling the extension.',
     },
     updates: {
       automaticUpdatesEnabled: {
@@ -84,14 +84,16 @@ export function createEnglishStrings(): Strings {
           'Automatic updates have been enabled. Please note that ' +
           'this functionality is currently in beta, and that you are advised ' +
           'to periodically check in and ensure you are running the ' +
-          'latest version.'
+          'latest version.',
       },
       finishedChecking: {
         title: 'Finished checking for updates.',
         error(description: string) {
-          return 'An issue occurred while checking for updates. ' +
+          return (
+            'An issue occurred while checking for updates. ' +
             'Please try again.\nIf this issue persists please contact ' +
-            `support with the following information: ${description}`;
+            `support with the following information: ${description}`
+          );
         },
         updateAvailable(newVersion: string) {
           return (
@@ -102,7 +104,7 @@ export function createEnglishStrings(): Strings {
         },
         noUpdateAvailable(currentVersion: string) {
           return `Your version (${currentVersion}) is the latest available version.`;
-        }
+        },
       },
       updateReady: {
         title: 'Update Ready',
@@ -110,15 +112,15 @@ export function createEnglishStrings(): Strings {
           return `A new update (version ${version}) is ready to install.`;
         },
         quitAndInstall: 'Quit and Install',
-        installLater: 'Install Later'
+        installLater: 'Install Later',
       },
       errorDownloading: {
         title: 'Error Downloading',
         message:
           'An error occurred while trying to download your ' +
-          'update file. Please try again.'
+          'update file. Please try again.',
       },
-      unknownVersionName: 'Unknown'
+      unknownVersionName: 'Unknown',
     },
     backups: {
       errorChangingDirectory(error: any): string {

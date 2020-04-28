@@ -1,7 +1,7 @@
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 
-module.exports = function({ onlyTranspileTypescript = false } = {}) {
+module.exports = function ({ onlyTranspileTypescript = false } = {}) {
   const moduleConfig = {
     rules: [
       {
@@ -12,42 +12,42 @@ module.exports = function({ onlyTranspileTypescript = false } = {}) {
           {
             loader: 'ts-loader',
             options: {
-              transpileOnly: onlyTranspileTypescript
-            }
-          }
-        ]
+              transpileOnly: onlyTranspileTypescript,
+            },
+          },
+        ],
       },
       {
         test: /\.js$/,
         exclude: /node_modules/,
-        loader: 'babel-loader'
+        loader: 'babel-loader',
       },
       {
         test: /\.(png|html)$/i,
         loader: 'file-loader',
         options: {
-          name: '[name].[ext]'
-        }
-      }
-    ]
+          name: '[name].[ext]',
+        },
+      },
+    ],
   };
 
   const resolve = {
-    extensions: ['.ts', '.js']
+    extensions: ['.ts', '.js'],
   };
 
   const electronMainConfig = {
     entry: {
-      index: './app/index.ts'
+      index: './app/index.ts',
     },
     output: {
       path: path.resolve(__dirname, 'app', 'dist'),
-      filename: 'index.js'
+      filename: 'index.js',
     },
     devtool: 'inline-cheap-source-map',
     target: 'electron-main',
     node: {
-      __dirname: false
+      __dirname: false,
     },
     resolve,
     module: moduleConfig,
@@ -57,41 +57,41 @@ module.exports = function({ onlyTranspileTypescript = false } = {}) {
         { from: 'app/vendor', to: 'vendor' },
         {
           from: 'app/node_modules/standard-notes-web/dist',
-          to: 'standard-notes-web'
+          to: 'standard-notes-web',
         },
         {
           from: 'app/node_modules/sn-electron-valence',
-          to: 'sn-electron-valence'
+          to: 'sn-electron-valence',
         },
         {
           from: 'app/stylesheets/renderer.css',
-          to: 'stylesheets/renderer.css'
+          to: 'stylesheets/renderer.css',
         },
-        { from: 'app/icon', to: 'icon' }
-      ])
-    ]
+        { from: 'app/icon', to: 'icon' },
+      ]),
+    ],
   };
 
   const electronRendererConfig = {
     entry: {
       preload: './app/javascripts/renderer/preload.js',
-      renderer: './app/javascripts/renderer/renderer.js'
+      renderer: './app/javascripts/renderer/renderer.js',
     },
     output: {
-      path: path.resolve(__dirname, 'app', 'dist', 'javascripts', 'renderer')
+      path: path.resolve(__dirname, 'app', 'dist', 'javascripts', 'renderer'),
     },
     target: 'electron-renderer',
     devtool: 'inline-cheap-source-map',
     node: {
-      __dirname: false
+      __dirname: false,
     },
     resolve,
     module: moduleConfig,
     externals: {
       electron: 'commonjs electron',
       'sn-electron-valence/Transmitter':
-        'commonjs sn-electron-valence/Transmitter'
-    }
+        'commonjs sn-electron-valence/Transmitter',
+    },
   };
   return [electronMainConfig, electronRendererConfig];
 };

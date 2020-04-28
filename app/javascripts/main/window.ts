@@ -34,7 +34,7 @@ export function createWindowState({
   shell,
   appState,
   appLocale,
-  teardown
+  teardown,
 }: {
   shell: Shell;
   appLocale: string;
@@ -49,19 +49,19 @@ export function createWindowState({
     window,
     archiveManager: services.archiveManager,
     trayManager: services.trayManager,
-    onClosed: teardown
+    onClosed: teardown,
   });
 
   return {
     window,
-    ...services
+    ...services,
   };
 }
 
 function createWindow(store: Store): Electron.BrowserWindow {
   const winState = windowStateKeeper({
     defaultWidth: WINDOW_DEFAULT_WIDTH,
-    defaultHeight: WINDOW_DEFAULT_HEIGHT
+    defaultHeight: WINDOW_DEFAULT_HEIGHT,
   });
   const useSystemMenuBar = store.get(StoreKeys.UseSystemMenuBar);
 
@@ -84,8 +84,8 @@ function createWindow(store: Store): Electron.BrowserWindow {
        */
       nodeIntegration: isTesting(),
       contextIsolation: !isTesting(),
-      preload: path.join(__dirname, 'javascripts/renderer/preload.js')
-    }
+      preload: path.join(__dirname, 'javascripts/renderer/preload.js'),
+    },
   });
 
   winState.manage(window);
@@ -131,14 +131,14 @@ function createWindowServices(
     updateManager,
     trayManager,
     store,
-    spellcheckerManager
+    spellcheckerManager,
   });
   return {
     archiveManager,
     updateManager,
     trayManager,
     spellcheckerManager,
-    menuManager
+    menuManager,
   };
 }
 
@@ -165,7 +165,7 @@ function fileUrlsAreEqual(a: string, b: string): boolean {
   } catch (error) {
     return false;
   }
-};
+}
 
 function registerWindowEventListeners({
   shell,
@@ -173,7 +173,7 @@ function registerWindowEventListeners({
   window,
   archiveManager,
   trayManager,
-  onClosed
+  onClosed,
 }: {
   shell: Shell;
   appState: Pick<AppState, 'willQuitApp' | 'startUrl'>;
@@ -200,7 +200,7 @@ function registerWindowEventListeners({
     window.show();
   });
 
-  window.on('close', event => {
+  window.on('close', (event) => {
     if (
       !appState.willQuitApp &&
       (isMac() || trayManager.shouldMinimizeToTray())

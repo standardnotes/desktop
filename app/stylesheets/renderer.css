@@ -9,7 +9,8 @@
 }
 
 /* To offset frameless window nav buttons on Mac */
-.mac-desktop #editor-column, .mac-desktop #notes-column {
+.mac-desktop #editor-column,
+.mac-desktop #notes-column {
   transition: 0.15s padding ease;
 }
 
@@ -57,15 +58,22 @@ panel-resizer {
   color: var(--sn-stylekit-info-color);
 }
 
-#desktop-title-bar .title-bar-left-buttons, #desktop-title-bar .title-bar-right-buttons {
+#desktop-title-bar .title-bar-left-buttons,
+#desktop-title-bar .title-bar-right-buttons {
   font-size: 0;
 }
 
 /* Required for BrowserWindow titleBarStyle: 'hiddenInset' */
-.mac-desktop .tags, .mac-desktop #tags-title-bar, .mac-desktop #notes-title-bar, .mac-desktop #editor-title-bar, .mac-desktop #lock-screen {
+.mac-desktop .tags,
+.mac-desktop #tags-title-bar,
+.mac-desktop #notes-title-bar,
+.mac-desktop #editor-title-bar,
+.mac-desktop #lock-screen {
   -webkit-app-region: drag;
 }
 
-input, .tags .content, .component-view-container {
+input,
+.tags .content,
+.component-view-container {
   -webkit-app-region: no-drag;
 }
