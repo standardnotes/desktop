@@ -14,7 +14,8 @@ import { createTrayManager, TrayManager } from './trayManager';
 import { createUpdateManager, UpdateManager } from './updateManager';
 import { isTesting, lowercaseDriveLetter } from './utils';
 import { initializeZoomManager } from './zoomManager';
-import { TestIpcMessages } from '../../../test/TestIpcMessages';
+import { MessageType } from '../../../test/TestIpcMessage';
+import { handle, send } from './testing';
 
 const WINDOW_DEFAULT_WIDTH = 1100;
 const WINDOW_DEFAULT_HEIGHT = 800;
@@ -90,9 +91,12 @@ function createWindow(store: Store): Electron.BrowserWindow {
   winState.manage(window);
 
   if (isTesting()) {
-    ipcMain.handle(TestIpcMessages.SpellCheckerLanguages, () =>
+    handle(MessageType.SpellCheckerLanguages, () =>
       window.webContents.session.getSpellCheckerLanguages()
     );
+    window.webContents.once('did-finish-load', () => {
+      send(MessageType.WindowLoaded);
+    });
   }
 
   return window;
@@ -119,7 +123,7 @@ function createWindowServices(
     appLocale
   );
   if (isTesting()) {
-    ipcMain.handle(TestIpcMessages.SpellCheckerManager, () => spellcheckerManager);
+    handle(MessageType.SpellCheckerManager, () => spellcheckerManager);
   }
   const menuManager = createMenuManager({
     window,

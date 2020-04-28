@@ -1,51 +1,56 @@
-import { strict as assert } from 'assert';
+import anyTest, { ExecutionContext, TestInterface } from 'ava';
 import { promises as fs } from 'fs';
-import 'mocha';
 import { writeJSONFile } from '../app/javascripts/main/fileUtils';
-import { setDefaults, tools } from './tools';
+import { createDriver, Driver } from './driver';
 
-async function validateData() {
-  const data = await tools.updates.settings();
-  assert(typeof data.autoupdateEnabled === 'boolean');
+const test = anyTest as TestInterface<Driver>;
+
+async function validateData(t: ExecutionContext<Driver>) {
+  const data = await t.context.updates.settings();
+  t.true(typeof data.autoupdateEnabled === 'boolean');
   /** Must not throw */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _url = new URL(data.endpoint);
 }
 
-describe('Update manager', function () {
-  setDefaults(this);
-  beforeEach(tools.launchApp);
-  afterEach(tools.stopApp);
+test.beforeEach(async (t) => {
+  t.context = await createDriver();
+});
 
-  it('has auto-updates enabled by default', async function () {
-    const settings = await tools.updates.settings();
-    assert.equal(settings.autoupdateEnabled, true);
-  });
+test.afterEach.always(async (t) => {
+  await t.context.stop();
+});
 
-  it('recovers its settings when the data is corrupted', async function () {
-    const settingsFilePath = await tools.paths.updates();
-    await fs.writeFile(settingsFilePath, '0xFF'.repeat(300));
-    await tools.app.restart();
-    await validateData();
-  });
+test('has auto-updates enabled by default', async (t) => {
+  const settings = await t.context.updates.settings();
+  t.true(settings.autoupdateEnabled);
+});
 
-  it('fills in default values when some settings are missing', async function () {
-    const settingsFilePath = await tools.paths.updates();
-    await writeJSONFile(settingsFilePath, {});
-    await tools.app.restart();
-    await validateData();
-  });
+test('recovers its settings when the data is corrupted', async (t) => {
+  const settingsFilePath = await t.context.updates.settingsLocation();
+  await fs.writeFile(settingsFilePath, '0xFF'.repeat(300));
+  await t.context.restart();
+  await validateData(t);
+});
 
-  it('reloads the menu after checking for an update', async function () {
-    await tools.updates.check();
-    assert(await tools.updates.menuReloadTriggered());
-  });
+test('fills in default values when some settings are missing', async (t) => {
+  const settingsFilePath = await t.context.updates.settingsLocation();
+  await writeJSONFile(settingsFilePath, {});
+  await t.context.restart();
+  await validateData(t);
+});
 
-  it('updates its settings after checking for an update', async function () {
-    const settings = await tools.updates.settings();
-    const previousCheckDate = new Date(settings.lastCheck);
-    await tools.updates.check();
-    const checkDate = new Date((await tools.updates.settings()).lastCheck);
-    assert(previousCheckDate.getTime() < checkDate.getTime());
-  });
+test('reloads the menu after checking for an update', async (t) => {
+  await t.context.updates.check();
+  t.true(await t.context.updates.menuReloadTriggered());
+});
+
+test('updates its settings after checking for an update', async (t) => {
+  const settings = await t.context.updates.settings();
+  t.falsy(settings.lastCheck);
+  await t.context.updates.check();
+  const lastCheck = (await t.context.updates.settings()).lastCheck;
+  t.truthy(lastCheck);
+  const checkDate = new Date(lastCheck);
+  t.false(Number.isNaN(checkDate.getTime()));
 });

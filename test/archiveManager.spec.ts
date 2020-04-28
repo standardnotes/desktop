@@ -1,79 +1,71 @@
-import 'mocha';
-import { setDefaults, tools, timeout } from './tools';
 import { promises as fs } from 'fs';
-import { strict as assert } from 'assert';
 import path from 'path';
+import anyTest, { TestInterface } from 'ava';
+import { Driver, createDriver } from './driver';
+import { BackupsDirectoryName } from '../app/javascripts/main/archiveManager';
 import { StoreKeys } from '../app/javascripts/main/store';
 import { FileDoesNotExist } from '../app/javascripts/main/fileUtils';
-import { BackupsDirectoryName } from '../app/javascripts/main/archiveManager';
 
-const BackupDuration = 1000;
-describe('Archive manager', function () {
-  setDefaults(this);
+const test = anyTest as TestInterface<Driver>;
 
-  beforeEach(tools.launchApp);
-  afterEach(tools.stopApp);
+test.beforeEach(async (t) => {
+  t.context = await createDriver();
+});
+test.afterEach(async (t) => {
+  await t.context.stop();
+});
 
-  it('saves incoming data to the backups folder', async function () {
-    const data = 'Sample Data';
-    tools.backups.save(data);
-    const backupsLocation = await tools.backups.location();
-    const files = await fs.readdir(backupsLocation);
-    assert(files.length >= 1);
-    const latestFile = files[files.length - 1];
-    assert.equal(
-      data,
-      await fs.readFile(path.join(backupsLocation, latestFile), 'utf8')
+test('saves incoming data to the backups folder', async (t) => {
+  const data = 'Sample Data';
+  const fileName = await t.context.backups.save(data);
+  const backupsLocation = await t.context.backups.location();
+  const files = await fs.readdir(backupsLocation);
+  t.true(files.includes(fileName));
+  t.is(data, await fs.readFile(path.join(backupsLocation, fileName), 'utf8'));
+});
+
+test('performs a backup', async (t) => {
+  await t.context.backups.perform();
+  const backupsLocation = await t.context.backups.location();
+  const files = await fs.readdir(backupsLocation);
+  t.true(files.length >= 1);
+});
+
+test('changes backups folder location', async (t) => {
+  await t.context.backups.perform();
+  let newLocation = path.join(t.context.userDataPath, 'newLocation');
+  await fs.mkdir(newLocation);
+  const currentLocation = await t.context.backups.location();
+  const fileNames = await fs.readdir(currentLocation);
+  await t.context.backups.changeLocation(newLocation);
+  newLocation = path.join(newLocation, BackupsDirectoryName);
+  t.deepEqual(fileNames, await fs.readdir(newLocation));
+
+  /** Assert that the setting was saved */
+  const data = await t.context.store.dataOnDisk();
+  t.is(data[StoreKeys.BackupsLocation], newLocation);
+
+  /** Perform backup and make sure there is one more file in the directory */
+  await t.context.backups.perform();
+  const newFileNames = await fs.readdir(newLocation);
+  t.deepEqual(newFileNames.length, fileNames.length + 1);
+});
+
+test('backups are enabled by default', async (t) => {
+  t.is(await t.context.backups.enabled(), true);
+});
+
+test('does not save a backup when they are disabled', async (t) => {
+  await t.context.backups.toggleEnabled();
+  await t.context.backups.perform();
+  const backupsLocation = await t.context.backups.location();
+  try {
+    await fs.readdir(backupsLocation);
+    t.fail(
+      `A backups folder is present when backups have been disabled right
+      after the app started.`
     );
-  });
-  it('performs a backup', async function () {
-    await tools.backups.perform();
-    await timeout(BackupDuration);
-    const backupsLocation = await tools.backups.location();
-    const files = await fs.readdir(backupsLocation);
-    assert(files.length >= 1);
-  });
-  it('changes backups folder location', async function () {
-    await tools.backups.perform();
-    let newLocation = path.join(await tools.paths.userData(), 'newLocation');
-    await fs.mkdir(newLocation);
-    const currentLocation = await tools.backups.location();
-    const fileNames = await fs.readdir(currentLocation);
-    await tools.backups.changeLocation(newLocation);
-    newLocation = path.join(newLocation, BackupsDirectoryName);
-    assert.deepEqual(
-      fileNames,
-      await fs.readdir(newLocation)
-    );
-
-    /** Assert that the setting was saved */
-    const data = await tools.store.diskData();
-    assert.equal(data[StoreKeys.BackupsLocation], newLocation);
-
-    /** Perform backup and make sure there is one more file in the directory */
-    await tools.backups.perform();
-    await timeout(BackupDuration);
-    const newFileNames = await fs.readdir(newLocation);
-    assert.deepEqual(newFileNames.length, fileNames.length + 1);
-  });
-
-  it('backups are enabled by default', async function () {
-    assert.equal(await tools.backups.enabled(), true);
-  });
-
-  it('does not save a backup when they are disabled', async function () {
-    await tools.backups.toggleEnabled();
-    await tools.backups.perform();
-    await timeout(BackupDuration);
-    const backupsLocation = await tools.backups.location();
-    try {
-      await fs.readdir(backupsLocation);
-      assert.fail(
-        `A backups folder is present when backups have been disabled right
-        after the app started.`
-      );
-    } catch (error) {
-      assert.equal(error.code, FileDoesNotExist);
-    }
-  });
+  } catch (error) {
+    t.is(error.code, FileDoesNotExist);
+  }
 });

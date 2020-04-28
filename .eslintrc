@@ -3,7 +3,6 @@
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
-    "plugin:mocha/recommended",
     "semistandard",
     "prettier"
   ],
@@ -20,8 +19,6 @@
     "@typescript-eslint/no-use-before-define": ["error", "nofunc"],
     "@typescript-eslint/no-non-null-assertion": 0,
     "@typescript-eslint/no-explicit-any": 0,
-    "mocha/no-hooks-for-single-case": 0,
-    "mocha/no-setup-in-describe": 0,
 
     /**
      * The following rules are disabled because they are already implemented
@@ -30,13 +27,10 @@
     "no-unused-vars": 0,
     "@typescript-eslint/camelcase": 0
   },
-  "plugins": ["@typescript-eslint", "mocha"],
+  "plugins": ["@typescript-eslint"],
   "globals": {
     "angular": true,
     "ElectronValence": true,
     "zip": true
-  },
-  "env": {
-    "mocha": true
   }
 }

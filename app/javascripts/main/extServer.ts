@@ -76,15 +76,12 @@ function onRequestError(error: Error | { code: string }, res: ServerResponse) {
   res.end();
 }
 
-export function createExtensionsServer(done?: () => void) {
+export function createExtensionsServer() {
   const port = 45653;
   const ip = '127.0.0.1';
   const host = `${Protocol}://${ip}:${port}/`;
   http.createServer(handleRequest).listen(port, ip, () => {
     log(`Server started at ${host}`);
-    if (done) {
-      done();
-    }
   });
   return host;
 }

@@ -1,3 +1,4 @@
 export const CommandLineArgs = {
-  Testing: '--testing-INSECURE'
+  Testing: '--testing-INSECURE',
+  UserDataPath: '--user-data-path',
 };

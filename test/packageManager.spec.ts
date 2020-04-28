@@ -1,6 +1,6 @@
-import { strict as assert } from 'assert';
+import test from 'ava';
+import { IpcMainEvent } from 'electron';
 import { promises as fs } from 'fs';
-import 'mocha';
 import path from 'path';
 import proxyquire from 'proxyquire';
 import {
@@ -8,38 +8,76 @@ import {
   readJSONFile,
 } from '../app/javascripts/main/fileUtils';
 import { SyncTask } from '../app/javascripts/main/packageManager';
-import { tools } from './tools';
+import { IpcMessages } from '../app/javascripts/shared/ipcMessages';
+import { createTmpDir } from './testUtils';
 
-const contentDir = path.join(tools.tmpDir.path, 'Extensions');
+const tmpDir = createTmpDir(__filename);
+
+const contentDir = path.join(tmpDir.path, 'Extensions');
 let downloadFileCallCount = 0;
-const { runTasks } = proxyquire('../app/javascripts/main/packageManager', {
-  electron: {
-    app: {
-      getPath() {
-        return tools.tmpDir.path;
+const { initializePackageManager } = proxyquire(
+  '../app/javascripts/main/packageManager',
+  {
+    electron: {
+      app: {
+        getPath() {
+          return tmpDir.path;
+        },
       },
     },
-  },
-  './networking': {
-    /** Download a fake component file */
-    async downloadFile(_src: string, dest: string) {
-      downloadFileCallCount += 1;
-      if (!path.normalize(dest).startsWith(tools.tmpDir.path)) {
-        throw new Error(`Bad download destination: ${dest}`);
-      }
-      await ensureDirectoryExists(path.dirname(dest));
-      await fs.copyFile(
-        path.join(__dirname, 'data', 'zip-file.zip'),
-        path.join(dest)
-      );
+    './networking': {
+      /** Download a fake component file */
+      async downloadFile(_src: string, dest: string) {
+        downloadFileCallCount += 1;
+        if (!path.normalize(dest).startsWith(tmpDir.path)) {
+          throw new Error(`Bad download destination: ${dest}`);
+        }
+        await ensureDirectoryExists(path.dirname(dest));
+        await fs.copyFile(
+          path.join(__dirname, 'data', 'zip-file.zip'),
+          path.join(dest)
+        );
+      },
     },
+  }
+);
+
+const fakeWebContents = {
+  send(_eventName: string, { error }) {
+    if (error) throw error;
   },
-});
+};
+
+const fakeIpcMain = (() => {
+  let handler: (event: IpcMainEvent, data: any) => Promise<void>;
+
+  return {
+    handler,
+    on(message: IpcMessages, messageHandler: any) {
+      if (message !== IpcMessages.SyncComponents) {
+        throw new Error(`unknown message ${message}`);
+      }
+      if (handler) {
+        throw new Error('handler already defined.');
+      }
+      handler = messageHandler;
+    },
+    async syncComponents(task: SyncTask) {
+      await handler(undefined, {
+        componentsData: task.components,
+      });
+      /** Give the package manager time to write to disk */
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    },
+  };
+})();
 
 const name = 'Fake Component';
 const identifier = 'fake.component';
 const uuid = 'fake-component';
-const modifiers = ['a', 'b', 'c', 'd'];
+const modifiers = Array(20)
+  .fill(0)
+  .map((_, i) => String(i).padStart(2, '0'));
 
 function fakeComponent({ deleted = false, modifier = '' } = {}) {
   return {
@@ -57,107 +95,103 @@ function fakeComponent({ deleted = false, modifier = '' } = {}) {
   };
 }
 
-function launchRunTasks(tasks: SyncTask[]) {
-  return new Promise((resolve, reject) => {
-    runTasks(
-      {
-        send(_e: string, { error }) {
-          if (error) {
-            reject(error);
-          } else {
-            resolve();
-          }
-        },
-      },
-      tasks
-    ).catch(reject);
-  });
-}
-
-describe('Package manager', function () {
-  const log = console.log;
-  const error = console.error;
-  before(async function () {
-    /** Silence the package manager's output. */
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    console.log = () => {};
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    console.error = () => {};
-    await ensureDirectoryExists(contentDir);
-  });
-  after(async function () {
-    console.log = log;
-    console.error = error;
-    await tools.tmpDir.remove();
-  });
-
-  afterEach(function () {
-    downloadFileCallCount = 0;
-  });
-
-  it('installs multiple components', async function () {
-    await launchRunTasks([
-      { components: modifiers.map((modifier) => fakeComponent({ modifier })) },
-    ]);
-
-    const files = await fs.readdir(contentDir);
-    assert.equal(files.length, 2 + modifiers.length);
-    assert(files.includes('downloads'));
-    for (const modifier of modifiers) {
-      assert(files.includes(identifier + modifier));
-    }
-    assert(files.includes('mapping.json'));
-    assert.deepEqual(
-      await readJSONFile(path.join(contentDir, 'mapping.json')),
-      modifiers.reduce((acc, modifier) => {
-        acc[uuid + modifier] = {
-          location: path.join('Extensions', identifier + modifier),
-        };
-        return acc;
-      }, {})
-    );
-    assert.deepEqual(
-      await fs.readdir(path.join(contentDir, 'downloads')),
-      modifiers.map((modifier) => `${name + modifier}.zip`)
-    );
-
-    for (const modifier of modifiers) {
-      const componentFiles = await fs.readdir(
-        path.join(contentDir, identifier + modifier)
-      );
-      assert.equal(componentFiles.length, 2);
-    }
-  });
-
-  it('uninstalls multiple components', async function () {
-    await runTasks(undefined /** Webcontents aren't used during uninstall */, [
-      {
-        components: modifiers.map((modifier) =>
-          fakeComponent({ deleted: true, modifier })
-        ),
-      },
-    ]);
-
-    const files = await fs.readdir(contentDir);
-    assert.equal(files.length, 2);
-    assert(files.includes('downloads'));
-    assert(files.includes('mapping.json'));
-
-    assert.deepEqual(
-      await readJSONFile(path.join(contentDir, 'mapping.json')),
-      {}
-    );
-  });
-
-  it("doesn't download anything when two install/uninstall tasks are queued", async function () {
-    await runTasks(undefined, [
-      {
-        components: [fakeComponent({ deleted: false })],
-      },
-      {
-        components: [fakeComponent({ deleted: true })],
-      },
-    ]);
-    assert.equal(downloadFileCallCount, 0);
-  });
+const log = console.log;
+const error = console.error;
+test.before(async function () {
+  /** Silence the package manager's output. */
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  console.log = () => {};
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  console.error = () => {};
+  await ensureDirectoryExists(contentDir);
+  await initializePackageManager(fakeIpcMain, fakeWebContents);
 });
+test.after.always(async function () {
+  console.log = log;
+  console.error = error;
+  await tmpDir.clean();
+});
+
+test.beforeEach(function () {
+  downloadFileCallCount = 0;
+});
+
+test.serial('installs multiple components', async (t) => {
+  await fakeIpcMain.syncComponents({
+    components: modifiers.map((modifier) => fakeComponent({ modifier })),
+  });
+  await new Promise((resolve) => setTimeout(resolve, 200));
+
+  const files = await fs.readdir(contentDir);
+  t.is(files.length, 2 + modifiers.length);
+  t.true(files.includes('downloads'));
+  for (const modifier of modifiers) {
+    t.true(files.includes(identifier + modifier));
+  }
+  t.true(files.includes('mapping.json'));
+  const mappingContents = await fs.readFile(
+    path.join(contentDir, 'mapping.json'),
+    'utf8'
+  );
+  try {
+    JSON.parse(mappingContents);
+  } catch (e) {
+    console.info(mappingContents);
+  }
+  t.deepEqual(
+    JSON.parse(mappingContents),
+    modifiers.reduce((acc, modifier) => {
+      acc[uuid + modifier] = {
+        location: path.join('Extensions', identifier + modifier),
+      };
+      return acc;
+    }, {})
+  );
+
+  const downloads = await fs.readdir(path.join(contentDir, 'downloads'));
+  t.is(downloads.length, modifiers.length);
+  for (const modifier of modifiers) {
+    t.true(downloads.includes(`${name + modifier}.zip`));
+  }
+
+  for (const modifier of modifiers) {
+    const componentFiles = await fs.readdir(
+      path.join(contentDir, identifier + modifier)
+    );
+    t.is(componentFiles.length, 2);
+  }
+});
+
+test.serial('uninstalls multiple components', async (t) => {
+  await fakeIpcMain.syncComponents({
+    components: modifiers.map((modifier) =>
+      fakeComponent({ deleted: true, modifier })
+    ),
+  });
+  await new Promise((resolve) => setTimeout(resolve, 200));
+
+  const files = await fs.readdir(contentDir);
+  t.is(files.length, 2);
+  t.true(files.includes('downloads'));
+  t.true(files.includes('mapping.json'));
+
+  t.deepEqual(await readJSONFile(path.join(contentDir, 'mapping.json')), {});
+});
+
+test.serial(
+  "doesn't download anything when two install/uninstall tasks are queued",
+  async (t) => {
+    await Promise.all([
+      fakeIpcMain.syncComponents({
+        components: [fakeComponent({ deleted: false })],
+      }),
+      fakeIpcMain.syncComponents({
+        components: [fakeComponent({ deleted: false })],
+      }),
+      fakeIpcMain.syncComponents({
+        components: [fakeComponent({ deleted: true })],
+      }),
+    ]);
+    t.is(downloadFileCallCount, 1);
+  }
+);

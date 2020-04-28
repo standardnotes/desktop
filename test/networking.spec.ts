@@ -1,10 +1,12 @@
-import { strict as assert } from 'assert';
+import test from 'ava';
 import { promises as fs } from 'fs';
 import http from 'http';
 import { AddressInfo } from 'net';
 import path from 'path';
 import proxyquire from 'proxyquire';
-import { tools } from './tools';
+import { createTmpDir } from './testUtils';
+
+const tmpDir = createTmpDir(__filename);
 
 const { getJSON, downloadFile } = proxyquire(
   '../app/javascripts/main/networking',
@@ -13,20 +15,21 @@ const { getJSON, downloadFile } = proxyquire(
   }
 );
 
-describe('Networking utilities', function () {
-  const sampleData = {
-    title: 'Diamond Dove',
-    meter: {
-      4: 4,
-    },
-    instruments: ['Piano', 'Chiptune'],
-  };
-  let server: http.Server;
-  let serverAddress: string;
+const sampleData = {
+  title: 'Diamond Dove',
+  meter: {
+    4: 4,
+  },
+  instruments: ['Piano', 'Chiptune'],
+};
 
-  before(function () {
+let server: http.Server;
+let serverAddress: string;
+
+test.before(
+  (): Promise<any> => {
     return Promise.all([
-      tools.tmpDir.make(),
+      tmpDir.make(),
       new Promise((resolve) => {
         server = http.createServer((_req, res) => {
           res.write(JSON.stringify(sampleData));
@@ -39,22 +42,25 @@ describe('Networking utilities', function () {
         });
       }),
     ]);
-  });
-  after(function () {
+  }
+);
+
+test.after(
+  (): Promise<any> => {
     return Promise.all([
-      tools.tmpDir.remove(),
+      tmpDir.clean(),
       new Promise((resolve) => server.close(resolve)),
     ]);
-  });
+  }
+);
 
-  it('downloads a JSON file', async function () {
-    assert.deepEqual(await getJSON(serverAddress), sampleData);
-  });
+test('downloads a JSON file', async (t) => {
+  t.deepEqual(await getJSON(serverAddress), sampleData);
+});
 
-  it('downloads a folder to the specified location', async function () {
-    const filePath = path.join(tools.tmpDir.path, 'fileName.json');
-    await downloadFile(serverAddress + '/file', filePath);
-    const fileContents = await fs.readFile(filePath, 'utf8');
-    assert.equal(JSON.stringify(sampleData), fileContents);
-  });
+test('downloads a folder to the specified location', async (t) => {
+  const filePath = path.join(tmpDir.path, 'fileName.json');
+  await downloadFile(serverAddress + '/file', filePath);
+  const fileContents = await fs.readFile(filePath, 'utf8');
+  t.is(JSON.stringify(sampleData), fileContents);
 });

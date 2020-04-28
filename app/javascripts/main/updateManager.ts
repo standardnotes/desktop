@@ -1,14 +1,15 @@
 import compareVersions from 'compare-versions';
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, dialog, shell } from 'electron';
 import electronLog from 'electron-log';
 import { autoUpdater } from 'electron-updater';
 import path from 'path';
-import { TestIpcMessages } from '../../../test/TestIpcMessages';
+import { MessageType } from '../../../test/TestIpcMessage';
 import { FileDoesNotExist, readJSONFile, writeJSONFile } from './fileUtils';
 import { downloadFile, getJSON } from './networking';
 import { getInstallerKey, InstallerKey } from './platforms';
 import { updates as str } from './strings';
 import { isDev, isTesting } from './utils';
+import { handle } from './testing';
 
 const DefaultUpdateEndpoint =
   process.env.UPDATE_ENDPOINT ||
@@ -106,17 +107,25 @@ export function createUpdateManager(window: BrowserWindow): UpdateManager {
   let autoupdateVersion: string | undefined;
   let onNeedMenuReload: (() => void) | undefined;
 
-  updateSettingsFromDisk(settings).then(() => checkForUpdate());
+  updateSettingsFromDisk(settings).then(() => {
+    if (!isTesting()) {
+      /**
+       * The app can quit too quickly during testing, causing an error popup
+       * to appear because the request has been canceled
+       */
+      checkForUpdate();
+    }
+  });
   setupAutoUpdater();
 
   if (isTesting()) {
     // eslint-disable-next-line no-var
     var menuReloadTriggered = false;
-    ipcMain.handle(TestIpcMessages.UpdateSettings, () => settings);
-    ipcMain.handle(TestIpcMessages.UpdateSettingsPath, () => settingsFilePath);
-    ipcMain.handle(TestIpcMessages.CheckForUpdate, () => checkForUpdate());
-    ipcMain.handle(
-      TestIpcMessages.UpdateManagerTriggeredMenuReload,
+    handle(MessageType.UpdateSettings, () => settings);
+    handle(MessageType.UpdateSettingsPath, () => settingsFilePath);
+    handle(MessageType.CheckForUpdate, () => checkForUpdate());
+    handle(
+      MessageType.UpdateManagerTriggeredMenuReload,
       () => menuReloadTriggered
     );
   }
@@ -155,9 +164,9 @@ export function createUpdateManager(window: BrowserWindow): UpdateManager {
   async function checkForUpdate({ userTriggered = false } = {}) {
     log('Checking for updates.');
 
-    checkForAutoUpdate(userTriggered);
     checkingForUpdate = true;
     triggerMenuReload();
+    await checkForAutoUpdate(userTriggered);
     try {
       const latest: LatestUpdate = await getJSON(settings.endpoint);
       updateSettings(settings, {
