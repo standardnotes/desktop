@@ -11,6 +11,7 @@
     "@babel/core": "^7.9.0",
     "@babel/plugin-proposal-class-properties": "^7.8.3",
     "@babel/preset-env": "^7.9.0",
+    "@commitlint/config-conventional": "^8.3.4",
     "@types/lodash": "^4.14.150",
     "@types/mime-types": "^2.1.0",
     "@types/node": "^12.12.30",
@@ -21,6 +22,7 @@
     "ava": "^3.7.0",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.1.0",
+    "commitlint": "^8.3.5",
     "copy-webpack-plugin": "^5.1.1",
     "electron": "^8.2.0",
     "electron-builder": "^22.4.1",
@@ -35,6 +37,7 @@
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
     "file-loader": "^6.0.0",
+    "husky": "^4.2.5",
     "lodash": "^4.17.15",
     "mime-types": "^2.1.26",
     "npm-run-all": "^4.1.5",
@@ -107,6 +110,11 @@
     "lint:eslint": "eslint app/index.ts app/application.ts app/javascripts/**/*.ts test/*.ts",
     "lint:types": "tsc --noEmit",
     "test": "ava"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
   },
   "ava": {
     "concurrency": 3,
