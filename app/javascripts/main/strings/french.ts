@@ -20,7 +20,7 @@ export function createFrenchStrings(): Strings {
     tray: {
       show: 'Afficher',
       hide: 'Masquer',
-      quit: 'Quitter'
+      quit: 'Quitter',
     },
     extensions: fallback.extensions,
     updates: fallback.updates,

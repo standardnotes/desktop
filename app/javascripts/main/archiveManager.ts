@@ -1,8 +1,4 @@
-import {
-  dialog,
-  IpcMain,
-  WebContents
-} from 'electron';
+import { dialog, IpcMain, WebContents } from 'electron';
 import fs from 'fs';
 import path from 'path';
 import { IpcMessages } from '../shared/ipcMessages';
@@ -146,7 +142,7 @@ export function createArchiveManager(
       } catch (e) {
         logError(e);
         dialog.showMessageBox({
-          message: str().errorChangingDirectory(e)
+          message: str().errorChangingDirectory(e),
         });
       }
     },

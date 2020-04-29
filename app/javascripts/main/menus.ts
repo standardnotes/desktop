@@ -18,7 +18,7 @@ import { isDev, isTesting } from './utils';
 import { handle } from './testing';
 
 export const enum MenuId {
-  SpellcheckerLanguages = 'SpellcheckerLanguages'
+  SpellcheckerLanguages = 'SpellcheckerLanguages',
 }
 
 export function editorContextMenu(
@@ -99,7 +99,7 @@ export function createMenuManager({
   updateManager,
   trayManager,
   store,
-  spellcheckerManager
+  spellcheckerManager,
 }: {
   window: Electron.BrowserWindow;
   archiveManager: ArchiveManager;
@@ -118,7 +118,7 @@ export function createMenuManager({
       windowMenu(store, trayManager, reload),
       backupsMenu(archiveManager, reload),
       updateMenu(updateManager),
-      helpMenu(window, shell)
+      helpMenu(window, shell),
     ]);
     Menu.setApplicationMenu(menu);
   }
@@ -153,7 +153,7 @@ export function createMenuManager({
       }
       // eslint-disable-next-line no-unused-expressions
       menu?.popup();
-    }
+    },
   };
 }
 
@@ -184,22 +184,22 @@ const enum Roles {
   StartSeeking = 'startSpeaking',
   StopSeeking = 'stopSpeaking',
   Zoom = 'zoom',
-  Front = 'front'
+  Front = 'front',
 }
 
 const KeyCombinations = {
   CmdOrCtrlW: 'CmdOrCtrl + W',
   CmdOrCtrlM: 'CmdOrCtrl + M',
-  AltM: 'Alt + m'
+  AltM: 'Alt + m',
 };
 
 const enum MenuItemTypes {
   CheckBox = 'checkbox',
-  Radio = 'radio'
+  Radio = 'radio',
 }
 
 const Separator: MenuItemConstructorOptions = {
-  type: 'separator'
+  type: 'separator',
 };
 
 const Urls = {
@@ -208,7 +208,7 @@ const Urls = {
   GitHub: 'https://github.com/standardnotes',
   Slack: 'https://standardnotes.org/slack',
   Twitter: 'https://twitter.com/StandardNotes',
-  GitHubReleases: 'https://github.com/standardnotes/desktop/releases'
+  GitHubReleases: 'https://github.com/standardnotes/desktop/releases',
 };
 
 function macAppMenu(appName: string): MenuItemConstructorOptions {
@@ -217,28 +217,28 @@ function macAppMenu(appName: string): MenuItemConstructorOptions {
     label: appName,
     submenu: [
       {
-        role: Roles.About
+        role: Roles.About,
       },
       Separator,
       {
         role: Roles.Services,
-        submenu: []
+        submenu: [],
       },
       Separator,
       {
-        role: Roles.Hide
+        role: Roles.Hide,
       },
       {
-        role: Roles.HideOthers
+        role: Roles.HideOthers,
       },
       {
-        role: Roles.UnHide
+        role: Roles.UnHide,
       },
       Separator,
       {
-        role: Roles.Quit
-      }
-    ]
+        role: Roles.Quit,
+      },
+    ],
   };
 }
 
@@ -258,31 +258,31 @@ function editMenu(
     label: str().edit,
     submenu: [
       {
-        role: Roles.Undo
+        role: Roles.Undo,
       },
       {
-        role: Roles.Redo
+        role: Roles.Redo,
       },
       Separator,
       {
-        role: Roles.Cut
+        role: Roles.Cut,
       },
       {
-        role: Roles.Copy
+        role: Roles.Copy,
       },
       {
-        role: Roles.Paste
+        role: Roles.Paste,
       },
       {
-        role: Roles.PasteAndMatchStyle
+        role: Roles.PasteAndMatchStyle,
       },
       {
-        role: Roles.SelectAll
+        role: Roles.SelectAll,
       },
       ...(isMac()
         ? [Separator, macSpeechMenu()]
-        : [spellcheckerMenu(spellcheckerManager!, reload)])
-    ]
+        : [spellcheckerMenu(spellcheckerManager!, reload)]),
+    ],
   };
 }
 
@@ -291,12 +291,12 @@ function macSpeechMenu(): MenuItemConstructorOptions {
     label: str().speech,
     submenu: [
       {
-        role: Roles.StopSeeking
+        role: Roles.StopSeeking,
       },
       {
-        role: Roles.StopSeeking
-      }
-    ]
+        role: Roles.StopSeeking,
+      },
+    ],
   };
 }
 
@@ -322,7 +322,7 @@ function spellcheckerMenu(
           reload();
         },
       })
-    )
+    ),
   };
 }
 
@@ -335,27 +335,27 @@ function viewMenu(
     label: str().view,
     submenu: [
       {
-        role: Roles.Reload
+        role: Roles.Reload,
       },
       {
-        role: Roles.ToggleDevTools
+        role: Roles.ToggleDevTools,
       },
       Separator,
       {
-        role: Roles.ResetZoom
+        role: Roles.ResetZoom,
       },
       {
-        role: Roles.ZoomIn
+        role: Roles.ZoomIn,
       },
       {
-        role: Roles.ZoomOut
+        role: Roles.ZoomOut,
       },
       Separator,
       {
-        role: Roles.ToggleFullScreen
+        role: Roles.ToggleFullScreen,
       },
-      ...(isMac() ? [] : [Separator, ...menuBarOptions(window, store, reload)])
-    ]
+      ...(isMac() ? [] : [Separator, ...menuBarOptions(window, store, reload)]),
+    ],
   };
 }
 
@@ -376,7 +376,7 @@ function menuBarOptions(
         isMenuBarVisible = !isMenuBarVisible;
         window.setMenuBarVisibility(isMenuBarVisible);
         store.set(StoreKeys.MenuBarVisible, isMenuBarVisible);
-      }
+      },
     },
     {
       label: str().useThemedMenuBar,
@@ -387,10 +387,10 @@ function menuBarOptions(
         reload();
         dialog.showMessageBox({
           title: str().preferencesChanged.title,
-          message: str().preferencesChanged.message
+          message: str().preferencesChanged.message,
         });
-      }
-    }
+      },
+    },
   ];
 }
 
@@ -403,16 +403,16 @@ function windowMenu(
     role: Roles.Window,
     submenu: [
       {
-        role: Roles.Minimize
+        role: Roles.Minimize,
       },
       {
-        role: Roles.Close
+        role: Roles.Close,
       },
       Separator,
       ...(isMac()
         ? macWindowItems()
-        : [minimizeToTrayItem(store, trayManager, reload)])
-    ]
+        : [minimizeToTrayItem(store, trayManager, reload)]),
+    ],
   };
 }
 
@@ -421,22 +421,22 @@ function macWindowItems(): MenuItemConstructorOptions[] {
     {
       label: str().close,
       accelerator: KeyCombinations.CmdOrCtrlW,
-      role: Roles.Close
+      role: Roles.Close,
     },
     {
       label: str().minimize,
       accelerator: KeyCombinations.CmdOrCtrlM,
-      role: Roles.Minimize
+      role: Roles.Minimize,
     },
     {
       label: str().zoom,
-      role: Roles.Zoom
+      role: Roles.Zoom,
     },
     Separator,
     {
       label: str().bringAllToFront,
-      role: Roles.Front
-    }
+      role: Roles.Front,
+    },
   ];
 }
 
@@ -458,7 +458,7 @@ function minimizeToTrayItem(
         trayManager.destroyTrayIcon();
       }
       reload();
-    }
+    },
   };
 }
 
@@ -473,22 +473,22 @@ function backupsMenu(archiveManager: ArchiveManager, reload: () => any) {
         click() {
           archiveManager.toggleBackupsStatus();
           reload();
-        }
+        },
       },
       Separator,
       {
         label: str().changeBackupsLocation,
         click() {
           archiveManager.changeBackupsLocation();
-        }
+        },
       },
       {
         label: str().openBackupsLocation,
         click() {
           shell.openItem(archiveManager.backupsLocation);
-        }
-      }
-    ]
+        },
+      },
+    ],
   };
 }
 
@@ -512,7 +512,7 @@ function updateMenu(updateManager: UpdateManager) {
       ),
       click() {
         updateManager.showAutoUpdateInstallationDialog();
-      }
+      },
     });
   }
 
@@ -522,14 +522,14 @@ function updateMenu(updateManager: UpdateManager) {
       : str().automaticUpdatesDisabled,
     click() {
       updateManager.toggleAutoupdateStatus();
-    }
+    },
   });
 
   submenu.push(Separator);
 
   if (updateManager.lastCheck && !updateManager.checkingForUpdate) {
     submenu.push({
-      label: str().lastUpdateCheck(updateManager.lastCheck)
+      label: str().lastUpdateCheck(updateManager.lastCheck),
     });
   }
 
@@ -538,14 +538,14 @@ function updateMenu(updateManager: UpdateManager) {
       label: str().checkForUpdate,
       click() {
         updateManager.checkForUpdate({ userTriggered: true });
-      }
+      },
     });
   }
 
   submenu.push(Separator);
 
   submenu.push({
-    label: str().yourVersion(updateManager.currentVersion)
+    label: str().yourVersion(updateManager.currentVersion),
   });
 
   const latestVersion = updateManager.latestVersion;
@@ -555,7 +555,7 @@ function updateMenu(updateManager: UpdateManager) {
       : str().errorRetrieving,
     click() {
       updateManager.openChangelog();
-    }
+    },
   });
 
   submenu.push(Separator);
@@ -565,7 +565,7 @@ function updateMenu(updateManager: UpdateManager) {
       label: str().viewReleaseNotes(latestVersion),
       click() {
         updateManager.openChangelog();
-      }
+      },
     });
   }
 
@@ -574,7 +574,7 @@ function updateMenu(updateManager: UpdateManager) {
       label: str().openDownloadLocation,
       click() {
         updateManager.openDownloadLocation();
-      }
+      },
     });
   } else if (updateNeeded || updateManager.downloadingUpdate) {
     submenu.push({
@@ -585,7 +585,7 @@ function updateMenu(updateManager: UpdateManager) {
         updateManager.downloadingUpdate
           ? updateManager.openDownloadLocation()
           : updateManager.downloadUpdateFile();
-      }
+      },
     });
   }
 
@@ -600,60 +600,60 @@ function helpMenu(window: Electron.BrowserWindow, shell: Electron.Shell) {
         label: str().emailSupport,
         click() {
           shell.openExternal(Urls.Support);
-        }
+        },
       },
       {
         label: str().website,
         click() {
           shell.openExternal(Urls.Website);
-        }
+        },
       },
       {
         label: str().gitHub,
         click() {
           shell.openExternal(Urls.GitHub);
-        }
+        },
       },
       {
         label: str().slack,
         click() {
           shell.openExternal(Urls.Slack);
-        }
+        },
       },
       {
         label: str().twitter,
         click() {
           shell.openExternal(Urls.Twitter);
-        }
+        },
       },
       Separator,
       {
         label: str().toggleErrorConsole,
         click() {
           window.webContents.toggleDevTools();
-        }
+        },
       },
       {
         label: str().openDataDirectory,
         click() {
           const userDataPath = app.getPath('userData');
           shell.openItem(userDataPath);
-        }
+        },
       },
       {
         label: str().clearCacheAndReload,
         async click() {
           await window.webContents.session.clearCache();
           window.reload();
-        }
+        },
       },
       Separator,
       {
         label: str().version(app.getVersion()),
         click() {
           shell.openExternal(Urls.GitHubReleases);
-        }
-      }
-    ]
+        },
+      },
+    ],
   };
 }

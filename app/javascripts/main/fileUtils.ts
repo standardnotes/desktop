@@ -55,7 +55,6 @@ export async function ensureDirectoryExists(dirPath: string) {
           throw error;
         }
       }
-
     } else {
       throw error;
     }
@@ -94,10 +93,7 @@ export async function deleteDirContents(dirPath: string) {
   }
 }
 
-export async function moveDirContents(
-  srcDir: string,
-  destDir: string
-) {
+export async function moveDirContents(srcDir: string, destDir: string) {
   const [fileNames] = await Promise.all([
     fs.promises.readdir(srcDir),
     ensureDirectoryExists(destDir),

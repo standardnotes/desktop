@@ -17,35 +17,40 @@ const path = require('path');
 var electron_notarize = require('electron-notarize');
 
 module.exports = async function (params) {
-    let platformName = params.electronPlatformName;
-    // Only notarize the app on Mac OS only.
-    if (platformName !== 'darwin') {
-        return;
-    }
-    console.log('afterSign hook triggered', params);
+  let platformName = params.electronPlatformName;
+  // Only notarize the app on Mac OS only.
+  if (platformName !== 'darwin') {
+    return;
+  }
+  console.log('afterSign hook triggered', params);
 
-    // Same appId in electron-builder.
-    let appId = 'org.standardnotes.standardnotes'
+  // Same appId in electron-builder.
+  let appId = 'org.standardnotes.standardnotes';
 
-    let appPath = path.join(params.appOutDir, `${params.packager.appInfo.productFilename}.app`);
-    if (!fs.existsSync(appPath)) {
-        throw new Error(`Cannot find application at: ${appPath}`);
-    }
+  let appPath = path.join(
+    params.appOutDir,
+    `${params.packager.appInfo.productFilename}.app`
+  );
+  if (!fs.existsSync(appPath)) {
+    throw new Error(`Cannot find application at: ${appPath}`);
+  }
 
-    console.log(`Notarizing ${appId} found at ${appPath}`);
+  console.log(`Notarizing ${appId} found at ${appPath}`);
 
-    try {
-        await electron_notarize.notarize({
-            appBundleId: appId,
-            appPath: appPath,
-            appleId: process.env.notarizeAppleId,
-            appleIdPassword: process.env.notarizeAppleIdPassword,
-        });
-    } catch (error) {
-        console.error(error);
-        throw error;
-    }
+  try {
+    await electron_notarize.notarize({
+      appBundleId: appId,
+      appPath: appPath,
+      appleId: process.env.notarizeAppleId,
+      appleIdPassword: process.env.notarizeAppleIdPassword,
+    });
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 
-    console.log(`Done notarizing ${appId}`);
-    console.warn(`DO NOT FORGET: Manually zip .app file for Catalina zip workaround issue! (Details in afterSignHook.js)`);
+  console.log(`Done notarizing ${appId}`);
+  console.warn(
+    `DO NOT FORGET: Manually zip .app file for Catalina zip workaround issue! (Details in afterSignHook.js)`
+  );
 };

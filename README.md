@@ -22,6 +22,7 @@ Pull requests should target the `dev` branch.
 ## Building
 
 Build for all platforms:
+
 ```bash
 electron-packager . "Standard Notes" \
   --platform=all \
@@ -51,4 +52,4 @@ On Linux, download the latest AppImage from the [Releases](https://github.com/st
 
 The Standard Notes desktop client is also available through a variety of package managers:
 
-* [unofficial] **AUR:** [standardnotes-desktop](https://aur.archlinux.org/packages/standardnotes-desktop/), non binary package - built from source, currently maintained by [danielhass](https://github.com/danielhass)
+- [unofficial] **AUR:** [standardnotes-desktop](https://aur.archlinux.org/packages/standardnotes-desktop/), non binary package - built from source, currently maintained by [danielhass](https://github.com/danielhass)
