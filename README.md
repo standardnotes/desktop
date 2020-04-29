@@ -15,7 +15,7 @@ Before making a pull request, make sure to check the output of the following com
 
 ```bash
 npm run lint
-npm test
+npm test # make sure to start `npm run dev` before running the tests
 ```
 
 Pull requests should target the `dev` branch.
