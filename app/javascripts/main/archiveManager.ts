@@ -60,11 +60,11 @@ export function createArchiveManager(
     let name: string | undefined;
     try {
       name = await writeDataToFile(data);
-      log(`Data backup succesfully saved: ${name}`);
+      log(`Data backup successfully saved: ${name}`);
       success = true;
     } catch (err) {
       success = false;
-      logError('An error ocurred saving backup file', err);
+      logError('An error occurred saving backup file', err);
     }
     webContents.send(IpcMessages.FinishedSavingBackup, { success });
     return name;

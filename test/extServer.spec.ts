@@ -72,7 +72,7 @@ test.before(
 
 test.after(
   (t): Promise<any> => {
-    /** Restore the console's functionnality */
+    /** Restore the console's functionality */
     console.log = log;
     console.error = error;
 
