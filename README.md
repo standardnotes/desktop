@@ -10,6 +10,7 @@ npm run dev
 npm start
 ```
 
+We use [commitlint](https://github.com/conventional-changelog/commitlint) to validate commit messages.
 Before making a pull request, make sure to check the output of the following commands:
 
 ```bash
