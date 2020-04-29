@@ -14,7 +14,7 @@ window.isElectron = true;
   const bridge = receiver.items[0];
   configureWindow(bridge);
 
-  await new Promise(resolve => angular.element(document).ready(resolve));
+  await new Promise((resolve) => angular.element(document).ready(resolve));
   const desktopManager = angular
     .element(document)
     .injector()
@@ -28,27 +28,27 @@ async function configureWindow(bridge) {
   const [isMacOS, useSystemMenuBar, appVersion] = await Promise.all([
     bridge.isMacOS,
     bridge.useSystemMenuBar,
-    bridge.appVersion
+    bridge.appVersion,
   ]);
 
   window.electronAppVersion = appVersion;
 
   // disable drag-n-drop of file in the app
-  document.addEventListener('dragover', event => event.preventDefault());
-  document.addEventListener('drop', event => event.preventDefault());
+  document.addEventListener('dragover', (event) => event.preventDefault());
+  document.addEventListener('drop', (event) => event.preventDefault());
 
   /*
   Title bar events
   */
-  document.getElementById('menu-btn').addEventListener('click', e => {
+  document.getElementById('menu-btn').addEventListener('click', (e) => {
     bridge.sendIpcMessage(IpcMessages.DisplayAppMenu, { x: e.x, y: e.y });
   });
 
-  document.getElementById('min-btn').addEventListener('click', e => {
+  document.getElementById('min-btn').addEventListener('click', (e) => {
     bridge.minimizeWindow();
   });
 
-  document.getElementById('max-btn').addEventListener('click', async e => {
+  document.getElementById('max-btn').addEventListener('click', async (e) => {
     if (await bridge.isWindowMaximized()) {
       bridge.unmaximizeWindow();
     } else {
@@ -91,13 +91,13 @@ async function configureDesktopManager(desktopManager, bridge) {
   desktopManager.desktop_setExtServerHost(extServerHost);
 
   desktopManager.desktop_setComponentInstallationSyncHandler(
-    async componentsData => {
+    async (componentsData) => {
       /* Handled by PackageManager */
       bridge.sendIpcMessage(IpcMessages.SyncComponents, { componentsData });
     }
   );
 
-  desktopManager.desktop_setSearchHandler(text => {
+  desktopManager.desktop_setSearchHandler((text) => {
     bridge.sendIpcMessage(IpcMessages.SearchText, { text });
   });
 
@@ -112,7 +112,7 @@ async function configureDesktopManager(desktopManager, bridge) {
 }
 
 function registerIpcMessageListener(desktopManager, bridge) {
-  window.addEventListener('message', event => {
+  window.addEventListener('message', (event) => {
     // We don't have access to the full file path.
     if (event.origin !== 'file://') {
       return;
@@ -140,12 +140,12 @@ function registerIpcMessageListener(desktopManager, bridge) {
         data.error
       );
     } else if (message === IpcMessages.UpdateAvailable) {
-      var controllerElement = document.querySelector('#home');
-      var controllerScope = angular.element(controllerElement).scope();
+      const controllerElement = document.querySelector('root');
+      const controllerScope = angular.element(controllerElement).scope();
       controllerScope.onUpdateAvailable();
     } else if (message === IpcMessages.DownloadBackup) {
       desktopManager.desktop_didBeginBackup();
-      desktopManager.desktop_requestBackupFile(data => {
+      desktopManager.desktop_requestBackupFile((data) => {
         if (data) {
           bridge.sendIpcMessage('data-archive', data);
         }
