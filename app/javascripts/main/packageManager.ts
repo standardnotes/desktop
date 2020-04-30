@@ -14,7 +14,9 @@ import {
   writeJSONFile,
 } from './fileUtils';
 import { downloadFile, getJSON } from './networking';
+import { AppName } from './strings';
 
+const tempPath = app.getPath('temp');
 const appPath = app.getPath('userData');
 const ExtensionsFolderName = 'Extensions';
 
@@ -376,8 +378,8 @@ function pathsForComponent(component: Component) {
     relativePath,
     absolutePath: path.join(appPath, relativePath),
     downloadPath: path.join(
-      appPath,
-      ExtensionsFolderName,
+      tempPath,
+      AppName,
       'downloads',
       component.content.name + '.zip'
     ),

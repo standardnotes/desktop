@@ -10,6 +10,7 @@ import {
 import { SyncTask } from '../app/javascripts/main/packageManager';
 import { IpcMessages } from '../app/javascripts/shared/ipcMessages';
 import { createTmpDir } from './testUtils';
+import { AppName } from '../app/javascripts/main/strings';
 
 const tmpDir = createTmpDir(__filename);
 
@@ -123,8 +124,7 @@ test.serial('installs multiple components', async (t) => {
   await new Promise((resolve) => setTimeout(resolve, 200));
 
   const files = await fs.readdir(contentDir);
-  t.is(files.length, 2 + modifiers.length);
-  t.true(files.includes('downloads'));
+  t.is(files.length, 1 + modifiers.length);
   for (const modifier of modifiers) {
     t.true(files.includes(identifier + modifier));
   }
@@ -133,11 +133,7 @@ test.serial('installs multiple components', async (t) => {
     path.join(contentDir, 'mapping.json'),
     'utf8'
   );
-  try {
-    JSON.parse(mappingContents);
-  } catch (e) {
-    console.info(mappingContents);
-  }
+
   t.deepEqual(
     JSON.parse(mappingContents),
     modifiers.reduce((acc, modifier) => {
@@ -148,7 +144,9 @@ test.serial('installs multiple components', async (t) => {
     }, {})
   );
 
-  const downloads = await fs.readdir(path.join(contentDir, 'downloads'));
+  const downloads = await fs.readdir(
+    path.join(tmpDir.path, AppName, 'downloads')
+  );
   t.is(downloads.length, modifiers.length);
   for (const modifier of modifiers) {
     t.true(downloads.includes(`${name + modifier}.zip`));
@@ -171,9 +169,7 @@ test.serial('uninstalls multiple components', async (t) => {
   await new Promise((resolve) => setTimeout(resolve, 200));
 
   const files = await fs.readdir(contentDir);
-  t.is(files.length, 2);
-  t.true(files.includes('downloads'));
-  t.true(files.includes('mapping.json'));
+  t.deepEqual(files, ['mapping.json']);
 
   t.deepEqual(await readJSONFile(path.join(contentDir, 'mapping.json')), {});
 });
