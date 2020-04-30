@@ -35,7 +35,7 @@ test('extracts a zip and unnests the folders by one level', async (t) => {
   ]);
 });
 
-test('creates a directory even when parent directories are non-existant', async (t) => {
+test('creates a directory even when parent directories are non-existent', async (t) => {
   await ensureDirectoryExists(path.join(root, 'tmp2', 'tmp3'));
   t.deepEqual(await fs.readdir(root), ['tmp2']);
   t.deepEqual(await fs.readdir(path.join(root, 'tmp2')), ['tmp3']);
