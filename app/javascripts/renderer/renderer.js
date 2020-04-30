@@ -33,10 +33,6 @@ async function configureWindow(bridge) {
 
   window.electronAppVersion = appVersion;
 
-  // disable drag-n-drop of file in the app
-  document.addEventListener('dragover', (event) => event.preventDefault());
-  document.addEventListener('drop', (event) => event.preventDefault());
-
   /*
   Title bar events
   */
