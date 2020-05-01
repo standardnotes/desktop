@@ -101,7 +101,7 @@
     "postinstall": "electron-builder install-app-deps",
     "build": "rimraf app/dist/ && webpack --config webpack.prod.js",
     "dev": "webpack --config webpack.dev.js --watch",
-    "start": "electron . --enable-logging --icon _icon/icon.png --testing-INSECURE",
+    "start": "electron . --enable-logging --icon _icon/icon.png",
     "clean": "rimraf app/dist/",
     "setup": "npm install && npm --prefix ./app install ./app && git submodule update --init --force --remote",
     "format": "prettier --write .",
