@@ -1,6 +1,10 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'path';
-import { MessageType, TestIPCMessage } from '../../../test/TestIpcMessage';
+import {
+  AppMessageType,
+  MessageType,
+  TestIPCMessage,
+} from '../../../test/TestIpcMessage';
 import { CommandLineArgs } from '../shared/CommandLineArgs';
 import { isTesting } from './utils';
 
@@ -13,7 +17,7 @@ export function handle(type: MessageType, handler: (...args: any) => unknown) {
   messageHandlers[type] = handler;
 }
 
-export function send(type: MessageType) {
+export function send(type: AppMessageType) {
   if (!isTesting()) return;
   process.send!({ type });
 }
@@ -60,7 +64,7 @@ export function setupTesting() {
 
   handle(MessageType.WindowCount, () => BrowserWindow.getAllWindows().length);
 
-  setTimeout(() => {
-    send(MessageType.Ready);
-  }, 200);
+  app.on('ready', () => {
+    send(AppMessageType.Ready);
+  });
 }

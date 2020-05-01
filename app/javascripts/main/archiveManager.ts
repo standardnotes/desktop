@@ -1,13 +1,13 @@
 import { dialog, IpcMain, WebContents } from 'electron';
 import fs from 'fs';
 import path from 'path';
+import { AppMessageType, MessageType } from '../../../test/TestIpcMessage';
 import { IpcMessages } from '../shared/ipcMessages';
-import { ensureDirectoryExists, moveDirContents, deleteDir } from './fileUtils';
+import { deleteDir, ensureDirectoryExists, moveDirContents } from './fileUtils';
 import { Store, StoreKeys } from './store';
-import { isTesting } from './utils';
 import { backups as str } from './strings';
-import { MessageType } from '../../../test/TestIpcMessage';
-import { handle } from './testing';
+import { handle, send } from './testing';
+import { isTesting } from './utils';
 
 function log(...message: any) {
   console.log('archiveManager:', ...message);
@@ -67,6 +67,9 @@ export function createArchiveManager(
       logError('An error occurred saving backup file', err);
     }
     webContents.send(IpcMessages.FinishedSavingBackup, { success });
+    if (isTesting()) {
+      send(AppMessageType.SavedBackup);
+    }
     return name;
   }
 

@@ -14,7 +14,7 @@ import { createTrayManager, TrayManager } from './trayManager';
 import { createUpdateManager, UpdateManager } from './updateManager';
 import { isTesting, lowercaseDriveLetter } from './utils';
 import { initializeZoomManager } from './zoomManager';
-import { MessageType } from '../../../test/TestIpcMessage';
+import { MessageType, AppMessageType } from '../../../test/TestIpcMessage';
 import { handle, send } from './testing';
 
 const WINDOW_DEFAULT_WIDTH = 1100;
@@ -95,7 +95,7 @@ function createWindow(store: Store): Electron.BrowserWindow {
       window.webContents.session.getSpellCheckerLanguages()
     );
     window.webContents.once('did-finish-load', () => {
-      send(MessageType.WindowLoaded);
+      send(AppMessageType.WindowLoaded);
     });
   }
 

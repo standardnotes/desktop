@@ -10,8 +10,17 @@ export interface TestIPCMessageResult {
   reject?: any;
 }
 
-export enum MessageType {
+export interface AppTestMessage {
+  type: AppMessageType;
+}
+
+export enum AppMessageType {
   Ready,
+  WindowLoaded,
+  SavedBackup,
+}
+
+export enum MessageType {
   WindowCount,
   StoreData,
   StoreSettingsLocation,
@@ -32,7 +41,6 @@ export enum MessageType {
   UpdateManagerTriggeredMenuReload,
   Relaunch,
   DataArchive,
-  WindowLoaded,
   GetJSON,
   DownloadFile,
 }

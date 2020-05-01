@@ -10,13 +10,16 @@ import {
   MessageType,
   TestIPCMessage,
   TestIPCMessageResult,
+  AppTestMessage,
+  AppMessageType,
 } from './TestIpcMessage';
 
-function spawnAppprocess(
-  userDataPath: string,
-  receive: (message: TestIPCMessage) => void
-) {
-  const appProcess = spawn(
+interface TestUpdateSettings extends Omit<UpdateSettings, 'lastCheck'> {
+  lastCheck: string;
+}
+
+function spawnAppprocess(userDataPath: string) {
+  return spawn(
     electronPath as any,
     [
       path.join(__dirname, '..'),
@@ -28,38 +31,6 @@ function spawnAppprocess(
       stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     }
   );
-
-  let onWindowLoaded: () => void;
-  const windowLoaded = new Promise<void>((resolve) => {
-    onWindowLoaded = resolve;
-  });
-
-  let onAppReady: () => void;
-  const appReady = new Promise<void>((resolve) => {
-    onAppReady = resolve;
-  });
-
-  appProcess.on('message', (message) => {
-    switch (message.type) {
-      case MessageType.Ready:
-        onAppReady();
-        break;
-      case MessageType.WindowLoaded:
-        /** Give the app another half-second to set everything up */
-        setTimeout(() => {
-          onWindowLoaded();
-        }, 500);
-        break;
-      default:
-        receive(message);
-    }
-  });
-
-  return { appProcess, appReady, windowLoaded };
-}
-
-interface TestUpdateSettings extends Omit<UpdateSettings, 'lastCheck'> {
-  lastCheck: string;
 }
 
 class Driver {
@@ -77,17 +48,51 @@ class Driver {
     reject: (...args: any) => void;
   } | null> = [];
 
-  appReady: Promise<void>;
-  windowLoaded: Promise<void>;
+  private awaitedOnMessages: Array<{
+    type: AppMessageType;
+    resolve: (...args: any) => void;
+  }> = [];
+
+  appReady: Promise<unknown>;
+  windowLoaded: Promise<unknown>;
+
+  private receive = (message: TestIPCMessageResult | AppTestMessage) => {
+    if ('type' in message) {
+      this.awaitedOnMessages = this.awaitedOnMessages.filter(
+        ({ type, resolve }) => {
+          if (type === message.type) {
+            resolve();
+            return false;
+          }
+          return true;
+        }
+      );
+    }
+    if ('id' in message) {
+      const call = this.calls[message.id]!;
+      this.calls[message.id] = null;
+      if (message.reject) {
+        call.reject(message.reject);
+      } else {
+        call.resolve(message.resolve);
+      }
+    }
+  };
+
+  private waitOn = (messageType: AppMessageType) => {
+    return new Promise((resolve) => {
+      this.awaitedOnMessages.push({
+        type: messageType,
+        resolve,
+      });
+    });
+  };
 
   constructor() {
-    const { appProcess, appReady, windowLoaded } = spawnAppprocess(
-      this.userDataPath,
-      this.receive
-    );
-    this.appProcess = appProcess;
-    this.appReady = appReady;
-    this.windowLoaded = windowLoaded;
+    this.appProcess = spawnAppprocess(this.userDataPath);
+    this.appProcess.on('message', this.receive);
+    this.appReady = this.waitOn(AppMessageType.Ready);
+    this.windowLoaded = this.waitOn(AppMessageType.WindowLoaded);
   }
 
   private send = (type: MessageType, ...args: any): Promise<any> => {
@@ -101,16 +106,6 @@ class Driver {
     return new Promise((resolve, reject) => {
       this.calls.push({ resolve, reject });
     });
-  };
-
-  private receive = (message: TestIPCMessageResult) => {
-    const call = this.calls[message.id]!;
-    this.calls[message.id] = null;
-    if (message.reject) {
-      call.reject(message.reject);
-    } else {
-      call.resolve(message.resolve);
-    }
   };
 
   windowCount = (): Promise<number> => this.send(MessageType.WindowCount);
@@ -148,10 +143,7 @@ class Driver {
     perform: async () => {
       await this.windowLoaded;
       await this.send(MessageType.PerformBackup);
-      /** Give the app another second to finish the backup. */
-      return new Promise((resolve) => {
-        setTimeout(resolve, 1000);
-      });
+      await this.waitOn(AppMessageType.SavedBackup);
     },
   };
 
@@ -201,13 +193,10 @@ class Driver {
 
   restart = async () => {
     this.appProcess.kill();
-    const { appProcess, appReady, windowLoaded } = spawnAppprocess(
-      this.userDataPath,
-      this.receive
-    );
-    this.appProcess = appProcess;
-    this.appReady = appReady;
-    this.windowLoaded = windowLoaded;
+    this.appProcess = spawnAppprocess(this.userDataPath);
+    this.appProcess.on('message', this.receive);
+    this.appReady = this.waitOn(AppMessageType.Ready);
+    this.windowLoaded = this.waitOn(AppMessageType.WindowLoaded);
     await this.appReady;
   };
 }

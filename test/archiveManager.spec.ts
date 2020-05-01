@@ -57,7 +57,10 @@ test('backups are enabled by default', async (t) => {
 
 test('does not save a backup when they are disabled', async (t) => {
   await t.context.backups.toggleEnabled();
-  await t.context.backups.perform();
+  await t.context.windowLoaded;
+  /** Do not wait on this one as the backup shouldn't be triggered */
+  t.context.backups.perform();
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   const backupsLocation = await t.context.backups.location();
   try {
     await fs.readdir(backupsLocation);
