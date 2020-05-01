@@ -194,10 +194,12 @@ export function createUpdateManager(window: BrowserWindow): UpdateManager {
       }
     } catch (error) {
       logError(error);
-      dialog.showMessageBox({
-        title: str().finishedChecking.title,
-        message: str().finishedChecking.error(JSON.stringify(error)),
-      });
+      if (userTriggered) {
+        dialog.showMessageBox({
+          title: str().finishedChecking.title,
+          message: str().finishedChecking.error(JSON.stringify(error)),
+        });
+      }
     } finally {
       checkingForUpdate = false;
       triggerMenuReload();

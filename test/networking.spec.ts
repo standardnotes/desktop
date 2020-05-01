@@ -1,19 +1,13 @@
-import test from 'ava';
+import anyTest, { TestInterface } from 'ava';
 import { promises as fs } from 'fs';
 import http from 'http';
 import { AddressInfo } from 'net';
 import path from 'path';
-import proxyquire from 'proxyquire';
+import { createDriver, Driver } from './driver';
 import { createTmpDir } from './testUtils';
+const test = anyTest as TestInterface<Driver>;
 
 const tmpDir = createTmpDir(__filename);
-
-const { getJSON, downloadFile } = proxyquire(
-  '../app/javascripts/main/networking',
-  {
-    https: http,
-  }
-);
 
 const sampleData = {
   title: 'Diamond Dove',
@@ -27,8 +21,8 @@ let server: http.Server;
 let serverAddress: string;
 
 test.before(
-  (): Promise<any> => {
-    return Promise.all([
+  (): Promise<any> =>
+    Promise.all([
       tmpDir.make(),
       new Promise((resolve) => {
         server = http.createServer((_req, res) => {
@@ -41,26 +35,29 @@ test.before(
           resolve();
         });
       }),
-    ]);
-  }
+    ])
 );
 
 test.after(
-  (): Promise<any> => {
-    return Promise.all([
+  (): Promise<any> =>
+    Promise.all([
       tmpDir.clean(),
       new Promise((resolve) => server.close(resolve)),
-    ]);
-  }
+    ])
 );
 
+test.beforeEach(async (t) => {
+  t.context = await createDriver();
+});
+test.afterEach((t) => t.context.stop());
+
 test('downloads a JSON file', async (t) => {
-  t.deepEqual(await getJSON(serverAddress), sampleData);
+  t.deepEqual(await t.context.net.getJSON(serverAddress), sampleData);
 });
 
 test('downloads a folder to the specified location', async (t) => {
   const filePath = path.join(tmpDir.path, 'fileName.json');
-  await downloadFile(serverAddress + '/file', filePath);
+  await t.context.net.downloadFile(serverAddress + '/file', filePath);
   const fileContents = await fs.readFile(filePath, 'utf8');
   t.is(JSON.stringify(sampleData), fileContents);
 });

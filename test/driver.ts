@@ -165,6 +165,12 @@ class Driver {
       this.send(MessageType.UpdateManagerTriggeredMenuReload),
   };
 
+  readonly net = {
+    getJSON: (url: string) => this.send(MessageType.GetJSON, url),
+    downloadFile: (url: string, filePath: string) =>
+      this.send(MessageType.DownloadFile, url, filePath),
+  };
+
   stop = async () => {
     this.appProcess.kill();
 
