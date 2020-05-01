@@ -33,4 +33,6 @@ export enum MessageType {
   Relaunch,
   DataArchive,
   WindowLoaded,
+  GetJSON,
+  DownloadFile,
 }

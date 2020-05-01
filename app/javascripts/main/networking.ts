@@ -1,11 +1,19 @@
+import { IncomingMessage, net } from 'electron';
 import fs from 'fs';
-import { IncomingMessage } from 'http';
-import https from 'https';
 import path from 'path';
 import { pipeline as pipelineFn } from 'stream';
 import { promisify } from 'util';
+import { MessageType } from '../../../test/TestIpcMessage';
 import { ensureDirectoryExists } from './fileUtils';
+import { handle } from './testing';
+import { isTesting } from './utils';
+
 const pipeline = promisify(pipelineFn);
+
+if (isTesting()) {
+  handle(MessageType.GetJSON, getJSON);
+  handle(MessageType.DownloadFile, downloadFile);
+}
 
 /**
  * Downloads a file to the specified destination.
@@ -15,12 +23,19 @@ const pipeline = promisify(pipelineFn);
 export async function downloadFile(url: string, filePath: string) {
   await ensureDirectoryExists(path.dirname(filePath));
   const response = await get(url);
-  await pipeline(response, fs.createWriteStream(filePath));
+  await pipeline(
+    /**
+     * IncomingMessage doesn't implement *every* property of ReadableStream
+     * but still all the ones that pipeline needs
+     * @see https://www.electronjs.org/docs/api/incoming-message
+     */
+    response as any,
+    fs.createWriteStream(filePath)
+  );
 }
 
 export async function getJSON<T>(url: string): Promise<T> {
   const response = await get(url);
-  response.setEncoding('utf-8');
   let data = '';
   return new Promise((resolve, reject) => {
     response
@@ -28,43 +43,28 @@ export async function getJSON<T>(url: string): Promise<T> {
         data += chunk;
       })
       .on('error', reject)
-      .on('close', () => {
+      .on('end', () => {
         resolve(JSON.parse(data));
       });
   });
 }
 
-/**
- * Performs an HTTPS GET request, following redirects.
- * DOES NOT handle compressed responses.
- * @param {string} url the url of the file to get
- */
-export async function get(
-  url: string,
-  maxRedirects = 3
-): Promise<IncomingMessage> {
-  let redirects = 0;
-  let response = await promiseGet(url);
-  while (
-    response.statusCode &&
-    response.statusCode >= 300 &&
-    response.statusCode < 400 &&
-    response.headers.location &&
-    redirects < maxRedirects
-  ) {
-    redirects += 1;
-    response = await promiseGet(response.headers.location);
+export function get(url: string) {
+  const enum Method {
+    Get = 'GET',
   }
-  return response;
-}
+  const enum RedirectMode {
+    Follow = 'follow',
+  }
 
-/**
- * The https module's get function, promisified.
- * @param {string} url
- * @returns The response stream.
- */
-function promiseGet(url: string): Promise<IncomingMessage> {
-  return new Promise((resolve, reject) => {
-    https.get(url, resolve).on('error', reject);
+  return new Promise<IncomingMessage>((resolve, reject) => {
+    const request = net.request({
+      url,
+      method: Method.Get,
+      redirect: RedirectMode.Follow,
+    });
+    request.on('response', resolve);
+    request.on('error', reject);
+    request.end();
   });
 }

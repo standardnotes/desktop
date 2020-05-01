@@ -1,11 +1,11 @@
 import anyTest, { TestInterface } from 'ava';
 import { promises as fs } from 'fs';
-import http, { IncomingMessage } from 'http';
+import http from 'http';
+import { AddressInfo } from 'net';
 import path from 'path';
 import proxyquire from 'proxyquire';
 import { ensureDirectoryExists } from '../app/javascripts/main/fileUtils';
 import { initializeStrings } from '../app/javascripts/main/strings';
-import { AddressInfo } from 'net';
 import { createTmpDir } from './testUtils';
 
 const test = anyTest as TestInterface<{
@@ -35,10 +35,6 @@ const { createExtensionsServer, normalizeFilePath } = proxyquire(
     },
   }
 );
-
-const { getJSON, get } = proxyquire('../app/javascripts/main/networking', {
-  https: http,
-});
 
 const extensionsDir = path.join(tmpDir.path, 'Extensions');
 
@@ -83,7 +79,7 @@ test.after(
   }
 );
 
-test('serves the files in the Extensions directory over HTTP', async (t) => {
+test('serves the files in the Extensions directory over HTTP', (t) => {
   const data = {
     name: 'Boxes',
     meter: {
@@ -97,25 +93,44 @@ test('serves the files in the Extensions directory over HTTP', async (t) => {
       { name: 'Piano', type: 'Electric' },
     ],
   };
-  await fs.writeFile(
-    path.join(extensionsDir, 'file.json'),
-    JSON.stringify(data)
-  );
-  t.deepEqual(await getJSON(t.context.host + 'Extensions/file.json'), data);
+
+  return fs
+    .writeFile(path.join(extensionsDir, 'file.json'), JSON.stringify(data))
+    .then(
+      () =>
+        new Promise((resolve) => {
+          let serverData = '';
+          http
+            .get(t.context.host + 'Extensions/file.json')
+            .on('response', (response) => {
+              response
+                .setEncoding('utf-8')
+                .on('data', (chunk) => {
+                  serverData += chunk;
+                })
+                .on('end', () => {
+                  t.deepEqual(data, JSON.parse(serverData));
+                  resolve();
+                });
+            });
+        })
+    );
 });
 
-test('does not serve files outside the Extensions directory', async (t) => {
-  const response: IncomingMessage = await get(
-    t.context.host + 'Extensions/../../../package.json'
-  );
-  t.is(response.statusCode, 500);
+test.cb('does not serve files outside the Extensions directory', (t) => {
+  http
+    .get(t.context.host + 'Extensions/../../../package.json')
+    .on('response', (response) => {
+      t.is(response.statusCode, 500);
+      t.end();
+    });
 });
 
-test('returns a 404 for files that are not present', async (t) => {
-  const response: IncomingMessage = await get(
-    t.context.host + 'Extensions/nothing'
-  );
-  t.is(response.statusCode, 404);
+test.cb('returns a 404 for files that are not present', (t) => {
+  http.get(t.context.host + 'Extensions/nothing').on('response', (response) => {
+    t.is(response.statusCode, 404);
+    t.end();
+  });
 });
 
 test('normalizes file paths to always point somewhere in the Extensions directory', (t) => {
