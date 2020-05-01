@@ -4,7 +4,7 @@ import path from 'path';
 import { AppState } from '../../application';
 import { IpcMessages } from '../shared/ipcMessages';
 import { ArchiveManager, createArchiveManager } from './archiveManager';
-import { createMenuManager, MenuManager } from './menus';
+import { createMenuManager, MenuManager, buildContextMenu } from './menus';
 import { initializePackageManager } from './packageManager';
 import { isMac, isWindows } from './platforms';
 import { initializeSearchManager } from './searchManager';
@@ -242,6 +242,10 @@ function registerWindowEventListeners({
       shell.openExternal(url);
     }
     event.preventDefault();
+  });
+
+  window.webContents.on('context-menu', (_event, params) => {
+    buildContextMenu(window.webContents, params).popup();
   });
 
   window.webContents.session.on('will-download', (event, item) => {

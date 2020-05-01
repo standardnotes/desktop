@@ -1,5 +1,6 @@
 import {
   app,
+  ContextMenuParams,
   dialog,
   Menu,
   MenuItemConstructorOptions,
@@ -12,22 +13,33 @@ import { isMac } from './platforms';
 import { SpellcheckerManager } from './spellcheckerManager';
 import { Store, StoreKeys } from './store';
 import { appMenu as str } from './strings';
+import { handle } from './testing';
 import { TrayManager } from './trayManager';
 import { UpdateManager } from './updateManager';
 import { isDev, isTesting } from './utils';
-import { handle } from './testing';
 
 export const enum MenuId {
   SpellcheckerLanguages = 'SpellcheckerLanguages',
 }
 
-export function editorContextMenu(
-  misspelledWord: string,
-  dictionarySuggestions: string[],
-  webContents: WebContents
-): MenuItemConstructorOptions[] {
-  return [
-    ...suggestionsMenu(misspelledWord, dictionarySuggestions, webContents),
+export function buildContextMenu(
+  webContents: WebContents,
+  params: ContextMenuParams
+): Menu {
+  if (!params.isEditable) {
+    return Menu.buildFromTemplate([
+      {
+        role: 'copy',
+      },
+    ]);
+  }
+
+  return Menu.buildFromTemplate([
+    ...suggestionsMenu(
+      params.misspelledWord,
+      params.dictionarySuggestions,
+      webContents
+    ),
     {
       role: 'undo',
     },
@@ -52,7 +64,7 @@ export function editorContextMenu(
     {
       role: 'selectAll',
     },
-  ];
+  ]);
 }
 
 function suggestionsMenu(
@@ -63,6 +75,7 @@ function suggestionsMenu(
   if (misspelledWord.length === 0) {
     return [];
   }
+
   if (suggestions.length === 0) {
     return [
       {

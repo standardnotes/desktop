@@ -1,8 +1,6 @@
-import { Menu } from 'electron';
 import { isMac } from './platforms';
 import { Store, StoreKeys } from './store';
 import { isDev } from './utils';
-import { editorContextMenu } from './menus';
 
 export enum Language {
   AF = 'af',
@@ -65,19 +63,6 @@ function log(...message: any) {
   console.log('spellcheckerMaager:', ...message);
 }
 
-function initializeContextMenuListener(webContents: Electron.WebContents) {
-  webContents.on(
-    'context-menu',
-    (_event, { isEditable, misspelledWord, dictionarySuggestions }) => {
-      /** Only show a context menu on editable items. */
-      if (!isEditable) return;
-      Menu.buildFromTemplate(
-        editorContextMenu(misspelledWord, dictionarySuggestions, webContents)
-      ).popup();
-    }
-  );
-}
-
 export interface SpellcheckerManager {
   languages(): Array<{
     code: string;
@@ -93,8 +78,6 @@ export function createSpellcheckerManager(
   webContents: Electron.WebContents,
   userLocale: string
 ): SpellcheckerManager | undefined {
-  initializeContextMenuListener(webContents);
-
   /**
    * On MacOS the system spellchecker is used and every related Electron method
    * is a no-op. Return early to prevent unnecessary code execution/allocations
