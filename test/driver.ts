@@ -4,19 +4,15 @@ import path from 'path';
 import { deleteDir, readJSONFile } from '../app/javascripts/main/fileUtils';
 import { Language } from '../app/javascripts/main/spellcheckerManager';
 import { StoreKeys } from '../app/javascripts/main/store';
-import { UpdateSettings } from '../app/javascripts/main/updateManager';
+import { UpdateManager } from '../app/javascripts/main/updateManager';
 import { CommandLineArgs } from '../app/javascripts/shared/CommandLineArgs';
 import {
+  AppMessageType,
+  AppTestMessage,
   MessageType,
   TestIPCMessage,
   TestIPCMessageResult,
-  AppTestMessage,
-  AppMessageType,
 } from './TestIpcMessage';
-
-interface TestUpdateSettings extends Omit<UpdateSettings, 'lastCheck'> {
-  lastCheck: string;
-}
 
 function spawnAppprocess(userDataPath: string) {
   return spawn(
@@ -148,13 +144,13 @@ class Driver {
   };
 
   readonly updates = {
-    settings: (): Promise<TestUpdateSettings> =>
-      this.send(MessageType.UpdateSettings),
-    settingsLocation: (): Promise<string> =>
-      this.send(MessageType.UpdateSettingsPath),
+    state: (): Promise<UpdateManager> =>
+      this.send(MessageType.UpdateManagerState),
+    autoUpdateEnabled: (): Promise<boolean> =>
+      this.send(MessageType.AutoUpdateEnabled),
     check: () => this.send(MessageType.CheckForUpdate),
-    menuReloadTriggered: (): Promise<boolean> =>
-      this.send(MessageType.UpdateManagerTriggeredMenuReload),
+    notifiedStateChange: (): Promise<boolean> =>
+      this.send(MessageType.UpdateManagerNotifiedStateChange),
   };
 
   readonly net = {

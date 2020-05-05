@@ -13,7 +13,7 @@ interface AppMenuStrings {
   useThemedMenuBar: string;
   minimizeToTrayOnClose: string;
   backups: string;
-  automaticUpdatesEnabled: string;
+  enableAutomaticUpdates: string;
   automaticUpdatesDisabled: string;
   disableAutomaticBackups: string;
   enableAutomaticBackups: string;
@@ -36,7 +36,7 @@ interface AppMenuStrings {
   checkingForUpdate: string;
   updateAvailable: string;
   updates: string;
-  errorRetrieving: string;
+  releaseNotes: string;
   openDownloadLocation: string;
   downloadingUpdate: string;
   manuallyDownloadUpdate: string;

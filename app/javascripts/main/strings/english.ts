@@ -9,7 +9,7 @@ export function createEnglishStrings(): Strings {
       useThemedMenuBar: 'Use Themed Menu Bar',
       minimizeToTrayOnClose: 'Minimize To Tray On Close',
       backups: 'Backups',
-      automaticUpdatesEnabled: 'Automatic Updates Enabled',
+      enableAutomaticUpdates: 'Enable Automatic Updates',
       automaticUpdatesDisabled: 'Automatic Updates Disabled',
       disableAutomaticBackups: 'Disable Automatic Backups',
       enableAutomaticBackups: 'Enable Automatic Backups',
@@ -32,7 +32,7 @@ export function createEnglishStrings(): Strings {
       checkingForUpdate: 'Checking for update…',
       updateAvailable: '(1) Update Available',
       updates: 'Updates',
-      errorRetrieving: 'Error Retrieving',
+      releaseNotes: 'Release Notes',
       openDownloadLocation: 'Open Download Location',
       downloadingUpdate: 'Downloading Update…',
       manuallyDownloadUpdate: 'Manually Download Update',
@@ -98,7 +98,7 @@ export function createEnglishStrings(): Strings {
         updateAvailable(newVersion: string) {
           return (
             `A new update is available (version ${newVersion}). ` +
-            'You can attempt upgrading through auto-update, or manually ' +
+            'You can wait for the app to update itself, or manually ' +
             'download and install this update.'
           );
         },

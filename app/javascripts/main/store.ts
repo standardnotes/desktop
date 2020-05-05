@@ -19,6 +19,7 @@ export enum StoreKeys {
   BackupsLocation = 'backupsLocation',
   BackupsDisabled = 'backupsDisabled',
   MinimizeToTray = 'minimizeToTray',
+  EnableAutoUpdate = 'enableAutoUpdates',
   ZoomFactor = 'zoomFactor',
   SelectedSpellCheckerLanguageCodes = 'selectedSpellCheckerLanguageCodes',
 }
@@ -30,6 +31,7 @@ interface StoreData {
   [StoreKeys.BackupsLocation]: string;
   [StoreKeys.BackupsDisabled]: boolean;
   [StoreKeys.MinimizeToTray]: boolean;
+  [StoreKeys.EnableAutoUpdate]: boolean;
   [StoreKeys.ZoomFactor]: number;
   [StoreKeys.SelectedSpellCheckerLanguageCodes]: Set<Language> | null;
 }
@@ -51,6 +53,10 @@ function createSanitizedStoreData(data: any = {}): StoreData {
     [StoreKeys.MinimizeToTray]: ensureIsBoolean(
       data[StoreKeys.MinimizeToTray],
       false
+    ),
+    [StoreKeys.EnableAutoUpdate]: ensureIsBoolean(
+      data[StoreKeys.EnableAutoUpdate],
+      true
     ),
     [StoreKeys.ExtServerHost]: stringOrNull(data[StoreKeys.ExtServerHost]),
     [StoreKeys.BackupsLocation]: sanitizeBackupsLocation(

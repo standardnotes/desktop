@@ -115,7 +115,7 @@ function createWindowServices(
     store,
     ipcMain
   );
-  const updateManager = createUpdateManager(window);
+  const updateManager = createUpdateManager(window, store);
   const trayManager = createTrayManager(window, store);
   const spellcheckerManager = createSpellcheckerManager(
     store,

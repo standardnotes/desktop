@@ -137,7 +137,7 @@ export function createMenuManager({
   }
   reload(); // initialization
 
-  updateManager.onNeedMenuReload = reload;
+  updateManager.onStateUpdate = reload;
 
   if (isTesting()) {
     handle(MessageType.AppMenuItems, () =>
@@ -518,11 +518,9 @@ function updateMenu(updateManager: UpdateManager) {
   const submenu: MenuItemConstructorOptions[] = [];
   const structure = { label, submenu };
 
-  if (updateManager.autoUpdateDownloaded) {
+  if (updateManager.autoUpdateDownloaded && updateManager.latestVersion) {
     submenu.push({
-      label: str().installPendingUpdate(
-        updateManager.autoUpdateDownloadedVersion()
-      ),
+      label: str().installPendingUpdate(updateManager.latestVersion),
       click() {
         updateManager.showAutoUpdateInstallationDialog();
       },
@@ -530,30 +528,13 @@ function updateMenu(updateManager: UpdateManager) {
   }
 
   submenu.push({
-    label: updateManager.autoUpdateEnabled
-      ? str().automaticUpdatesEnabled
-      : str().automaticUpdatesDisabled,
-    click() {
-      updateManager.toggleAutoupdateStatus();
-    },
+    type: 'checkbox',
+    checked: updateManager.autoUpdateEnabled,
+    label: str().enableAutomaticUpdates,
+    click: updateManager.toggleAutoupdateStatus,
   });
 
-  submenu.push(Separator);
-
-  if (updateManager.lastCheck && !updateManager.checkingForUpdate) {
-    submenu.push({
-      label: str().lastUpdateCheck(updateManager.lastCheck),
-    });
-  }
-
-  if (!updateManager.checkingForUpdate) {
-    submenu.push({
-      label: str().checkForUpdate,
-      click() {
-        updateManager.checkForUpdate({ userTriggered: true });
-      },
-    });
-  }
+  const latestVersion = updateManager.latestVersion;
 
   submenu.push(Separator);
 
@@ -561,17 +542,14 @@ function updateMenu(updateManager: UpdateManager) {
     label: str().yourVersion(updateManager.currentVersion),
   });
 
-  const latestVersion = updateManager.latestVersion;
   submenu.push({
     label: latestVersion
       ? str().latestVersion(latestVersion)
-      : str().errorRetrieving,
+      : str().releaseNotes,
     click() {
       updateManager.openChangelog();
     },
   });
-
-  submenu.push(Separator);
 
   if (latestVersion) {
     submenu.push({
@@ -582,23 +560,20 @@ function updateMenu(updateManager: UpdateManager) {
     });
   }
 
-  if (updateManager.manualUpdateDownloaded) {
+  submenu.push(Separator);
+
+  if (!updateManager.checkingForUpdate) {
     submenu.push({
-      label: str().openDownloadLocation,
+      label: str().checkForUpdate,
       click() {
-        updateManager.openDownloadLocation();
+        updateManager.checkForUpdate();
       },
     });
-  } else if (updateNeeded || updateManager.downloadingUpdate) {
+  }
+
+  if (updateManager.lastCheck && !updateManager.checkingForUpdate) {
     submenu.push({
-      label: updateManager.downloadingUpdate
-        ? str().downloadingUpdate
-        : str().manuallyDownloadUpdate,
-      click() {
-        updateManager.downloadingUpdate
-          ? updateManager.openDownloadLocation()
-          : updateManager.downloadUpdateFile();
-      },
+      label: str().lastUpdateCheck(updateManager.lastCheck),
     });
   }
 

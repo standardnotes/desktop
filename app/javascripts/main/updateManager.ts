@@ -2,189 +2,216 @@ import compareVersions from 'compare-versions';
 import { app, BrowserWindow, dialog, shell } from 'electron';
 import electronLog from 'electron-log';
 import { autoUpdater } from 'electron-updater';
-import path from 'path';
 import { MessageType } from '../../../test/TestIpcMessage';
-import { FileDoesNotExist, readJSONFile, writeJSONFile } from './fileUtils';
-import { downloadFile, getJSON } from './networking';
-import { getInstallerKey, InstallerKey } from './platforms';
+import { Store, StoreKeys } from './store';
 import { updates as str } from './strings';
-import { isDev, isTesting } from './utils';
 import { handle } from './testing';
-
-const DefaultUpdateEndpoint =
-  process.env.UPDATE_ENDPOINT ||
-  'https://standardnotes.org/desktop/latest.json';
-
-const appPath = app.getPath('userData');
-const folderPath = path.join(appPath, 'Updates');
-const settingsFilePath = path.join(folderPath, 'settings.json');
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function log(...message: any) {
-  console.log('updateManager:', ...message);
-}
+import { isTesting } from './utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function logError(...message: any) {
   console.error('updateManager:', ...message);
 }
 
-interface LatestUpdate {
-  version: string;
-  changelog: string;
-  downloads: Record<InstallerKey, string>;
+if (isTesting()) {
+  // eslint-disable-next-line no-var
+  var notifiedStateUpdate = false;
 }
 
-export interface UpdateSettings {
-  endpoint: string;
-  autoupdateEnabled: boolean;
-
-  manualUpdateDownloaded?: boolean;
+class UpdateManagerState {
+  readonly currentVersion = app.getVersion();
   lastCheck?: Date;
-  latest?: LatestUpdate;
-}
-async function updateSettingsFromDisk(settings: UpdateSettings) {
-  try {
-    const data = await readJSONFile<{ lastCheck?: string | Date }>(
-      settingsFilePath
-    );
-    if (data.lastCheck) {
-      data.lastCheck = new Date(data.lastCheck);
-    }
-    Object.assign(settings, data);
-  } catch (error) {
-    if (error.code === FileDoesNotExist) {
-      await writeJSONFile(settingsFilePath, settings);
-    } else {
-      logError(error);
-    }
-  }
-}
-function updateSettings(
-  settings: UpdateSettings,
-  props: Partial<UpdateSettings>
-) {
-  Object.assign(settings, props);
-  /** Save settings to disk */
-  writeJSONFile(settingsFilePath, settings);
+  latestVersion?: string;
+  checkingForUpdate = false;
+  autoUpdateDownloaded = false;
+  autoUpdateVersion?: string;
+  onStateUpdate?: () => void;
 }
 
 export interface UpdateManager {
-  onNeedMenuReload?: () => void;
-
-  currentVersion: string;
-  latestVersion?: string;
-  lastCheck?: Date;
-
-  checkForUpdate(arg?: { userTriggered: boolean }): void;
-  checkingForUpdate: boolean;
-
-  updateNeeded(): boolean;
-
-  downloadUpdateFile(): void;
-  downloadingUpdate: boolean;
-  openDownloadLocation(): void;
-
-  autoUpdateEnabled: boolean;
-  autoUpdateDownloaded: boolean;
-  showAutoUpdateInstallationDialog(): void;
-  autoUpdateDownloadedVersion(): string;
-  toggleAutoupdateStatus(): void;
-  manualUpdateDownloaded: boolean;
-
+  readonly latestVersion?: string;
+  readonly currentVersion: string;
+  readonly lastCheck?: Date;
+  readonly autoUpdateEnabled: boolean;
+  readonly autoUpdateDownloaded: boolean;
+  readonly checkingForUpdate: boolean;
+  onStateUpdate?: () => void;
   openChangelog(): void;
+  checkForUpdate(): void;
+  toggleAutoupdateStatus(): void;
+  showAutoUpdateInstallationDialog(): void;
+  updateNeeded(): boolean;
 }
 
-export function createUpdateManager(window: BrowserWindow): UpdateManager {
-  const settings: UpdateSettings = {
-    endpoint: DefaultUpdateEndpoint,
-    autoupdateEnabled: true,
-  };
-  const currentVersion = app.getVersion();
-  let checkingForUpdate = false;
-  let downloadingUpdate = false;
-  let autoUpdateDownloaded = false;
-  let autoupdateVersion: string | undefined;
-  let onNeedMenuReload: (() => void) | undefined;
+export function createUpdateManager(
+  window: BrowserWindow,
+  store: Store
+): UpdateManager {
+  const state = new UpdateManagerState();
 
-  updateSettingsFromDisk(settings).then(() => {
-    if (!isTesting()) {
-      /**
-       * The app can quit too quickly during testing, causing an error popup
-       * to appear because the request has been canceled
-       */
-      checkForUpdate();
-    }
-  });
-  setupAutoUpdater();
+  setupAutoUpdater(window, store, state);
 
   if (isTesting()) {
     // eslint-disable-next-line no-var
-    var menuReloadTriggered = false;
-    handle(MessageType.UpdateSettings, () => settings);
-    handle(MessageType.UpdateSettingsPath, () => settingsFilePath);
-    handle(MessageType.CheckForUpdate, () => checkForUpdate());
-    handle(
-      MessageType.UpdateManagerTriggeredMenuReload,
-      () => menuReloadTriggered
+    handle(MessageType.UpdateManagerState, () => state);
+    handle(MessageType.AutoUpdateEnabled, () =>
+      store.get(StoreKeys.EnableAutoUpdate)
     );
+    handle(MessageType.CheckForUpdate, () =>
+      checkForUpdate(store, state, false)
+    );
+    handle(
+      MessageType.UpdateManagerNotifiedStateChange,
+      () => notifiedStateUpdate
+    );
+  } else {
+    checkForUpdate(store, state);
   }
 
-  function setupAutoUpdater() {
-    autoUpdater.logger = electronLog;
+  return {
+    currentVersion: state.currentVersion,
+    get autoUpdateDownloaded() {
+      return state.autoUpdateDownloaded;
+    },
+    get checkingForUpdate() {
+      return state.checkingForUpdate;
+    },
+    get lastCheck() {
+      return state.lastCheck;
+    },
+    get latestVersion() {
+      return state.latestVersion;
+    },
+    get autoUpdateEnabled() {
+      return autoUpdateEnabled(store);
+    },
+    set onStateUpdate(fn: () => void) {
+      state.onStateUpdate = fn;
+    },
+    openChangelog() {
+      openChangelog(state.latestVersion);
+    },
+    updateNeeded() {
+      return updateNeeded(state);
+    },
+    showAutoUpdateInstallationDialog() {
+      showUpdateInstallationDialog(window, state);
+    },
+    checkForUpdate() {
+      checkForUpdate(store, state, true);
+    },
+    toggleAutoupdateStatus() {
+      toggleAutoupdateStatus(store, state);
+    },
+  };
+}
 
-    autoUpdater.on('update-downloaded', (info: { version: string }) => {
-      window.webContents.send('update-available', null);
-      autoUpdateDownloaded = true;
-      autoupdateVersion = info.version;
-      triggerMenuReload();
+function autoUpdateEnabled(store: Store) {
+  return store.get(StoreKeys.EnableAutoUpdate);
+}
+
+function setupAutoUpdater(
+  window: BrowserWindow,
+  store: Store,
+  state: UpdateManagerState
+) {
+  autoUpdater.logger = electronLog;
+  autoUpdater.autoDownload = store.get(StoreKeys.EnableAutoUpdate);
+
+  autoUpdater.on('update-downloaded', (info: { version: string }) => {
+    window.webContents.send('update-available', null);
+    state.autoUpdateDownloaded = true;
+    state.autoUpdateVersion = info.version;
+    notifyStateUpdate(state);
+  });
+
+  autoUpdater.on('error', logError);
+  autoUpdater.on('update-available', (info: { version: string }) => {
+    state.latestVersion = info.version;
+    state.lastCheck = new Date();
+    notifyStateUpdate(state);
+  });
+  autoUpdater.on('update-not-available', (info: { version: string }) => {
+    state.latestVersion = info.version;
+    state.lastCheck = new Date();
+    notifyStateUpdate(state);
+  });
+}
+
+function openChangelog(latestVersion?: string) {
+  const url = 'https://github.com/standardnotes/desktop/releases';
+  if (latestVersion) {
+    shell.openExternal(`${url}/tag/v${latestVersion}`);
+  } else {
+    shell.openExternal(url);
+  }
+}
+
+function toggleAutoupdateStatus(store: Store, state: UpdateManagerState) {
+  const enableAutoUpdates = !autoUpdateEnabled(store);
+  autoUpdater.autoDownload = enableAutoUpdates;
+  store.set(StoreKeys.EnableAutoUpdate, enableAutoUpdates);
+  notifyStateUpdate(state);
+}
+
+function notifyStateUpdate(state: UpdateManagerState) {
+  state.onStateUpdate?.();
+  if (isTesting()) {
+    notifiedStateUpdate = true;
+  }
+}
+
+function updateNeeded(state: UpdateManagerState) {
+  if (state.latestVersion) {
+    return compareVersions(state.latestVersion, state.currentVersion) === 1;
+  }
+  return false;
+}
+
+async function showUpdateInstallationDialog(
+  window: BrowserWindow,
+  state: UpdateManagerState
+) {
+  if (!state.latestVersion) return;
+  const result = await dialog.showMessageBox({
+    type: 'info',
+    title: str().updateReady.title,
+    message: str().updateReady.message(state.latestVersion),
+    buttons: [str().updateReady.quitAndInstall, str().updateReady.installLater],
+  });
+
+  const buttonIndex = result.response;
+  if (buttonIndex === 0) {
+    setImmediate(() => {
+      // index.js prevents close event on some platforms
+      window.removeAllListeners('close');
+      window.close();
+      autoUpdater.quitAndInstall(false);
     });
   }
+}
 
-  function triggerMenuReload() {
-    if (isTesting()) {
-      menuReloadTriggered = true;
-    }
-    // eslint-disable-next-line no-unused-expressions
-    onNeedMenuReload?.();
-  }
-
-  async function checkForAutoUpdate(force = false) {
-    if (isDev()) return;
-
-    if (settings.autoupdateEnabled || force) {
-      try {
-        await autoUpdater.checkForUpdates();
-      } catch (e) {
-        logError('Exception caught while checking for autoupdates:', e);
-      }
-    }
-  }
-
-  async function checkForUpdate({ userTriggered = false } = {}) {
-    log('Checking for updates.');
-
-    checkingForUpdate = true;
-    triggerMenuReload();
-    await checkForAutoUpdate(userTriggered);
+async function checkForUpdate(
+  store: Store,
+  state: UpdateManagerState,
+  userTriggered = false
+) {
+  if (store.get(StoreKeys.EnableAutoUpdate) || userTriggered) {
+    state.checkingForUpdate = true;
+    notifyStateUpdate(state);
     try {
-      const latest: LatestUpdate = await getJSON(settings.endpoint);
-      updateSettings(settings, {
-        latest,
-        lastCheck: new Date(),
-      });
-
-      log(
-        'Finished checking for updates. Latest version:\n ' +
-          `${latest.version} Current version: ${currentVersion}`
-      );
+      const { updateInfo } = await autoUpdater.checkForUpdates();
+      state.lastCheck = new Date();
+      state.latestVersion = updateInfo.version;
 
       if (userTriggered) {
         let message;
-        if (updateNeeded()) {
-          message = str().finishedChecking.updateAvailable(latest.version);
+        if (updateNeeded(state)) {
+          message = str().finishedChecking.updateAvailable(state.latestVersion);
         } else {
-          message = str().finishedChecking.noUpdateAvailable(currentVersion);
+          message = str().finishedChecking.noUpdateAvailable(
+            state.currentVersion
+          );
         }
 
         dialog.showMessageBox({
@@ -193,7 +220,7 @@ export function createUpdateManager(window: BrowserWindow): UpdateManager {
         });
       }
     } catch (error) {
-      logError(error);
+      logError('Exception caught while checking for autoupdates:', error);
       if (userTriggered) {
         dialog.showMessageBox({
           title: str().finishedChecking.title,
@@ -201,128 +228,8 @@ export function createUpdateManager(window: BrowserWindow): UpdateManager {
         });
       }
     } finally {
-      checkingForUpdate = false;
-      triggerMenuReload();
+      state.checkingForUpdate = false;
+      notifyStateUpdate(state);
     }
   }
-
-  function updateNeeded() {
-    return (
-      settings.latest &&
-      compareVersions(settings.latest.version, currentVersion) === 1
-    );
-  }
-
-  function openChangelog() {
-    const url = settings.latest?.changelog;
-    if (url) {
-      shell.openExternal(url);
-    }
-  }
-
-  function openDownloadLocation() {
-    shell.openItem(folderPath);
-  }
-
-  return {
-    currentVersion,
-    checkForUpdate,
-    openDownloadLocation,
-    openChangelog,
-    get autoUpdateDownloaded() {
-      return autoUpdateDownloaded;
-    },
-    get lastCheck() {
-      return settings.lastCheck;
-    },
-    get latestVersion() {
-      return settings.latest?.version;
-    },
-    get checkingForUpdate() {
-      return checkingForUpdate;
-    },
-    get autoUpdateEnabled() {
-      return settings.autoupdateEnabled;
-    },
-    get downloadingUpdate() {
-      return downloadingUpdate;
-    },
-    get manualUpdateDownloaded() {
-      return settings.manualUpdateDownloaded ?? false;
-    },
-    set onNeedMenuReload(fn: () => void) {
-      onNeedMenuReload = fn;
-    },
-    autoUpdateDownloadedVersion() {
-      return autoupdateVersion ?? str().unknownVersionName;
-    },
-    async showAutoUpdateInstallationDialog() {
-      if (!autoupdateVersion) return;
-      const result = await dialog.showMessageBox({
-        type: 'info',
-        title: str().updateReady.title,
-        message: str().updateReady.message(autoupdateVersion),
-        buttons: [
-          str().updateReady.quitAndInstall,
-          str().updateReady.installLater,
-        ],
-      });
-
-      const buttonIndex = result.response;
-      if (buttonIndex === 0) {
-        setImmediate(() => {
-          // index.js prevents close event on some platforms
-          window.removeAllListeners('close');
-          window.close();
-          autoUpdater.quitAndInstall(false);
-        });
-      }
-    },
-    updateNeeded(): boolean {
-      if (!settings.latest) return false;
-      return compareVersions(settings.latest.version, app.getVersion()) === 1;
-    },
-    toggleAutoupdateStatus() {
-      updateSettings(settings, {
-        autoupdateEnabled: !settings.autoupdateEnabled,
-      });
-      triggerMenuReload();
-
-      if (settings.autoupdateEnabled) {
-        dialog.showMessageBox({
-          title: str().automaticUpdatesEnabled.title,
-          message: str().automaticUpdatesEnabled.message,
-        });
-      }
-    },
-    async downloadUpdateFile() {
-      const url = settings.latest?.downloads?.[getInstallerKey()];
-      if (!url) {
-        // Open GitHub releases
-        openChangelog();
-        return;
-      }
-
-      try {
-        downloadingUpdate = true;
-        triggerMenuReload();
-        const filename = url.split('/').pop();
-        if (!filename) throw new Error(`Invalid url: ${url}`);
-        const filePath = path.join(folderPath, filename);
-        log('Downloading update file', url);
-
-        await downloadFile(url, filePath);
-        updateSettings(settings, { manualUpdateDownloaded: true });
-        openDownloadLocation();
-      } catch (error) {
-        dialog.showMessageBox({
-          title: str().errorDownloading.title,
-          message: str().errorDownloading.message,
-        });
-      } finally {
-        downloadingUpdate = false;
-        triggerMenuReload();
-      }
-    },
-  };
 }

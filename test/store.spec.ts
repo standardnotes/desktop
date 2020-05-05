@@ -10,7 +10,7 @@ async function validateData(t: ExecutionContext<Driver>) {
    * There should always be 8 values in the store.
    * If one was added/removed intentionally, update this number
    */
-  const numberOfStoreKeys = 8;
+  const numberOfStoreKeys = 9;
   t.is(Object.keys(data).length, numberOfStoreKeys);
 
   t.is(typeof data.isMenuBarVisible, 'boolean');
@@ -20,6 +20,8 @@ async function validateData(t: ExecutionContext<Driver>) {
   t.is(typeof data.backupsDisabled, 'boolean');
 
   t.is(typeof data.minimizeToTray, 'boolean');
+
+  t.is(typeof data.enableAutoUpdates, 'boolean');
 
   t.is(typeof data.zoomFactor, 'number');
   t.true(data.zoomFactor > 0);

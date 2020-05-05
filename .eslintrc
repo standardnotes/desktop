@@ -22,9 +22,11 @@
 
     /**
      * The following rules are disabled because they are already implemented
-     * in the TypeScript configuration or vice-versa
+     * in the TypeScript configuration, or vice-versa
      */
     "no-unused-vars": 0,
+    "no-useless-constructor": 0,
+    "no-unused-expressions": 0,
     "@typescript-eslint/camelcase": 0
   },
   "plugins": ["@typescript-eslint"],
