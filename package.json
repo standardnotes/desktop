@@ -103,7 +103,7 @@
     "start": "electron . --enable-logging --icon _icon/icon.png",
     "clean": "npm-run-all --parallel clean:*",
     "clean:build": "rimraf app/dist/",
-    "clean:tests": "rimraf test/app/tmp/",
+    "clean:tests": "rimraf test/data/tmp/",
     "setup": "npm install && npm --prefix ./app install ./app && git submodule update --init --force --remote",
     "format": "prettier --write .",
     "lint": "npm-run-all --parallel lint:*",

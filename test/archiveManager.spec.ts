@@ -15,6 +15,12 @@ test.afterEach(async (t) => {
   await t.context.stop();
 });
 
+/**
+ * Depending on the current system load, performing a backup
+ * might take a while
+ */
+const timeoutDuration = 15000;
+
 test('saves incoming data to the backups folder', async (t) => {
   const data = 'Sample Data';
   const fileName = await t.context.backups.save(data);
@@ -25,6 +31,7 @@ test('saves incoming data to the backups folder', async (t) => {
 });
 
 test('performs a backup', async (t) => {
+  t.timeout(timeoutDuration);
   await t.context.backups.perform();
   const backupsLocation = await t.context.backups.location();
   const files = await fs.readdir(backupsLocation);
@@ -32,6 +39,7 @@ test('performs a backup', async (t) => {
 });
 
 test('changes backups folder location', async (t) => {
+  t.timeout(timeoutDuration);
   await t.context.backups.perform();
   let newLocation = path.join(t.context.userDataPath, 'newLocation');
   await fs.mkdir(newLocation);

@@ -65,6 +65,8 @@ export function setupTesting() {
   handle(MessageType.WindowCount, () => BrowserWindow.getAllWindows().length);
 
   app.on('ready', () => {
-    send(AppMessageType.Ready);
+    setTimeout(() => {
+      send(AppMessageType.Ready);
+    }, 200);
   });
 }
