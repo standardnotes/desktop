@@ -3,4 +3,4 @@ dist/
 app/dist/
 app/vendor/
 app/extensions/
-test/tmp/
+test/data/tmp/
