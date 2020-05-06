@@ -1,21 +1,30 @@
-import { BrowserWindow, ipcMain, Shell, dialog } from 'electron';
-import windowStateKeeper from 'electron-window-state';
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  Rectangle,
+  screen,
+  Shell,
+} from 'electron';
+import fs from 'fs';
+import { debounce } from 'lodash';
 import path from 'path';
+import { AppMessageType, MessageType } from '../../../test/TestIpcMessage';
 import { AppState } from '../../application';
 import { IpcMessages } from '../shared/ipcMessages';
 import { ArchiveManager, createArchiveManager } from './archiveManager';
-import { createMenuManager, MenuManager, buildContextMenu } from './menus';
+import { buildContextMenu, createMenuManager, MenuManager } from './menus';
 import { initializePackageManager } from './packageManager';
 import { isMac, isWindows } from './platforms';
 import { initializeSearchManager } from './searchManager';
 import { createSpellcheckerManager } from './spellcheckerManager';
 import { Store, StoreKeys } from './store';
+import { handle, send } from './testing';
 import { createTrayManager, TrayManager } from './trayManager';
 import { createUpdateManager, UpdateManager } from './updateManager';
 import { isTesting, lowercaseDriveLetter } from './utils';
 import { initializeZoomManager } from './zoomManager';
-import { MessageType, AppMessageType } from '../../../test/TestIpcMessage';
-import { handle, send } from './testing';
 
 const WINDOW_DEFAULT_WIDTH = 1100;
 const WINDOW_DEFAULT_HEIGHT = 800;
@@ -30,7 +39,7 @@ export interface WindowState {
   trayManager: TrayManager;
 }
 
-export function createWindowState({
+export async function createWindowState({
   shell,
   appState,
   appLocale,
@@ -40,8 +49,8 @@ export function createWindowState({
   appLocale: string;
   appState: Pick<AppState, 'willQuitApp' | 'startUrl' | 'store'>;
   teardown: () => void;
-}): WindowState {
-  const window = createWindow(appState.store);
+}): Promise<WindowState> {
+  const window = await createWindow(appState.store);
   const services = createWindowServices(window, appState.store, appLocale);
   registerWindowEventListeners({
     shell,
@@ -58,18 +67,11 @@ export function createWindowState({
   };
 }
 
-function createWindow(store: Store): Electron.BrowserWindow {
-  const winState = windowStateKeeper({
-    defaultWidth: WINDOW_DEFAULT_WIDTH,
-    defaultHeight: WINDOW_DEFAULT_HEIGHT,
-  });
+async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
   const useSystemMenuBar = store.get(StoreKeys.UseSystemMenuBar);
-
+  const position = await getPreviousWindowPosition();
   const window = new BrowserWindow({
-    x: winState.x,
-    y: winState.y,
-    width: winState.width,
-    height: winState.height,
+    ...position.bounds,
     minWidth: WINDOW_MIN_WIDTH,
     minHeight: WINDOW_MIN_HEIGHT,
     show: false,
@@ -88,7 +90,10 @@ function createWindow(store: Store): Electron.BrowserWindow {
     },
   });
 
-  winState.manage(window);
+  if (position.isMaximized) {
+    window.maximize();
+  }
+  persistWindowPosition(window);
 
   if (isTesting()) {
     handle(MessageType.SpellCheckerLanguages, () =>
@@ -269,4 +274,81 @@ function registerWindowEventListeners({
       event.preventDefault();
     }
   });
+}
+
+interface WindowPosition {
+  bounds: Rectangle;
+  isMaximized: boolean;
+}
+
+async function getPreviousWindowPosition() {
+  let position: WindowPosition;
+  try {
+    position = JSON.parse(
+      await fs.promises.readFile(
+        path.join(app.getPath('userData'), 'window-position.json'),
+        'utf8'
+      )
+    );
+  } catch (e) {
+    return {
+      bounds: {
+        width: WINDOW_DEFAULT_WIDTH,
+        height: WINDOW_DEFAULT_HEIGHT,
+      },
+    };
+  }
+
+  const options: Partial<Rectangle> = {};
+  const bounds = position.bounds;
+  if (bounds) {
+    /** Validate coordinates. Keep them if the window can fit on a screen */
+    const area = screen.getDisplayMatching(bounds).workArea;
+    if (
+      bounds.x >= area.x &&
+      bounds.y >= area.y &&
+      bounds.x + bounds.width <= area.x + area.width &&
+      bounds.y + bounds.height <= area.y + area.height
+    ) {
+      options.x = bounds.x;
+      options.y = bounds.y;
+    }
+    if (bounds.width <= area.width || bounds.height <= area.height) {
+      options.width = bounds.width;
+      options.height = bounds.height;
+    }
+  }
+
+  return {
+    isMaximized: position.isMaximized,
+    bounds: {
+      width: WINDOW_DEFAULT_WIDTH,
+      height: WINDOW_DEFAULT_HEIGHT,
+      ...options,
+    },
+  };
+}
+
+function persistWindowPosition(window: BrowserWindow) {
+  const savePath = path.join(app.getPath('userData'), 'window-position.json');
+  let writingToDisk = false;
+
+  const saveWindowBounds = debounce(async () => {
+    const position: WindowPosition = {
+      bounds: window.getNormalBounds(),
+      isMaximized: window.isMaximized(),
+    };
+    if (writingToDisk) return;
+    writingToDisk = true;
+    try {
+      await fs.promises.writeFile(savePath, JSON.stringify(position), 'utf-8');
+    } catch (error) {
+      console.error('Could not write to window-position.json', error);
+    } finally {
+      writingToDisk = false;
+    }
+  }, 500);
+
+  window.on('resize', saveWindowBounds);
+  window.on('move', saveWindowBounds);
 }

@@ -9,7 +9,6 @@
     "compare-versions": "^3.6.0",
     "electron-log": "^4.1.1",
     "electron-updater": "^4.2.5",
-    "electron-window-state": "^5.0.3",
     "mime-types": "^2.1.26",
     "sn-electron-valence": "0.0.4",
     "standard-notes-web": "github:standardnotes/web#b075d1b7fb66d0f6235a72f4faa41cb2f2b3b5c6"

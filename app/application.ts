@@ -117,7 +117,7 @@ function registerAppEventListeners(args: {
   });
 }
 
-function finishApplicationInitialization({
+async function finishApplicationInitialization({
   app,
   ipcMain,
   shell,
@@ -130,7 +130,7 @@ function finishApplicationInitialization({
 }) {
   initializeStrings(app.getLocale());
   initializeExtensionsServer(state.store);
-  const windowState = createWindowState({
+  const windowState = await createWindowState({
     shell,
     appState: state,
     appLocale: app.getLocale(),
