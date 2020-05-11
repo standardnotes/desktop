@@ -1,9 +1,10 @@
-import fs from 'fs';
+import fs, { PathLike } from 'fs';
 import path from 'path';
 import yauzl from 'yauzl';
 
 export const FileDoesNotExist = 'ENOENT';
 export const FileAlreadyExists = 'EEXIST';
+const CrossDeviceLink = 'EXDEV';
 
 export async function readJSONFile<T>(filepath: string): Promise<T> {
   const data = await fs.promises.readFile(filepath, 'utf8');
@@ -100,7 +101,7 @@ export async function moveDirContents(srcDir: string, destDir: string) {
   ]);
   return Promise.all(
     fileNames.map(async (fileName) =>
-      fs.promises.rename(
+      moveFile(
         path.join(srcDir, fileName),
         path.join(destDir, fileName)
       )
@@ -165,4 +166,18 @@ export async function extractNestedZip(source: string, dest: string) {
       }
     );
   });
+}
+
+async function moveFile(source: PathLike, destination: PathLike) {
+  try {
+    await fs.promises.rename(source, destination);
+  } catch (error) {
+    if (error.code === CrossDeviceLink) {
+      /** Fall back to copying and then deleting. */
+      await fs.promises.copyFile(source, destination);
+      await fs.promises.unlink(source);
+    } else {
+      throw error;
+    }
+  }
 }
