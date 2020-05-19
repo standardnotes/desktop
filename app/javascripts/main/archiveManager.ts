@@ -135,6 +135,7 @@ export function createArchiveManager(
       const result = await dialog.showOpenDialog({
         properties: ['openDirectory', 'showHiddenFiles', 'createDirectory'],
       });
+      if (result.filePaths.length === 0) return;
       const path = result.filePaths[0];
       try {
         await setBackupsLocation(path);
