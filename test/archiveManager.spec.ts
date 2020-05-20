@@ -19,7 +19,7 @@ test.afterEach(async (t) => {
  * Depending on the current system load, performing a backup
  * might take a while
  */
-const timeoutDuration = 15000;
+const timeoutDuration = 20 * 1000; /** 20s */
 
 test('saves incoming data to the backups folder', async (t) => {
   const data = 'Sample Data';
