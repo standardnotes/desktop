@@ -16,33 +16,40 @@ const tmpPath = path.join(dataPath, 'tmp', path.basename(__filename));
 const zipFileDestination = path.join(tmpPath, 'zip-file-output');
 const root = path.join(tmpPath, 'tmp1');
 
-test.before(async () => {
-  await ensureDirectoryExists(tmpPath);
+test.beforeEach(async () => {
+  await ensureDirectoryExists(root);
 });
 
-test.after(async () => {
+test.afterEach(async () => {
   await deleteDir(tmpPath);
 });
 
-test('extracts a zip and unnests the folders by one level', async (t) => {
-  await extractNestedZip(
-    path.join(dataPath, 'zip-file.zip'),
-    zipFileDestination
-  );
-  t.deepEqual(await fs.readdir(zipFileDestination), [
-    'package.json',
-    'test-file.txt',
-  ]);
-});
+test.serial(
+  'extracts a zip and unnests the folders by one level',
+  async (t) => {
+    await extractNestedZip(
+      path.join(dataPath, 'zip-file.zip'),
+      zipFileDestination
+    );
+    t.deepEqual(await fs.readdir(zipFileDestination), [
+      'package.json',
+      'test-file.txt',
+    ]);
+  }
+);
 
-test('creates a directory even when parent directories are non-existent', async (t) => {
+test.serial(
+  'creates a directory even when parent directories are non-existent',
+  async (t) => {
+    await ensureDirectoryExists(path.join(root, 'tmp2', 'tmp3'));
+    t.deepEqual(await fs.readdir(root), ['tmp2']);
+    t.deepEqual(await fs.readdir(path.join(root, 'tmp2')), ['tmp3']);
+  }
+);
+
+test.serial('deletes a deeply-nesting directory', async (t) => {
   await ensureDirectoryExists(path.join(root, 'tmp2', 'tmp3'));
-  t.deepEqual(await fs.readdir(root), ['tmp2']);
-  t.deepEqual(await fs.readdir(path.join(root, 'tmp2')), ['tmp3']);
-});
-
-test('deletes a deeply-nesting directory', async (t) => {
-  await deleteDir(path.join(root));
+  await deleteDir(root);
   try {
     await fs.readdir(path.join(tmpPath, 'tmp1'));
     t.fail('Should not have been able to read');
@@ -55,7 +62,7 @@ test('deletes a deeply-nesting directory', async (t) => {
   }
 });
 
-test('moves the contents of one directory to the other', async (t) => {
+test.serial('moves the contents of one directory to the other', async (t) => {
   const fileNames = [
     '1.txt',
     '2.txt',
@@ -86,18 +93,21 @@ test('moves the contents of one directory to the other', async (t) => {
   );
 });
 
-test('serializes and deserializes an object to the same values', async (t) => {
-  const data = {
-    meter: {
-      4: 4,
-    },
-    chorus: {
-      passengers: 2,
-      destination: 'moon',
-      activities: [{ type: 'play', environment: 'stars' }],
-    },
-  };
-  const filePath = path.join(tmpPath, 'data.json');
-  await writeJSONFile(filePath, data);
-  t.deepEqual(data, await readJSONFile(filePath));
-});
+test.serial(
+  'serializes and deserializes an object to the same values',
+  async (t) => {
+    const data = {
+      meter: {
+        4: 4,
+      },
+      chorus: {
+        passengers: 2,
+        destination: 'moon',
+        activities: [{ type: 'play', environment: 'stars' }],
+      },
+    };
+    const filePath = path.join(tmpPath, 'data.json');
+    await writeJSONFile(filePath, data);
+    t.deepEqual(data, await readJSONFile(filePath));
+  }
+);

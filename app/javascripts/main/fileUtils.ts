@@ -5,6 +5,8 @@ import yauzl from 'yauzl';
 export const FileDoesNotExist = 'ENOENT';
 export const FileAlreadyExists = 'EEXIST';
 const CrossDeviceLink = 'EXDEV';
+const OperationNotPermitted = 'EPERM';
+const DeviceIsBusy = 'EBUSY';
 
 export async function readJSONFile<T>(filepath: string): Promise<T> {
   const data = await fs.promises.readFile(filepath, 'utf8');
@@ -80,16 +82,23 @@ export async function deleteDir(dirPath: string) {
 }
 
 export async function deleteDirContents(dirPath: string) {
-  const children = await fs.promises.readdir(dirPath, {
-    withFileTypes: true,
-  });
-  for (const child of children) {
-    const childPath = path.join(dirPath, child.name);
-    if (child.isDirectory()) {
-      await deleteDirContents(childPath);
-      await fs.promises.rmdir(childPath);
-    } else {
-      await fs.promises.unlink(childPath);
+  /**
+   * Scan the directory up to ten times, to handle cases where files are being added while
+   * the directory's contents are being deleted
+   */
+  for (let i = 1, maxTries = 10; i < maxTries; i++) {
+    const children = await fs.promises.readdir(dirPath, {
+      withFileTypes: true,
+    });
+    if (children.length === 0) break;
+    for (const child of children) {
+      const childPath = path.join(dirPath, child.name);
+      if (child.isDirectory()) {
+        await deleteDirContents(childPath);
+        await fs.promises.rmdir(childPath);
+      } else {
+        await deleteFile(childPath);
+      }
     }
   }
 }
@@ -101,10 +110,7 @@ export async function moveDirContents(srcDir: string, destDir: string) {
   ]);
   return Promise.all(
     fileNames.map(async (fileName) =>
-      moveFile(
-        path.join(srcDir, fileName),
-        path.join(destDir, fileName)
-      )
+      moveFile(path.join(srcDir, fileName), path.join(destDir, fileName))
     )
   );
 }
@@ -177,6 +183,22 @@ async function moveFile(source: PathLike, destination: PathLike) {
       await fs.promises.copyFile(source, destination);
       await fs.promises.unlink(source);
     } else {
+      throw error;
+    }
+  }
+}
+
+/** Deletes a file, handling EPERM and EBUSY errors on Windows. */
+async function deleteFile(filePath: PathLike) {
+  for (let i = 1, maxTries = 10; i < maxTries; i++) {
+    try {
+      await fs.promises.unlink(filePath);
+      break;
+    } catch (error) {
+      if (error.code === OperationNotPermitted || error.code === DeviceIsBusy) {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        continue;
+      }
       throw error;
     }
   }
