@@ -53,6 +53,7 @@
   },
   "build": {
     "appId": "org.standardnotes.standardnotes",
+    "artifactName": "${name}-${version}.${ext}",
     "afterSign": "./afterSignHook.js",
     "files": [
       "compiled/**/*",
