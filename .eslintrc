@@ -20,6 +20,8 @@
     "@typescript-eslint/no-non-null-assertion": 0,
     "@typescript-eslint/no-explicit-any": 0,
 
+    "@typescript-eslint/no-var-requires": 0,
+
     /**
      * The following rules are disabled because they are already implemented
      * in the TypeScript configuration, or vice-versa
