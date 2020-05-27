@@ -37,6 +37,7 @@
     "eslint-plugin-standard": "^4.0.1",
     "file-loader": "^6.0.0",
     "husky": "^4.2.5",
+    "js-yaml": "^3.14.0",
     "lodash": "^4.17.15",
     "mime-types": "^2.1.27",
     "npm-run-all": "^4.1.5",
@@ -53,7 +54,8 @@
   },
   "build": {
     "appId": "org.standardnotes.standardnotes",
-    "afterSign": "./afterSignHook.js",
+    "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
+    "afterSign": "./scripts/afterSignHook.js",
     "files": [
       "compiled/**/*",
       "vendor/**/*",
@@ -92,7 +94,7 @@
     "release": "npm run setup && npm run build && electron-builder -mwl --x64 --ia32",
     "build-linux": "npm run build && electron-builder -l --x64 --ia32",
     "build-snap": "npm run build && electron-builder -l --x64",
-    "build-beta": "npm run build && electron-builder -mwl --x64 --ia32 --publish=always --em.productName='Standard Notes (Beta)' --em.appId=org.standardnotes.standardnotes.beta",
+    "build-beta": "npm run build && electron-builder -mwl --x64 --ia32 --publish=always -c.productName='Standard Notes (Beta)' -c.appId=org.standardnotes.standardnotes.beta",
     "dist": "npm run build && electron-builder -mwl --x64 --ia32",
     "dist-win": "npm run build && electron-builder -w --x64 --ia32",
     "dist-mac": "npm run build && electron-builder -m",
@@ -108,7 +110,7 @@
     "format": "prettier --write .",
     "lint": "npm-run-all --parallel lint:*",
     "lint:formatting": "prettier --check .",
-    "lint:eslint": "eslint app/index.ts app/application.ts app/javascripts/**/*.ts test/*.ts",
+    "lint:eslint": "eslint app/index.ts app/application.ts app/javascripts/**/*.ts test/*.ts scripts/*.js",
     "lint:types": "tsc --noEmit",
     "test": "ava"
   },
