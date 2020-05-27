@@ -96,6 +96,7 @@
     "build-snap": "npm run build && electron-builder -l --x64",
     "build-beta": "npm run build && electron-builder -mwl --x64 --ia32 --publish=always -c.productName='Standard Notes (Beta)' -c.appId=org.standardnotes.standardnotes.beta",
     "dist": "npm run build && electron-builder -mwl --x64 --ia32 && node scripts/fix-mac-zip.js && node scripts/sums.js",
+    "dist-beta": "npm run build && electron-builder -mwl --x64 --ia32 -c.productName='Standard Notes (Beta)' -c.appId=org.standardnotes.standardnotes.beta && node scripts/fix-mac-zip.js --beta && node scripts/sums.js",
     "dist-win": "npm run build && electron-builder -w --x64 --ia32",
     "dist-mac": "npm run build && electron-builder -m && node scripts/fix-mac-zip.js",
     "dist-linux": "npm run build && electron-builder -l --x64 --ia32",
