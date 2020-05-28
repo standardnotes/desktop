@@ -58,6 +58,7 @@ export async function createWindowState({
     window,
     archiveManager: services.archiveManager,
     trayManager: services.trayManager,
+    updateManager: services.updateManager,
     onClosed: teardown,
   });
 
@@ -178,6 +179,7 @@ function registerWindowEventListeners({
   window,
   archiveManager,
   trayManager,
+  updateManager,
   onClosed,
 }: {
   shell: Shell;
@@ -185,12 +187,17 @@ function registerWindowEventListeners({
   window: Electron.BrowserWindow;
   archiveManager: ArchiveManager;
   trayManager: TrayManager;
+  updateManager: UpdateManager;
   onClosed: () => void;
 }) {
   const shouldOpenUrl = (url: string) =>
     url.startsWith('http') || url.startsWith('mailto');
 
   window.on('closed', onClosed);
+
+  window.on('show', () => {
+    updateManager.checkForUpdate(false);
+  });
 
   window.on('focus', () => {
     window.webContents.send(IpcMessages.WindowFocused, null);

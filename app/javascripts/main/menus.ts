@@ -566,7 +566,7 @@ function updateMenu(updateManager: UpdateManager) {
     submenu.push({
       label: str().checkForUpdate,
       click() {
-        updateManager.checkForUpdate();
+        updateManager.checkForUpdate(true);
       },
     });
   }

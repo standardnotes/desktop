@@ -37,7 +37,7 @@ export interface UpdateManager {
   readonly checkingForUpdate: boolean;
   onStateUpdate?: () => void;
   openChangelog(): void;
-  checkForUpdate(): void;
+  checkForUpdate(userTriggered: boolean): void;
   toggleAutoupdateStatus(): void;
   showAutoUpdateInstallationDialog(): void;
   updateNeeded(): boolean;
@@ -97,8 +97,8 @@ export function createUpdateManager(
     showAutoUpdateInstallationDialog() {
       showUpdateInstallationDialog(window, state);
     },
-    checkForUpdate() {
-      checkForUpdate(store, state, true);
+    checkForUpdate(userTriggered: boolean) {
+      checkForUpdate(store, state, userTriggered);
     },
     toggleAutoupdateStatus() {
       toggleAutoupdateStatus(store, state);
