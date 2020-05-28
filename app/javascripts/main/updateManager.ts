@@ -52,7 +52,6 @@ export function createUpdateManager(
   setupAutoUpdater(window, store, state);
 
   if (isTesting()) {
-    // eslint-disable-next-line no-var
     handle(MessageType.UpdateManagerState, () => state);
     handle(MessageType.AutoUpdateEnabled, () =>
       store.get(StoreKeys.EnableAutoUpdate)
