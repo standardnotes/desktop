@@ -86,6 +86,9 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
       preload: path.join(__dirname, 'javascripts/renderer/preload.js'),
     },
   });
+  if (position.isFullScreen) {
+    window.setFullScreen(true);
+  }
 
   if (position.isMaximized) {
     window.maximize();
@@ -282,6 +285,7 @@ function registerWindowEventListeners({
 interface WindowPosition {
   bounds: Rectangle;
   isMaximized: boolean;
+  isFullScreen: boolean;
 }
 
 async function getPreviousWindowPosition() {
@@ -324,6 +328,7 @@ async function getPreviousWindowPosition() {
 
   return {
     isMaximized: position.isMaximized,
+    isFullScreen: position.isFullScreen,
     bounds: {
       width: WINDOW_DEFAULT_WIDTH,
       height: WINDOW_DEFAULT_HEIGHT,
@@ -340,6 +345,7 @@ function persistWindowPosition(window: BrowserWindow) {
     const position: WindowPosition = {
       bounds: window.getNormalBounds(),
       isMaximized: window.isMaximized(),
+      isFullScreen: window.isFullScreen(),
     };
     if (writingToDisk) return;
     writingToDisk = true;
