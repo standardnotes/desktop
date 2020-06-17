@@ -81,10 +81,6 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
     frame: isMac() ? false : useSystemMenuBar,
     webPreferences: {
       spellcheck: true,
-      /**
-       * During testing, we expose unsafe node apis to the browser window as
-       * required by spectron (^10.0.0)
-       */
       nodeIntegration: isTesting(),
       contextIsolation: !isTesting(),
       preload: path.join(__dirname, 'javascripts/renderer/preload.js'),
