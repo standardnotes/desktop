@@ -258,28 +258,6 @@ function registerWindowEventListeners({
   window.webContents.on('context-menu', (_event, params) => {
     buildContextMenu(window.webContents, params).popup();
   });
-
-  window.webContents.session.on('will-download', (event, item) => {
-    /**
-     * On macOS, attempting to download a file while a save dialog is open
-     * will completely ignore that file and even trigger the system error sound.
-     * To make sure this doesn't happen, we block the main thread until
-     * the user has closed the save dialog
-     */
-    const savePath = dialog.showSaveDialogSync(window, {
-      defaultPath: item.getFilename(),
-    });
-
-    if (savePath) {
-      /**
-       * Setting a save path will instruct Electron to not show its default
-       * download dialog
-       */
-      item.setSavePath(savePath);
-    } else {
-      event.preventDefault();
-    }
-  });
 }
 
 interface WindowPosition {
