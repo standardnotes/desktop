@@ -11,6 +11,6 @@
     "electron-updater": "^4.3.1",
     "mime-types": "^2.1.27",
     "sn-electron-valence": "0.0.4",
-    "standard-notes-web": "github:standardnotes/web#cd43234b5e8d23fff9e00c4958e68467f6868660"
+    "standard-notes-web": "github:standardnotes/web#1631aee113e02310ec8ea464097df25cab95d01b"
   }
 }
