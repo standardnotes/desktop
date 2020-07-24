@@ -83,24 +83,25 @@
         "StartupWMClass": "standard notes"
       },
       "target": [
-        "AppImage",
-        "snap"
+        "AppImage"
       ]
     }
   },
   "scripts": {
     "pack": "build --dir",
-    "release": "npm run setup && npm run build && electron-builder -mwl --x64 --ia32",
-    "build-linux": "npm run build && electron-builder -l --x64 --ia32",
-    "build-snap": "npm run build && electron-builder -l --x64",
-    "build-beta": "npm run build && electron-builder -mwl --x64 --ia32 --publish=always -c.productName='Standard Notes (Beta)' -c.appId=org.standardnotes.standardnotes.beta",
-    "dist": "npm run build && electron-builder -mwl --x64 --ia32 && node scripts/fix-mac-zip.js && node scripts/sums.js",
-    "dist-beta": "npm run build && electron-builder -mwl --x64 --ia32 -c.productName='Standard Notes (Beta)' -c.appId=org.standardnotes.standardnotes.beta && node scripts/fix-mac-zip.js --beta && node scripts/sums.js",
-    "dist-win": "npm run build && electron-builder -w --x64 --ia32",
-    "dist-mac": "npm run build && electron-builder -m && node scripts/fix-mac-zip.js",
-    "dist-linux": "npm run build && electron-builder -l --x64 --ia32",
+    "release": "npm run setup && npm run bundle && electron-builder -mwl --x64 --ia32",
+    "build-linux": "npm run bundle && electron-builder -l --x64 --ia32",
+    "build": "npm run build:all && npm run build:write-sums",
+    "build:all": "npm run bundle && electron-builder -mwl --x64 --ia32 && npm run build:snap",
+    "build:beta": "npm run bundle && electron-builder -mwl --x64 --ia32 -c.productName='Standard Notes (Beta)' -c.appId=org.standardnotes.standardnotes.beta && node scripts/fix-mac-zip.js --beta && node scripts/sums.js",
+    "build:windows": "npm run bundle && electron-builder --windows --x64 --ia32",
+    "build:mac": "npm run bundle && electron-builder --mac --x64 && node scripts/fix-mac-zip",
+    "build:linux": "npm run bundle && electron-builder --linux --x64 --ia32",
+    "build:snap": "electron-builder --linux --x64 -c.linux.target=snap",
+    "build:write-sums": "node scripts/sums.js",
+    "build:remove-unpacked": "rimraf dist/{linux-*,mac,win-*}",
     "postinstall": "electron-builder install-app-deps",
-    "build": "rimraf app/dist/ && webpack --config webpack.prod.js",
+    "bundle": "rimraf app/dist/ && webpack --config webpack.prod.js",
     "dev": "webpack --config webpack.dev.js --watch",
     "start": "electron . --enable-logging --icon _icon/icon.png",
     "clean": "npm-run-all --parallel clean:*",
