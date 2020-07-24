@@ -22,7 +22,6 @@ function sha256(filePath) {
 
       `standard-notes-${version}-linux-i386.AppImage`,
       `standard-notes-${version}-linux-x86_64.AppImage`,
-      `standard-notes-${version}-linux-i386.snap`,
       `standard-notes-${version}-linux-amd64.snap`,
 
       `standard-notes-${version}-win.exe`,
