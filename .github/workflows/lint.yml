@@ -3,12 +3,16 @@ name: Lint/Typescript
 on: [push]
 
 jobs:
-  tsc:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Install dependencies
         run: npm ci
-      - name: Lint files
-        run: npm run lint
+      - name: Typescript
+        run: npm run lint:types
+      - name: ESLint
+        run: npm run lint:eslint
+      - name: Prettier
+        run: npm run lint:formatting
