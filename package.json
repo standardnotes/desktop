@@ -111,9 +111,9 @@
     "clean:build": "rimraf app/dist/",
     "clean:tests": "rimraf test/data/tmp/",
     "setup": "npm install && npm --prefix ./app install ./app && git submodule update --init --force --remote && npm --prefix ./web install",
-    "format": "prettier --write {.,!web}",
+    "format": "prettier --write .",
     "lint": "npm-run-all --parallel lint:*",
-    "lint:formatting": "prettier --check {.,!web}",
+    "lint:formatting": "prettier --check .",
     "lint:eslint": "eslint app/index.ts app/application.ts app/javascripts/**/*.ts test/*.ts scripts/*.js",
     "lint:types": "tsc --noEmit",
     "test": "ava"

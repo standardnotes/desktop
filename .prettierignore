@@ -4,3 +4,4 @@ app/dist/
 app/vendor/
 app/extensions/
 test/data/tmp/
+web/
