@@ -4,6 +4,7 @@ This application makes use of the core JS/CSS/HTML code found in the [web repo](
 
 ```bash
 npm run setup
+npm run build:web # Or `npm run dev:web`
 npm run dev
 
 # In another terminal

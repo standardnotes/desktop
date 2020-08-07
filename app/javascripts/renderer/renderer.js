@@ -3,7 +3,9 @@ const messageBus = new ElectronValence.FrameMessageBus();
 const receiver = new ElectronValence.Receiver(messageBus);
 
 /** Accessed by web app */
-window._default_sf_server = 'https://sync.standardnotes.org';
+window._default_sync_server =
+  DEFAULT_SYNC_SERVER ||
+  'https://sync.standardnotes.org';
 window._extensions_manager_location =
   'extensions/extensions-manager/dist/index.html';
 window._batch_manager_location = 'extensions/batch-manager/dist/index.html';
@@ -15,12 +17,8 @@ window.isElectron = true;
   configureWindow(bridge);
 
   await new Promise((resolve) => angular.element(document).ready(resolve));
-  const desktopManager = angular
-    .element(document)
-    .injector()
-    .get('desktopManager');
-  registerIpcMessageListener(desktopManager, bridge);
-  configureDesktopManager(desktopManager, bridge);
+  registerIpcMessageListener(window.desktopManager, bridge);
+  configureDesktopManager(window.desktopManager, bridge);
 })();
 loadZipLibrary();
 

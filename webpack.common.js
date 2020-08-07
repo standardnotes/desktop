@@ -56,7 +56,7 @@ module.exports = function ({ onlyTranspileTypescript = false } = {}) {
         { from: 'app/extensions', to: 'extensions' },
         { from: 'app/vendor', to: 'vendor' },
         {
-          from: 'app/node_modules/standard-notes-web/dist',
+          from: 'web/dist',
           to: 'standard-notes-web',
         },
         {
