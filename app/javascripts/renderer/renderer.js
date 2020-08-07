@@ -4,8 +4,7 @@ const receiver = new ElectronValence.Receiver(messageBus);
 
 /** Accessed by web app */
 window._default_sync_server =
-  DEFAULT_SYNC_SERVER ||
-  'https://sync.standardnotes.org';
+  DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org';
 window._extensions_manager_location =
   'extensions/extensions-manager/dist/index.html';
 window._batch_manager_location = 'extensions/batch-manager/dist/index.html';

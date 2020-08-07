@@ -1,7 +1,6 @@
 import {
   app,
   BrowserWindow,
-  dialog,
   ipcMain,
   Rectangle,
   screen,
