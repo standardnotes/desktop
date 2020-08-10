@@ -24,7 +24,7 @@
     "babel-loader": "^8.1.0",
     "commitlint": "^8.3.5",
     "copy-webpack-plugin": "^5.1.1",
-    "electron": "^8.2.5",
+    "electron": "^9.2.0",
     "electron-builder": "^22.6.0",
     "electron-notarize": "^0.3.0",
     "eslint": "^6.7.2",

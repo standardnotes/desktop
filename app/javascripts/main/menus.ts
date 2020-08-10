@@ -498,7 +498,7 @@ function backupsMenu(archiveManager: ArchiveManager, reload: () => any) {
       {
         label: str().openBackupsLocation,
         click() {
-          shell.openItem(archiveManager.backupsLocation);
+          shell.openPath(archiveManager.backupsLocation);
         },
       },
     ],
@@ -625,7 +625,7 @@ function helpMenu(window: Electron.BrowserWindow, shell: Electron.Shell) {
         label: str().openDataDirectory,
         click() {
           const userDataPath = app.getPath('userData');
-          shell.openItem(userDataPath);
+          shell.openPath(userDataPath);
         },
       },
       {
