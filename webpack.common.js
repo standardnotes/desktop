@@ -52,23 +52,34 @@ module.exports = function ({ onlyTranspileTypescript = false } = {}) {
     resolve,
     module: moduleConfig,
     plugins: [
-      new CopyPlugin([
-        { from: 'app/extensions', to: 'extensions' },
-        { from: 'app/vendor', to: 'vendor' },
-        {
-          from: 'web/dist',
-          to: 'standard-notes-web',
-        },
-        {
-          from: 'app/node_modules/sn-electron-valence',
-          to: 'sn-electron-valence',
-        },
-        {
-          from: 'app/stylesheets/renderer.css',
-          to: 'stylesheets/renderer.css',
-        },
-        { from: 'app/icon', to: 'icon' },
-      ]),
+      new CopyPlugin({
+        patterns: [
+          {
+            from: 'app/extensions',
+            to: 'extensions',
+          },
+          {
+            from: 'app/vendor',
+            to: 'vendor',
+          },
+          {
+            from: 'web/dist',
+            to: 'standard-notes-web',
+          },
+          {
+            from: 'app/node_modules/sn-electron-valence',
+            to: 'sn-electron-valence',
+          },
+          {
+            from: 'app/stylesheets/renderer.css',
+            to: 'stylesheets/renderer.css',
+          },
+          {
+            from: 'app/icon',
+            to: 'icon',
+          },
+        ],
+      }),
     ],
   };
 
