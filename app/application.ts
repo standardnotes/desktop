@@ -8,6 +8,11 @@ import { isLinux, isMac, isWindows } from './javascripts/main/platforms';
 import { Store, StoreKeys } from './javascripts/main/store';
 import { AppName, initializeStrings } from './javascripts/main/strings';
 import { createWindowState, WindowState } from './javascripts/main/window';
+import {
+  getKeychainValue,
+  setKeychainValue,
+  clearKeychainValue,
+} from './javascripts/main/keychain';
 import { IpcMessages } from './javascripts/shared/ipcMessages';
 import { isDev } from './javascripts/main/utils';
 
@@ -175,4 +180,10 @@ function registerIpcEventListeners(
   ipcMain.on(IpcMessages.MajorDataChange, () => {
     archiveManager.performBackup();
   });
+
+  ipcMain.handle(IpcMessages.GetKeychainValue, getKeychainValue);
+  ipcMain.handle(IpcMessages.SetKeychainValue, (_event, value) =>
+    setKeychainValue(value)
+  );
+  ipcMain.handle(IpcMessages.ClearKeychainValue, clearKeychainValue);
 }

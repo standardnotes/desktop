@@ -51,6 +51,9 @@ module.exports = function ({ onlyTranspileTypescript = false } = {}) {
     },
     resolve,
     module: moduleConfig,
+    externals: {
+      keytar: 'commonjs keytar',
+    },
     plugins: [
       new CopyPlugin({
         patterns: [
@@ -67,8 +70,12 @@ module.exports = function ({ onlyTranspileTypescript = false } = {}) {
             to: 'standard-notes-web',
           },
           {
-            from: 'app/node_modules/sn-electron-valence',
+            from: 'node_modules/sn-electron-valence',
             to: 'sn-electron-valence',
+          },
+          {
+            from: 'app/node_modules',
+            to: 'node_modules',
           },
           {
             from: 'app/stylesheets/renderer.css',

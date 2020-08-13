@@ -25,6 +25,12 @@ const transmitter = new Transmitter(messageBus, {
   maximizeWindow: { type: PropertyType.METHOD },
   unmaximizeWindow: { type: PropertyType.METHOD },
   isWindowMaximized: { type: PropertyType.METHOD },
+  getKeychainValue: { type: PropertyType.METHOD },
+  setKeychainValue: {
+    type: PropertyType.METHOD,
+    argValidators: [{ type: 'object' }],
+  },
+  clearKeychainValue: { type: PropertyType.METHOD },
 });
 
 process.once('loaded', function () {
@@ -62,6 +68,11 @@ function loadTransmitter() {
     isWindowMaximized: async () => {
       return remote.getCurrentWindow().isMaximized();
     },
+    getKeychainValue: () => ipcRenderer.invoke(IpcMessages.GetKeychainValue),
+    setKeychainValue: (value) =>
+      ipcRenderer.invoke(IpcMessages.SetKeychainValue, value),
+    clearKeychainValue: () =>
+      ipcRenderer.invoke(IpcMessages.ClearKeychainValue),
   });
 }
 

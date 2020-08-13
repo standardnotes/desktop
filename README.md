@@ -19,30 +19,28 @@ npm run lint
 npm test # make sure to start `npm run dev` before running the tests
 ```
 
-Pull requests should target the `dev` branch.
+Pull requests should target the `develop` branch.
+
+### Installing dependencies
+
+To determine where to install a dependency:
+
+- If it is only required for building, install it in `package.json`'s `devDependencies`
+- If it is required at runtime but can be packaged by webpack, install it in `package.json`'s `dependencies`.
+- If it must be distributed as a node module (not packaged by webpack), install it in `app/package.json`'s `dependencies`
+  - Also make sure to declare it as an external commonjs dependency in `webpack.common.js`.
 
 ## Building
 
 Build for all platforms:
 
-```bash
-electron-packager . "Standard Notes" \
-  --platform=all \
-  --icon=icon/icon \
-  --overwrite \
-  --osx-sign='Mac Developer ID Application: xxx' \
-  --out=dist
-```
+- `npm run build`
 
 or
 
-- `npm run dist`
-
-or
-
-- `npm run dist-win`
-- `npm run dist-linux`
-- `npm run dist-mac`
+- `npm run build:win`
+- `npm run build:linux`
+- `npm run build:mac`
 
 ## Installation
 

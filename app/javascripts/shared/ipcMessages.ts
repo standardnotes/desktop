@@ -11,4 +11,7 @@ export enum IpcMessages {
   InstallComponentComplete = 'install-component-complete',
   DisplayAppMenu = 'display-app-menu',
   DataArchive = 'data-archive',
+  GetKeychainValue = 'GetKeychainValue',
+  SetKeychainValue = 'SetKeychainValue',
+  ClearKeychainValue = 'ClearKeychainValue',
 }

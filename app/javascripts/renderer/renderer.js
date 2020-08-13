@@ -10,9 +10,31 @@ window._extensions_manager_location =
 window._batch_manager_location = 'extensions/batch-manager/dist/index.html';
 window.isElectron = true;
 
+function migrateKeychain(bridge) {
+  const key = 'keychain';
+  const value = localStorage.getItem(key);
+  if (value) {
+    /** Migrate to native keychain */
+    console.warn('Migrating keychain from localStorage to native keychain.');
+    localStorage.removeItem(key);
+    return bridge.setKeychainValue(JSON.parse(value));
+  }
+}
+
 (async () => {
   await receiver.ready;
   const bridge = receiver.items[0];
+  window.bridge = bridge;
+
+  await migrateKeychain(bridge);
+
+  window.startApplication({
+    getKeychainValue: () => bridge.getKeychainValue(),
+    setKeychainValue: (value) => bridge.setKeychainValue(value),
+    clearKeychainValue: () => bridge.clearKeychainValue(),
+  });
+  angular.bootstrap(document, ['app']);
+
   configureWindow(bridge);
 
   await new Promise((resolve) => angular.element(document).ready(resolve));
@@ -133,14 +155,16 @@ function registerIpcMessageListener(desktopManager, bridge) {
         data.error
       );
     } else if (message === IpcMessages.UpdateAvailable) {
-      const controllerElement = document.querySelector('root');
+      const controllerElement = document.querySelector(
+        'application-group-view'
+      );
       const controllerScope = angular.element(controllerElement).scope();
       controllerScope.onUpdateAvailable();
     } else if (message === IpcMessages.DownloadBackup) {
       desktopManager.desktop_didBeginBackup();
       desktopManager.desktop_requestBackupFile((data) => {
         if (data) {
-          bridge.sendIpcMessage('data-archive', data);
+          bridge.sendIpcMessage(IpcMessages.DataArchive, data);
         }
       });
     } else if (message === IpcMessages.FinishedSavingBackup) {
