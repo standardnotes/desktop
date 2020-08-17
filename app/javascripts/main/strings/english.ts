@@ -62,6 +62,10 @@ export function createEnglishStrings(): Strings {
           'application for the change to take effect.',
       },
     },
+    contextMenu: {
+      learnSpelling: 'Learn Spelling',
+      noSuggestions: 'No Suggestions',
+    },
     tray: {
       show: 'Show',
       hide: 'Hide',

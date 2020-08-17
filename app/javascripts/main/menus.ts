@@ -12,7 +12,7 @@ import { ArchiveManager } from './archiveManager';
 import { isMac } from './platforms';
 import { SpellcheckerManager } from './spellcheckerManager';
 import { Store, StoreKeys } from './store';
-import { appMenu as str } from './strings';
+import { appMenu as str, contextMenu } from './strings';
 import { handle } from './testing';
 import { TrayManager } from './trayManager';
 import { UpdateManager } from './updateManager';
@@ -21,6 +21,10 @@ import { isDev, isTesting } from './utils';
 export const enum MenuId {
   SpellcheckerLanguages = 'SpellcheckerLanguages',
 }
+
+const Separator: MenuItemConstructorOptions = {
+  type: 'separator',
+};
 
 export function buildContextMenu(
   webContents: WebContents,
@@ -36,19 +40,19 @@ export function buildContextMenu(
 
   return Menu.buildFromTemplate([
     ...suggestionsMenu(
+      params.selectionText,
       params.misspelledWord,
       params.dictionarySuggestions,
       webContents
     ),
+    Separator,
     {
       role: 'undo',
     },
     {
       role: 'redo',
     },
-    {
-      type: 'separator',
-    },
+    Separator,
     {
       role: 'cut',
     },
@@ -68,6 +72,7 @@ export function buildContextMenu(
 }
 
 function suggestionsMenu(
+  selection: string,
   misspelledWord: string,
   suggestions: string[],
   webContents: WebContents
@@ -76,15 +81,21 @@ function suggestionsMenu(
     return [];
   }
 
+  const learnSpelling = {
+    label: contextMenu().learnSpelling,
+    click() {
+      webContents.session.addWordToSpellCheckerDictionary(misspelledWord);
+    },
+  };
+
   if (suggestions.length === 0) {
     return [
       {
-        label: 'No suggestions',
+        label: contextMenu().noSuggestions,
         enabled: false,
       },
-      {
-        type: 'separator',
-      },
+      Separator,
+      learnSpelling,
     ];
   }
 
@@ -95,9 +106,8 @@ function suggestionsMenu(
         webContents.replaceMisspelling(suggestion);
       },
     })),
-    {
-      type: 'separator',
-    },
+    Separator,
+    learnSpelling,
   ];
 }
 
@@ -210,10 +220,6 @@ const enum MenuItemTypes {
   CheckBox = 'checkbox',
   Radio = 'radio',
 }
-
-const Separator: MenuItemConstructorOptions = {
-  type: 'separator',
-};
 
 const Urls = {
   Support: 'mailto:help@standardnotes.org',

@@ -1,5 +1,6 @@
 export interface Strings {
   readonly appMenu: Readonly<AppMenuStrings>;
+  readonly contextMenu: Readonly<ContextMenuStrings>;
   readonly tray: Readonly<TrayStrings>;
   readonly extensions: Readonly<ExtensionsStrings>;
   readonly updates: Readonly<UpdateStrings>;
@@ -51,6 +52,11 @@ interface AppMenuStrings {
     title: string;
     message: string;
   };
+}
+
+interface ContextMenuStrings {
+  learnSpelling: string;
+  noSuggestions: string;
 }
 
 interface TrayStrings {
