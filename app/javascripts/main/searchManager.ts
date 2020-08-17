@@ -1,7 +1,7 @@
 import { ipcMain, WebContents } from 'electron';
 import { IpcMessages } from '../shared/ipcMessages';
 
-export function initializeSearchManager(webContents: WebContents) {
+export function initializeSearchManager(webContents: WebContents): void {
   ipcMain.on(IpcMessages.SearchText, (_event, { text }: { text: string }) => {
     webContents.stopFindInPage('clearSelection');
     if (text && text.length > 0) {

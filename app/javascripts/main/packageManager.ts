@@ -129,7 +129,7 @@ async function createMapping() {
 export async function initializePackageManager(
   ipcMain: IpcMain,
   webContents: Electron.WebContents
-) {
+): Promise<void> {
   const syncTasks: SyncTask[] = [];
   let isRunningTasks = false;
 

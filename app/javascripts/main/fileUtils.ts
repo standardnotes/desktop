@@ -18,16 +18,19 @@ export function readJSONFileSync<T>(filepath: string): T {
   return JSON.parse(data);
 }
 
-export async function writeJSONFile(filepath: string, data: any) {
+export async function writeJSONFile(
+  filepath: string,
+  data: unknown
+): Promise<void> {
   await ensureDirectoryExists(path.dirname(filepath));
   await fs.promises.writeFile(filepath, JSON.stringify(data, null, 2), 'utf8');
 }
 
-export function writeJSONFileSync(filepath: string, data: any) {
+export function writeJSONFileSync(filepath: string, data: unknown): void {
   fs.writeFileSync(filepath, JSON.stringify(data, null, 2), 'utf8');
 }
 
-export async function ensureDirectoryExists(dirPath: string) {
+export async function ensureDirectoryExists(dirPath: string): Promise<void> {
   try {
     const stat = await fs.promises.lstat(dirPath);
     if (!stat.isDirectory()) {
@@ -68,7 +71,7 @@ export async function ensureDirectoryExists(dirPath: string) {
  * Deletes a directory (handling recursion.)
  * @param {string} dirPath the path of the directory
  */
-export async function deleteDir(dirPath: string) {
+export async function deleteDir(dirPath: string): Promise<void> {
   try {
     await deleteDirContents(dirPath);
   } catch (error) {
@@ -81,7 +84,7 @@ export async function deleteDir(dirPath: string) {
   await fs.promises.rmdir(dirPath);
 }
 
-export async function deleteDirContents(dirPath: string) {
+export async function deleteDirContents(dirPath: string): Promise<void> {
   /**
    * Scan the directory up to ten times, to handle cases where files are being added while
    * the directory's contents are being deleted
@@ -103,19 +106,25 @@ export async function deleteDirContents(dirPath: string) {
   }
 }
 
-export async function moveDirContents(srcDir: string, destDir: string) {
+export async function moveDirContents(
+  srcDir: string,
+  destDir: string
+): Promise<void> {
   const [fileNames] = await Promise.all([
     fs.promises.readdir(srcDir),
     ensureDirectoryExists(destDir),
   ]);
-  return Promise.all(
+  await Promise.all(
     fileNames.map(async (fileName) =>
       moveFile(path.join(srcDir, fileName), path.join(destDir, fileName))
     )
   );
 }
 
-export async function extractNestedZip(source: string, dest: string) {
+export async function extractNestedZip(
+  source: string,
+  dest: string
+): Promise<void> {
   return new Promise((resolve, reject) => {
     yauzl.open(
       source,

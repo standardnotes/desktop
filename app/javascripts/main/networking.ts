@@ -20,7 +20,10 @@ if (isTesting()) {
  * @param filePath path to the saved file (will be created if it does
  * not exist)
  */
-export async function downloadFile(url: string, filePath: string) {
+export async function downloadFile(
+  url: string,
+  filePath: string
+): Promise<void> {
   await ensureDirectoryExists(path.dirname(filePath));
   const response = await get(url);
   await pipeline(
@@ -49,7 +52,7 @@ export async function getJSON<T>(url: string): Promise<T> {
   });
 }
 
-export function get(url: string) {
+export function get(url: string): Promise<IncomingMessage> {
   const enum Method {
     Get = 'GET',
   }

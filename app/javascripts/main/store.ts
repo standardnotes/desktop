@@ -144,7 +144,7 @@ export class Store {
   readonly path: string;
   readonly data: StoreData;
 
-  static getInstance() {
+  static getInstance(): Store {
     if (!this.instance) {
       /**
        * Renderer process has to get `app` module via `remote`, whereas the main process
@@ -158,7 +158,7 @@ export class Store {
     return this.instance;
   }
 
-  static get(key: StoreKeys) {
+  static get<T extends keyof StoreData>(key: T): StoreData[T] {
     return this.getInstance().get(key);
   }
 
@@ -178,7 +178,7 @@ export class Store {
     return this.data[key];
   }
 
-  set<T extends keyof StoreData>(key: T, val: StoreData[T]) {
+  set<T extends keyof StoreData>(key: T, val: StoreData[T]): void {
     this.data[key] = val;
     fs.writeFileSync(this.path, serializeStoreData(this.data));
   }

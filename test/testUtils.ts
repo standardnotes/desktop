@@ -4,12 +4,18 @@ import {
   ensureDirectoryExists,
 } from '../app/javascripts/main/fileUtils';
 
-export function createTmpDir(name: string) {
+export function createTmpDir(
+  name: string
+): {
+  path: string;
+  make(): Promise<string>;
+  clean(): Promise<void>;
+} {
   const tmpDirPath = path.join(__dirname, 'data', 'tmp', path.basename(name));
 
   return {
     path: tmpDirPath,
-    async make(): Promise<string> {
+    async make() {
       await ensureDirectoryExists(tmpDirPath);
       return tmpDirPath;
     },

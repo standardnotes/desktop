@@ -12,17 +12,20 @@ const messageHandlers: {
   [key in MessageType]?: (...args: any) => unknown;
 } = {};
 
-export function handle(type: MessageType, handler: (...args: any) => unknown) {
+export function handle(
+  type: MessageType,
+  handler: (...args: any) => unknown
+): void {
   if (!isTesting()) return;
   messageHandlers[type] = handler;
 }
 
-export function send(type: AppMessageType) {
+export function send(type: AppMessageType): void {
   if (!isTesting()) return;
   process.send!({ type });
 }
 
-export function setupTesting() {
+export function setupTesting(): void {
   /** Allow a custom userData path to be used. */
   const userDataPathIndex = process.argv.indexOf(CommandLineArgs.UserDataPath);
   if (userDataPathIndex > 0) {

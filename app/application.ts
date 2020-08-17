@@ -29,7 +29,7 @@ export function initializeApplication(args: {
   app: Electron.App;
   ipcMain: Electron.IpcMain;
   shell: Shell;
-}) {
+}): void {
   const { app } = args;
 
   app.name = AppName;
