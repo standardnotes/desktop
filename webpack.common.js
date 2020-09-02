@@ -1,5 +1,6 @@
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
+const webpack = require('webpack');
 
 module.exports = function ({ onlyTranspileTypescript = false } = {}) {
   const moduleConfig = {
@@ -55,6 +56,11 @@ module.exports = function ({ onlyTranspileTypescript = false } = {}) {
       keytar: 'commonjs keytar',
     },
     plugins: [
+      new webpack.DefinePlugin({
+        DEFAULT_SYNC_SERVER: JSON.stringify(
+          process.env.DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org'
+        ),
+      }),
       new CopyPlugin({
         patterns: [
           {
