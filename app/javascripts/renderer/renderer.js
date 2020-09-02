@@ -3,8 +3,6 @@ const messageBus = new ElectronValence.FrameMessageBus();
 const receiver = new ElectronValence.Receiver(messageBus);
 
 /** Accessed by web app */
-window._default_sync_server =
-  DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org';
 window._extensions_manager_location =
   'extensions/extensions-manager/dist/index.html';
 window._batch_manager_location = 'extensions/batch-manager/dist/index.html';
@@ -12,11 +10,11 @@ window.isElectron = true;
 
 function migrateKeychain(bridge) {
   const key = 'keychain';
-  const value = localStorage.getItem(key);
+  const value = window.localStorage.getItem(key);
   if (value) {
     /** Migrate to native keychain */
     console.warn('Migrating keychain from localStorage to native keychain.');
-    localStorage.removeItem(key);
+    window.localStorage.removeItem(key);
     return bridge.setKeychainValue(JSON.parse(value));
   }
 }
@@ -28,11 +26,15 @@ function migrateKeychain(bridge) {
 
   await migrateKeychain(bridge);
 
-  window.startApplication({
-    getKeychainValue: () => bridge.getKeychainValue(),
-    setKeychainValue: (value) => bridge.setKeychainValue(value),
-    clearKeychainValue: () => bridge.clearKeychainValue(),
-  });
+  window.startApplication(
+    // eslint-disable-next-line no-undef
+    DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org',
+    {
+      getKeychainValue: () => bridge.getKeychainValue(),
+      setKeychainValue: (value) => bridge.setKeychainValue(value),
+      clearKeychainValue: () => bridge.clearKeychainValue(),
+    }
+  );
   angular.bootstrap(document, ['app']);
 
   configureWindow(bridge);
