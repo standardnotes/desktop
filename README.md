@@ -47,9 +47,3 @@ or
 On Linux, download the latest AppImage from the [Releases](https://github.com/standardnotes/desktop/releases/latest) page, and give it executable permission:
 
 `chmod u+x standard-notes*.AppImage`
-
-## Alternative Downloads
-
-The Standard Notes desktop client is also available through a variety of package managers:
-
-- [unofficial] **AUR:** [standardnotes-desktop](https://aur.archlinux.org/packages/standardnotes-desktop/), non binary package - built from source, currently maintained by [danielhass](https://github.com/danielhass)
