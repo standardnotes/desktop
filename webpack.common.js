@@ -70,10 +70,6 @@ module.exports = function ({ onlyTranspileTypescript = false } = {}) {
             to: 'standard-notes-web',
           },
           {
-            from: 'node_modules/sn-electron-valence',
-            to: 'sn-electron-valence',
-          },
-          {
             from: 'app/node_modules',
             to: 'node_modules',
           },
