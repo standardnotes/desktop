@@ -362,6 +362,7 @@ async function installComponent(
 
     sendInstalledMessage(component);
   } catch (error) {
+    log(`Error while installing ${component.content.name}`, error.message);
     sendInstalledMessage(component, {
       message: error.message,
       tag: 'error-downloading',
