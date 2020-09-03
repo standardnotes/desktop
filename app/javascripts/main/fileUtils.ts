@@ -98,7 +98,13 @@ export async function deleteDirContents(dirPath: string): Promise<void> {
       const childPath = path.join(dirPath, child.name);
       if (child.isDirectory()) {
         await deleteDirContents(childPath);
-        await fs.promises.rmdir(childPath);
+        try {
+          await fs.promises.rmdir(childPath);
+        } catch (error) {
+          if (error !== FileDoesNotExist) {
+            throw error;
+          }
+        }
       } else {
         await deleteFile(childPath);
       }
@@ -207,6 +213,9 @@ async function deleteFile(filePath: PathLike) {
       if (error.code === OperationNotPermitted || error.code === DeviceIsBusy) {
         await new Promise((resolve) => setTimeout(resolve, 300));
         continue;
+      } else if (error.code === FileDoesNotExist) {
+        /** Already deleted */
+        break;
       }
       throw error;
     }
