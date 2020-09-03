@@ -56,11 +56,6 @@ module.exports = function ({ onlyTranspileTypescript = false } = {}) {
       keytar: 'commonjs keytar',
     },
     plugins: [
-      new webpack.DefinePlugin({
-        DEFAULT_SYNC_SERVER: JSON.stringify(
-          process.env.DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org'
-        ),
-      }),
       new CopyPlugin({
         patterns: [
           {
@@ -112,6 +107,13 @@ module.exports = function ({ onlyTranspileTypescript = false } = {}) {
       'sn-electron-valence/Transmitter':
         'commonjs sn-electron-valence/Transmitter',
     },
+    plugins: [
+      new webpack.DefinePlugin({
+        DEFAULT_SYNC_SERVER: JSON.stringify(
+          process.env.DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org'
+        ),
+      }),
+    ],
   };
   return [electronMainConfig, electronRendererConfig];
 };
