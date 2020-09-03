@@ -320,7 +320,10 @@ async function installComponent(
     } else {
       log(`Installed component ${component.content.name}`);
     }
-    webContents.send(IpcMessages.InstallComponentComplete, { component, error });
+    webContents.send(IpcMessages.InstallComponentComplete, {
+      component,
+      error,
+    });
   };
 
   const paths = pathsForComponent(component);

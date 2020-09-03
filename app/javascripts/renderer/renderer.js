@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import { IpcMessages } from '../shared/ipcMessages';
 const messageBus = new ElectronValence.FrameMessageBus();
 const receiver = new ElectronValence.Receiver(messageBus);
@@ -30,9 +31,25 @@ function migrateKeychain(bridge) {
     // eslint-disable-next-line no-undef
     DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org',
     {
+      environment: 2 /** Desktop */,
+
       getKeychainValue: () => bridge.getKeychainValue(),
       setKeychainValue: (value) => bridge.setKeychainValue(value),
       clearKeychainValue: () => bridge.clearKeychainValue(),
+
+      extensionsServerHost: await bridge.extServerHost,
+      syncComponents(componentsData) {
+        bridge.sendIpcMessage(IpcMessages.SyncComponents, { componentsData });
+      },
+      onMajorDataChange() {
+        bridge.sendIpcMessage(IpcMessages.MajorDataChange, {});
+      },
+      onSearch(text) {
+        bridge.sendIpcMessage(IpcMessages.SearchText, { text });
+      },
+      onInitialDataLoad() {
+        bridge.sendIpcMessage(IpcMessages.InitialDataLoaded, {});
+      },
     }
   );
   angular.bootstrap(document, ['app']);
@@ -40,8 +57,8 @@ function migrateKeychain(bridge) {
   configureWindow(bridge);
 
   await new Promise((resolve) => angular.element(document).ready(resolve));
-  registerIpcMessageListener(window.desktopManager, bridge);
-  configureDesktopManager(window.desktopManager, bridge);
+  registerIpcMessageListener(bridge);
+  configureDesktopManager(window.desktopManager);
 })();
 loadZipLibrary();
 
@@ -61,11 +78,11 @@ async function configureWindow(bridge) {
     bridge.sendIpcMessage(IpcMessages.DisplayAppMenu, { x: e.x, y: e.y });
   });
 
-  document.getElementById('min-btn').addEventListener('click', (e) => {
+  document.getElementById('min-btn').addEventListener('click', () => {
     bridge.minimizeWindow();
   });
 
-  document.getElementById('max-btn').addEventListener('click', async (e) => {
+  document.getElementById('max-btn').addEventListener('click', async () => {
     if (await bridge.isWindowMaximized()) {
       bridge.unmaximizeWindow();
     } else {
@@ -103,33 +120,12 @@ async function configureWindow(bridge) {
   }
 }
 
-async function configureDesktopManager(desktopManager, bridge) {
-  const extServerHost = await bridge.extServerHost;
-  desktopManager.desktop_setExtServerHost(extServerHost);
-
-  desktopManager.desktop_setComponentInstallationSyncHandler(
-    async (componentsData) => {
-      /* Handled by PackageManager */
-      bridge.sendIpcMessage(IpcMessages.SyncComponents, { componentsData });
-    }
-  );
-
-  desktopManager.desktop_setSearchHandler((text) => {
-    bridge.sendIpcMessage(IpcMessages.SearchText, { text });
-  });
-
-  desktopManager.desktop_setInitialDataLoadHandler(() => {
-    /* Handled by ArchiveManager */
-    bridge.sendIpcMessage(IpcMessages.InitialDataLoaded, {});
-  });
-
-  desktopManager.desktop_setMajorDataChangeHandler(() => {
-    bridge.sendIpcMessage(IpcMessages.MajorDataChange, {});
-  });
+async function configureDesktopManager(desktopManager) {
+  desktopManager.onExtensionsReady();
 }
 
-function registerIpcMessageListener(desktopManager, bridge) {
-  window.addEventListener('message', (event) => {
+function registerIpcMessageListener(bridge) {
+  window.addEventListener('message', async (event) => {
     // We don't have access to the full file path.
     if (event.origin !== 'file://') {
       return;
@@ -164,11 +160,15 @@ function registerIpcMessageListener(desktopManager, bridge) {
       controllerScope.onUpdateAvailable();
     } else if (message === IpcMessages.DownloadBackup) {
       desktopManager.desktop_didBeginBackup();
-      desktopManager.desktop_requestBackupFile((data) => {
+      try {
+        const data = await desktopManager.desktop_requestBackupFile();
         if (data) {
           bridge.sendIpcMessage(IpcMessages.DataArchive, data);
         }
-      });
+      } catch (error) {
+        console.error(error);
+        desktopManager.desktop_didFinishBackup(false);
+      }
     } else if (message === IpcMessages.FinishedSavingBackup) {
       desktopManager.desktop_didFinishBackup(data.success);
     }
