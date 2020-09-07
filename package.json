@@ -101,7 +101,7 @@
     "build:all": "npm run bundle && electron-builder -mwl --x64 --ia32 && npm run build:snap",
     "build:beta": "npm run bundle && electron-builder -mwl --x64 --ia32 -c.productName='Standard Notes (Beta)' -c.appId=org.standardnotes.standardnotes.beta && node scripts/fix-mac-zip.js --beta && node scripts/sums.js",
     "build:beta:mac": "npm run bundle && electron-builder --mac -c.productName='Standard Notes (Beta)' && node scripts/fix-mac-zip.js --beta",
-    "build:beta:linux": "npm run bundle && electron-builder --linux -c.productName='Standard Notes (Beta)'",
+    "build:beta:linux": "npm run bundle && electron-builder --linux --x64 --ia32 -c.productName='Standard Notes (Beta)'",
     "build:beta:windows": "npm run bundle && electron-builder --windows -c.productName='Standard Notes (Beta)'",
     "build:windows": "npm run bundle && electron-builder --windows --x64 --ia32",
     "build:mac": "npm run bundle && electron-builder --mac --x64 && history -c && node scripts/fix-mac-zip",
