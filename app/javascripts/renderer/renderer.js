@@ -41,7 +41,7 @@ async function migrateKeychain(bridge) {
       getKeychainValue: () => bridge.getKeychainValue(),
       setKeychainValue: (value) => bridge.setKeychainValue(value),
       clearKeychainValue: () => bridge.clearKeychainValue(),
-    }
+    };
   } else {
     /** Keychain is not migrated, use web-compatible keychain methods */
     const key = 'keychain';
@@ -58,7 +58,7 @@ async function migrateKeychain(bridge) {
       clearKeychainValue() {
         localStorage.removeItem(key);
       },
-    }
+    };
   }
 
   window.startApplication(
