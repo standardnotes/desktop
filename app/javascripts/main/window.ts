@@ -79,6 +79,7 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
     titleBarStyle: isMac() || useSystemMenuBar ? 'hiddenInset' : undefined,
     frame: isMac() ? false : useSystemMenuBar,
     webPreferences: {
+      enableRemoteModule: true,
       spellcheck: true,
       nodeIntegration: isTesting(),
       contextIsolation: !isTesting(),
