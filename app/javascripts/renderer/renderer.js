@@ -9,14 +9,23 @@ window._extensions_manager_location =
 window._batch_manager_location = 'extensions/batch-manager/dist/index.html';
 window.isElectron = true;
 
-function migrateKeychain(bridge) {
+/** @returns whether the keychain structure is up to date or not */
+async function migrateKeychain(bridge) {
   const key = 'keychain';
-  const value = window.localStorage.getItem(key);
-  if (value) {
-    /** Migrate to native keychain */
-    console.warn('Migrating keychain from localStorage to native keychain.');
-    window.localStorage.removeItem(key);
-    return bridge.setKeychainValue(JSON.parse(value));
+  if (await bridge.getKeychainValue()) {
+    return true;
+  } else {
+    const localStorageValue = window.localStorage.getItem(key);
+    if (localStorageValue) {
+      /** Migrate to native keychain */
+      console.warn('Migrating keychain from localStorage to native keychain.');
+      window.localStorage.removeItem(key);
+      await bridge.setKeychainValue(JSON.parse(localStorageValue));
+      return true;
+    } else {
+      /** Unknown or pre-migration configuration, abort */
+      return false;
+    }
   }
 }
 
@@ -25,18 +34,39 @@ function migrateKeychain(bridge) {
   const bridge = receiver.items[0];
   window.bridge = bridge;
 
-  await migrateKeychain(bridge);
+  let keychainMethods;
+  if (await migrateKeychain(bridge)) {
+    /** Keychain is migrated, we can rely on native methods */
+    keychainMethods = {
+      getKeychainValue: () => bridge.getKeychainValue(),
+      setKeychainValue: (value) => bridge.setKeychainValue(value),
+      clearKeychainValue: () => bridge.clearKeychainValue(),
+    }
+  } else {
+    /** Keychain is not migrated, use web-compatible keychain methods */
+    const key = 'keychain';
+    keychainMethods = {
+      getKeychainValue() {
+        const value = localStorage.getItem(key);
+        if (value) {
+          return JSON.parse(value);
+        }
+      },
+      setKeychainValue(value) {
+        localStorage.setItem(key, JSON.stringify(value));
+      },
+      clearKeychainValue() {
+        localStorage.removeItem(key);
+      },
+    }
+  }
 
   window.startApplication(
     // eslint-disable-next-line no-undef
     DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org',
     {
+      ...keychainMethods,
       environment: 2 /** Desktop */,
-
-      getKeychainValue: () => bridge.getKeychainValue(),
-      setKeychainValue: (value) => bridge.setKeychainValue(value),
-      clearKeychainValue: () => bridge.clearKeychainValue(),
-
       extensionsServerHost: await bridge.extServerHost,
       syncComponents(componentsData) {
         bridge.sendIpcMessage(IpcMessages.SyncComponents, { componentsData });
