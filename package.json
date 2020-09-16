@@ -109,7 +109,7 @@
     "build:snap": "electron-builder --linux --x64 -c.linux.target=snap",
     "build:write-sums": "node scripts/sums.js",
     "build:remove-unpacked": "rimraf dist/{linux-*,mac,win-*}",
-    "build:web": "cd web && npm run bundle -- --env.platform='desktop'",
+    "build:web": "cd web && npm run bundle:desktop",
     "bundle": "npm run build:web && rimraf app/dist/ && webpack --config webpack.prod.js",
     "dev": "webpack --config webpack.dev.js --watch",
     "dev:web": "cd web && npm run watch -- --env.platform='desktop'",
