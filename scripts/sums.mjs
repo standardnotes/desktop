@@ -1,5 +1,6 @@
-const crypto = require('crypto');
-const fs = require('fs');
+import crypto from 'crypto';
+import fs from 'fs';
+import { getLatestBuiltFilesList } from './utils.mjs';
 
 function sha256(filePath) {
   return new Promise((resolve, reject) => {
@@ -15,7 +16,7 @@ function sha256(filePath) {
 (async () => {
   try {
     const version = JSON.parse(fs.readFileSync('./package.json')).version;
-    const files = [
+    let files = [
       `standard-notes-${version}-mac.zip`,
       `standard-notes-${version}-mac.dmg`,
       `standard-notes-${version}-mac.dmg.blockmap`,
@@ -32,6 +33,7 @@ function sha256(filePath) {
       'latest-mac.yml',
       'latest.yml',
     ];
+    files = await getLatestBuiltFilesList();
 
     process.chdir('dist');
 
