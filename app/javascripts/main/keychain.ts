@@ -1,8 +1,12 @@
 import keytar from 'keytar';
 import { AppName } from './strings';
-import { isDev } from './utils';
+import { isDev, isTesting } from './utils';
 
-const ServiceName = isDev() ? AppName + ' (Development)' : AppName;
+const ServiceName = isTesting()
+  ? AppName + ' (Testing)'
+  : isDev()
+  ? AppName + ' (Development)'
+  : AppName;
 const AccountName = 'Standard Notes Account';
 
 export async function getKeychainValue(): Promise<unknown> {

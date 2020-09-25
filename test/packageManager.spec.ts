@@ -76,6 +76,7 @@ const fakeIpcMain = (() => {
 const name = 'Fake Component';
 const identifier = 'fake.component';
 const uuid = 'fake-component';
+const version = '1.0.0';
 const modifiers = Array(20)
   .fill(0)
   .map((_, i) => String(i).padStart(2, '0'));
@@ -88,7 +89,7 @@ function fakeComponent({ deleted = false, modifier = '' } = {}) {
       name: name + modifier,
       autoupdateDisabled: false,
       package_info: {
-        version: '0.0.1',
+        version,
         identifier: identifier + modifier,
         download_url: 'https://standardnotes.org',
       },
@@ -139,6 +140,7 @@ test.serial('installs multiple components', async (t) => {
     modifiers.reduce((acc, modifier) => {
       acc[uuid + modifier] = {
         location: path.join('Extensions', identifier + modifier),
+        version,
       };
       return acc;
     }, {})
