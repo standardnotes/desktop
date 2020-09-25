@@ -20,6 +20,6 @@ export async function getLatestBuiltFilesList() {
     'latest-linux.yml',
     'latest-mac.yml',
     'latest.yml',
-    'builder-effective-config.yaml'
+    'builder-effective-config.yaml',
   ];
 }

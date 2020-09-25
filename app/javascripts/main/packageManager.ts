@@ -115,7 +115,7 @@ async function createMapping(): Promise<InstalledComponentsMapping> {
     set(componentId: string, location: string, version: string) {
       mapping[componentId] = {
         location,
-        version
+        version,
       };
       writeToDisk();
     },
@@ -272,12 +272,7 @@ async function syncComponents(
         /**
          * We have a component but it is not mapped to anything on the file system
          */
-        await installComponent(
-          webContents,
-          mapping,
-          component,
-          version,
-        );
+        await installComponent(webContents, mapping, component, version);
       } else {
         try {
           /** Will trigger an error if the directory does not exist. */
@@ -288,12 +283,7 @@ async function syncComponents(
         } catch (error) {
           if (error.code === FileDoesNotExist) {
             /** We have a component but no content. Install the component */
-            await installComponent(
-              webContents,
-              mapping,
-              component,
-              version,
-            );
+            await installComponent(webContents, mapping, component, version);
           } else {
             throw error;
           }
@@ -307,7 +297,7 @@ async function installComponent(
   webContents: Electron.WebContents,
   mapping: InstalledComponentsMapping,
   component: Component,
-  version: string,
+  version: string
 ) {
   const downloadUrl = component.content.package_info.download_url;
   if (!downloadUrl) {
@@ -322,10 +312,7 @@ async function installComponent(
     error?: { message: string; tag: string }
   ) => {
     if (error) {
-      logError(
-        `Error when installing component ${name}: ` +
-          error.message
-      );
+      logError(`Error when installing component ${name}: ` + error.message);
     } else {
       log(`Installed component ${name}`);
     }
@@ -399,7 +386,10 @@ function pathsForComponent(component: Component) {
   };
 }
 
-async function uninstallComponent(mapping: InstalledComponentsMapping, uuid: string) {
+async function uninstallComponent(
+  mapping: InstalledComponentsMapping,
+  uuid: string
+) {
   const componentMapping = mapping.get(uuid);
   if (!componentMapping || !componentMapping.location) {
     /** No mapping for component */
