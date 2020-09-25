@@ -96,7 +96,7 @@
   "scripts": {
     "build": "npm run build:all && npm run build:write-sums",
     "build:all": "npm run bundle && electron-builder -mwl --x64 --ia32 && npm run build:snap",
-    "build:beta": "npm run bundle && electron-builder -mwl --x64 --ia32 -c.productName='Standard Notes (Beta)' && node scripts/fix-mac-zip.js --beta && node scripts/sums.js",
+    "build:beta": "npm run bundle && electron-builder -mwl --x64 --ia32 -c.productName='Standard Notes (Beta)' && node scripts/fix-mac-zip.js --beta && node scripts/sums.mjs",
     "build:beta:mac": "npm run bundle && electron-builder --mac -c.productName='Standard Notes (Beta)' && node scripts/fix-mac-zip.js --beta",
     "build:beta:linux": "npm run bundle && electron-builder --linux --x64 --ia32 -c.productName='Standard Notes (Beta)'",
     "build:beta:windows": "npm run bundle && electron-builder --windows -c.productName='Standard Notes (Beta)'",
