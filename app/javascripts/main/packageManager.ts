@@ -50,24 +50,23 @@ export interface SyncTask {
   components: Component[];
 }
 
-interface ComponentLocation {
+interface ComponentMapping {
   location: string;
+  version?: string;
 }
 
-interface Mapping {
-  get(componentId: string): ComponentLocation | undefined;
-  set(componendId: string, location: string): void;
+interface InstalledComponentsMapping {
+  get(componentId: string): ComponentMapping | undefined;
+  set(componendId: string, location: string, version: string): void;
   remove(componendId: string): void;
 }
 
 /**
  * Safe component mapping manager that queues its disk writes
  */
-async function createMapping() {
+async function createMapping(): Promise<InstalledComponentsMapping> {
   interface MappingFile {
-    [key: string]: {
-      location: string;
-    };
+    [key: string]: ComponentMapping;
   }
   let mapping: MappingFile;
 
@@ -107,15 +106,16 @@ async function createMapping() {
     get(componendId: string) {
       const component = mapping[componendId];
       if (component) {
-        /** Do a shallow clone to protect against modifications */
+        /** Return a shallow clone to protect against modifications */
         return {
           ...component,
         };
       }
     },
-    set(componentId: string, location: string) {
+    set(componentId: string, location: string, version: string) {
       mapping[componentId] = {
         location,
+        version
       };
       writeToDisk();
     },
@@ -162,7 +162,7 @@ export async function initializePackageManager(
 
 async function runTasks(
   webContents: Electron.WebContents,
-  mapping: Mapping,
+  mapping: InstalledComponentsMapping,
   tasks: SyncTask[]
 ) {
   while (tasks.length > 0) {
@@ -195,7 +195,7 @@ async function runTasks(
  */
 async function runTask(
   webContents: Electron.WebContents,
-  mapping: Mapping,
+  mapping: InstalledComponentsMapping,
   task: SyncTask,
   nextTasks: SyncTask[]
 ): Promise<SyncTask | undefined> {
@@ -244,7 +244,7 @@ async function runTask(
 
 async function syncComponents(
   webContents: Electron.WebContents,
-  mapping: Mapping,
+  mapping: InstalledComponentsMapping,
   components: Component[]
 ) {
   /**
@@ -267,11 +267,17 @@ async function syncComponents(
       }
 
       const paths = pathsForComponent(component);
+      const version = component.content.package_info.version;
       if (!component.content.local_url) {
         /**
          * We have a component but it is not mapped to anything on the file system
          */
-        await installComponent(webContents, mapping, component);
+        await installComponent(
+          webContents,
+          mapping,
+          component,
+          version,
+        );
       } else {
         try {
           /** Will trigger an error if the directory does not exist. */
@@ -282,7 +288,12 @@ async function syncComponents(
         } catch (error) {
           if (error.code === FileDoesNotExist) {
             /** We have a component but no content. Install the component */
-            await installComponent(webContents, mapping, component);
+            await installComponent(
+              webContents,
+              mapping,
+              component,
+              version,
+            );
           } else {
             throw error;
           }
@@ -294,19 +305,17 @@ async function syncComponents(
 
 async function installComponent(
   webContents: Electron.WebContents,
-  mapping: Mapping,
-  component: Component
+  mapping: InstalledComponentsMapping,
+  component: Component,
+  version: string,
 ) {
   const downloadUrl = component.content.package_info.download_url;
   if (!downloadUrl) {
-    log(
-      'Tried to install a component with no download url:',
-      component.content.name
-    );
     return;
   }
+  const name = component.content.name;
 
-  log('Installing ', component.content.name, downloadUrl);
+  log('Installing ', name, downloadUrl);
 
   const sendInstalledMessage = (
     component: Component,
@@ -314,11 +323,11 @@ async function installComponent(
   ) => {
     if (error) {
       logError(
-        `Error when installing component ${component.content.name}: ` +
+        `Error when installing component ${name}: ` +
           error.message
       );
     } else {
-      log(`Installed component ${component.content.name}`);
+      log(`Installed component ${name}`);
     }
     webContents.send('install-component-complete', { component, error });
   };
@@ -358,7 +367,7 @@ async function installComponent(
     }
 
     component.content.local_url = 'sn://' + paths.relativePath + '/' + main;
-    mapping.set(component.uuid, paths.relativePath);
+    mapping.set(component.uuid, paths.relativePath, version);
 
     sendInstalledMessage(component);
   } catch (error) {
@@ -386,7 +395,7 @@ function pathsForComponent(component: Component) {
   };
 }
 
-async function uninstallComponent(mapping: Mapping, uuid: string) {
+async function uninstallComponent(mapping: InstalledComponentsMapping, uuid: string) {
   const componentMapping = mapping.get(uuid);
   if (!componentMapping || !componentMapping.location) {
     /** No mapping for component */
@@ -397,16 +406,22 @@ async function uninstallComponent(mapping: Mapping, uuid: string) {
 }
 
 async function getInstalledVersionForComponent(
+  mapping: InstalledComponentsMapping,
   component: Component
 ): Promise<string> {
+  const version = mapping.get(component.uuid)?.version;
+  if (version) {
+    return version;
+  }
+
   /**
-   * We check package.json version rather than
-   * component.content.package_info.version because we want device specific
-   * versions rather than a globally synced value
+   * If the mapping has no version (pre-3.5 installs) check the component's
+   * package.json file
    */
   const paths = pathsForComponent(component);
   const packagePath = path.join(paths.absolutePath, 'package.json');
   const response = await readJSONFile<{ version: string }>(packagePath);
+  mapping.set(component.uuid, paths.relativePath, response.version);
   return response.version;
 }
 
@@ -418,7 +433,7 @@ interface Package {
 
 async function checkForUpdate(
   webContents: Electron.WebContents,
-  mapping: Mapping,
+  mapping: InstalledComponentsMapping,
   component: Component
 ) {
   const latestURL = component.content.package_info.latest_url;
@@ -431,7 +446,7 @@ async function checkForUpdate(
 
   const [payload, installedVersion] = await Promise.all([
     getJSON<Package>(latestURL),
-    getInstalledVersionForComponent(component),
+    getInstalledVersionForComponent(mapping, component),
   ]);
   log(
     `Checking for update for ${component.content.name}\n` +
@@ -442,6 +457,6 @@ async function checkForUpdate(
     log('Downloading new version', payload.download_url);
     component.content.package_info.download_url = payload.download_url;
     component.content.package_info.version = payload.version;
-    await installComponent(webContents, mapping, component);
+    await installComponent(webContents, mapping, component, payload.version);
   }
 }
