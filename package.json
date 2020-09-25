@@ -94,9 +94,6 @@
     }
   },
   "scripts": {
-    "clean": "npm-run-all --parallel clean:*",
-    "clean:build": "rimraf app/dist/",
-    "clean:tests": "rimraf test/data/tmp/",
     "build": "npm run build:all && npm run build:write-sums",
     "build:all": "npm run bundle && electron-builder -mwl --x64 --ia32 && npm run build:snap",
     "build:beta": "npm run bundle && electron-builder -mwl --x64 --ia32 -c.productName='Standard Notes (Beta)' && node scripts/fix-mac-zip.js --beta && node scripts/sums.js",
@@ -107,10 +104,13 @@
     "build:mac": "npm run bundle && electron-builder --mac --x64 && history -c && node scripts/fix-mac-zip",
     "build:linux": "npm run bundle && electron-builder --linux --x64 --ia32",
     "build:snap": "electron-builder --linux --x64 -c.linux.target=snap",
-    "build:write-sums": "node scripts/sums.js",
+    "build:write-sums": "node scripts/sums.mjs",
     "build:remove-unpacked": "rimraf dist/{linux-*,mac,win-*}",
     "build:web": "cd web && npm run bundle:desktop",
     "bundle": "npm run build:web && rimraf app/dist/ && webpack --config webpack.prod.js",
+    "clean": "npm-run-all --parallel clean:*",
+    "clean:build": "rimraf app/dist/",
+    "clean:tests": "rimraf test/data/tmp/",
     "dev": "webpack --config webpack.dev.js --watch",
     "dev:web": "cd web && npm run watch -- --env.platform='desktop'",
     "format": "prettier --write .",
@@ -120,7 +120,7 @@
     "lint:types": "tsc --noEmit",
     "pack": "build --dir",
     "postinstall": "electron-builder install-app-deps",
-    "release": "npm run setup && npm run bundle && electron-builder -mwl --x64 --ia32",
+    "release:draft": "node scripts/create-draft-release.mjs",
     "setup": "npm install && npm --prefix ./app install ./app && git submodule update --init && npm --prefix ./web install",
     "start": "electron . --enable-logging --icon _icon/icon.png",
     "test": "rimraf test/data/tmp && ava"
