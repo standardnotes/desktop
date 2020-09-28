@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 import { IpcMessages } from '../shared/ipcMessages';
 const messageBus = new ElectronValence.FrameMessageBus();
 const receiver = new ElectronValence.Receiver(messageBus);
@@ -47,16 +46,16 @@ async function migrateKeychain(bridge) {
     const key = 'keychain';
     keychainMethods = {
       getKeychainValue() {
-        const value = localStorage.getItem(key);
+        const value = window.localStorage.getItem(key);
         if (value) {
           return JSON.parse(value);
         }
       },
       setKeychainValue(value) {
-        localStorage.setItem(key, JSON.stringify(value));
+        window.localStorage.setItem(key, JSON.stringify(value));
       },
       clearKeychainValue() {
-        localStorage.removeItem(key);
+        window.localStorage.removeItem(key);
       },
     };
   }
@@ -88,7 +87,6 @@ async function migrateKeychain(bridge) {
 
   await new Promise((resolve) => angular.element(document).ready(resolve));
   registerIpcMessageListener(bridge);
-  configureDesktopManager(window.desktopManager);
 })();
 loadZipLibrary();
 
@@ -150,10 +148,6 @@ async function configureWindow(bridge) {
   }
 }
 
-async function configureDesktopManager(desktopManager) {
-  desktopManager.onExtensionsReady();
-}
-
 function registerIpcMessageListener(bridge) {
   window.addEventListener('message', async (event) => {
     // We don't have access to the full file path.
@@ -169,6 +163,7 @@ function registerIpcMessageListener(bridge) {
       return;
     }
 
+    const desktopManager = window.desktopManager;
     const message = payload.message;
     const data = payload.data;
 
