@@ -193,3 +193,27 @@ test.serial(
     t.is(downloadFileCallCount, 1);
   }
 );
+
+test.serial(
+  "Relies on download_url's version field to store the version number",
+  async (t) => {
+    await fakeIpcMain.syncComponents({
+      components: [fakeComponent()],
+    });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    const mappingFileVersion = JSON.parse(
+      await fs.readFile(path.join(contentDir, 'mapping.json'), 'utf8')
+    )[uuid].version;
+
+    const packageJsonVersion = JSON.parse(
+      await fs.readFile(
+        path.join(contentDir, identifier, 'package.json'),
+        'utf-8'
+      )
+    ).version;
+
+    t.not(mappingFileVersion, packageJsonVersion);
+    t.is(mappingFileVersion, version);
+  }
+);
