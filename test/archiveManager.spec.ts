@@ -32,7 +32,7 @@ test('saves incoming data to the backups folder', async (t) => {
 
 test.serial('performs a backup', async (t) => {
   t.timeout(timeoutDuration);
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   await t.context.backups.perform();
   const backupsLocation = await t.context.backups.location();
   const files = await fs.readdir(backupsLocation);
@@ -41,7 +41,7 @@ test.serial('performs a backup', async (t) => {
 
 test.serial('changes backups folder location', async (t) => {
   t.timeout(timeoutDuration);
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   await t.context.backups.perform();
   let newLocation = path.join(t.context.userDataPath, 'newLocation');
   await fs.mkdir(newLocation);
