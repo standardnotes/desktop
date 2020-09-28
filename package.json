@@ -112,7 +112,7 @@
     "clean:build": "rimraf app/dist/",
     "clean:tests": "rimraf test/data/tmp/",
     "dev": "webpack --config webpack.dev.js --watch",
-    "dev:web": "cd web && npm run watch -- --env.platform='desktop'",
+    "dev:web": "cd web && npm run watch:desktop",
     "format": "prettier --write .",
     "lint": "npm-run-all --parallel lint:*",
     "lint:formatting": "prettier --check .",
