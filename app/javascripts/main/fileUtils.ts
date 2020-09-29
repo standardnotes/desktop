@@ -1,4 +1,5 @@
 import fs, { PathLike } from 'fs';
+import { debounce } from 'lodash';
 import path from 'path';
 import yauzl from 'yauzl';
 
@@ -7,6 +8,25 @@ export const FileAlreadyExists = 'EEXIST';
 const CrossDeviceLink = 'EXDEV';
 const OperationNotPermitted = 'EPERM';
 const DeviceIsBusy = 'EBUSY';
+
+export function debouncedJSONDiskWriter(
+  durationMs: number,
+  location: string,
+  data: () => unknown
+): () => void {
+  let writingToDisk = false;
+  return debounce(async () => {
+    if (writingToDisk) return;
+    writingToDisk = true;
+    try {
+      await writeJSONFile(location, data());
+    } catch (error) {
+      console.error(error);
+    } finally {
+      writingToDisk = false;
+    }
+  }, durationMs);
+}
 
 export async function readJSONFile<T>(filepath: string): Promise<T> {
   const data = await fs.promises.readFile(filepath, 'utf8');

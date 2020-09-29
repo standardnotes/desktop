@@ -26,3 +26,7 @@ export function stringOrNull(arg: unknown): string | null {
 export function lowercaseDriveLetter(filePath: string): string {
   return filePath.replace(/^\/[A-Z]:\//, (letter) => letter.toLowerCase());
 }
+
+export function timeout(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
