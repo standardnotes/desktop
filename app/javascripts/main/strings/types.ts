@@ -84,7 +84,7 @@ interface UpdateStrings {
   updateReady: {
     title: string;
     message(version: string): string;
-    quitAndInstall: string;
+    installAndRestart: string;
     installLater: string;
   };
   errorDownloading: {

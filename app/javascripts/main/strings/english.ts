@@ -115,7 +115,7 @@ export function createEnglishStrings(): Strings {
         message(version: string) {
           return `A new update (version ${version}) is ready to install.`;
         },
-        quitAndInstall: 'Quit and Install',
+        installAndRestart: 'Install and Restart',
         installLater: 'Install Later',
       },
       errorDownloading: {
