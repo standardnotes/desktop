@@ -176,7 +176,10 @@ async function showUpdateInstallationDialog(
     type: 'info',
     title: str().updateReady.title,
     message: str().updateReady.message(state.latestVersion),
-    buttons: [str().updateReady.installAndRestart, str().updateReady.installLater],
+    buttons: [
+      str().updateReady.installAndRestart,
+      str().updateReady.installLater,
+    ],
   });
 
   const buttonIndex = result.response;
