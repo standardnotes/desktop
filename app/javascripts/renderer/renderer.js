@@ -8,9 +8,9 @@ window._extensions_manager_location =
 window._batch_manager_location = 'extensions/batch-manager/dist/index.html';
 
 /** @returns whether the keychain structure is up to date or not */
-async function migrateKeychain(bridge) {
+async function migrateKeychain(mainThread) {
   const key = 'keychain';
-  if (await bridge.getKeychainValue()) {
+  if (await mainThread.getKeychainValue()) {
     return true;
   } else {
     const localStorageValue = window.localStorage.getItem(key);
@@ -18,7 +18,7 @@ async function migrateKeychain(bridge) {
       /** Migrate to native keychain */
       console.warn('Migrating keychain from localStorage to native keychain.');
       window.localStorage.removeItem(key);
-      await bridge.setKeychainValue(JSON.parse(localStorageValue));
+      await mainThread.setKeychainValue(JSON.parse(localStorageValue));
       return true;
     } else {
       /** Unknown or pre-migration configuration, abort */
@@ -27,18 +27,14 @@ async function migrateKeychain(bridge) {
   }
 }
 
-(async () => {
-  await receiver.ready;
-  const bridge = receiver.items[0];
-  window.bridge = bridge;
-
+async function createWebBridge(mainThread) {
   let keychainMethods;
-  if (await migrateKeychain(bridge)) {
+  if (await migrateKeychain(mainThread)) {
     /** Keychain is migrated, we can rely on native methods */
     keychainMethods = {
-      getKeychainValue: () => bridge.getKeychainValue(),
-      setKeychainValue: (value) => bridge.setKeychainValue(value),
-      clearKeychainValue: () => bridge.clearKeychainValue(),
+      getKeychainValue: () => mainThread.getKeychainValue(),
+      setKeychainValue: (value) => mainThread.setKeychainValue(value),
+      clearKeychainValue: () => mainThread.clearKeychainValue(),
     };
   } else {
     /** Keychain is not migrated, use web-compatible keychain methods */
@@ -59,41 +55,64 @@ async function migrateKeychain(bridge) {
     };
   }
 
+  return {
+    ...keychainMethods,
+    environment: 2 /** Desktop */,
+    extensionsServerHost: await mainThread.extServerHost,
+    syncComponents(componentsData) {
+      mainThread.sendIpcMessage(IpcMessages.SyncComponents, {
+        componentsData,
+      });
+    },
+    onMajorDataChange() {
+      mainThread.sendIpcMessage(IpcMessages.MajorDataChange, {});
+    },
+    onSearch(text) {
+      mainThread.sendIpcMessage(IpcMessages.SearchText, { text });
+    },
+    onInitialDataLoad() {
+      mainThread.sendIpcMessage(IpcMessages.InitialDataLoaded, {});
+    },
+    async downloadBackup() {
+      const desktopManager = window.desktopManager;
+      desktopManager.desktop_didBeginBackup();
+      try {
+        const data = await desktopManager.desktop_requestBackupFile();
+        if (data) {
+          mainThread.sendIpcMessage(IpcMessages.DataArchive, data);
+        }
+      } catch (error) {
+        console.error(error);
+        desktopManager.desktop_didFinishBackup(false);
+      }
+    },
+  };
+}
+
+(async () => {
+  await receiver.ready;
+  const mainThread = receiver.items[0];
+
+  const webBridge = await createWebBridge(mainThread);
   window.startApplication(
     // eslint-disable-next-line no-undef
     DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org',
-    {
-      ...keychainMethods,
-      environment: 2 /** Desktop */,
-      extensionsServerHost: await bridge.extServerHost,
-      syncComponents(componentsData) {
-        bridge.sendIpcMessage(IpcMessages.SyncComponents, { componentsData });
-      },
-      onMajorDataChange() {
-        bridge.sendIpcMessage(IpcMessages.MajorDataChange, {});
-      },
-      onSearch(text) {
-        bridge.sendIpcMessage(IpcMessages.SearchText, { text });
-      },
-      onInitialDataLoad() {
-        bridge.sendIpcMessage(IpcMessages.InitialDataLoaded, {});
-      },
-    }
+    webBridge
   );
   angular.bootstrap(document, ['app']);
 
-  configureWindow(bridge);
+  configureWindow(mainThread);
 
   await new Promise((resolve) => angular.element(document).ready(resolve));
-  registerIpcMessageListener(bridge);
+  registerIpcMessageListener(webBridge);
 })();
 loadZipLibrary();
 
-async function configureWindow(bridge) {
+async function configureWindow(mainThread) {
   const [isMacOS, useSystemMenuBar, appVersion] = await Promise.all([
-    bridge.isMacOS,
-    bridge.useSystemMenuBar,
-    bridge.appVersion,
+    mainThread.isMacOS,
+    mainThread.useSystemMenuBar,
+    mainThread.appVersion,
   ]);
 
   window.electronAppVersion = appVersion;
@@ -102,23 +121,26 @@ async function configureWindow(bridge) {
   Title bar events
   */
   document.getElementById('menu-btn').addEventListener('click', (e) => {
-    bridge.sendIpcMessage(IpcMessages.DisplayAppMenu, { x: e.x, y: e.y });
+    mainThread.sendIpcMessage(IpcMessages.DisplayAppMenu, {
+      x: e.x,
+      y: e.y,
+    });
   });
 
   document.getElementById('min-btn').addEventListener('click', () => {
-    bridge.minimizeWindow();
+    mainThread.minimizeWindow();
   });
 
   document.getElementById('max-btn').addEventListener('click', async () => {
-    if (await bridge.isWindowMaximized()) {
-      bridge.unmaximizeWindow();
+    if (await mainThread.isWindowMaximized()) {
+      mainThread.unmaximizeWindow();
     } else {
-      bridge.maximizeWindow();
+      mainThread.maximizeWindow();
     }
   });
 
   document.getElementById('close-btn').addEventListener('click', () => {
-    bridge.closeWindow();
+    mainThread.closeWindow();
   });
 
   // For Mac inset window
@@ -147,7 +169,7 @@ async function configureWindow(bridge) {
   }
 }
 
-function registerIpcMessageListener(bridge) {
+function registerIpcMessageListener(webBridge) {
   window.addEventListener('message', async (event) => {
     // We don't have access to the full file path.
     if (event.origin !== 'file://') {
@@ -183,16 +205,7 @@ function registerIpcMessageListener(bridge) {
       const controllerScope = angular.element(controllerElement).scope();
       controllerScope.onUpdateAvailable();
     } else if (message === IpcMessages.DownloadBackup) {
-      desktopManager.desktop_didBeginBackup();
-      try {
-        const data = await desktopManager.desktop_requestBackupFile();
-        if (data) {
-          bridge.sendIpcMessage(IpcMessages.DataArchive, data);
-        }
-      } catch (error) {
-        console.error(error);
-        desktopManager.desktop_didFinishBackup(false);
-      }
+      webBridge.downloadBackup();
     } else if (message === IpcMessages.FinishedSavingBackup) {
       desktopManager.desktop_didFinishBackup(data.success);
     }
