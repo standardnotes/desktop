@@ -1,3 +1,14 @@
+# Standard Notes
+
+<div align="center">
+
+[![latest release version](https://img.shields.io/github/v/release/standardnotes/desktop)](https://github.com/standardnotes/desktop/releases)
+[![License](https://img.shields.io/github/license/standardnotes/desktop?color=blue)](https://github.com/standardnotes/desktop/blob/master/LICENSE)
+[![Slack](https://img.shields.io/badge/slack-standardnotes-CC2B5E.svg?style=flat&logo=slack)](https://standardnotes.org/slack)
+[![Twitter Follow](https://img.shields.io/badge/follow-%40standardnotes-blue.svg?style=flat&logo=twitter)](https://twitter.com/standardnotes)
+
+</div>
+
 This application makes use of the core JS/CSS/HTML code found in the [web repo](https://github.com/standardnotes/web). For issues related to the actual app experience, please post issues in the web repo.
 
 ## Running Locally
