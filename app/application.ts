@@ -1,6 +1,4 @@
 import { App, IpcMain, Shell } from 'electron';
-import path from 'path';
-import index from './index.html';
 import { ArchiveManager } from './javascripts/main/archiveManager';
 import { createExtensionsServer } from './javascripts/main/extServer';
 import { MenuManager } from './javascripts/main/menus';
@@ -12,9 +10,11 @@ import {
   getKeychainValue,
   setKeychainValue,
   clearKeychainValue,
+  ensureKeychainAccess,
 } from './javascripts/main/keychain';
 import { IpcMessages } from './javascripts/shared/ipcMessages';
 import { isDev } from './javascripts/main/utils';
+import { indexHtml } from './javascripts/main/paths';
 
 export interface AppState {
   readonly store: Store;
@@ -39,7 +39,7 @@ export function initializeApplication(args: {
 
   const state: AppState = {
     store: new Store(app.getPath('userData')),
-    startUrl: determineStartUrl(),
+    startUrl: indexHtml,
     isPrimaryInstance,
     willQuitApp: false,
   };
@@ -53,18 +53,6 @@ export function initializeApplication(args: {
     /** Expose the app's state as a global variable. Useful for debugging */
     (global as any).appState = state;
   }
-}
-
-function determineStartUrl(): string {
-  if ('APP_RELATIVE_PATH' in process.env) {
-    return path.join(
-      'file://',
-      __dirname,
-      process.env.APP_RELATIVE_PATH as string,
-      index
-    );
-  }
-  return path.join('file://', __dirname, index);
 }
 
 function registerSingleInstanceHandler(
@@ -132,6 +120,8 @@ async function finishApplicationInitialization({
   shell: Shell;
   state: AppState;
 }) {
+  const keychainWindow = await ensureKeychainAccess(state.store);
+
   initializeStrings(app.getLocale());
   initializeExtensionsServer(state.store);
   const windowState = await createWindowState({
@@ -142,6 +132,13 @@ async function finishApplicationInitialization({
       state.windowState = undefined;
     },
   });
+
+  /**
+   * Close the keychain window after the main window is created, otherwise the
+   * app will quit automatically
+   */
+  keychainWindow?.close();
+
   state.windowState = windowState;
   registerIpcEventListeners(
     ipcMain,

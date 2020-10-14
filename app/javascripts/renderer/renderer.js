@@ -10,7 +10,11 @@ window._batch_manager_location = 'extensions/batch-manager/dist/index.html';
 /** @returns whether the keychain structure is up to date or not */
 async function migrateKeychain(mainThread) {
   const key = 'keychain';
-  if (await mainThread.getKeychainValue()) {
+
+  if (!(await mainThread.useNativeKeychain)) {
+    /** User chose not to use keychain, do not migrate. */
+    return false;
+  } else if (await mainThread.getKeychainValue()) {
     return true;
   } else {
     const localStorageValue = window.localStorage.getItem(key);

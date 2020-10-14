@@ -24,6 +24,7 @@ import { createTrayManager, TrayManager } from './trayManager';
 import { createUpdateManager, UpdateManager } from './updateManager';
 import { isTesting, lowercaseDriveLetter } from './utils';
 import { initializeZoomManager } from './zoomManager';
+import { preloadJsPath } from './paths';
 
 const WINDOW_DEFAULT_WIDTH = 1100;
 const WINDOW_DEFAULT_HEIGHT = 800;
@@ -83,7 +84,7 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
       spellcheck: true,
       nodeIntegration: isTesting(),
       contextIsolation: !isTesting(),
-      preload: path.join(__dirname, 'javascripts/renderer/preload.js'),
+      preload: preloadJsPath,
     },
   });
   if (position.isFullScreen) {

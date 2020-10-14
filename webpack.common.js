@@ -91,6 +91,7 @@ module.exports = function ({ onlyTranspileTypescript = false } = {}) {
     entry: {
       preload: './app/javascripts/renderer/preload.js',
       renderer: './app/javascripts/renderer/renderer.js',
+      grantKeyringAccess: './app/javascripts/renderer/grantKeyringAccess.ts',
     },
     output: {
       path: path.resolve(__dirname, 'app', 'dist', 'javascripts', 'renderer'),
