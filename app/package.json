@@ -3,7 +3,7 @@
   "productName": "Standard Notes",
   "description": "A simple and private place for your notes, thoughts, and life's work.",
   "author": "Standard Notes <help@standardnotes.org>",
-  "version": "3.4.6",
+  "version": "3.4.10",
   "main": "./dist/index.js",
   "dependencies": {
     "compare-versions": "^3.6.0",
@@ -11,6 +11,6 @@
     "electron-updater": "^4.3.1",
     "mime-types": "^2.1.27",
     "sn-electron-valence": "0.0.4",
-    "standard-notes-web": "github:standardnotes/web#c705b5b4dbbae84231058cb2e52a0449df0cf5ce"
+    "standard-notes-web": "github:standardnotes/web#5fae8e057d939c1c2ad8f36cba874f3e1a187be9"
   }
 }
