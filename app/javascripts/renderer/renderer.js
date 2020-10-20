@@ -97,6 +97,8 @@ async function createWebBridge(mainThread) {
   await receiver.ready;
   const mainThread = receiver.items[0];
 
+  await configureWindow(mainThread);
+
   const webBridge = await createWebBridge(mainThread);
   window.startApplication(
     // eslint-disable-next-line no-undef
@@ -104,8 +106,6 @@ async function createWebBridge(mainThread) {
     webBridge
   );
   angular.bootstrap(document, ['app']);
-
-  configureWindow(mainThread);
 
   await new Promise((resolve) => angular.element(document).ready(resolve));
   registerIpcMessageListener(webBridge);
