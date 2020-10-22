@@ -157,7 +157,8 @@ export async function initializePackageManager(
         components
           .map(
             ({ content, deleted }) =>
-              `${content.name} (${content.package_info.version}) ` +
+              // eslint-disable-next-line camelcase
+              `${content?.name} (${content?.package_info?.version}) ` +
               `(deleted: ${deleted})`
           )
           .join(', ')
