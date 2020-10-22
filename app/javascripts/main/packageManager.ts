@@ -189,7 +189,6 @@ async function runTasks(
         tasks.splice(tasks.indexOf(oppositeTask), 1);
       }
     } catch (error) {
-      /** TODO(baptiste): do something */
       logError(error);
     } finally {
       /** Remove the task from the queue. */
