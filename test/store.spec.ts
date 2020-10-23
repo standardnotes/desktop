@@ -10,7 +10,7 @@ async function validateData(t: ExecutionContext<Driver>) {
    * There should always be 8 values in the store.
    * If one was added/removed intentionally, update this number
    */
-  const numberOfStoreKeys = 9;
+  const numberOfStoreKeys = 10;
   t.is(Object.keys(data).length, numberOfStoreKeys);
 
   t.is(typeof data.isMenuBarVisible, 'boolean');
@@ -34,6 +34,8 @@ async function validateData(t: ExecutionContext<Driver>) {
   t.is(extServerHost.port, '45653');
 
   t.is(typeof data.backupsLocation, 'string');
+
+  t.is(typeof data.useNativeKeychain, 'boolean');
 
   if (process.platform === 'darwin') {
     t.is(data.selectedSpellCheckerLanguageCodes, null);
