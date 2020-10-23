@@ -3,7 +3,12 @@ import fs from 'fs';
 import path from 'path';
 import { AppMessageType, MessageType } from '../../../test/TestIpcMessage';
 import { IpcMessages } from '../shared/ipcMessages';
-import { deleteDir, ensureDirectoryExists, moveDirContents } from './fileUtils';
+import {
+  deleteDir,
+  ensureDirectoryExists,
+  moveDirContents,
+  moveFiles,
+} from './fileUtils';
 import { Store, StoreKeys } from './store';
 import { backups as str } from './strings';
 import { handle, send } from './testing';
@@ -40,10 +45,20 @@ export function createArchiveManager(
 
   async function setBackupsLocation(location: string) {
     const previousLocation = backupsLocation;
-    const newLocation = path.join(location, BackupsDirectoryName);
+    if (previousLocation === location) {
+      return;
+    }
 
-    await moveDirContents(previousLocation, newLocation);
-    await deleteDir(previousLocation);
+    const newLocation = path.join(location, BackupsDirectoryName);
+    const backupFiles = (await fs.promises.readdir(previousLocation))
+      .filter((fileName) => fileName.endsWith('.txt'))
+      .map((fileName) => path.join(previousLocation, fileName));
+
+    await moveFiles(backupFiles, newLocation);
+
+    if ((await fs.promises.readdir(previousLocation)).length === 0) {
+      await deleteDir(previousLocation);
+    }
 
     /** Wait for the operation to be successful before saving new location */
     backupsLocation = newLocation;
