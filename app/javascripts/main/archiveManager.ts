@@ -3,23 +3,18 @@ import fs from 'fs';
 import path from 'path';
 import { AppMessageType, MessageType } from '../../../test/TestIpcMessage';
 import { IpcMessages } from '../shared/ipcMessages';
-import {
-  deleteDir,
-  ensureDirectoryExists,
-  moveDirContents,
-  moveFiles,
-} from './fileUtils';
+import { deleteDir, ensureDirectoryExists, moveFiles } from './fileUtils';
 import { Store, StoreKeys } from './store';
 import { backups as str } from './strings';
 import { handle, send } from './testing';
 import { isTesting } from './utils';
 
 function log(...message: any) {
-  console.log('archiveManager:', ...message);
+  console.log('ArchiveManager:', ...message);
 }
 
 function logError(...message: any) {
-  console.error('archiveManager:', ...message);
+  console.error('ArchiveManager:', ...message);
 }
 
 export const BackupsDirectoryName = 'Standard Notes Backups';

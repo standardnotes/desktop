@@ -220,7 +220,10 @@ export async function extractNestedZip(
   });
 }
 
-export async function moveFiles(sources: string[], destDir: string) {
+export async function moveFiles(
+  sources: string[],
+  destDir: string
+): Promise<void[]> {
   await ensureDirectoryExists(destDir);
   return Promise.all(
     sources.map((fileName) =>

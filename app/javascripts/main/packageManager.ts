@@ -33,7 +33,7 @@ interface Component {
   uuid: string;
   deleted: boolean;
   content: {
-    name: string;
+    name?: string;
     autoupdateDisabled: boolean;
     local_url?: string;
     package_info: {
@@ -268,7 +268,7 @@ async function syncComponents(
     components.map(async (component) => {
       if (component.deleted) {
         /** Uninstall */
-        log(`Uninstalling ${component.content.name}`);
+        log(`Uninstalling ${component.content?.name}`);
         await uninstallComponent(mapping, component.uuid);
         return;
       }
