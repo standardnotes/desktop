@@ -32,7 +32,7 @@ function logError(...message: any) {
 interface Component {
   uuid: string;
   deleted: boolean;
-  content: {
+  content?: {
     name?: string;
     autoupdateDisabled: boolean;
     local_url?: string;
@@ -273,7 +273,8 @@ async function syncComponents(
         return;
       }
 
-      if (!component.content.package_info) {
+      // eslint-disable-next-line camelcase
+      if (!component.content?.package_info) {
         log('Package info is null, skipping');
         return;
       }
@@ -311,6 +312,9 @@ async function installComponent(
   component: Component,
   version: string
 ) {
+  if (!component.content) {
+    return;
+  }
   const downloadUrl = component.content.package_info.download_url;
   if (!downloadUrl) {
     return;
@@ -390,7 +394,7 @@ async function installComponent(
 function pathsForComponent(component: Pick<Component, 'content'>) {
   const relativePath = path.join(
     ExtensionsFolderName,
-    component.content.package_info.identifier
+    component.content!.package_info.identifier
   );
   return {
     relativePath,
@@ -399,7 +403,7 @@ function pathsForComponent(component: Pick<Component, 'content'>) {
       tempPath,
       AppName,
       'downloads',
-      component.content.name + '.zip'
+      component.content!.name + '.zip'
     ),
   };
 }
@@ -425,10 +429,10 @@ async function checkForUpdate(
   mapping: MappingFileHandler,
   component: Component
 ) {
-  const latestURL = component.content.package_info.latest_url;
+  const latestURL = component.content!.package_info.latest_url;
   if (!latestURL) {
     console.warn(
-      `No latest url, skipping update for ${component.content.name}`
+      `No latest url, skipping update for ${component.content?.name}`
     );
     return;
   }
@@ -438,14 +442,14 @@ async function checkForUpdate(
     mapping.getInstalledVersionForComponent(component),
   ]);
   log(
-    `Checking for update for ${component.content.name}\n` +
+    `Checking for update for ${component.content?.name}\n` +
       `Latest: ${payload.version} | Installed: ${installedVersion}`
   );
   if (compareVersions(payload.version, installedVersion) === 1) {
     /** Latest version is greater than installed version */
     log('Downloading new version', payload.download_url);
-    component.content.package_info.download_url = payload.download_url;
-    component.content.package_info.version = payload.version;
+    component.content!.package_info.download_url = payload.download_url;
+    component.content!.package_info.version = payload.version;
     await installComponent(webContents, mapping, component, payload.version);
   }
 }
