@@ -9,21 +9,25 @@ window._batch_manager_location = 'extensions/batch-manager/dist/index.html';
 
 /** @returns whether the keychain structure is up to date or not */
 async function migrateKeychain(mainThread) {
+  if (!(await mainThread.useNativeKeychain)) {
+    /** User chose not to use keychain, do not migrate. */
+    return false;
+  }
+
   const key = 'keychain';
-  if (await mainThread.getKeychainValue()) {
+  const localStorageValue = window.localStorage.getItem(key);
+  if (localStorageValue) {
+    /** Migrate to native keychain */
+    console.warn('Migrating keychain from localStorage to native keychain.');
+    window.localStorage.removeItem(key);
+    await mainThread.setKeychainValue(JSON.parse(localStorageValue));
+    return true;
+  } else if (await mainThread.getKeychainValue()) {
+    /** Keychain value is already present */
     return true;
   } else {
-    const localStorageValue = window.localStorage.getItem(key);
-    if (localStorageValue) {
-      /** Migrate to native keychain */
-      console.warn('Migrating keychain from localStorage to native keychain.');
-      window.localStorage.removeItem(key);
-      await mainThread.setKeychainValue(JSON.parse(localStorageValue));
-      return true;
-    } else {
-      /** Unknown or pre-migration configuration, abort */
-      return false;
-    }
+    /** Unknown or pre-migration configuration, abort */
+    return false;
   }
 }
 
@@ -93,6 +97,8 @@ async function createWebBridge(mainThread) {
   await receiver.ready;
   const mainThread = receiver.items[0];
 
+  await configureWindow(mainThread);
+
   const webBridge = await createWebBridge(mainThread);
   window.startApplication(
     // eslint-disable-next-line no-undef
@@ -100,8 +106,6 @@ async function createWebBridge(mainThread) {
     webBridge
   );
   angular.bootstrap(document, ['app']);
-
-  configureWindow(mainThread);
 
   await new Promise((resolve) => angular.element(document).ready(resolve));
   registerIpcMessageListener(webBridge);

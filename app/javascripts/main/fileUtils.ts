@@ -2,6 +2,7 @@ import fs, { PathLike } from 'fs';
 import { debounce } from 'lodash';
 import path from 'path';
 import yauzl from 'yauzl';
+import { removeFromArray } from './utils';
 
 export const FileDoesNotExist = 'ENOENT';
 export const FileAlreadyExists = 'EEXIST';
@@ -132,18 +133,28 @@ export async function deleteDirContents(dirPath: string): Promise<void> {
   }
 }
 
+function isChildOfDir(parent: string, potentialChild: string) {
+  const relative = path.relative(parent, potentialChild);
+  return relative && !relative.startsWith('..') && !path.isAbsolute(relative);
+}
+
 export async function moveDirContents(
   srcDir: string,
   destDir: string
-): Promise<void> {
-  const [fileNames] = await Promise.all([
-    fs.promises.readdir(srcDir),
-    ensureDirectoryExists(destDir),
-  ]);
-  await Promise.all(
-    fileNames.map(async (fileName) =>
-      moveFile(path.join(srcDir, fileName), path.join(destDir, fileName))
-    )
+): Promise<void[]> {
+  let fileNames = await fs.promises.readdir(srcDir);
+  await ensureDirectoryExists(destDir);
+
+  if (isChildOfDir(srcDir, destDir)) {
+    fileNames = fileNames.filter((name) => {
+      return !isChildOfDir(destDir, path.join(srcDir, name));
+    });
+    removeFromArray(fileNames, path.basename(destDir));
+  }
+
+  return moveFiles(
+    fileNames.map((fileName) => path.join(srcDir, fileName)),
+    destDir
   );
 }
 
@@ -207,6 +218,18 @@ export async function extractNestedZip(
       }
     );
   });
+}
+
+export async function moveFiles(
+  sources: string[],
+  destDir: string
+): Promise<void[]> {
+  await ensureDirectoryExists(destDir);
+  return Promise.all(
+    sources.map((fileName) =>
+      moveFile(fileName, path.join(destDir, path.basename(fileName)))
+    )
+  );
 }
 
 async function moveFile(source: PathLike, destination: PathLike) {

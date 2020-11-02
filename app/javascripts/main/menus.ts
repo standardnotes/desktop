@@ -1,5 +1,6 @@
 import {
   app,
+  BrowserWindow,
   ContextMenuParams,
   dialog,
   Menu,
@@ -9,7 +10,7 @@ import {
 } from 'electron';
 import { MessageType } from '../../../test/TestIpcMessage';
 import { ArchiveManager } from './archiveManager';
-import { isMac } from './platforms';
+import { isLinux, isMac } from './platforms';
 import { SpellcheckerManager } from './spellcheckerManager';
 import { Store, StoreKeys } from './store';
 import { appMenu as str, contextMenu } from './strings';
@@ -141,6 +142,7 @@ export function createMenuManager({
       windowMenu(store, trayManager, reload),
       backupsMenu(archiveManager, reload),
       updateMenu(updateManager),
+      ...(isLinux() ? [keyringMenu(window, store)] : []),
       helpMenu(window, shell),
     ]);
     Menu.setApplicationMenu(menu);
@@ -646,6 +648,38 @@ function helpMenu(window: Electron.BrowserWindow, shell: Electron.Shell) {
         label: str().version(app.getVersion()),
         click() {
           shell.openExternal(Urls.GitHubReleases);
+        },
+      },
+    ],
+  };
+}
+
+/** It's called keyring on Ubuntu */
+function keyringMenu(
+  window: BrowserWindow,
+  store: Store
+): MenuItemConstructorOptions {
+  const useNativeKeychain = store.get(StoreKeys.UseNativeKeychain);
+  return {
+    label: str().security.security,
+    submenu: [
+      {
+        enabled: !useNativeKeychain,
+        checked: useNativeKeychain,
+        type: 'checkbox',
+        label: str().security.useKeyringtoStorePassword,
+        async click() {
+          store.set(StoreKeys.UseNativeKeychain, true);
+          const { response } = await dialog.showMessageBox(window, {
+            message: str().security.enabledKeyringAccessMessage,
+            buttons: [
+              str().security.enabledKeyringQuitNow,
+              str().security.enabledKeyringPostpone,
+            ],
+          });
+          if (response === 0) {
+            app.quit();
+          }
         },
       },
     ],

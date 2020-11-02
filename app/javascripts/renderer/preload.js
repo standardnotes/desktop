@@ -15,6 +15,7 @@ const transmitter = new Transmitter(messageBus, {
   isMacOS: PropertyType.VALUE,
   appVersion: PropertyType.VALUE,
   extServerHost: PropertyType.VALUE,
+  useNativeKeychain: PropertyType.VALUE,
   useSystemMenuBar: PropertyType.VALUE,
   sendIpcMessage: {
     type: PropertyType.METHOD,
@@ -41,6 +42,7 @@ process.once('loaded', function () {
 function loadTransmitter() {
   transmitter.expose({
     extServerHost: Store.get(StoreKeys.ExtServerHost),
+    useNativeKeychain: Store.get(StoreKeys.UseNativeKeychain),
     rendererPath,
     isMacOS: process.platform === 'darwin',
     appVersion: remote.app.getVersion(),

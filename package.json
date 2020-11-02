@@ -1,7 +1,7 @@
 {
   "name": "standard-notes",
   "main": "./app/dist/index.js",
-  "version": "3.5.0-beta7",
+  "version": "3.5.1",
   "repository": {
     "type": "git",
     "url": "git://github.com/standardnotes/desktop"
@@ -30,7 +30,7 @@
     "commitlint": "^9.1.0",
     "copy-webpack-plugin": "^6.0.3",
     "electron": "^9.2.1",
-    "electron-builder": "^22.8.0",
+    "electron-builder": "^22.9.1",
     "electron-notarize": "^1.0.0",
     "eslint": "^7.6.0",
     "eslint-config-prettier": "^6.11.0",
@@ -91,6 +91,12 @@
         "AppImage",
         "snap"
       ]
+    },
+    "snap": {
+      "plugs": [
+        "default",
+        "password-manager-service"
+      ]
     }
   },
   "scripts": {
@@ -123,7 +129,8 @@
     "release:draft": "node scripts/create-draft-release.mjs",
     "setup": "npm install && npm --prefix ./app install ./app && git submodule update --init && npm --prefix ./web install",
     "start": "electron . --enable-logging --icon _icon/icon.png",
-    "test": "rimraf test/data/tmp && ava"
+    "test": "rimraf test/data/tmp && ava",
+    "change-version": "node scripts/change-version.mjs"
   },
   "husky": {
     "hooks": {

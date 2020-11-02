@@ -17,6 +17,7 @@ import { getLatestBuiltFilesList } from './utils.mjs';
     '--target',
     'master',
     '--draft',
+    '--prerelease',
     '--title',
     versionNumber,
   ]);

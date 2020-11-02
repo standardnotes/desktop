@@ -21,6 +21,10 @@ test.afterEach(async (t) => {
  */
 const timeoutDuration = 20 * 1000; /** 20s */
 
+function wait() {
+  return new Promise((resolve) => setTimeout(resolve, 1000));
+}
+
 test('saves incoming data to the backups folder', async (t) => {
   const data = 'Sample Data';
   const fileName = await t.context.backups.save(data);
@@ -32,7 +36,7 @@ test('saves incoming data to the backups folder', async (t) => {
 
 test.serial('performs a backup', async (t) => {
   t.timeout(timeoutDuration);
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await wait();
   await t.context.backups.perform();
   const backupsLocation = await t.context.backups.location();
   const files = await fs.readdir(backupsLocation);
@@ -41,7 +45,7 @@ test.serial('performs a backup', async (t) => {
 
 test.serial('changes backups folder location', async (t) => {
   t.timeout(timeoutDuration);
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await wait();
   await t.context.backups.perform();
   let newLocation = path.join(t.context.userDataPath, 'newLocation');
   await fs.mkdir(newLocation);
@@ -61,6 +65,37 @@ test.serial('changes backups folder location', async (t) => {
   t.deepEqual(newFileNames.length, fileNames.length + 1);
 });
 
+test.serial('changes backups location to a child directory', async (t) => {
+  t.timeout(timeoutDuration);
+  await wait();
+  await t.context.backups.perform();
+  const currentLocation = await t.context.backups.location();
+  const backups = await fs.readdir(currentLocation);
+  t.is(backups.length, 1);
+  const newLocation = path.join(currentLocation, 'child_dir');
+  await t.context.backups.changeLocation(newLocation);
+  t.deepEqual(
+    await fs.readdir(path.join(newLocation, BackupsDirectoryName)),
+    backups
+  );
+});
+
+test.serial(
+  'changing backups location to the same directory should not do anything',
+  async (t) => {
+    t.timeout(timeoutDuration);
+    await wait();
+    await t.context.backups.perform();
+    await t.context.backups.perform();
+    const currentLocation = await t.context.backups.location();
+    let totalFiles = (await fs.readdir(currentLocation)).length;
+    t.is(totalFiles, 2);
+    await t.context.backups.changeLocation(currentLocation);
+    totalFiles = (await fs.readdir(currentLocation)).length;
+    t.is(totalFiles, 2);
+  }
+);
+
 test('backups are enabled by default', async (t) => {
   t.is(await t.context.backups.enabled(), true);
 });
@@ -70,7 +105,7 @@ test('does not save a backup when they are disabled', async (t) => {
   await t.context.windowLoaded;
   /** Do not wait on this one as the backup shouldn't be triggered */
   t.context.backups.perform();
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await wait();
   const backupsLocation = await t.context.backups.location();
   try {
     await fs.readdir(backupsLocation);

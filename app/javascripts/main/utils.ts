@@ -30,3 +30,7 @@ export function lowercaseDriveLetter(filePath: string): string {
 export function timeout(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+export function removeFromArray<T>(array: T[], toRemove: T): void {
+  array.splice(array.indexOf(toRemove), 1);
+}
