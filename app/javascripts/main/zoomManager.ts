@@ -1,7 +1,10 @@
 import { BrowserWindow } from 'electron';
 import { Store, StoreKeys } from './store';
 
-export function initializeZoomManager(window: BrowserWindow, store: Store) {
+export function initializeZoomManager(
+  window: BrowserWindow,
+  store: Store
+): void {
   window.webContents.on('dom-ready', () => {
     const zoomFactor = store.get(StoreKeys.ZoomFactor);
     if (zoomFactor) {

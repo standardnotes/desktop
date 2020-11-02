@@ -1,10 +1,20 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html ng-app="app">
+<html>
   <head>
     <meta charset="utf-8" />
+    <!--
+      We need to set 'unsafe-eval' to use wasm.
+      https://bugs.chromium.org/p/chromium/issues/detail?id=948834
+    -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; connect-src *; style-src 'unsafe-inline' 'self' http://127.0.0.1:45653; frame-src *"
+      content="
+        default-src 'self';
+        script-src 'self' 'unsafe-eval';
+        connect-src * data:;
+        style-src 'unsafe-inline' 'self' http://127.0.0.1:45653;
+        frame-src *
+      "
     />
 
     <meta content="IE=edge" http-equiv="X-UA-Compatible" />
@@ -19,7 +29,7 @@
     <meta ng-bind="title" content="Standard Notes" name="application-name" />
 
     <script src="standard-notes-web/javascripts/app.js"></script>
-    <script src="sn-electron-valence/Receiver.js"></script>
+    <script src="../node_modules/sn-electron-valence/Receiver.js"></script>
     <script src="javascripts/renderer/renderer.js"></script>
 
     <link
@@ -107,6 +117,6 @@
         </button>
       </div>
     </div>
-    <root />
+    <application-group-view />
   </body>
 </html>

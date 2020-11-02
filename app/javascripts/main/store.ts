@@ -22,6 +22,7 @@ export enum StoreKeys {
   EnableAutoUpdate = 'enableAutoUpdates',
   ZoomFactor = 'zoomFactor',
   SelectedSpellCheckerLanguageCodes = 'selectedSpellCheckerLanguageCodes',
+  UseNativeKeychain = 'useNativeKeychain',
 }
 
 interface StoreData {
@@ -32,6 +33,7 @@ interface StoreData {
   [StoreKeys.BackupsDisabled]: boolean;
   [StoreKeys.MinimizeToTray]: boolean;
   [StoreKeys.EnableAutoUpdate]: boolean;
+  [StoreKeys.UseNativeKeychain]: boolean;
   [StoreKeys.ZoomFactor]: number;
   [StoreKeys.SelectedSpellCheckerLanguageCodes]: Set<Language> | null;
 }
@@ -56,6 +58,10 @@ function createSanitizedStoreData(data: any = {}): StoreData {
     ),
     [StoreKeys.EnableAutoUpdate]: ensureIsBoolean(
       data[StoreKeys.EnableAutoUpdate],
+      true
+    ),
+    [StoreKeys.UseNativeKeychain]: ensureIsBoolean(
+      data[StoreKeys.UseNativeKeychain],
       true
     ),
     [StoreKeys.ExtServerHost]: stringOrNull(data[StoreKeys.ExtServerHost]),
@@ -144,7 +150,7 @@ export class Store {
   readonly path: string;
   readonly data: StoreData;
 
-  static getInstance() {
+  static getInstance(): Store {
     if (!this.instance) {
       /**
        * Renderer process has to get `app` module via `remote`, whereas the main process
@@ -158,7 +164,7 @@ export class Store {
     return this.instance;
   }
 
-  static get(key: StoreKeys) {
+  static get<T extends keyof StoreData>(key: T): StoreData[T] {
     return this.getInstance().get(key);
   }
 
@@ -178,7 +184,7 @@ export class Store {
     return this.data[key];
   }
 
-  set<T extends keyof StoreData>(key: T, val: StoreData[T]) {
+  set<T extends keyof StoreData>(key: T, val: StoreData[T]): void {
     this.data[key] = val;
     fs.writeFileSync(this.path, serializeStoreData(this.data));
   }

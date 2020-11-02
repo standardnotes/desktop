@@ -1,5 +1,6 @@
 import {
   app,
+  BrowserWindow,
   ContextMenuParams,
   dialog,
   Menu,
@@ -9,10 +10,10 @@ import {
 } from 'electron';
 import { MessageType } from '../../../test/TestIpcMessage';
 import { ArchiveManager } from './archiveManager';
-import { isMac } from './platforms';
+import { isLinux, isMac } from './platforms';
 import { SpellcheckerManager } from './spellcheckerManager';
 import { Store, StoreKeys } from './store';
-import { appMenu as str } from './strings';
+import { appMenu as str, contextMenu } from './strings';
 import { handle } from './testing';
 import { TrayManager } from './trayManager';
 import { UpdateManager } from './updateManager';
@@ -21,6 +22,10 @@ import { isDev, isTesting } from './utils';
 export const enum MenuId {
   SpellcheckerLanguages = 'SpellcheckerLanguages',
 }
+
+const Separator: MenuItemConstructorOptions = {
+  type: 'separator',
+};
 
 export function buildContextMenu(
   webContents: WebContents,
@@ -36,19 +41,19 @@ export function buildContextMenu(
 
   return Menu.buildFromTemplate([
     ...suggestionsMenu(
+      params.selectionText,
       params.misspelledWord,
       params.dictionarySuggestions,
       webContents
     ),
+    Separator,
     {
       role: 'undo',
     },
     {
       role: 'redo',
     },
-    {
-      type: 'separator',
-    },
+    Separator,
     {
       role: 'cut',
     },
@@ -68,6 +73,7 @@ export function buildContextMenu(
 }
 
 function suggestionsMenu(
+  selection: string,
   misspelledWord: string,
   suggestions: string[],
   webContents: WebContents
@@ -76,15 +82,21 @@ function suggestionsMenu(
     return [];
   }
 
+  const learnSpelling = {
+    label: contextMenu().learnSpelling,
+    click() {
+      webContents.session.addWordToSpellCheckerDictionary(misspelledWord);
+    },
+  };
+
   if (suggestions.length === 0) {
     return [
       {
-        label: 'No suggestions',
+        label: contextMenu().noSuggestions,
         enabled: false,
       },
-      {
-        type: 'separator',
-      },
+      Separator,
+      learnSpelling,
     ];
   }
 
@@ -95,9 +107,8 @@ function suggestionsMenu(
         webContents.replaceMisspelling(suggestion);
       },
     })),
-    {
-      type: 'separator',
-    },
+    Separator,
+    learnSpelling,
   ];
 }
 
@@ -131,6 +142,7 @@ export function createMenuManager({
       windowMenu(store, trayManager, reload),
       backupsMenu(archiveManager, reload),
       updateMenu(updateManager),
+      ...(isLinux() ? [keyringMenu(window, store)] : []),
       helpMenu(window, shell),
     ]);
     Menu.setApplicationMenu(menu);
@@ -210,10 +222,6 @@ const enum MenuItemTypes {
   CheckBox = 'checkbox',
   Radio = 'radio',
 }
-
-const Separator: MenuItemConstructorOptions = {
-  type: 'separator',
-};
 
 const Urls = {
   Support: 'mailto:help@standardnotes.org',
@@ -498,7 +506,7 @@ function backupsMenu(archiveManager: ArchiveManager, reload: () => any) {
       {
         label: str().openBackupsLocation,
         click() {
-          shell.openItem(archiveManager.backupsLocation);
+          shell.openPath(archiveManager.backupsLocation);
         },
       },
     ],
@@ -625,7 +633,7 @@ function helpMenu(window: Electron.BrowserWindow, shell: Electron.Shell) {
         label: str().openDataDirectory,
         click() {
           const userDataPath = app.getPath('userData');
-          shell.openItem(userDataPath);
+          shell.openPath(userDataPath);
         },
       },
       {
@@ -640,6 +648,38 @@ function helpMenu(window: Electron.BrowserWindow, shell: Electron.Shell) {
         label: str().version(app.getVersion()),
         click() {
           shell.openExternal(Urls.GitHubReleases);
+        },
+      },
+    ],
+  };
+}
+
+/** It's called keyring on Ubuntu */
+function keyringMenu(
+  window: BrowserWindow,
+  store: Store
+): MenuItemConstructorOptions {
+  const useNativeKeychain = store.get(StoreKeys.UseNativeKeychain);
+  return {
+    label: str().security.security,
+    submenu: [
+      {
+        enabled: !useNativeKeychain,
+        checked: useNativeKeychain,
+        type: 'checkbox',
+        label: str().security.useKeyringtoStorePassword,
+        async click() {
+          store.set(StoreKeys.UseNativeKeychain, true);
+          const { response } = await dialog.showMessageBox(window, {
+            message: str().security.enabledKeyringAccessMessage,
+            buttons: [
+              str().security.enabledKeyringQuitNow,
+              str().security.enabledKeyringPostpone,
+            ],
+          });
+          if (response === 0) {
+            app.quit();
+          }
         },
       },
     ],

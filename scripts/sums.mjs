@@ -14,26 +14,11 @@ function sha256(filePath) {
 }
 
 (async () => {
+  console.log('Writing SHA256 sums to dist/SHA256SUMS');
+
   try {
     const version = JSON.parse(fs.readFileSync('./package.json')).version;
-    let files = [
-      `standard-notes-${version}-mac.zip`,
-      `standard-notes-${version}-mac.dmg`,
-      `standard-notes-${version}-mac.dmg.blockmap`,
-
-      `standard-notes-${version}-linux-i386.AppImage`,
-      `standard-notes-${version}-linux-x86_64.AppImage`,
-      `standard-notes-${version}-linux-amd64.snap`,
-
-      `standard-notes-${version}-win.exe`,
-      `standard-notes-${version}-win.exe.blockmap`,
-
-      'latest-linux-ia32.yml',
-      'latest-linux.yml',
-      'latest-mac.yml',
-      'latest.yml',
-    ];
-    files = await getLatestBuiltFilesList();
+    const files = await getLatestBuiltFilesList();
 
     process.chdir('dist');
 

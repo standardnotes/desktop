@@ -76,6 +76,7 @@ const fakeIpcMain = (() => {
 const name = 'Fake Component';
 const identifier = 'fake.component';
 const uuid = 'fake-component';
+const version = '1.0.0';
 const modifiers = Array(20)
   .fill(0)
   .map((_, i) => String(i).padStart(2, '0'));
@@ -88,7 +89,7 @@ function fakeComponent({ deleted = false, modifier = '' } = {}) {
       name: name + modifier,
       autoupdateDisabled: false,
       package_info: {
-        version: '0.0.1',
+        version,
         identifier: identifier + modifier,
         download_url: 'https://standardnotes.org',
       },
@@ -139,6 +140,7 @@ test.serial('installs multiple components', async (t) => {
     modifiers.reduce((acc, modifier) => {
       acc[uuid + modifier] = {
         location: path.join('Extensions', identifier + modifier),
+        version,
       };
       return acc;
     }, {})
@@ -189,5 +191,29 @@ test.serial(
       }),
     ]);
     t.is(downloadFileCallCount, 1);
+  }
+);
+
+test.serial(
+  "Relies on download_url's version field to store the version number",
+  async (t) => {
+    await fakeIpcMain.syncComponents({
+      components: [fakeComponent()],
+    });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    const mappingFileVersion = JSON.parse(
+      await fs.readFile(path.join(contentDir, 'mapping.json'), 'utf8')
+    )[uuid].version;
+
+    const packageJsonVersion = JSON.parse(
+      await fs.readFile(
+        path.join(contentDir, identifier, 'package.json'),
+        'utf-8'
+      )
+    ).version;
+
+    t.not(mappingFileVersion, packageJsonVersion);
+    t.is(mappingFileVersion, version);
   }
 );

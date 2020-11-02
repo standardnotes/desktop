@@ -1,12 +1,33 @@
 import fs, { PathLike } from 'fs';
+import { debounce } from 'lodash';
 import path from 'path';
 import yauzl from 'yauzl';
+import { removeFromArray } from './utils';
 
 export const FileDoesNotExist = 'ENOENT';
 export const FileAlreadyExists = 'EEXIST';
 const CrossDeviceLink = 'EXDEV';
 const OperationNotPermitted = 'EPERM';
 const DeviceIsBusy = 'EBUSY';
+
+export function debouncedJSONDiskWriter(
+  durationMs: number,
+  location: string,
+  data: () => unknown
+): () => void {
+  let writingToDisk = false;
+  return debounce(async () => {
+    if (writingToDisk) return;
+    writingToDisk = true;
+    try {
+      await writeJSONFile(location, data());
+    } catch (error) {
+      console.error(error);
+    } finally {
+      writingToDisk = false;
+    }
+  }, durationMs);
+}
 
 export async function readJSONFile<T>(filepath: string): Promise<T> {
   const data = await fs.promises.readFile(filepath, 'utf8');
@@ -18,16 +39,19 @@ export function readJSONFileSync<T>(filepath: string): T {
   return JSON.parse(data);
 }
 
-export async function writeJSONFile(filepath: string, data: any) {
+export async function writeJSONFile(
+  filepath: string,
+  data: unknown
+): Promise<void> {
   await ensureDirectoryExists(path.dirname(filepath));
   await fs.promises.writeFile(filepath, JSON.stringify(data, null, 2), 'utf8');
 }
 
-export function writeJSONFileSync(filepath: string, data: any) {
+export function writeJSONFileSync(filepath: string, data: unknown): void {
   fs.writeFileSync(filepath, JSON.stringify(data, null, 2), 'utf8');
 }
 
-export async function ensureDirectoryExists(dirPath: string) {
+export async function ensureDirectoryExists(dirPath: string): Promise<void> {
   try {
     const stat = await fs.promises.lstat(dirPath);
     if (!stat.isDirectory()) {
@@ -68,7 +92,7 @@ export async function ensureDirectoryExists(dirPath: string) {
  * Deletes a directory (handling recursion.)
  * @param {string} dirPath the path of the directory
  */
-export async function deleteDir(dirPath: string) {
+export async function deleteDir(dirPath: string): Promise<void> {
   try {
     await deleteDirContents(dirPath);
   } catch (error) {
@@ -81,7 +105,7 @@ export async function deleteDir(dirPath: string) {
   await fs.promises.rmdir(dirPath);
 }
 
-export async function deleteDirContents(dirPath: string) {
+export async function deleteDirContents(dirPath: string): Promise<void> {
   /**
    * Scan the directory up to ten times, to handle cases where files are being added while
    * the directory's contents are being deleted
@@ -95,7 +119,13 @@ export async function deleteDirContents(dirPath: string) {
       const childPath = path.join(dirPath, child.name);
       if (child.isDirectory()) {
         await deleteDirContents(childPath);
-        await fs.promises.rmdir(childPath);
+        try {
+          await fs.promises.rmdir(childPath);
+        } catch (error) {
+          if (error !== FileDoesNotExist) {
+            throw error;
+          }
+        }
       } else {
         await deleteFile(childPath);
       }
@@ -103,19 +133,35 @@ export async function deleteDirContents(dirPath: string) {
   }
 }
 
-export async function moveDirContents(srcDir: string, destDir: string) {
-  const [fileNames] = await Promise.all([
-    fs.promises.readdir(srcDir),
-    ensureDirectoryExists(destDir),
-  ]);
-  return Promise.all(
-    fileNames.map(async (fileName) =>
-      moveFile(path.join(srcDir, fileName), path.join(destDir, fileName))
-    )
+function isChildOfDir(parent: string, potentialChild: string) {
+  const relative = path.relative(parent, potentialChild);
+  return relative && !relative.startsWith('..') && !path.isAbsolute(relative);
+}
+
+export async function moveDirContents(
+  srcDir: string,
+  destDir: string
+): Promise<void[]> {
+  let fileNames = await fs.promises.readdir(srcDir);
+  await ensureDirectoryExists(destDir);
+
+  if (isChildOfDir(srcDir, destDir)) {
+    fileNames = fileNames.filter((name) => {
+      return !isChildOfDir(destDir, path.join(srcDir, name));
+    });
+    removeFromArray(fileNames, path.basename(destDir));
+  }
+
+  return moveFiles(
+    fileNames.map((fileName) => path.join(srcDir, fileName)),
+    destDir
   );
 }
 
-export async function extractNestedZip(source: string, dest: string) {
+export async function extractNestedZip(
+  source: string,
+  dest: string
+): Promise<void> {
   return new Promise((resolve, reject) => {
     yauzl.open(
       source,
@@ -174,6 +220,18 @@ export async function extractNestedZip(source: string, dest: string) {
   });
 }
 
+export async function moveFiles(
+  sources: string[],
+  destDir: string
+): Promise<void[]> {
+  await ensureDirectoryExists(destDir);
+  return Promise.all(
+    sources.map((fileName) =>
+      moveFile(fileName, path.join(destDir, path.basename(fileName)))
+    )
+  );
+}
+
 async function moveFile(source: PathLike, destination: PathLike) {
   try {
     await fs.promises.rename(source, destination);
@@ -198,6 +256,9 @@ async function deleteFile(filePath: PathLike) {
       if (error.code === OperationNotPermitted || error.code === DeviceIsBusy) {
         await new Promise((resolve) => setTimeout(resolve, 300));
         continue;
+      } else if (error.code === FileDoesNotExist) {
+        /** Already deleted */
+        break;
       }
       throw error;
     }

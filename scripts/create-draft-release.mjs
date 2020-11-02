@@ -13,10 +13,13 @@ import { getLatestBuiltFilesList } from './utils.mjs';
     'release',
     'create',
     `v${versionNumber}`,
-    ...files.map(name => path.join('dist', name)),
-    '--target', 'master',
+    ...files.map((name) => path.join('dist', name)),
+    '--target',
+    'master',
     '--draft',
-    '--title', versionNumber,
+    '--prerelease',
+    '--title',
+    versionNumber,
   ]);
   child.stdout.pipe(process.stdout);
   child.stderr.pipe(process.stderr);

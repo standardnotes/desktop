@@ -17,6 +17,10 @@ export function createFrenchStrings(): Strings {
       edit: 'Édition',
       view: 'Affichage',
     },
+    contextMenu: {
+      learnSpelling: "Mémoriser l'orthographe",
+      noSuggestions: 'Aucune suggestion',
+    },
     tray: {
       show: 'Afficher',
       hide: 'Masquer',

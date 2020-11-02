@@ -1,9 +1,10 @@
 export interface Strings {
-  readonly appMenu: Readonly<AppMenuStrings>;
-  readonly tray: Readonly<TrayStrings>;
-  readonly extensions: Readonly<ExtensionsStrings>;
-  readonly updates: Readonly<UpdateStrings>;
-  readonly backups: Readonly<BackupsStrings>;
+  appMenu: AppMenuStrings;
+  contextMenu: ContextMenuStrings;
+  tray: TrayStrings;
+  extensions: ExtensionsStrings;
+  updates: UpdateStrings;
+  backups: BackupsStrings;
 }
 
 interface AppMenuStrings {
@@ -51,6 +52,18 @@ interface AppMenuStrings {
     title: string;
     message: string;
   };
+  security: {
+    security: string;
+    useKeyringtoStorePassword: string;
+    enabledKeyringAccessMessage: string;
+    enabledKeyringQuitNow: string;
+    enabledKeyringPostpone: string;
+  };
+}
+
+interface ContextMenuStrings {
+  learnSpelling: string;
+  noSuggestions: string;
 }
 
 interface TrayStrings {
@@ -78,7 +91,7 @@ interface UpdateStrings {
   updateReady: {
     title: string;
     message(version: string): string;
-    quitAndInstall: string;
+    installAndRestart: string;
     installLater: string;
   };
   errorDownloading: {

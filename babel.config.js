@@ -6,13 +6,11 @@ module.exports = function (api) {
       '@babel/preset-env',
       {
         targets: {
-          electron: 8,
+          electron: 9,
         },
       },
     ],
   ];
-
-  const plugins = ['@babel/plugin-proposal-class-properties'];
 
   const ignore = [
     './app/extensions',
@@ -30,6 +28,5 @@ module.exports = function (api) {
   return {
     ignore,
     presets,
-    plugins,
   };
 };

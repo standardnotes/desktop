@@ -18,7 +18,7 @@ function log(...message: any) {
   console.log('extServer:', ...message);
 }
 
-export function normalizeFilePath(requestUrl: string, host: string) {
+export function normalizeFilePath(requestUrl: string, host: string): string {
   if (!requestUrl.startsWith('/Extensions')) {
     throw new Error(
       `URL '${requestUrl}' falls outside of the Extensions domain.`
@@ -76,7 +76,7 @@ function onRequestError(error: Error | { code: string }, res: ServerResponse) {
   res.end();
 }
 
-export function createExtensionsServer() {
+export function createExtensionsServer(): string {
   const port = 45653;
   const ip = '127.0.0.1';
   const host = `${Protocol}://${ip}:${port}/`;

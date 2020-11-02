@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { ChildProcess, spawn } from 'child_process';
 import electronPath, { MenuItem } from 'electron';
 import path from 'path';

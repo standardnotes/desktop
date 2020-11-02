@@ -61,6 +61,19 @@ export function createEnglishStrings(): Strings {
           'Your menu bar preference has been saved. Please restart the ' +
           'application for the change to take effect.',
       },
+      security: {
+        security: 'Security',
+        useKeyringtoStorePassword: 'Use keyring to store password',
+        enabledKeyringAccessMessage:
+          'Standard Notes will try to use your keyring to store your ' +
+          'password the next time you start it.',
+        enabledKeyringQuitNow: 'Quit Now',
+        enabledKeyringPostpone: 'Postpone',
+      },
+    },
+    contextMenu: {
+      learnSpelling: 'Learn Spelling',
+      noSuggestions: 'No Suggestions',
     },
     tray: {
       show: 'Show',
@@ -111,7 +124,7 @@ export function createEnglishStrings(): Strings {
         message(version: string) {
           return `A new update (version ${version}) is ready to install.`;
         },
-        quitAndInstall: 'Quit and Install',
+        installAndRestart: 'Install and Restart',
         installLater: 'Install Later',
       },
       errorDownloading: {

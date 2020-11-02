@@ -15,6 +15,7 @@ const transmitter = new Transmitter(messageBus, {
   isMacOS: PropertyType.VALUE,
   appVersion: PropertyType.VALUE,
   extServerHost: PropertyType.VALUE,
+  useNativeKeychain: PropertyType.VALUE,
   useSystemMenuBar: PropertyType.VALUE,
   sendIpcMessage: {
     type: PropertyType.METHOD,
@@ -25,6 +26,12 @@ const transmitter = new Transmitter(messageBus, {
   maximizeWindow: { type: PropertyType.METHOD },
   unmaximizeWindow: { type: PropertyType.METHOD },
   isWindowMaximized: { type: PropertyType.METHOD },
+  getKeychainValue: { type: PropertyType.METHOD },
+  setKeychainValue: {
+    type: PropertyType.METHOD,
+    argValidators: [{ type: 'object' }],
+  },
+  clearKeychainValue: { type: PropertyType.METHOD },
 });
 
 process.once('loaded', function () {
@@ -35,6 +42,7 @@ process.once('loaded', function () {
 function loadTransmitter() {
   transmitter.expose({
     extServerHost: Store.get(StoreKeys.ExtServerHost),
+    useNativeKeychain: Store.get(StoreKeys.UseNativeKeychain),
     rendererPath,
     isMacOS: process.platform === 'darwin',
     appVersion: remote.app.getVersion(),
@@ -62,6 +70,11 @@ function loadTransmitter() {
     isWindowMaximized: async () => {
       return remote.getCurrentWindow().isMaximized();
     },
+    getKeychainValue: () => ipcRenderer.invoke(IpcMessages.GetKeychainValue),
+    setKeychainValue: (value) =>
+      ipcRenderer.invoke(IpcMessages.SetKeychainValue, value),
+    clearKeychainValue: () =>
+      ipcRenderer.invoke(IpcMessages.ClearKeychainValue),
   });
 }
 

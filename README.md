@@ -4,6 +4,7 @@ This application makes use of the core JS/CSS/HTML code found in the [web repo](
 
 ```bash
 npm run setup
+npm run build:web # Or `npm run dev:web`
 npm run dev
 
 # In another terminal
@@ -18,39 +19,31 @@ npm run lint
 npm test # make sure to start `npm run dev` before running the tests
 ```
 
-Pull requests should target the `dev` branch.
+Pull requests should target the `develop` branch.
+
+### Installing dependencies
+
+To determine where to install a dependency:
+
+- If it is only required for building, install it in `package.json`'s `devDependencies`
+- If it is required at runtime but can be packaged by webpack, install it in `package.json`'s `dependencies`.
+- If it must be distributed as a node module (not packaged by webpack), install it in `app/package.json`'s `dependencies`
+  - Also make sure to declare it as an external commonjs dependency in `webpack.common.js`.
 
 ## Building
 
 Build for all platforms:
 
-```bash
-electron-packager . "Standard Notes" \
-  --platform=all \
-  --icon=icon/icon \
-  --overwrite \
-  --osx-sign='Mac Developer ID Application: xxx' \
-  --out=dist
-```
+- `npm run build`
 
 or
 
-- `npm run dist`
-
-or
-
-- `npm run dist-win`
-- `npm run dist-linux`
-- `npm run dist-mac`
+- `npm run build:win`
+- `npm run build:linux`
+- `npm run build:mac`
 
 ## Installation
 
 On Linux, download the latest AppImage from the [Releases](https://github.com/standardnotes/desktop/releases/latest) page, and give it executable permission:
 
 `chmod u+x standard-notes*.AppImage`
-
-## Alternative Downloads
-
-The Standard Notes desktop client is also available through a variety of package managers:
-
-- [unofficial] **AUR:** [standardnotes-desktop](https://aur.archlinux.org/packages/standardnotes-desktop/), non binary package - built from source, currently maintained by [danielhass](https://github.com/danielhass)

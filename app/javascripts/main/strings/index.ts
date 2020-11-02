@@ -33,6 +33,10 @@ export function appMenu() {
   return str().appMenu;
 }
 
+export function contextMenu() {
+  return str().contextMenu;
+}
+
 export function tray() {
   return str().tray;
 }
