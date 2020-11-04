@@ -1,7 +1,7 @@
 {
   "name": "standard-notes",
   "main": "./app/dist/index.js",
-  "version": "3.5.3",
+  "version": "3.5.4",
   "repository": {
     "type": "git",
     "url": "git://github.com/standardnotes/desktop"
@@ -113,7 +113,7 @@
     "build:write-sums": "node scripts/sums.mjs",
     "build:remove-unpacked": "rimraf dist/{linux-*,mac,win-*}",
     "build:web": "cd web && npm run bundle:desktop",
-    "bundle": "npm run build:web && rimraf app/dist/ && webpack --config webpack.prod.js",
+    "bundle": "npm run lint:formatting && npm run lint:eslint && npm run build:web && rimraf app/dist/ && webpack --config webpack.prod.js",
     "clean": "npm-run-all --parallel clean:*",
     "clean:build": "rimraf app/dist/",
     "clean:tests": "rimraf test/data/tmp/",

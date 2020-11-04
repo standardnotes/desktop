@@ -6,7 +6,7 @@ const receiver = new ElectronValence.Receiver(messageBus);
 window._extensions_manager_location =
   'extensions/extensions-manager/dist/index.html';
 window._batch_manager_location = 'extensions/batch-manager/dist/index.html';
-window._bugsnag_api_key = BUGSNAG_API_KEY
+window._bugsnag_api_key = BUGSNAG_API_KEY;
 
 /** @returns whether the keychain structure is up to date or not */
 async function migrateKeychain(mainThread) {
