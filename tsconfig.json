@@ -11,7 +11,11 @@
     "strict": true,
     /** Import non-ES modules as default imports. */
     "esModuleInterop": true,
-    "typeRoots": ["./app/@types"]
+    "typeRoots": ["./app/@types"],
+    "baseUrl": ".",
+    "paths": {
+      "@web/*": ["./web/app/assets/javascripts/*"]
+    }
   },
-  "files": ["app/index.ts"]
+  "files": ["app/index.ts", "app/javascripts/renderer/renderer.ts"]
 }

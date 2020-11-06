@@ -7,8 +7,7 @@ module.exports = function ({ onlyTranspileTypescript = false } = {}) {
   const moduleConfig = {
     rules: [
       {
-        test: /\.tsx?$/,
-        exclude: /node_modules/,
+        test: /\.ts$/,
         use: [
           'babel-loader',
           {
@@ -36,6 +35,9 @@ module.exports = function ({ onlyTranspileTypescript = false } = {}) {
 
   const resolve = {
     extensions: ['.ts', '.js'],
+    alias: {
+      '@web': path.resolve(__dirname, 'web/app/assets/javascripts'),
+    },
   };
 
   const electronMainConfig = {
@@ -91,7 +93,7 @@ module.exports = function ({ onlyTranspileTypescript = false } = {}) {
   const electronRendererConfig = {
     entry: {
       preload: './app/javascripts/renderer/preload.js',
-      renderer: './app/javascripts/renderer/renderer.js',
+      renderer: './app/javascripts/renderer/renderer.ts',
       grantKeyringAccess: './app/javascripts/renderer/grantKeyringAccess.ts',
     },
     output: {

@@ -1,13 +1,15 @@
 import { dialog, IpcMain, WebContents } from 'electron';
-import fs from 'fs';
+import { promises as fs } from 'fs';
 import path from 'path';
 import { AppMessageType, MessageType } from '../../../test/TestIpcMessage';
+import { AppState } from '../../application';
 import { IpcMessages } from '../shared/ipcMessages';
 import { deleteDir, ensureDirectoryExists, moveFiles } from './fileUtils';
 import { Store, StoreKeys } from './store';
 import { backups as str } from './strings';
 import { handle, send } from './testing';
-import { isTesting } from './utils';
+import { UpdateManager } from './updateManager';
+import { isTesting, last } from './utils';
 
 function log(...message: any) {
   console.log('ArchiveManager:', ...message);
@@ -17,9 +19,29 @@ function logError(...message: any) {
   console.error('ArchiveManager:', ...message);
 }
 
-export const BackupsDirectoryName = 'Standard Notes Backups';
+export const enum EnsureRecentBackupExists {
+  Success = 0,
+  BackupsAreDisabled = 1,
+  FailedToCreateBackup = 2,
+}
 
-export interface ArchiveManager {
+export const BackupsDirectoryName = 'Standard Notes Backups';
+const BackupFileExtension = '.txt';
+
+function backupFileNameToDate(string: string): number {
+  string = path.basename(string, '.txt');
+  const dateTimeDelimiter = string.indexOf('T');
+  const date = string.slice(0, dateTimeDelimiter);
+
+  const time = string.slice(dateTimeDelimiter + 1).replace(/-/g, ':');
+  return Date.parse(date + 'T' + time);
+}
+
+function dateToSafeFilename(date: Date) {
+  return date.toISOString().replace(/:/g, '-');
+}
+
+export interface BackupsManager {
   backupsAreEnabled: boolean;
   toggleBackupsStatus(): void;
   backupsLocation: string;
@@ -29,14 +51,18 @@ export interface ArchiveManager {
   performBackup(): void;
 }
 
-export function createArchiveManager(
+export function createBackupsManager(
   webContents: WebContents,
-  store: Store,
+  appState: AppState,
   ipcMain: IpcMain
-): ArchiveManager {
-  let backupsLocation = store.get(StoreKeys.BackupsLocation);
-  let backupsDisabled = store.get(StoreKeys.BackupsDisabled);
+): BackupsManager {
+  let backupsLocation = appState.store.get(StoreKeys.BackupsLocation);
+  let backupsDisabled = appState.store.get(StoreKeys.BackupsDisabled);
   let needsBackup = false;
+
+  determineLastBackupDate(backupsLocation)
+    .then((date) => (appState.lastBackupDate = date))
+    .catch(console.error);
 
   async function setBackupsLocation(location: string) {
     const previousLocation = backupsLocation;
@@ -45,19 +71,19 @@ export function createArchiveManager(
     }
 
     const newLocation = path.join(location, BackupsDirectoryName);
-    const backupFiles = (await fs.promises.readdir(previousLocation))
-      .filter((fileName) => fileName.endsWith('.txt'))
+    const backupFiles = (await fs.readdir(previousLocation))
+      .filter((fileName) => fileName.endsWith(BackupFileExtension))
       .map((fileName) => path.join(previousLocation, fileName));
 
     await moveFiles(backupFiles, newLocation);
 
-    if ((await fs.promises.readdir(previousLocation)).length === 0) {
+    if ((await fs.readdir(previousLocation)).length === 0) {
       await deleteDir(previousLocation);
     }
 
     /** Wait for the operation to be successful before saving new location */
     backupsLocation = newLocation;
-    store.set(StoreKeys.BackupsLocation, backupsLocation);
+    appState.store.set(StoreKeys.BackupsLocation, backupsLocation);
   }
 
   ipcMain.on(IpcMessages.DataArchive, (_event, data) => {
@@ -72,6 +98,7 @@ export function createArchiveManager(
       name = await writeDataToFile(data);
       log(`Data backup successfully saved: ${name}`);
       success = true;
+      appState.setBackupCreationDate(Date.now());
     } catch (err) {
       success = false;
       logError('An error occurred saving backup file', err);
@@ -91,9 +118,9 @@ export function createArchiveManager(
   async function writeDataToFile(data: any): Promise<string> {
     await ensureDirectoryExists(backupsLocation);
 
-    const name = new Date().toISOString().replace(/:/g, '-') + '.txt';
+    const name = dateToSafeFilename(new Date()) + BackupFileExtension;
     const filePath = path.join(backupsLocation, name);
-    await fs.promises.writeFile(filePath, data);
+    await fs.writeFile(filePath, data);
     return name;
   }
 
@@ -112,7 +139,7 @@ export function createArchiveManager(
 
   function toggleBackupsStatus() {
     backupsDisabled = !backupsDisabled;
-    store.set(StoreKeys.BackupsDisabled, backupsDisabled);
+    appState.store.set(StoreKeys.BackupsDisabled, backupsDisabled);
     /** Create a backup on reactivation. */
     if (!backupsDisabled) {
       performBackup();
@@ -161,4 +188,25 @@ export function createArchiveManager(
       }
     },
   };
+}
+
+async function determineLastBackupDate(
+  backupsLocation: string
+): Promise<number | null> {
+  const files = (await fs.readdir(backupsLocation))
+    .filter(
+      (filename) =>
+        filename.endsWith(BackupFileExtension) &&
+        !Number.isNaN(backupFileNameToDate(filename))
+    )
+    .sort();
+  const lastBackupFileName = last(files);
+  if (!lastBackupFileName) {
+    return null;
+  }
+  const backupDate = backupFileNameToDate(lastBackupFileName);
+  if (Number.isNaN(backupDate)) {
+    return null;
+  }
+  return backupDate;
 }

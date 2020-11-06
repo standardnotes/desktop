@@ -1,5 +1,5 @@
 import { App, IpcMain, Shell } from 'electron';
-import { ArchiveManager } from './javascripts/main/archiveManager';
+import { BackupsManager } from './javascripts/main/backupsManager';
 import { createExtensionsServer } from './javascripts/main/extServer';
 import { MenuManager } from './javascripts/main/menus';
 import { isLinux, isMac, isWindows } from './javascripts/main/platforms';
@@ -15,14 +15,28 @@ import {
 import { IpcMessages } from './javascripts/shared/ipcMessages';
 import { isDev } from './javascripts/main/utils';
 import { indexHtml } from './javascripts/main/paths';
+import { action, makeObservable, observable } from 'mobx';
 
-export interface AppState {
+export class AppState {
   readonly store: Store;
-  readonly startUrl: string;
-  isPrimaryInstance: boolean;
-  willQuitApp: boolean;
+  readonly startUrl = indexHtml;
+  readonly isPrimaryInstance: boolean;
+  public willQuitApp = false;
+  public lastBackupDate: number | null = null;
+  public windowState?: WindowState;
 
-  windowState?: WindowState;
+  constructor(app: Electron.App) {
+    this.store = new Store(app.getPath('userData'));
+    this.isPrimaryInstance = app.requestSingleInstanceLock();
+    makeObservable(this, {
+      lastBackupDate: observable,
+      setBackupCreationDate: action,
+    });
+  }
+
+  setBackupCreationDate(date: number | null) {
+    this.lastBackupDate = date;
+  }
 }
 
 export function initializeApplication(args: {
@@ -35,14 +49,7 @@ export function initializeApplication(args: {
   app.name = AppName;
   app.allowRendererProcessReuse = true;
 
-  const isPrimaryInstance = app.requestSingleInstanceLock();
-
-  const state: AppState = {
-    store: new Store(app.getPath('userData')),
-    startUrl: indexHtml,
-    isPrimaryInstance,
-    willQuitApp: false,
-  };
+  const state = new AppState(app);
   registerSingleInstanceHandler(app, state);
   registerAppEventListeners({
     ...args,
@@ -143,7 +150,7 @@ async function finishApplicationInitialization({
   registerIpcEventListeners(
     ipcMain,
     windowState.menuManager,
-    windowState.archiveManager
+    windowState.backupsManager
   );
 
   if (
@@ -164,7 +171,7 @@ function initializeExtensionsServer(store: Store) {
 function registerIpcEventListeners(
   ipcMain: Electron.IpcMain,
   menuManager: MenuManager,
-  archiveManager: ArchiveManager
+  archiveManager: BackupsManager
 ) {
   ipcMain.on(IpcMessages.DisplayAppMenu, () => {
     menuManager.popupMenu();

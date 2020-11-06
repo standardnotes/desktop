@@ -34,3 +34,7 @@ export function timeout(ms: number): Promise<void> {
 export function removeFromArray<T>(array: T[], toRemove: T): void {
   array.splice(array.indexOf(toRemove), 1);
 }
+
+export function last<T>(array: T[]): T | undefined {
+  return array[array.length - 1];
+}

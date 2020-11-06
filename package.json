@@ -11,7 +11,8 @@
     "compare-versions": "^3.6.0",
     "electron-log": "^4.2.2",
     "electron-updater": "^4.3.4",
-    "mime-types": "^2.1.27"
+    "mime-types": "^2.1.27",
+    "mobx": "^6.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.11.1",

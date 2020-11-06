@@ -9,7 +9,7 @@ import {
   WebContents,
 } from 'electron';
 import { MessageType } from '../../../test/TestIpcMessage';
-import { ArchiveManager } from './archiveManager';
+import { BackupsManager } from './backupsManager';
 import { isLinux, isMac } from './platforms';
 import { SpellcheckerManager } from './spellcheckerManager';
 import { Store, StoreKeys } from './store';
@@ -119,14 +119,14 @@ export interface MenuManager {
 
 export function createMenuManager({
   window,
-  archiveManager,
+  backupsManager,
   updateManager,
   trayManager,
   store,
   spellcheckerManager,
 }: {
   window: Electron.BrowserWindow;
-  archiveManager: ArchiveManager;
+  backupsManager: BackupsManager;
   updateManager: UpdateManager;
   trayManager: TrayManager;
   store: Store;
@@ -140,7 +140,7 @@ export function createMenuManager({
       editMenu(spellcheckerManager, reload),
       viewMenu(window, store, reload),
       windowMenu(store, trayManager, reload),
-      backupsMenu(archiveManager, reload),
+      backupsMenu(backupsManager, reload),
       updateMenu(updateManager),
       ...(isLinux() ? [keyringMenu(window, store)] : []),
       helpMenu(window, shell),
@@ -483,7 +483,7 @@ function minimizeToTrayItem(
   };
 }
 
-function backupsMenu(archiveManager: ArchiveManager, reload: () => any) {
+function backupsMenu(archiveManager: BackupsManager, reload: () => any) {
   return {
     label: str().backups,
     submenu: [
