@@ -4,11 +4,16 @@ import path from 'path';
 import { AppMessageType, MessageType } from '../../../test/TestIpcMessage';
 import { AppState } from '../../application';
 import { IpcMessages } from '../shared/ipcMessages';
-import { deleteDir, ensureDirectoryExists, moveFiles } from './fileUtils';
-import { Store, StoreKeys } from './store';
+import {
+  deleteDir,
+  ensureDirectoryExists,
+  FileDoesNotExist,
+  moveFiles,
+} from './fileUtils';
+import { decryptScriptPath } from './paths';
+import { StoreKeys } from './store';
 import { backups as str } from './strings';
 import { handle, send } from './testing';
-import { UpdateManager } from './updateManager';
 import { isTesting, last } from './utils';
 
 function log(...message: any) {
@@ -60,9 +65,22 @@ export function createBackupsManager(
   let backupsDisabled = appState.store.get(StoreKeys.BackupsDisabled);
   let needsBackup = false;
 
-  determineLastBackupDate(backupsLocation)
-    .then((date) => (appState.lastBackupDate = date))
+  ensureDirectoryExists(backupsLocation)
+    .then(() =>
+      fs.copyFile(
+        decryptScriptPath,
+        path.join(backupsLocation, path.basename(decryptScriptPath))
+      )
+    )
     .catch(console.error);
+
+  determineLastBackupDate(backupsLocation)
+    .then((date) => appState.setBackupCreationDate(date))
+    .catch(console.error);
+
+  ipcMain.on(IpcMessages.DataArchive, (_event, data) => {
+    archiveData(data);
+  });
 
   async function setBackupsLocation(location: string) {
     const previousLocation = backupsLocation;
@@ -85,10 +103,6 @@ export function createBackupsManager(
     backupsLocation = newLocation;
     appState.store.set(StoreKeys.BackupsLocation, backupsLocation);
   }
-
-  ipcMain.on(IpcMessages.DataArchive, (_event, data) => {
-    archiveData(data);
-  });
 
   async function archiveData(data: any) {
     if (backupsDisabled) return;
@@ -193,20 +207,27 @@ export function createBackupsManager(
 async function determineLastBackupDate(
   backupsLocation: string
 ): Promise<number | null> {
-  const files = (await fs.readdir(backupsLocation))
-    .filter(
-      (filename) =>
-        filename.endsWith(BackupFileExtension) &&
-        !Number.isNaN(backupFileNameToDate(filename))
-    )
-    .sort();
-  const lastBackupFileName = last(files);
-  if (!lastBackupFileName) {
+  try {
+    const files = (await fs.readdir(backupsLocation))
+      .filter(
+        (filename) =>
+          filename.endsWith(BackupFileExtension) &&
+          !Number.isNaN(backupFileNameToDate(filename))
+      )
+      .sort();
+    const lastBackupFileName = last(files);
+    if (!lastBackupFileName) {
+      return null;
+    }
+    const backupDate = backupFileNameToDate(lastBackupFileName);
+    if (Number.isNaN(backupDate)) {
+      return null;
+    }
+    return backupDate;
+  } catch (error) {
+    if (error.code !== FileDoesNotExist) {
+      console.error(error);
+    }
     return null;
   }
-  const backupDate = backupFileNameToDate(lastBackupFileName);
-  if (Number.isNaN(backupDate)) {
-    return null;
-  }
-  return backupDate;
 }

@@ -14,12 +14,12 @@ import {
 } from './javascripts/main/keychain';
 import { IpcMessages } from './javascripts/shared/ipcMessages';
 import { isDev } from './javascripts/main/utils';
-import { indexHtml } from './javascripts/main/paths';
+import { indexUrl } from './javascripts/main/paths';
 import { action, makeObservable, observable } from 'mobx';
 
 export class AppState {
   readonly store: Store;
-  readonly startUrl = indexHtml;
+  readonly startUrl = indexUrl;
   readonly isPrimaryInstance: boolean;
   public willQuitApp = false;
   public lastBackupDate: number | null = null;
@@ -34,7 +34,7 @@ export class AppState {
     });
   }
 
-  setBackupCreationDate(date: number | null) {
+  setBackupCreationDate(date: number | null): void {
     this.lastBackupDate = date;
   }
 }

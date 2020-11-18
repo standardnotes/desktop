@@ -4,7 +4,6 @@ import electronLog from 'electron-log';
 import { autoUpdater } from 'electron-updater';
 import { MessageType } from '../../../test/TestIpcMessage';
 import { AppState } from '../../application';
-import { BackupsManager } from './backupsManager';
 import { Store, StoreKeys } from './store';
 import { updates as str } from './strings';
 import { handle } from './testing';

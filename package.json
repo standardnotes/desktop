@@ -9,6 +9,7 @@
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "compare-versions": "^3.6.0",
+    "decrypt": "github:standardnotes/decrypt#master",
     "electron-log": "^4.2.2",
     "electron-updater": "^4.3.4",
     "mime-types": "^2.1.27",

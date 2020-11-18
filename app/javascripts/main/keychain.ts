@@ -4,7 +4,7 @@ import { isLinux } from './platforms';
 import { AppName } from './strings';
 import { isDev, isTesting } from './utils';
 import { IpcMessages } from '../shared/ipcMessages';
-import { grantKeyringAccessJsPath, grantKeyringAccessHtml } from './paths';
+import { grantKeyringAccessJsPath, grantKeyringAccessUrl } from './paths';
 import { Store, StoreKeys } from './store';
 
 const ServiceName = isTesting()
@@ -41,7 +41,7 @@ export async function ensureKeychainAccess(
       },
     });
     window.on('ready-to-show', window.show);
-    window.loadURL(grantKeyringAccessHtml);
+    window.loadURL(grantKeyringAccessUrl);
 
     const quitListener = () => {
       app.quit();
