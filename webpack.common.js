@@ -2,6 +2,7 @@ const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
 const env = require('./.env');
+const { DefinePlugin } = require('webpack');
 
 module.exports = function ({
   onlyTranspileTypescript = false,
@@ -62,6 +63,9 @@ module.exports = function ({
       keytar: 'commonjs keytar',
     },
     plugins: [
+      new DefinePlugin({
+        EXPERIMENTAL_FEATURES: JSON.stringify(experimentalFeatures),
+      }),
       new CopyPlugin({
         patterns: [
           {
