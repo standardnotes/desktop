@@ -3,10 +3,13 @@ import { app, BrowserWindow, dialog, shell } from 'electron';
 import electronLog from 'electron-log';
 import { autoUpdater } from 'electron-updater';
 import { MessageType } from '../../../test/TestIpcMessage';
+import { AppState } from '../../application';
 import { Store, StoreKeys } from './store';
 import { updates as str } from './strings';
 import { handle } from './testing';
 import { isTesting } from './utils';
+
+declare const EXPERIMENTAL_FEATURES: boolean;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function logError(...message: any) {
@@ -45,11 +48,12 @@ export interface UpdateManager {
 
 export function createUpdateManager(
   window: BrowserWindow,
-  store: Store
+  appState: Pick<AppState, 'store' | 'lastBackupDate'>
 ): UpdateManager {
+  const { store } = appState;
   const state = new UpdateManagerState();
 
-  setupAutoUpdater(window, store, state);
+  setupAutoUpdater(window, state, appState.store);
 
   if (isTesting()) {
     handle(MessageType.UpdateManagerState, () => state);
@@ -94,7 +98,7 @@ export function createUpdateManager(
       return updateNeeded(state);
     },
     showAutoUpdateInstallationDialog() {
-      showUpdateInstallationDialog(window, state);
+      showUpdateInstallationDialog(window, state, appState);
     },
     checkForUpdate(userTriggered: boolean) {
       checkForUpdate(store, state, userTriggered);
@@ -111,11 +115,18 @@ function autoUpdateEnabled(store: Store) {
 
 function setupAutoUpdater(
   window: BrowserWindow,
-  store: Store,
-  state: UpdateManagerState
+  state: UpdateManagerState,
+  store: Store
 ) {
   autoUpdater.logger = electronLog;
-  autoUpdater.autoDownload = store.get(StoreKeys.EnableAutoUpdate);
+  if (EXPERIMENTAL_FEATURES) {
+    autoUpdater.autoInstallOnAppQuit = false;
+    autoUpdater.autoDownload = false;
+  } else {
+    const enabled = autoUpdateEnabled(store);
+    autoUpdater.autoInstallOnAppQuit = enabled;
+    autoUpdater.autoDownload = enabled;
+  }
 
   autoUpdater.on('update-downloaded', (info: { version: string }) => {
     window.webContents.send('update-available', null);
@@ -167,29 +178,67 @@ function updateNeeded(state: UpdateManagerState) {
   return false;
 }
 
+function quitAndInstall(window: BrowserWindow) {
+  setTimeout(() => {
+    // index.js prevents close event on some platforms
+    window.removeAllListeners('close');
+    window.close();
+    autoUpdater.quitAndInstall(false);
+  }, 0);
+}
+
+function isLessThanOneHourFromNow(date: number) {
+  const now = Date.now();
+  const onHourMs = 1 * 60 * 60 * 1000;
+  return now - date < onHourMs;
+}
+
 async function showUpdateInstallationDialog(
-  window: BrowserWindow,
-  state: UpdateManagerState
+  parentWindow: BrowserWindow,
+  state: UpdateManagerState,
+  appState: Pick<AppState, 'lastBackupDate'>
 ) {
   if (!state.latestVersion) return;
-  const result = await dialog.showMessageBox({
-    type: 'info',
-    title: str().updateReady.title,
-    message: str().updateReady.message(state.latestVersion),
-    buttons: [
-      str().updateReady.installAndRestart,
-      str().updateReady.installLater,
-    ],
-  });
-
-  const buttonIndex = result.response;
-  if (buttonIndex === 0) {
-    setImmediate(() => {
-      // index.js prevents close event on some platforms
-      window.removeAllListeners('close');
-      window.close();
-      autoUpdater.quitAndInstall(false);
+  if (
+    !EXPERIMENTAL_FEATURES ||
+    (appState.lastBackupDate &&
+      isLessThanOneHourFromNow(appState.lastBackupDate))
+  ) {
+    const result = await dialog.showMessageBox(parentWindow, {
+      type: 'info',
+      title: str().updateReady.title,
+      message: str().updateReady.message(state.latestVersion),
+      buttons: [
+        str().updateReady.installLater,
+        str().updateReady.installAndRestart,
+      ],
+      cancelId: 0,
     });
+
+    const buttonIndex = result.response;
+    if (buttonIndex === 1) {
+      quitAndInstall(parentWindow);
+    }
+  } else {
+    const cancelId = 0;
+    const result = await dialog.showMessageBox({
+      type: 'warning',
+      title: str().updateReady.title,
+      message: str().updateReady.noRecentBackupMessage,
+      detail: str().updateReady.noRecentBackupDetail(appState.lastBackupDate),
+      checkboxLabel: str().updateReady.noRecentBackupChecbox,
+      checkboxChecked: false,
+      buttons: [
+        str().updateReady.installLater,
+        str().updateReady.installAndRestart,
+      ],
+      cancelId,
+    });
+
+    if (!result.checkboxChecked || result.response === cancelId) {
+      return;
+    }
+    quitAndInstall(parentWindow);
   }
 }
 

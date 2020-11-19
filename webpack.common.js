@@ -3,12 +3,14 @@ const CopyPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
 const env = require('./.env');
 
-module.exports = function ({ onlyTranspileTypescript = false } = {}) {
+module.exports = function ({
+  onlyTranspileTypescript = false,
+  experimentalFeatures = false,
+} = {}) {
   const moduleConfig = {
     rules: [
       {
-        test: /\.tsx?$/,
-        exclude: /node_modules/,
+        test: /\.ts$/,
         use: [
           'babel-loader',
           {
@@ -36,6 +38,9 @@ module.exports = function ({ onlyTranspileTypescript = false } = {}) {
 
   const resolve = {
     extensions: ['.ts', '.js'],
+    alias: {
+      '@web': path.resolve(__dirname, 'web/app/assets/javascripts'),
+    },
   };
 
   const electronMainConfig = {
@@ -91,7 +96,7 @@ module.exports = function ({ onlyTranspileTypescript = false } = {}) {
   const electronRendererConfig = {
     entry: {
       preload: './app/javascripts/renderer/preload.js',
-      renderer: './app/javascripts/renderer/renderer.js',
+      renderer: './app/javascripts/renderer/renderer.ts',
       grantKeyringAccess: './app/javascripts/renderer/grantKeyringAccess.ts',
     },
     output: {
@@ -115,6 +120,7 @@ module.exports = function ({ onlyTranspileTypescript = false } = {}) {
           process.env.DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org'
         ),
         BUGSNAG_API_KEY: JSON.stringify(env.BUGSNAG_API_KEY),
+        EXPERIMENTAL_FEATURES: JSON.stringify(experimentalFeatures),
       }),
     ],
   };

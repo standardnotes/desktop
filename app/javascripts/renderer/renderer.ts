@@ -1,15 +1,38 @@
 import { IpcMessages } from '../shared/ipcMessages';
-const messageBus = new ElectronValence.FrameMessageBus();
-const receiver = new ElectronValence.Receiver(messageBus);
+import { StartApplication } from '@web/startApplication';
+import { Bridge, Environment } from '@web/services/bridge';
+
+declare const BUGSNAG_API_KEY: string;
+declare const DEFAULT_SYNC_SERVER: string;
+declare global {
+  interface Window {
+    ElectronValence: any;
+    /* eslint-disable camelcase */
+    _extensions_manager_location: string;
+    _batch_manager_location: string;
+    _bugsnag_api_key: string;
+    /* eslint-enable camelcase */
+    angular: any;
+    desktopManager: any;
+    electronAppVersion: string;
+    zip: any;
+    startApplication: StartApplication;
+  }
+}
+
+const messageBus = new window.ElectronValence.FrameMessageBus();
+const receiver = new window.ElectronValence.Receiver(messageBus);
 
 /** Accessed by web app */
+/* eslint-disable camelcase */
 window._extensions_manager_location =
   'extensions/extensions-manager/dist/index.html';
 window._batch_manager_location = 'extensions/batch-manager/dist/index.html';
 window._bugsnag_api_key = BUGSNAG_API_KEY;
+/* eslint-enable camelcase */
 
 /** @returns whether the keychain structure is up to date or not */
-async function migrateKeychain(mainThread) {
+async function migrateKeychain(mainThread: any) {
   if (!(await mainThread.useNativeKeychain)) {
     /** User chose not to use keychain, do not migrate. */
     return false;
@@ -32,13 +55,13 @@ async function migrateKeychain(mainThread) {
   }
 }
 
-async function createWebBridge(mainThread) {
+async function createWebBridge(mainThread: any): Promise<Bridge> {
   let keychainMethods;
   if (await migrateKeychain(mainThread)) {
     /** Keychain is migrated, we can rely on native methods */
     keychainMethods = {
       getKeychainValue: () => mainThread.getKeychainValue(),
-      setKeychainValue: (value) => mainThread.setKeychainValue(value),
+      setKeychainValue: (value: unknown) => mainThread.setKeychainValue(value),
       clearKeychainValue: () => mainThread.clearKeychainValue(),
     };
   } else {
@@ -51,7 +74,7 @@ async function createWebBridge(mainThread) {
           return JSON.parse(value);
         }
       },
-      setKeychainValue(value) {
+      setKeychainValue(value: unknown) {
         window.localStorage.setItem(key, JSON.stringify(value));
       },
       clearKeychainValue() {
@@ -62,9 +85,10 @@ async function createWebBridge(mainThread) {
 
   return {
     ...keychainMethods,
-    environment: 2 /** Desktop */,
+    appVersion: await mainThread.appVersion,
+    environment: Environment.Desktop,
     extensionsServerHost: await mainThread.extServerHost,
-    syncComponents(componentsData) {
+    syncComponents(componentsData: unknown) {
       mainThread.sendIpcMessage(IpcMessages.SyncComponents, {
         componentsData,
       });
@@ -72,7 +96,7 @@ async function createWebBridge(mainThread) {
     onMajorDataChange() {
       mainThread.sendIpcMessage(IpcMessages.MajorDataChange, {});
     },
-    onSearch(text) {
+    onSearch(text: string) {
       mainThread.sendIpcMessage(IpcMessages.SearchText, { text });
     },
     onInitialDataLoad() {
@@ -107,12 +131,14 @@ async function createWebBridge(mainThread) {
     webBridge
   );
 
-  await new Promise((resolve) => angular.element(document).ready(resolve));
+  await new Promise((resolve) =>
+    window.angular.element(document).ready(resolve)
+  );
   registerIpcMessageListener(webBridge);
 })();
 loadZipLibrary();
 
-async function configureWindow(mainThread) {
+async function configureWindow(mainThread: any) {
   const [isMacOS, useSystemMenuBar, appVersion] = await Promise.all([
     mainThread.isMacOS,
     mainThread.useSystemMenuBar,
@@ -124,18 +150,18 @@ async function configureWindow(mainThread) {
   /*
   Title bar events
   */
-  document.getElementById('menu-btn').addEventListener('click', (e) => {
+  document.getElementById('menu-btn')!.addEventListener('click', (e) => {
     mainThread.sendIpcMessage(IpcMessages.DisplayAppMenu, {
       x: e.x,
       y: e.y,
     });
   });
 
-  document.getElementById('min-btn').addEventListener('click', () => {
+  document.getElementById('min-btn')!.addEventListener('click', () => {
     mainThread.minimizeWindow();
   });
 
-  document.getElementById('max-btn').addEventListener('click', async () => {
+  document.getElementById('max-btn')!.addEventListener('click', async () => {
     if (await mainThread.isWindowMaximized()) {
       mainThread.unmaximizeWindow();
     } else {
@@ -143,7 +169,7 @@ async function configureWindow(mainThread) {
     }
   });
 
-  document.getElementById('close-btn').addEventListener('click', () => {
+  document.getElementById('close-btn')!.addEventListener('click', () => {
     mainThread.closeWindow();
   });
 
@@ -173,7 +199,7 @@ async function configureWindow(mainThread) {
   }
 }
 
-function registerIpcMessageListener(webBridge) {
+function registerIpcMessageListener(webBridge: any) {
   window.addEventListener('message', async (event) => {
     // We don't have access to the full file path.
     if (event.origin !== 'file://') {
@@ -206,8 +232,8 @@ function registerIpcMessageListener(webBridge) {
       const controllerElement = document.querySelector(
         'application-group-view'
       );
-      const controllerScope = angular.element(controllerElement).scope();
-      controllerScope.onUpdateAvailable();
+      const controllerScope = window.angular.element(controllerElement).scope();
+      controllerScope.$root.$broadcast('new-update-available');
     } else if (message === IpcMessages.DownloadBackup) {
       webBridge.downloadBackup();
     } else if (message === IpcMessages.FinishedSavingBackup) {
@@ -224,6 +250,6 @@ async function loadZipLibrary() {
   const headTag = document.getElementsByTagName('head')[0];
   headTag.appendChild(scriptTag);
   scriptTag.onload = () => {
-    zip.workerScriptsPath = './vendor/zip/';
+    window.zip.workerScriptsPath = './vendor/zip/';
   };
 }

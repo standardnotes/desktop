@@ -10,7 +10,7 @@ let strings: Strings;
  * @param locale The user's locale
  * @see https://www.electronjs.org/docs/api/locales
  */
-export function initializeStrings(locale: string) {
+export function initializeStrings(locale: string): void {
   if (isDev()) {
     if (strings) {
       throw new Error('`strings` has already been initialized');

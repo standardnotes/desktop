@@ -12,7 +12,7 @@ import path from 'path';
 import { AppMessageType, MessageType } from '../../../test/TestIpcMessage';
 import { AppState } from '../../application';
 import { IpcMessages } from '../shared/ipcMessages';
-import { ArchiveManager, createArchiveManager } from './archiveManager';
+import { BackupsManager, createBackupsManager } from './backupsManager';
 import { buildContextMenu, createMenuManager, MenuManager } from './menus';
 import { initializePackageManager } from './packageManager';
 import { isMac, isWindows } from './platforms';
@@ -34,7 +34,7 @@ const WINDOW_MIN_HEIGHT = 400;
 export interface WindowState {
   window: Electron.BrowserWindow;
   menuManager: MenuManager;
-  archiveManager: ArchiveManager;
+  backupsManager: BackupsManager;
   updateManager: UpdateManager;
   trayManager: TrayManager;
 }
@@ -47,16 +47,16 @@ export async function createWindowState({
 }: {
   shell: Shell;
   appLocale: string;
-  appState: Pick<AppState, 'willQuitApp' | 'startUrl' | 'store'>;
+  appState: AppState;
   teardown: () => void;
 }): Promise<WindowState> {
   const window = await createWindow(appState.store);
-  const services = createWindowServices(window, appState.store, appLocale);
+  const services = createWindowServices(window, appState, appLocale);
   registerWindowEventListeners({
     shell,
     appState,
     window,
-    archiveManager: services.archiveManager,
+    backupsManager: services.backupsManager,
     trayManager: services.trayManager,
     updateManager: services.updateManager,
     onClosed: teardown,
@@ -110,21 +110,21 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
 
 function createWindowServices(
   window: Electron.BrowserWindow,
-  store: Store,
+  appState: AppState,
   appLocale: string
 ) {
   initializePackageManager(ipcMain, window.webContents);
   initializeSearchManager(window.webContents);
-  initializeZoomManager(window, store);
-  const archiveManager = createArchiveManager(
+  initializeZoomManager(window, appState.store);
+  const backupsManager = createBackupsManager(
     window.webContents,
-    store,
+    appState,
     ipcMain
   );
-  const updateManager = createUpdateManager(window, store);
-  const trayManager = createTrayManager(window, store);
+  const updateManager = createUpdateManager(window, appState);
+  const trayManager = createTrayManager(window, appState.store);
   const spellcheckerManager = createSpellcheckerManager(
-    store,
+    appState.store,
     window.webContents,
     appLocale
   );
@@ -133,14 +133,14 @@ function createWindowServices(
   }
   const menuManager = createMenuManager({
     window,
-    archiveManager,
+    backupsManager,
     updateManager,
     trayManager,
-    store,
+    store: appState.store,
     spellcheckerManager,
   });
   return {
-    archiveManager,
+    backupsManager,
     updateManager,
     trayManager,
     spellcheckerManager,
@@ -177,7 +177,7 @@ function registerWindowEventListeners({
   shell,
   appState,
   window,
-  archiveManager,
+  backupsManager,
   trayManager,
   updateManager,
   onClosed,
@@ -185,7 +185,7 @@ function registerWindowEventListeners({
   shell: Shell;
   appState: Pick<AppState, 'willQuitApp' | 'startUrl'>;
   window: Electron.BrowserWindow;
-  archiveManager: ArchiveManager;
+  backupsManager: BackupsManager;
   trayManager: TrayManager;
   updateManager: UpdateManager;
   onClosed: () => void;
@@ -205,7 +205,7 @@ function registerWindowEventListeners({
 
   window.on('blur', () => {
     window.webContents.send(IpcMessages.WindowBlurred, null);
-    archiveManager.applicationDidBlur();
+    backupsManager.applicationDidBlur();
   });
 
   window.once('ready-to-show', () => {
