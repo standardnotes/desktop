@@ -1,11 +1,9 @@
 import { app, BrowserWindow } from 'electron';
-import path from 'path';
 import {
   AppMessageType,
   MessageType,
   TestIPCMessage,
 } from '../../../test/TestIpcMessage';
-import { CommandLineArgs } from '../shared/CommandLineArgs';
 import { isTesting } from './utils';
 
 const messageHandlers: {
@@ -26,15 +24,6 @@ export function send(type: AppMessageType): void {
 }
 
 export function setupTesting(): void {
-  /** Allow a custom userData path to be used. */
-  const userDataPathIndex = process.argv.indexOf(CommandLineArgs.UserDataPath);
-  if (userDataPathIndex > 0) {
-    const userDataPath = process.argv[userDataPathIndex + 1];
-    if (typeof userDataPath === 'string') {
-      app.setPath('userData', path.resolve(userDataPath));
-    }
-  }
-
   process.on('message', async (message: TestIPCMessage) => {
     const handler = messageHandlers[message.type];
 
