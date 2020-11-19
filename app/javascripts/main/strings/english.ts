@@ -126,6 +126,24 @@ export function createEnglishStrings(): Strings {
         },
         installAndRestart: 'Install and Restart',
         installLater: 'Install Later',
+        noRecentBackupMessage:
+          'An update is ready to install, but your backups folder does not ' +
+          'appear to contain a recent enough backup. Please download a ' +
+          'backup manually before proceeding with the installation.',
+        noRecentBackupDetail(lastBackupDate: number | null) {
+          const downloadInstructions =
+            'You can download a backup from the Account menu ' +
+            'in the bottom-left corner of the app.';
+          const lastAutomaticBackup =
+            lastBackupDate === null
+              ? 'Your backups folder is empty.'
+              : `Your latest automatic backup is from ${new Date(
+                  lastBackupDate
+                ).toLocaleString()}.`;
+          return `${downloadInstructions}\n${lastAutomaticBackup}`;
+        },
+        noRecentBackupChecbox:
+          'I have downloaded a backup, proceed with installation',
       },
       errorDownloading: {
         title: 'Error Downloading',

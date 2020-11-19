@@ -9,6 +9,8 @@ import { updates as str } from './strings';
 import { handle } from './testing';
 import { isTesting } from './utils';
 
+declare const EXPERIMENTAL_FEATURES: boolean;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function logError(...message: any) {
   console.error('updateManager:', ...message);
@@ -51,7 +53,7 @@ export function createUpdateManager(
   const { store } = appState;
   const state = new UpdateManagerState();
 
-  setupAutoUpdater(window, state);
+  setupAutoUpdater(window, state, appState.store);
 
   if (isTesting()) {
     handle(MessageType.UpdateManagerState, () => state);
@@ -111,10 +113,20 @@ function autoUpdateEnabled(store: Store) {
   return store.get(StoreKeys.EnableAutoUpdate);
 }
 
-function setupAutoUpdater(window: BrowserWindow, state: UpdateManagerState) {
+function setupAutoUpdater(
+  window: BrowserWindow,
+  state: UpdateManagerState,
+  store: Store
+) {
   autoUpdater.logger = electronLog;
-  autoUpdater.autoInstallOnAppQuit = false;
-  autoUpdater.autoDownload = false;
+  if (EXPERIMENTAL_FEATURES) {
+    autoUpdater.autoInstallOnAppQuit = false;
+    autoUpdater.autoDownload = false;
+  } else {
+    const enabled = autoUpdateEnabled(store);
+    autoUpdater.autoInstallOnAppQuit = enabled;
+    autoUpdater.autoDownload = enabled;
+  }
 
   autoUpdater.on('update-downloaded', (info: { version: string }) => {
     window.webContents.send('update-available', null);
@@ -180,6 +192,7 @@ function isLessThanOneHourFromNow(date: number) {
   const onHourMs = 1 * 60 * 60 * 1000;
   return now - date < onHourMs;
 }
+
 async function showUpdateInstallationDialog(
   parentWindow: BrowserWindow,
   state: UpdateManagerState,
@@ -187,8 +200,9 @@ async function showUpdateInstallationDialog(
 ) {
   if (!state.latestVersion) return;
   if (
-    appState.lastBackupDate &&
-    isLessThanOneHourFromNow(appState.lastBackupDate)
+    !EXPERIMENTAL_FEATURES ||
+    (appState.lastBackupDate &&
+      isLessThanOneHourFromNow(appState.lastBackupDate))
   ) {
     const result = await dialog.showMessageBox(parentWindow, {
       type: 'info',
@@ -210,12 +224,9 @@ async function showUpdateInstallationDialog(
     const result = await dialog.showMessageBox({
       type: 'warning',
       title: str().updateReady.title,
-      message:
-        'An update is ready to install, but your backups folder does not appear to contain a recent enough backup. ' +
-        'Please download a backup manually before proceeding with the installation.',
-      detail:
-        'You can download a backup from the Account menu in the bottom-left corner of the app.',
-      checkboxLabel: 'I have downloaded a backup, proceed with installation',
+      message: str().updateReady.noRecentBackupMessage,
+      detail: str().updateReady.noRecentBackupDetail(appState.lastBackupDate),
+      checkboxLabel: str().updateReady.noRecentBackupChecbox,
       checkboxChecked: false,
       buttons: [
         str().updateReady.installLater,
