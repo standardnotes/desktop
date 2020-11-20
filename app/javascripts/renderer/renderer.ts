@@ -1,6 +1,6 @@
 import { IpcMessages } from '../shared/ipcMessages';
 import { StartApplication } from '@web/startApplication';
-import { Bridge, Environment } from '@web/services/bridge';
+import { Bridge } from '@web/services/bridge';
 
 declare const BUGSNAG_API_KEY: string;
 declare const DEFAULT_SYNC_SERVER: string;
@@ -31,8 +31,28 @@ window._batch_manager_location = 'extensions/batch-manager/dist/index.html';
 window._bugsnag_api_key = BUGSNAG_API_KEY;
 /* eslint-enable camelcase */
 
+(async () => {
+  await receiver.ready;
+  const mainThread = receiver.items[0];
+
+  await configureWindow(mainThread);
+
+  const webBridge = await createWebBridge(mainThread);
+  window.startApplication(
+    // eslint-disable-next-line no-undef
+    DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org',
+    webBridge
+  );
+
+  await new Promise((resolve) =>
+    window.angular.element(document).ready(resolve)
+  );
+  registerIpcMessageListener(webBridge);
+})();
+loadZipLibrary();
+
 /** @returns whether the keychain structure is up to date or not */
-async function migrateKeychain(mainThread: any) {
+async function migrateKeychain(mainThread: any): Promise<boolean> {
   if (!(await mainThread.useNativeKeychain)) {
     /** User chose not to use keychain, do not migrate. */
     return false;
@@ -45,14 +65,8 @@ async function migrateKeychain(mainThread: any) {
     console.warn('Migrating keychain from localStorage to native keychain.');
     window.localStorage.removeItem(key);
     await mainThread.setKeychainValue(JSON.parse(localStorageValue));
-    return true;
-  } else if (await mainThread.getKeychainValue()) {
-    /** Keychain value is already present */
-    return true;
-  } else {
-    /** Unknown or pre-migration configuration, abort */
-    return false;
   }
+  return true;
 }
 
 async function createWebBridge(mainThread: any): Promise<Bridge> {
@@ -60,24 +74,31 @@ async function createWebBridge(mainThread: any): Promise<Bridge> {
   if (await migrateKeychain(mainThread)) {
     /** Keychain is migrated, we can rely on native methods */
     keychainMethods = {
-      getKeychainValue: () => mainThread.getKeychainValue(),
-      setKeychainValue: (value: unknown) => mainThread.setKeychainValue(value),
-      clearKeychainValue: () => mainThread.clearKeychainValue(),
+      async getKeychainValue() {
+        const keychainValue = await mainThread.getKeychainValue();
+        return keychainValue;
+      },
+      setKeychainValue(value: unknown) {
+        return mainThread.setKeychainValue(value);
+      },
+      clearKeychainValue() {
+        return mainThread.clearKeychainValue();
+      },
     };
   } else {
     /** Keychain is not migrated, use web-compatible keychain methods */
     const key = 'keychain';
     keychainMethods = {
-      getKeychainValue() {
+      async getKeychainValue() {
         const value = window.localStorage.getItem(key);
         if (value) {
           return JSON.parse(value);
         }
       },
-      setKeychainValue(value: unknown) {
+      async setKeychainValue(value: unknown) {
         window.localStorage.setItem(key, JSON.stringify(value));
       },
-      clearKeychainValue() {
+      async clearKeychainValue() {
         window.localStorage.removeItem(key);
       },
     };
@@ -86,7 +107,11 @@ async function createWebBridge(mainThread: any): Promise<Bridge> {
   return {
     ...keychainMethods,
     appVersion: await mainThread.appVersion,
-    environment: Environment.Desktop,
+    /**
+     * Importing the Environment enum from SNJS results in a much larger bundle
+     * size, so we use the number literal corresponding to Environment.Desktop
+     */
+    environment: 2,
     extensionsServerHost: await mainThread.extServerHost,
     syncComponents(componentsData: unknown) {
       mainThread.sendIpcMessage(IpcMessages.SyncComponents, {
@@ -117,26 +142,6 @@ async function createWebBridge(mainThread: any): Promise<Bridge> {
     },
   };
 }
-
-(async () => {
-  await receiver.ready;
-  const mainThread = receiver.items[0];
-
-  await configureWindow(mainThread);
-
-  const webBridge = await createWebBridge(mainThread);
-  window.startApplication(
-    // eslint-disable-next-line no-undef
-    DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org',
-    webBridge
-  );
-
-  await new Promise((resolve) =>
-    window.angular.element(document).ready(resolve)
-  );
-  registerIpcMessageListener(webBridge);
-})();
-loadZipLibrary();
 
 async function configureWindow(mainThread: any) {
   const [isMacOS, useSystemMenuBar, appVersion] = await Promise.all([
