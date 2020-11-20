@@ -28,6 +28,7 @@ module.exports = function ({
         loader: 'babel-loader',
       },
       {
+        sideEffects: true,
         test: /\.(png|html)$/i,
         loader: 'file-loader',
         options: {
