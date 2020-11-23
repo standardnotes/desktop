@@ -1,15 +1,58 @@
 import { IpcMessages } from '../shared/ipcMessages';
-const messageBus = new ElectronValence.FrameMessageBus();
-const receiver = new ElectronValence.Receiver(messageBus);
+import { StartApplication } from '@web/startApplication';
+import { Bridge } from '@web/services/bridge';
+
+declare const BUGSNAG_API_KEY: string;
+declare const DEFAULT_SYNC_SERVER: string;
+declare global {
+  interface Window {
+    ElectronValence: any;
+    /* eslint-disable camelcase */
+    _extensions_manager_location: string;
+    _batch_manager_location: string;
+    _bugsnag_api_key: string;
+    /* eslint-enable camelcase */
+    angular: any;
+    desktopManager: any;
+    electronAppVersion: string;
+    zip: any;
+    startApplication: StartApplication;
+  }
+}
+
+const messageBus = new window.ElectronValence.FrameMessageBus();
+const receiver = new window.ElectronValence.Receiver(messageBus);
 
 /** Accessed by web app */
+/* eslint-disable camelcase */
 window._extensions_manager_location =
   'extensions/extensions-manager/dist/index.html';
 window._batch_manager_location = 'extensions/batch-manager/dist/index.html';
 window._bugsnag_api_key = BUGSNAG_API_KEY;
+/* eslint-enable camelcase */
+
+(async () => {
+  await receiver.ready;
+  const mainThread = receiver.items[0];
+
+  await configureWindow(mainThread);
+
+  const webBridge = await createWebBridge(mainThread);
+  window.startApplication(
+    // eslint-disable-next-line no-undef
+    DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org',
+    webBridge
+  );
+
+  await new Promise((resolve) =>
+    window.angular.element(document).ready(resolve)
+  );
+  registerIpcMessageListener(webBridge);
+})();
+loadZipLibrary();
 
 /** @returns whether the keychain structure is up to date or not */
-async function migrateKeychain(mainThread) {
+async function migrateKeychain(mainThread: any): Promise<boolean> {
   if (!(await mainThread.useNativeKeychain)) {
     /** User chose not to use keychain, do not migrate. */
     return false;
@@ -22,39 +65,40 @@ async function migrateKeychain(mainThread) {
     console.warn('Migrating keychain from localStorage to native keychain.');
     window.localStorage.removeItem(key);
     await mainThread.setKeychainValue(JSON.parse(localStorageValue));
-    return true;
-  } else if (await mainThread.getKeychainValue()) {
-    /** Keychain value is already present */
-    return true;
-  } else {
-    /** Unknown or pre-migration configuration, abort */
-    return false;
   }
+  return true;
 }
 
-async function createWebBridge(mainThread) {
+async function createWebBridge(mainThread: any): Promise<Bridge> {
   let keychainMethods;
   if (await migrateKeychain(mainThread)) {
     /** Keychain is migrated, we can rely on native methods */
     keychainMethods = {
-      getKeychainValue: () => mainThread.getKeychainValue(),
-      setKeychainValue: (value) => mainThread.setKeychainValue(value),
-      clearKeychainValue: () => mainThread.clearKeychainValue(),
+      async getKeychainValue() {
+        const keychainValue = await mainThread.getKeychainValue();
+        return keychainValue;
+      },
+      setKeychainValue(value: unknown) {
+        return mainThread.setKeychainValue(value);
+      },
+      clearKeychainValue() {
+        return mainThread.clearKeychainValue();
+      },
     };
   } else {
     /** Keychain is not migrated, use web-compatible keychain methods */
     const key = 'keychain';
     keychainMethods = {
-      getKeychainValue() {
+      async getKeychainValue() {
         const value = window.localStorage.getItem(key);
         if (value) {
           return JSON.parse(value);
         }
       },
-      setKeychainValue(value) {
+      async setKeychainValue(value: unknown) {
         window.localStorage.setItem(key, JSON.stringify(value));
       },
-      clearKeychainValue() {
+      async clearKeychainValue() {
         window.localStorage.removeItem(key);
       },
     };
@@ -62,9 +106,14 @@ async function createWebBridge(mainThread) {
 
   return {
     ...keychainMethods,
-    environment: 2 /** Desktop */,
+    appVersion: await mainThread.appVersion,
+    /**
+     * Importing the Environment enum from SNJS results in a much larger bundle
+     * size, so we use the number literal corresponding to Environment.Desktop
+     */
+    environment: 2,
     extensionsServerHost: await mainThread.extServerHost,
-    syncComponents(componentsData) {
+    syncComponents(componentsData: unknown) {
       mainThread.sendIpcMessage(IpcMessages.SyncComponents, {
         componentsData,
       });
@@ -72,7 +121,7 @@ async function createWebBridge(mainThread) {
     onMajorDataChange() {
       mainThread.sendIpcMessage(IpcMessages.MajorDataChange, {});
     },
-    onSearch(text) {
+    onSearch(text: string) {
       mainThread.sendIpcMessage(IpcMessages.SearchText, { text });
     },
     onInitialDataLoad() {
@@ -94,25 +143,7 @@ async function createWebBridge(mainThread) {
   };
 }
 
-(async () => {
-  await receiver.ready;
-  const mainThread = receiver.items[0];
-
-  await configureWindow(mainThread);
-
-  const webBridge = await createWebBridge(mainThread);
-  window.startApplication(
-    // eslint-disable-next-line no-undef
-    DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org',
-    webBridge
-  );
-
-  await new Promise((resolve) => angular.element(document).ready(resolve));
-  registerIpcMessageListener(webBridge);
-})();
-loadZipLibrary();
-
-async function configureWindow(mainThread) {
+async function configureWindow(mainThread: any) {
   const [isMacOS, useSystemMenuBar, appVersion] = await Promise.all([
     mainThread.isMacOS,
     mainThread.useSystemMenuBar,
@@ -124,18 +155,18 @@ async function configureWindow(mainThread) {
   /*
   Title bar events
   */
-  document.getElementById('menu-btn').addEventListener('click', (e) => {
+  document.getElementById('menu-btn')!.addEventListener('click', (e) => {
     mainThread.sendIpcMessage(IpcMessages.DisplayAppMenu, {
       x: e.x,
       y: e.y,
     });
   });
 
-  document.getElementById('min-btn').addEventListener('click', () => {
+  document.getElementById('min-btn')!.addEventListener('click', () => {
     mainThread.minimizeWindow();
   });
 
-  document.getElementById('max-btn').addEventListener('click', async () => {
+  document.getElementById('max-btn')!.addEventListener('click', async () => {
     if (await mainThread.isWindowMaximized()) {
       mainThread.unmaximizeWindow();
     } else {
@@ -143,7 +174,7 @@ async function configureWindow(mainThread) {
     }
   });
 
-  document.getElementById('close-btn').addEventListener('click', () => {
+  document.getElementById('close-btn')!.addEventListener('click', () => {
     mainThread.closeWindow();
   });
 
@@ -173,7 +204,7 @@ async function configureWindow(mainThread) {
   }
 }
 
-function registerIpcMessageListener(webBridge) {
+function registerIpcMessageListener(webBridge: any) {
   window.addEventListener('message', async (event) => {
     // We don't have access to the full file path.
     if (event.origin !== 'file://') {
@@ -206,8 +237,8 @@ function registerIpcMessageListener(webBridge) {
       const controllerElement = document.querySelector(
         'application-group-view'
       );
-      const controllerScope = angular.element(controllerElement).scope();
-      controllerScope.onUpdateAvailable();
+      const controllerScope = window.angular.element(controllerElement).scope();
+      controllerScope.$root.$broadcast('new-update-available');
     } else if (message === IpcMessages.DownloadBackup) {
       webBridge.downloadBackup();
     } else if (message === IpcMessages.FinishedSavingBackup) {
@@ -224,6 +255,6 @@ async function loadZipLibrary() {
   const headTag = document.getElementsByTagName('head')[0];
   headTag.appendChild(scriptTag);
   scriptTag.onload = () => {
-    zip.workerScriptsPath = './vendor/zip/';
+    window.zip.workerScriptsPath = './vendor/zip/';
   };
 }

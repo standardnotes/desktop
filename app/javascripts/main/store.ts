@@ -5,7 +5,7 @@ import { MessageType } from '../../../test/TestIpcMessage';
 import { Language } from './spellcheckerManager';
 import { ensureIsBoolean, isTesting, stringOrNull, isDev } from './utils';
 import { FileDoesNotExist } from './fileUtils';
-import { BackupsDirectoryName } from './archiveManager';
+import { BackupsDirectoryName } from './backupsManager';
 import { handle } from './testing';
 
 function logError(...message: any) {
