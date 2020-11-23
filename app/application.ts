@@ -13,25 +13,38 @@ import {
   ensureKeychainAccess,
 } from './javascripts/main/keychain';
 import { IpcMessages } from './javascripts/shared/ipcMessages';
-import { isDev } from './javascripts/main/utils';
+import { isDev, isTesting } from './javascripts/main/utils';
 import { indexUrl } from './javascripts/main/paths';
 import { action, makeObservable, observable } from 'mobx';
+import { UpdateState } from './javascripts/main/updateManager';
+import { handle } from './javascripts/main/testing';
+import { MessageType } from '../test/TestIpcMessage';
 
 export class AppState {
+  readonly version: string;
   readonly store: Store;
   readonly startUrl = indexUrl;
   readonly isPrimaryInstance: boolean;
   public willQuitApp = false;
   public lastBackupDate: number | null = null;
   public windowState?: WindowState;
+  public readonly updates: UpdateState;
 
   constructor(app: Electron.App) {
+    this.version = app.getVersion();
     this.store = new Store(app.getPath('userData'));
     this.isPrimaryInstance = app.requestSingleInstanceLock();
     makeObservable(this, {
       lastBackupDate: observable,
       setBackupCreationDate: action,
     });
+    this.updates = new UpdateState(this);
+
+    if (isTesting()) {
+      handle(MessageType.AppStateCall, (method, ...args) => {
+        (this as any)[method](...args);
+      });
+    }
   }
 
   setBackupCreationDate(date: number | null): void {

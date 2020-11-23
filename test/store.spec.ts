@@ -1,7 +1,13 @@
 import anyTest, { TestInterface, ExecutionContext } from 'ava';
 import fs from 'fs';
-import { serializeStoreData } from '../app/javascripts/main/store';
+import proxyquire from 'proxyquire';
 import { createDriver, Driver } from './driver';
+
+const { serializeStoreData } = proxyquire('../app/javascripts/main/store', {
+  './backupsManager': {
+    '@noCallThru': true,
+  },
+});
 
 async function validateData(t: ExecutionContext<Driver>) {
   const data = await t.context.store.dataOnDisk();

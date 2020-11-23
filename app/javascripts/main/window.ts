@@ -21,7 +21,7 @@ import { createSpellcheckerManager } from './spellcheckerManager';
 import { Store, StoreKeys } from './store';
 import { handle, send } from './testing';
 import { createTrayManager, TrayManager } from './trayManager';
-import { createUpdateManager, UpdateManager } from './updateManager';
+import { checkForUpdate, setupUpdates } from './updateManager';
 import { isTesting, lowercaseDriveLetter } from './utils';
 import { initializeZoomManager } from './zoomManager';
 import { preloadJsPath } from './paths';
@@ -35,7 +35,6 @@ export interface WindowState {
   window: Electron.BrowserWindow;
   menuManager: MenuManager;
   backupsManager: BackupsManager;
-  updateManager: UpdateManager;
   trayManager: TrayManager;
 }
 
@@ -58,7 +57,6 @@ export async function createWindowState({
     window,
     backupsManager: services.backupsManager,
     trayManager: services.trayManager,
-    updateManager: services.updateManager,
     onClosed: teardown,
   });
 
@@ -121,7 +119,7 @@ function createWindowServices(
     appState,
     ipcMain
   );
-  const updateManager = createUpdateManager(window, appState);
+  const updateManager = setupUpdates(window, appState, backupsManager);
   const trayManager = createTrayManager(window, appState.store);
   const spellcheckerManager = createSpellcheckerManager(
     appState.store,
@@ -132,9 +130,9 @@ function createWindowServices(
     handle(MessageType.SpellCheckerManager, () => spellcheckerManager);
   }
   const menuManager = createMenuManager({
+    appState,
     window,
     backupsManager,
-    updateManager,
     trayManager,
     store: appState.store,
     spellcheckerManager,
@@ -179,15 +177,13 @@ function registerWindowEventListeners({
   window,
   backupsManager,
   trayManager,
-  updateManager,
   onClosed,
 }: {
   shell: Shell;
-  appState: Pick<AppState, 'willQuitApp' | 'startUrl'>;
+  appState: AppState;
   window: Electron.BrowserWindow;
   backupsManager: BackupsManager;
   trayManager: TrayManager;
-  updateManager: UpdateManager;
   onClosed: () => void;
 }) {
   const shouldOpenUrl = (url: string) =>
@@ -196,7 +192,7 @@ function registerWindowEventListeners({
   window.on('closed', onClosed);
 
   window.on('show', () => {
-    updateManager.checkForUpdate(false);
+    checkForUpdate(appState, appState.updates, false);
   });
 
   window.on('focus', () => {
