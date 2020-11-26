@@ -4,6 +4,7 @@ import electronLog from 'electron-log';
 import { autoUpdater } from 'electron-updater';
 import { MessageType } from '../../../test/TestIpcMessage';
 import { AppState } from '../../application';
+import { isMac } from './platforms';
 import { Store, StoreKeys } from './store';
 import { updates as str } from './strings';
 import { handle } from './testing';
@@ -230,7 +231,9 @@ async function showUpdateInstallationDialog(
       checkboxChecked: false,
       buttons: [
         str().updateReady.installLater,
-        str().updateReady.installAndRestart,
+        isMac()
+          ? str().updateReady.installAndRestart
+          : str().updateReady.quitAndInstall,
       ],
       cancelId,
     });
