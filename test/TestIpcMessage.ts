@@ -18,6 +18,7 @@ export enum AppMessageType {
   Ready,
   WindowLoaded,
   SavedBackup,
+  Log,
 }
 
 export enum MessageType {
@@ -35,7 +36,7 @@ export enum MessageType {
   PerformBackup,
   ChangeBackupsLocation,
   MenuReloaded,
-  UpdateManagerState,
+  UpdateState,
   CheckForUpdate,
   UpdateManagerNotifiedStateChange,
   Relaunch,
@@ -43,4 +44,6 @@ export enum MessageType {
   GetJSON,
   DownloadFile,
   AutoUpdateEnabled,
+  HasReloadedMenu,
+  AppStateCall,
 }

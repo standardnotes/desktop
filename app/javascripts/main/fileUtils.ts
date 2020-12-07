@@ -247,7 +247,7 @@ async function moveFile(source: PathLike, destination: PathLike) {
 }
 
 /** Deletes a file, handling EPERM and EBUSY errors on Windows. */
-async function deleteFile(filePath: PathLike) {
+export async function deleteFile(filePath: PathLike): Promise<void> {
   for (let i = 1, maxTries = 10; i < maxTries; i++) {
     try {
       await fs.promises.unlink(filePath);

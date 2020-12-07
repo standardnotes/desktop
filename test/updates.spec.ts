@@ -17,15 +17,16 @@ test('has auto-updates enabled by default', async (t) => {
 
 test('reloads the menu after checking for an update', async (t) => {
   await t.context.updates.check();
-  t.true(await t.context.updates.notifiedStateChange());
+  t.true(await t.context.appMenu.hasReloaded());
 });
 
-test('updates its settings after checking for an update', async (t) => {
-  const state = await t.context.updates.state();
+test.only('updates its settings after checking for an update', async (t) => {
+  let state = await t.context.updates.state();
   t.falsy(state.lastCheck);
+  await t.context.appStateCall('setBackupCreationDate', Date.now());
   await t.context.updates.check();
-  const lastCheck = (await t.context.updates.state()).lastCheck;
-  t.truthy(lastCheck);
-  const checkDate = new Date(lastCheck);
+  state = await t.context.updates.state();
+  t.truthy(state.lastCheck);
+  const checkDate = new Date(state.lastCheck);
   t.false(Number.isNaN(checkDate.getTime()));
 });

@@ -18,9 +18,9 @@ export function handle(
   messageHandlers[type] = handler;
 }
 
-export function send(type: AppMessageType): void {
+export function send(type: AppMessageType, data?: unknown): void {
   if (!isTesting()) return;
-  process.send!({ type });
+  process.send!({ type, data });
 }
 
 export function setupTesting(): void {

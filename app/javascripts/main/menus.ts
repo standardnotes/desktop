@@ -1,3 +1,4 @@
+import { AppState } from 'app/application';
 import {
   app,
   BrowserWindow,
@@ -8,6 +9,7 @@ import {
   shell,
   WebContents,
 } from 'electron';
+import { autorun } from 'mobx';
 import { MessageType } from '../../../test/TestIpcMessage';
 import { BackupsManager } from './backupsManager';
 import { isLinux, isMac } from './platforms';
@@ -16,7 +18,11 @@ import { Store, StoreKeys } from './store';
 import { appMenu as str, contextMenu } from './strings';
 import { handle } from './testing';
 import { TrayManager } from './trayManager';
-import { UpdateManager } from './updateManager';
+import {
+  checkForUpdate,
+  openChangelog,
+  showUpdateInstallationDialog,
+} from './updateManager';
 import { isDev, isTesting } from './utils';
 
 export const enum MenuId {
@@ -119,39 +125,26 @@ export interface MenuManager {
 
 export function createMenuManager({
   window,
+  appState,
   backupsManager,
-  updateManager,
   trayManager,
   store,
   spellcheckerManager,
 }: {
   window: Electron.BrowserWindow;
+  appState: AppState;
   backupsManager: BackupsManager;
-  updateManager: UpdateManager;
   trayManager: TrayManager;
   store: Store;
   spellcheckerManager?: SpellcheckerManager;
 }): MenuManager {
   let menu: Menu;
 
-  function reload() {
-    menu = Menu.buildFromTemplate([
-      ...(isMac() ? [macAppMenu(app.name)] : []),
-      editMenu(spellcheckerManager, reload),
-      viewMenu(window, store, reload),
-      windowMenu(store, trayManager, reload),
-      backupsMenu(backupsManager, reload),
-      updateMenu(updateManager),
-      ...(isLinux() ? [keyringMenu(window, store)] : []),
-      helpMenu(window, shell),
-    ]);
-    Menu.setApplicationMenu(menu);
-  }
-  reload(); // initialization
-
-  updateManager.onStateUpdate = reload;
-
   if (isTesting()) {
+    // eslint-disable-next-line no-var
+    var hasReloaded = false;
+    // eslint-disable-next-line no-var
+    var hasReloadedTimeout: any;
     handle(MessageType.AppMenuItems, () =>
       menu.items.map((item) => ({
         label: item.label,
@@ -167,7 +160,33 @@ export function createMenuManager({
     handle(MessageType.ClickLanguage, (code) => {
       menu.getMenuItemById(MessageType.ClickLanguage + code)!.click();
     });
+    handle(MessageType.HasReloadedMenu, () => hasReloaded);
   }
+
+  function reload() {
+    console.log('🚀 ~ file: menus.ts ~ line 144 ~ reload ~ reload');
+    if (isTesting()) {
+      hasReloaded = true;
+      clearTimeout(hasReloadedTimeout);
+      hasReloadedTimeout = setTimeout(() => {
+        hasReloaded = false;
+      }, 300);
+    }
+    menu = Menu.buildFromTemplate([
+      ...(isMac() ? [macAppMenu(app.name)] : []),
+      editMenu(spellcheckerManager, reload),
+      viewMenu(window, store, reload),
+      windowMenu(store, trayManager, reload),
+      backupsMenu(backupsManager, reload),
+      updateMenu(window, appState),
+      ...(isLinux() ? [keyringMenu(window, store)] : []),
+      helpMenu(window, shell),
+    ]);
+    Menu.setApplicationMenu(menu);
+  }
+  autorun(() => {
+    reload(); // initialization
+  });
 
   return {
     reload,
@@ -513,12 +532,12 @@ function backupsMenu(archiveManager: BackupsManager, reload: () => any) {
   };
 }
 
-function updateMenu(updateManager: UpdateManager) {
-  const updateNeeded = updateManager.updateNeeded();
+function updateMenu(window: BrowserWindow, appState: AppState) {
+  const updateState = appState.updates;
   let label;
-  if (updateManager.checkingForUpdate) {
+  if (updateState.checkingForUpdate) {
     label = str().checkingForUpdate;
-  } else if (updateNeeded) {
+  } else if (updateState.updateNeeded) {
     label = str().updateAvailable;
   } else {
     label = str().updates;
@@ -526,28 +545,30 @@ function updateMenu(updateManager: UpdateManager) {
   const submenu: MenuItemConstructorOptions[] = [];
   const structure = { label, submenu };
 
-  if (updateManager.autoUpdateDownloaded && updateManager.latestVersion) {
+  if (updateState.autoUpdateDownloaded && updateState.latestVersion) {
     submenu.push({
-      label: str().installPendingUpdate(updateManager.latestVersion),
+      label: str().installPendingUpdate(updateState.latestVersion),
       click() {
-        updateManager.showAutoUpdateInstallationDialog();
+        showUpdateInstallationDialog(window, appState);
       },
     });
   }
 
   submenu.push({
     type: 'checkbox',
-    checked: updateManager.autoUpdateEnabled,
+    checked: updateState.enableAutoUpdate,
     label: str().enableAutomaticUpdates,
-    click: updateManager.toggleAutoupdateStatus,
+    click() {
+      updateState.toggleAutoUpdate();
+    },
   });
 
-  const latestVersion = updateManager.latestVersion;
+  const latestVersion = updateState.latestVersion;
 
   submenu.push(Separator);
 
   submenu.push({
-    label: str().yourVersion(updateManager.currentVersion),
+    label: str().yourVersion(appState.version),
   });
 
   submenu.push({
@@ -555,7 +576,7 @@ function updateMenu(updateManager: UpdateManager) {
       ? str().latestVersion(latestVersion)
       : str().releaseNotes,
     click() {
-      updateManager.openChangelog();
+      openChangelog(updateState);
     },
   });
 
@@ -563,25 +584,25 @@ function updateMenu(updateManager: UpdateManager) {
     submenu.push({
       label: str().viewReleaseNotes(latestVersion),
       click() {
-        updateManager.openChangelog();
+        openChangelog(updateState);
       },
     });
   }
 
   submenu.push(Separator);
 
-  if (!updateManager.checkingForUpdate) {
+  if (!updateState.checkingForUpdate) {
     submenu.push({
       label: str().checkForUpdate,
       click() {
-        updateManager.checkForUpdate(true);
+        checkForUpdate(appState, updateState, true);
       },
     });
   }
 
-  if (updateManager.lastCheck && !updateManager.checkingForUpdate) {
+  if (updateState.lastCheck && !updateState.checkingForUpdate) {
     submenu.push({
-      label: str().lastUpdateCheck(updateManager.lastCheck),
+      label: str().lastUpdateCheck(updateState.lastCheck),
     });
   }
 

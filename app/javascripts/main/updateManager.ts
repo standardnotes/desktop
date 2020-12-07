@@ -1,16 +1,16 @@
 import compareVersions from 'compare-versions';
-import { app, BrowserWindow, dialog, shell } from 'electron';
+import { BrowserWindow, dialog, shell } from 'electron';
 import electronLog from 'electron-log';
 import { autoUpdater } from 'electron-updater';
+import { action, autorun, computed, makeObservable, observable } from 'mobx';
 import { MessageType } from '../../../test/TestIpcMessage';
 import { AppState } from '../../application';
+import { BackupsManager } from './backupsManager';
 import { isMac } from './platforms';
-import { Store, StoreKeys } from './store';
+import { StoreKeys } from './store';
 import { updates as str } from './strings';
 import { handle } from './testing';
 import { isTesting } from './utils';
-
-declare const EXPERIMENTAL_FEATURES: boolean;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function logError(...message: any) {
@@ -22,161 +22,137 @@ if (isTesting()) {
   var notifiedStateUpdate = false;
 }
 
-class UpdateManagerState {
-  readonly currentVersion = app.getVersion();
-  lastCheck?: Date;
-  latestVersion?: string;
+export class UpdateState {
+  latestVersion: string | null = null;
+  enableAutoUpdate: boolean;
   checkingForUpdate = false;
   autoUpdateDownloaded = false;
-  autoUpdateVersion?: string;
-  onStateUpdate?: () => void;
+  lastCheck: Date | null = null;
+
+  constructor(private appState: AppState) {
+    this.enableAutoUpdate = appState.store.get(StoreKeys.EnableAutoUpdate);
+    makeObservable(this, {
+      latestVersion: observable,
+      enableAutoUpdate: observable,
+      checkingForUpdate: observable,
+      autoUpdateDownloaded: observable,
+      lastCheck: observable,
+
+      updateNeeded: computed,
+      updatingIsSafe: computed,
+
+      toggleAutoUpdate: action,
+      setCheckingForUpdate: action,
+      autoUpdateHasBeenDownloaded: action,
+      checkedForUpdate: action,
+    });
+
+    if (isTesting()) {
+      handle(MessageType.UpdateState, () => ({
+        lastCheck: this.lastCheck,
+      }));
+    }
+  }
+
+  get updateNeeded(): boolean {
+    if (this.latestVersion) {
+      return compareVersions(this.appState.version, this.latestVersion) === 1;
+    } else {
+      return false;
+    }
+  }
+
+  get updatingIsSafe(): boolean {
+    return (
+      !this.enableAutoUpdate &&
+      !!this.appState.lastBackupDate &&
+      isLessThanOneHourFromNow(this.appState.lastBackupDate)
+    );
+  }
+
+  toggleAutoUpdate(): void {
+    this.enableAutoUpdate = !this.enableAutoUpdate;
+    this.appState.store.set(StoreKeys.EnableAutoUpdate, this.enableAutoUpdate);
+  }
+
+  setCheckingForUpdate(checking: boolean): void {
+    this.checkingForUpdate = checking;
+  }
+
+  autoUpdateHasBeenDownloaded(version: string | null): void {
+    this.autoUpdateDownloaded = true;
+    this.latestVersion = version;
+  }
+
+  checkedForUpdate(latestVersion: string | null): void {
+    this.lastCheck = new Date();
+    this.latestVersion = latestVersion;
+  }
 }
 
-export interface UpdateManager {
-  readonly latestVersion?: string;
-  readonly currentVersion: string;
-  readonly lastCheck?: Date;
-  readonly autoUpdateEnabled: boolean;
-  readonly autoUpdateDownloaded: boolean;
-  readonly checkingForUpdate: boolean;
-  onStateUpdate?: () => void;
-  openChangelog(): void;
-  checkForUpdate(userTriggered: boolean): void;
-  toggleAutoupdateStatus(): void;
-  showAutoUpdateInstallationDialog(): void;
-  updateNeeded(): boolean;
-}
+let updatesSetup = false;
 
-export function createUpdateManager(
+export function setupUpdates(
   window: BrowserWindow,
-  appState: Pick<AppState, 'store' | 'lastBackupDate'>
-): UpdateManager {
+  appState: AppState,
+  backupsManager: BackupsManager
+): void {
+  if (updatesSetup) {
+    throw Error('Already set up updates.');
+  }
   const { store } = appState;
-  const state = new UpdateManagerState();
 
-  setupAutoUpdater(window, state, appState.store);
+  autoUpdater.logger = electronLog;
+
+  const updateState = appState.updates;
+  function checkUpdateSafety() {
+    const isSafeToUpdate = updateState.updatingIsSafe;
+    autoUpdater.autoInstallOnAppQuit = isSafeToUpdate;
+    autoUpdater.autoDownload = isSafeToUpdate;
+  }
+  autorun(checkUpdateSafety);
+  const oneHour = 1 * 60 * 60 * 1000;
+  setInterval(checkUpdateSafety, oneHour);
+
+  autoUpdater.on('update-downloaded', (info: { version?: string }) => {
+    window.webContents.send('update-available', null);
+    updateState.autoUpdateHasBeenDownloaded(info.version || null);
+  });
+
+  autoUpdater.on('error', logError);
+  autoUpdater.on('update-available', (info: { version?: string }) => {
+    updateState.checkedForUpdate(info.version || null);
+    backupsManager.performBackup();
+  });
+  autoUpdater.on('update-not-available', (info: { version?: string }) => {
+    updateState.checkedForUpdate(info.version || null);
+  });
+
+  updatesSetup = true;
 
   if (isTesting()) {
-    handle(MessageType.UpdateManagerState, () => state);
     handle(MessageType.AutoUpdateEnabled, () =>
       store.get(StoreKeys.EnableAutoUpdate)
     );
     handle(MessageType.CheckForUpdate, () =>
-      checkForUpdate(store, state, false)
+      checkForUpdate(appState, updateState)
     );
     handle(
       MessageType.UpdateManagerNotifiedStateChange,
       () => notifiedStateUpdate
     );
   } else {
-    checkForUpdate(store, state);
+    checkForUpdate(appState, updateState);
   }
-
-  return {
-    currentVersion: state.currentVersion,
-    get autoUpdateDownloaded() {
-      return state.autoUpdateDownloaded;
-    },
-    get checkingForUpdate() {
-      return state.checkingForUpdate;
-    },
-    get lastCheck() {
-      return state.lastCheck;
-    },
-    get latestVersion() {
-      return state.latestVersion;
-    },
-    get autoUpdateEnabled() {
-      return autoUpdateEnabled(store);
-    },
-    set onStateUpdate(fn: () => void) {
-      state.onStateUpdate = fn;
-    },
-    openChangelog() {
-      openChangelog(state.latestVersion);
-    },
-    updateNeeded() {
-      return updateNeeded(state);
-    },
-    showAutoUpdateInstallationDialog() {
-      showUpdateInstallationDialog(window, state, appState);
-    },
-    checkForUpdate(userTriggered: boolean) {
-      checkForUpdate(store, state, userTriggered);
-    },
-    toggleAutoupdateStatus() {
-      toggleAutoupdateStatus(store, state);
-    },
-  };
 }
 
-function autoUpdateEnabled(store: Store) {
-  return store.get(StoreKeys.EnableAutoUpdate);
-}
-
-function setupAutoUpdater(
-  window: BrowserWindow,
-  state: UpdateManagerState,
-  store: Store
-) {
-  autoUpdater.logger = electronLog;
-  if (EXPERIMENTAL_FEATURES) {
-    autoUpdater.autoInstallOnAppQuit = false;
-    autoUpdater.autoDownload = false;
-  } else {
-    const enabled = autoUpdateEnabled(store);
-    autoUpdater.autoInstallOnAppQuit = enabled;
-    autoUpdater.autoDownload = enabled;
-  }
-
-  autoUpdater.on('update-downloaded', (info: { version: string }) => {
-    window.webContents.send('update-available', null);
-    state.autoUpdateDownloaded = true;
-    state.autoUpdateVersion = info.version;
-    notifyStateUpdate(state);
-  });
-
-  autoUpdater.on('error', logError);
-  autoUpdater.on('update-available', (info: { version: string }) => {
-    state.latestVersion = info.version;
-    state.lastCheck = new Date();
-    notifyStateUpdate(state);
-  });
-  autoUpdater.on('update-not-available', (info: { version: string }) => {
-    state.latestVersion = info.version;
-    state.lastCheck = new Date();
-    notifyStateUpdate(state);
-  });
-}
-
-function openChangelog(latestVersion?: string) {
+export function openChangelog(state: UpdateState): void {
   const url = 'https://github.com/standardnotes/desktop/releases';
-  if (latestVersion) {
-    shell.openExternal(`${url}/tag/v${latestVersion}`);
+  if (state.latestVersion) {
+    shell.openExternal(`${url}/tag/v${state.latestVersion}`);
   } else {
     shell.openExternal(url);
   }
-}
-
-function toggleAutoupdateStatus(store: Store, state: UpdateManagerState) {
-  const enableAutoUpdates = !autoUpdateEnabled(store);
-  autoUpdater.autoDownload = enableAutoUpdates;
-  store.set(StoreKeys.EnableAutoUpdate, enableAutoUpdates);
-  notifyStateUpdate(state);
-}
-
-function notifyStateUpdate(state: UpdateManagerState) {
-  state.onStateUpdate?.();
-  if (isTesting()) {
-    notifiedStateUpdate = true;
-  }
-}
-
-function updateNeeded(state: UpdateManagerState) {
-  if (state.latestVersion) {
-    return compareVersions(state.latestVersion, state.currentVersion) === 1;
-  }
-  return false;
 }
 
 function quitAndInstall(window: BrowserWindow) {
@@ -194,21 +170,19 @@ function isLessThanOneHourFromNow(date: number) {
   return now - date < onHourMs;
 }
 
-async function showUpdateInstallationDialog(
+export async function showUpdateInstallationDialog(
   parentWindow: BrowserWindow,
-  state: UpdateManagerState,
-  appState: Pick<AppState, 'lastBackupDate'>
-) {
-  if (!state.latestVersion) return;
+  appState: AppState
+): Promise<void> {
+  if (!appState.updates.latestVersion) return;
   if (
-    !EXPERIMENTAL_FEATURES ||
-    (appState.lastBackupDate &&
-      isLessThanOneHourFromNow(appState.lastBackupDate))
+    appState.lastBackupDate &&
+    isLessThanOneHourFromNow(appState.lastBackupDate)
   ) {
     const result = await dialog.showMessageBox(parentWindow, {
       type: 'info',
       title: str().updateReady.title,
-      message: str().updateReady.message(state.latestVersion),
+      message: str().updateReady.message(appState.updates.latestVersion),
       buttons: [
         str().updateReady.installLater,
         str().updateReady.installAndRestart,
@@ -245,27 +219,23 @@ async function showUpdateInstallationDialog(
   }
 }
 
-async function checkForUpdate(
-  store: Store,
-  state: UpdateManagerState,
+export async function checkForUpdate(
+  appState: AppState,
+  state: UpdateState,
   userTriggered = false
-) {
-  if (store.get(StoreKeys.EnableAutoUpdate) || userTriggered) {
-    state.checkingForUpdate = true;
-    notifyStateUpdate(state);
+): Promise<void> {
+  if (state.enableAutoUpdate || userTriggered) {
+    state.setCheckingForUpdate(true);
     try {
       const { updateInfo } = await autoUpdater.checkForUpdates();
-      state.lastCheck = new Date();
-      state.latestVersion = updateInfo.version;
+      state.checkedForUpdate(updateInfo.version);
 
       if (userTriggered) {
         let message;
-        if (updateNeeded(state)) {
+        if (state.updateNeeded && state.latestVersion) {
           message = str().finishedChecking.updateAvailable(state.latestVersion);
         } else {
-          message = str().finishedChecking.noUpdateAvailable(
-            state.currentVersion
-          );
+          message = str().finishedChecking.noUpdateAvailable(appState.version);
         }
 
         dialog.showMessageBox({
@@ -282,8 +252,7 @@ async function checkForUpdate(
         });
       }
     } finally {
-      state.checkingForUpdate = false;
-      notifyStateUpdate(state);
+      state.setCheckingForUpdate(false);
     }
   }
 }
