@@ -6,6 +6,7 @@ import { action, autorun, computed, makeObservable, observable } from 'mobx';
 import { MessageType } from '../../../test/TestIpcMessage';
 import { AppState } from '../../application';
 import { BackupsManager } from './backupsManager';
+import { isMac } from './platforms';
 import { StoreKeys } from './store';
 import { updates as str } from './strings';
 import { handle } from './testing';
@@ -204,7 +205,9 @@ export async function showUpdateInstallationDialog(
       checkboxChecked: false,
       buttons: [
         str().updateReady.installLater,
-        str().updateReady.installAndRestart,
+        isMac()
+          ? str().updateReady.installAndRestart
+          : str().updateReady.quitAndInstall,
       ],
       cancelId,
     });

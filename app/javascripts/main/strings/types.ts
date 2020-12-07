@@ -92,6 +92,7 @@ interface UpdateStrings {
     title: string;
     message(version: string): string;
     installAndRestart: string;
+    quitAndInstall: string;
     installLater: string;
     noRecentBackupMessage: string;
     noRecentBackupDetail(lastBackupDate: number | null): string;
