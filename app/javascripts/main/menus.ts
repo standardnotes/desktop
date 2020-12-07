@@ -164,7 +164,6 @@ export function createMenuManager({
   }
 
   function reload() {
-    console.log('🚀 ~ file: menus.ts ~ line 144 ~ reload ~ reload');
     if (isTesting()) {
       hasReloaded = true;
       clearTimeout(hasReloadedTimeout);
