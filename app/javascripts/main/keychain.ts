@@ -27,7 +27,7 @@ export async function ensureKeychainAccess(
   }
 
   try {
-    await getKeychainValue();
+    await setKeychainValue(await getKeychainValue());
   } catch (_) {
     /** Can't access keychain. Ask users to grant access */
     return askForKeychainAccess(store);
