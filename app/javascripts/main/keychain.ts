@@ -69,7 +69,6 @@ export async function getKeychainValue(): Promise<unknown> {
       return JSON.parse(value);
     }
   } catch (error) {
-    // shell.openExternal('https://snapcraft.io/standard-notes');
     console.error(error);
     throw error;
   }
