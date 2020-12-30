@@ -17,11 +17,11 @@ import { handle, send } from './testing';
 import { isTesting, last } from './utils';
 
 function log(...message: any) {
-  console.log('ArchiveManager:', ...message);
+  console.log('BackupsManager:', ...message);
 }
 
 function logError(...message: any) {
-  console.error('ArchiveManager:', ...message);
+  console.error('BackupsManager:', ...message);
 }
 
 export const enum EnsureRecentBackupExists {

@@ -39,7 +39,6 @@ export class UpdateState {
       lastCheck: observable,
 
       updateNeeded: computed,
-      updatingIsSafe: computed,
 
       toggleAutoUpdate: action,
       setCheckingForUpdate: action,
@@ -56,18 +55,10 @@ export class UpdateState {
 
   get updateNeeded(): boolean {
     if (this.latestVersion) {
-      return compareVersions(this.appState.version, this.latestVersion) === 1;
+      return compareVersions(this.latestVersion, this.appState.version) === 1;
     } else {
       return false;
     }
-  }
-
-  get updatingIsSafe(): boolean {
-    return (
-      !this.enableAutoUpdate &&
-      !!this.appState.lastBackupDate &&
-      isLessThanOneHourFromNow(this.appState.lastBackupDate)
-    );
   }
 
   toggleAutoUpdate(): void {
@@ -105,12 +96,17 @@ export function setupUpdates(
   autoUpdater.logger = electronLog;
 
   const updateState = appState.updates;
+
   function checkUpdateSafety() {
-    const isSafeToUpdate = updateState.updatingIsSafe;
+    const isSafeToUpdate =
+      updateState.enableAutoUpdate &&
+      typeof appState.lastBackupDate === 'number' &&
+      isLessThanOneHourFromNow(appState.lastBackupDate);
     autoUpdater.autoInstallOnAppQuit = isSafeToUpdate;
     autoUpdater.autoDownload = isSafeToUpdate;
   }
   autorun(checkUpdateSafety);
+
   const oneHour = 1 * 60 * 60 * 1000;
   setInterval(checkUpdateSafety, oneHour);
 
