@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Grant Standard Notes access to your keyring</title>
+    <title>Grant Standard Notes access to password storage</title>
     <link
       rel="stylesheet"
       media="all"
@@ -18,27 +18,29 @@
           <div class="sk-panel">
             <div class="sk-panel-header">
               <div class="sk-panel-header-title">
-                Grant Standard Notes access to your keyring
+                Grant Standard Notes access to password storage
               </div>
             </div>
             <div class="sk-panel-content" style="padding-bottom: 2rem;">
               <p>
                 To store your password securely, Standard Notes needs to save
-                and retrieve passwords on your system keyring (libsecret).
+                and retrieve passwords on your password storage facility, or
+                "Secret Service" (using libsecret).
               </p>
               <p>
-                Due to limitations of Linux keyring access, Standard Notes will
-                be granted access to all your keyring entries. We will not read
-                these values, but technically, we can. If you prefer to use
-                local storage instead to store your keys, you may do so. You can
-                add an application passcode to the app to encrypt your local
-                storage.
+                Due to limitations of password storage access, Standard Notes
+                will be granted access to all your entries. We will not read
+                these values, but technically, we can. If you do not have a
+                "Secret Service" (also sometimes referred to as your
+                <em>keyring</em>) or you prefer to use local app storage instead
+                to store your keys, you may do so. You can add an application
+                passcode to the app to encrypt your local storage.
               </p>
               <p>
                 <strong>
-                  To grant Standard Notes access to your keyring, visit the
-                  Standard Notes page in your software store an look for a
-                  Permissions button. Then, quit and relaunch the app.
+                  To grant Standard Notes access to your passwords, visit the
+                  Standard Notes page in your software store and look for a
+                  Permissions button. Then, quit the app and start it again.
                 </strong>
               </p>
               <p>

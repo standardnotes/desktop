@@ -2,16 +2,15 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import anyTest, { TestInterface } from 'ava';
 import { Driver, createDriver } from './driver';
-import { BackupsDirectoryName } from '../app/javascripts/main/archiveManager';
-import { StoreKeys } from '../app/javascripts/main/store';
-import { FileDoesNotExist } from '../app/javascripts/main/fileUtils';
 
 const test = anyTest as TestInterface<Driver>;
+
+const BackupsDirectoryName = 'Standard Notes Backups';
 
 test.beforeEach(async (t) => {
   t.context = await createDriver();
 });
-test.afterEach(async (t) => {
+test.afterEach.always(async (t) => {
   await t.context.stop();
 });
 
@@ -21,8 +20,8 @@ test.afterEach(async (t) => {
  */
 const timeoutDuration = 20 * 1000; /** 20s */
 
-function wait() {
-  return new Promise((resolve) => setTimeout(resolve, 1000));
+function wait(duration = 1000) {
+  return new Promise((resolve) => setTimeout(resolve, duration));
 }
 
 test('saves incoming data to the backups folder', async (t) => {
@@ -32,6 +31,13 @@ test('saves incoming data to the backups folder', async (t) => {
   const files = await fs.readdir(backupsLocation);
   t.true(files.includes(fileName));
   t.is(data, await fs.readFile(path.join(backupsLocation, fileName), 'utf8'));
+});
+
+test('saves the decrypt script to the backups folder', async (t) => {
+  const backupsLocation = await t.context.backups.location();
+  await wait(300); /** Disk might be busy */
+  const files = await fs.readdir(backupsLocation);
+  t.true(files.includes('decrypt.html'));
 });
 
 test.serial('performs a backup', async (t) => {
@@ -57,7 +63,7 @@ test.serial('changes backups folder location', async (t) => {
 
   /** Assert that the setting was saved */
   const data = await t.context.store.dataOnDisk();
-  t.is(data[StoreKeys.BackupsLocation], newLocation);
+  t.is(data.backupsLocation, newLocation);
 
   /** Perform backup and make sure there is one more file in the directory */
   await t.context.backups.perform();
@@ -71,7 +77,7 @@ test.serial('changes backups location to a child directory', async (t) => {
   await t.context.backups.perform();
   const currentLocation = await t.context.backups.location();
   const backups = await fs.readdir(currentLocation);
-  t.is(backups.length, 1);
+  t.is(backups.length, 2); /** 1 + decrypt script */
   const newLocation = path.join(currentLocation, 'child_dir');
   await t.context.backups.changeLocation(newLocation);
   t.deepEqual(
@@ -89,10 +95,10 @@ test.serial(
     await t.context.backups.perform();
     const currentLocation = await t.context.backups.location();
     let totalFiles = (await fs.readdir(currentLocation)).length;
-    t.is(totalFiles, 2);
+    t.is(totalFiles, 3); /** 2 + decrypt script */
     await t.context.backups.changeLocation(currentLocation);
     totalFiles = (await fs.readdir(currentLocation)).length;
-    t.is(totalFiles, 2);
+    t.is(totalFiles, 3);
   }
 );
 
@@ -107,13 +113,6 @@ test('does not save a backup when they are disabled', async (t) => {
   t.context.backups.perform();
   await wait();
   const backupsLocation = await t.context.backups.location();
-  try {
-    await fs.readdir(backupsLocation);
-    t.fail(
-      `A backups folder is present when backups have been disabled right
-      after the app started.`
-    );
-  } catch (error) {
-    t.is(error.code, FileDoesNotExist);
-  }
+  const files = await fs.readdir(backupsLocation);
+  t.deepEqual(files, ['decrypt.html']);
 });

@@ -2,10 +2,14 @@
 import { ChildProcess, spawn } from 'child_process';
 import electronPath, { MenuItem } from 'electron';
 import path from 'path';
-import { deleteDir, readJSONFile } from '../app/javascripts/main/fileUtils';
+import {
+  deleteDir,
+  ensureDirectoryExists,
+  readJSONFile,
+} from '../app/javascripts/main/fileUtils';
 import { Language } from '../app/javascripts/main/spellcheckerManager';
 import { StoreKeys } from '../app/javascripts/main/store';
-import { UpdateManager } from '../app/javascripts/main/updateManager';
+import { UpdateState } from '../app/javascripts/main/updateManager';
 import { CommandLineArgs } from '../app/javascripts/shared/CommandLineArgs';
 import {
   AppMessageType,
@@ -33,13 +37,6 @@ function spawnAppprocess(userDataPath: string) {
 class Driver {
   private appProcess: ChildProcess;
 
-  readonly userDataPath = path.join(
-    __dirname,
-    'data',
-    'tmp',
-    `userData-${Date.now()}-${Math.round(Math.random() * 10000)}`
-  );
-
   private calls: Array<{
     resolve: (...args: any) => void;
     reject: (...args: any) => void;
@@ -55,6 +52,9 @@ class Driver {
 
   private receive = (message: TestIPCMessageResult | AppTestMessage) => {
     if ('type' in message) {
+      if (message.type === AppMessageType.Log) {
+        console.log(message);
+      }
       this.awaitedOnMessages = this.awaitedOnMessages.filter(
         ({ type, resolve }) => {
           if (type === message.type) {
@@ -85,7 +85,7 @@ class Driver {
     });
   };
 
-  constructor() {
+  constructor(readonly userDataPath: string) {
     this.appProcess = spawnAppprocess(this.userDataPath);
     this.appProcess.on('message', this.receive);
     this.appReady = this.waitOn(AppMessageType.Ready);
@@ -107,6 +107,9 @@ class Driver {
 
   windowCount = (): Promise<number> => this.send(MessageType.WindowCount);
 
+  appStateCall = (methodName: string, ...args: any): Promise<any> =>
+    this.send(MessageType.AppStateCall, methodName, ...args);
+
   readonly store = {
     dataOnDisk: async (): Promise<{ [key in StoreKeys]: any }> => {
       const location = await this.send(MessageType.StoreSettingsLocation);
@@ -122,6 +125,7 @@ class Driver {
     items: (): Promise<MenuItem[]> => this.send(MessageType.AppMenuItems),
     clickLanguage: (language: Language) =>
       this.send(MessageType.ClickLanguage, language),
+    hasReloaded: () => this.send(MessageType.HasReloadedMenu),
   };
 
   readonly spellchecker = {
@@ -145,13 +149,10 @@ class Driver {
   };
 
   readonly updates = {
-    state: (): Promise<UpdateManager> =>
-      this.send(MessageType.UpdateManagerState),
+    state: (): Promise<UpdateState> => this.send(MessageType.UpdateState),
     autoUpdateEnabled: (): Promise<boolean> =>
       this.send(MessageType.AutoUpdateEnabled),
     check: () => this.send(MessageType.CheckForUpdate),
-    notifiedStateChange: (): Promise<boolean> =>
-      this.send(MessageType.UpdateManagerNotifiedStateChange),
   };
 
   readonly net = {
@@ -201,7 +202,14 @@ class Driver {
 export type { Driver };
 
 export async function createDriver() {
-  const driver = new Driver();
+  const userDataPath = path.join(
+    __dirname,
+    'data',
+    'tmp',
+    `userData-${Date.now()}-${Math.round(Math.random() * 10000)}`
+  );
+  await ensureDirectoryExists(userDataPath);
+  const driver = new Driver(userDataPath);
   await driver.appReady;
   return driver;
 }

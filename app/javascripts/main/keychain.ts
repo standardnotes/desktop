@@ -30,32 +30,36 @@ export async function ensureKeychainAccess(
     await getKeychainValue();
   } catch (_) {
     /** Can't access keychain. Ask users to grant access */
-    const window = new BrowserWindow({
-      frame: false,
-      width: 550,
-      height: 550,
-      center: true,
-      show: false,
-      webPreferences: {
-        preload: grantKeyringAccessJsPath,
-      },
-    });
-    window.on('ready-to-show', window.show);
-    window.loadURL(grantKeyringAccessUrl);
-
-    const quitListener = () => {
-      app.quit();
-    };
-    ipcMain.once(IpcMessages.Quit, quitListener);
-
-    return new Promise((resolve) => {
-      ipcMain.once(IpcMessages.UseLocalstorageForKeychain, () => {
-        store.set(StoreKeys.UseNativeKeychain, false);
-        ipcMain.removeListener(IpcMessages.Quit, quitListener);
-        resolve(window);
-      });
-    });
+    return askForKeychainAccess(store);
   }
+}
+
+function askForKeychainAccess(store: Store): Promise<BrowserWindow> {
+  const window = new BrowserWindow({
+    frame: false,
+    width: 550,
+    height: 600,
+    center: true,
+    show: false,
+    webPreferences: {
+      preload: grantKeyringAccessJsPath,
+    },
+  });
+  window.on('ready-to-show', window.show);
+  window.loadURL(grantKeyringAccessUrl);
+
+  const quitListener = () => {
+    app.quit();
+  };
+  ipcMain.once(IpcMessages.Quit, quitListener);
+
+  return new Promise((resolve) => {
+    ipcMain.once(IpcMessages.UseLocalstorageForKeychain, () => {
+      store.set(StoreKeys.UseNativeKeychain, false);
+      ipcMain.removeListener(IpcMessages.Quit, quitListener);
+      resolve(window);
+    });
+  });
 }
 
 export async function getKeychainValue(): Promise<unknown> {
@@ -65,7 +69,6 @@ export async function getKeychainValue(): Promise<unknown> {
       return JSON.parse(value);
     }
   } catch (error) {
-    // shell.openExternal('https://snapcraft.io/standard-notes');
     console.error(error);
     throw error;
   }

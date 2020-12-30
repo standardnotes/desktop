@@ -1,6 +1,5 @@
 import anyTest, { TestInterface } from 'ava';
 import { MenuItem } from 'electron';
-import { MenuId } from '../app/javascripts/main/menus';
 import { AppName } from '../app/javascripts/main/strings';
 import { createDriver, Driver } from './driver';
 
@@ -25,7 +24,7 @@ function findSpellCheckerLanguagesMenu(menuItems: MenuItem[]) {
   return menuItems.find((item) => {
     if (item.role?.toLowerCase() === 'editmenu') {
       return item?.submenu?.items?.find(
-        (item) => item.id === MenuId.SpellcheckerLanguages
+        (item) => item.id === 'SpellcheckerLanguages'
       );
     }
   });
