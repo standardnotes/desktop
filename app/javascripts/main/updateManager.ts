@@ -99,9 +99,10 @@ export function setupUpdates(
 
   function checkUpdateSafety() {
     const isSafeToUpdate =
-      updateState.enableAutoUpdate &&
-      typeof appState.lastBackupDate === 'number' &&
-      isLessThanOneHourFromNow(appState.lastBackupDate);
+      appState.store.get(StoreKeys.BackupsDisabled) ||
+      (updateState.enableAutoUpdate &&
+        typeof appState.lastBackupDate === 'number' &&
+        isLessThanOneHourFromNow(appState.lastBackupDate));
     autoUpdater.autoInstallOnAppQuit = isSafeToUpdate;
     autoUpdater.autoDownload = isSafeToUpdate;
   }

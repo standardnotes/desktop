@@ -134,6 +134,8 @@ async function createWebBridge(mainThread: any): Promise<Bridge> {
         const data = await desktopManager.desktop_requestBackupFile();
         if (data) {
           mainThread.sendIpcMessage(IpcMessages.DataArchive, data);
+        } else {
+          desktopManager.desktop_didFinishBackup(false);
         }
       } catch (error) {
         console.error(error);
