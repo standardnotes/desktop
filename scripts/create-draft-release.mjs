@@ -15,7 +15,7 @@ import { getLatestBuiltFilesList } from './utils.mjs';
     `v${versionNumber}`,
     ...files.map((name) => path.join('dist', name)),
     '--target',
-    'master',
+    'main',
     '--draft',
     '--prerelease',
     '--title',
