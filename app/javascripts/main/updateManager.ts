@@ -241,7 +241,6 @@ export async function checkForUpdate(
         });
       }
     } catch (error) {
-      logError('Exception caught while checking for autoupdates:', error);
       if (userTriggered) {
         dialog.showMessageBox({
           title: str().finishedChecking.title,
