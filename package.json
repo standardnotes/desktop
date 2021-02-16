@@ -118,7 +118,7 @@
     "lint:eslint": "eslint app/index.ts app/application.ts app/javascripts/**/*.ts",
     "lint:types": "tsc --noEmit",
     "release:draft": "node scripts/create-draft-release.mjs",
-    "setup": "yarn install && yarn install --cwd ./app ./app && git submodule update --init && yarn install --cwd ./web",
+    "setup": "yarn && yarn --cwd ./app && git submodule update --init && yarn --cwd ./web",
     "start": "electron . --enable-logging --icon _icon/icon.png",
     "test": "rimraf test/data/tmp && ava"
   },
