@@ -3,10 +3,12 @@ const CopyPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
 const env = require('./.env');
 const { DefinePlugin } = require('webpack');
+const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = function ({
   onlyTranspileTypescript = false,
   experimentalFeatures = false,
+  snap = false,
 } = {}) {
   const moduleConfig = {
     rules: [
@@ -62,6 +64,13 @@ module.exports = function ({
     module: moduleConfig,
     externals: {
       keytar: 'commonjs keytar',
+    },
+    optimization: {
+      minimizer: [
+        new TerserPlugin({
+          exclude: ['extensions', 'vendor', 'web', 'node_modules'],
+        }),
+      ],
     },
     plugins: [
       new DefinePlugin({
@@ -127,6 +136,7 @@ module.exports = function ({
         ),
         BUGSNAG_API_KEY: JSON.stringify(env.BUGSNAG_API_KEY),
         EXPERIMENTAL_FEATURES: JSON.stringify(experimentalFeatures),
+        AUTO_UPDATING_AVAILABLE: JSON.stringify(snap ? false : true),
       }),
     ],
   };

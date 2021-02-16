@@ -23,3 +23,9 @@ export async function getLatestBuiltFilesList() {
     'builder-effective-config.yaml',
   ];
 }
+
+export async function getBuiltx64SnapFilename() {
+  const packageJson = await fs.promises.readFile('./package.json');
+  const version = JSON.parse(packageJson).version;
+  return `standard-notes-${version}-linux-amd64.snap`;
+}
