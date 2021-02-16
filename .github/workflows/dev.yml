@@ -21,3 +21,7 @@ jobs:
           snapcraft_token: ${{ secrets.SNAPCRAFT_TOKEN }}
       - run: yarn setup
       - run: yarn build appimage-x64
+      - uses: actions/upload-artifact@v2
+        with:
+          name: 'AppImage'
+          path: dist/*.AppImage
