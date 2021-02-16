@@ -1,4 +1,4 @@
-name: Upload snap
+name: Dev
 
 on:
   push:
