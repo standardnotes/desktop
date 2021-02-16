@@ -45,20 +45,22 @@ const availableTargets = [appimage, appimageX64, mac, snap, windows];
       case appimage:
         await runCommand('yarn run webpack --config webpack.prod.js');
         await runCommand(
-          'yarn run electron-builder --linux --x64 --ia32 -c.linux.target=AppImage'
+          'yarn run electron-builder --linux --x64 --ia32 -c.linux.target=AppImage --publish=never'
         );
         break;
       case appimageX64:
         await runCommand('yarn run webpack --config webpack.prod.js');
         await runCommand(
-          'yarn run electron-builder --linux --x64 -c.linux.target=AppImage'
+          'yarn run electron-builder --linux --x64 -c.linux.target=AppImage --publish=never'
         );
         break;
       case mac:
         await runCommand(
           'yarn run webpack --config webpack.prod.js --env snap'
         );
-        await runCommand('yarn run electron-builder --mac --x64');
+        await runCommand(
+          'yarn run electron-builder --mac --x64 --publish=never'
+        );
         await runCommand('node scripts/fix-mac-zip');
         break;
       case snap:
@@ -66,14 +68,16 @@ const availableTargets = [appimage, appimageX64, mac, snap, windows];
           'yarn run webpack --config webpack.prod.js --env snap'
         );
         await runCommand(
-          'yarn run electron-builder --linux --x64 --ia32 -c.linux.target=snap'
+          'yarn run electron-builder --linux --x64 --ia32 -c.linux.target=snap --publish=never'
         );
         break;
       case windows:
         await runCommand(
           'yarn run webpack --config webpack.prod.js --env snap'
         );
-        await runCommand('yarn run electron-builder --windows --x64 --ia32');
+        await runCommand(
+          'yarn run electron-builder --windows --x64 --ia32 --publish=never'
+        );
         break;
     }
   } catch (e) {
