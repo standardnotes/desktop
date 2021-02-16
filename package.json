@@ -117,7 +117,6 @@
     "lint:formatting": "prettier --check .",
     "lint:eslint": "eslint app/index.ts app/application.ts app/javascripts/**/*.ts",
     "lint:types": "tsc --noEmit",
-    "postinstall": "cd app && yarn",
     "release:draft": "node scripts/create-draft-release.mjs",
     "setup": "yarn install && yarn install --cwd ./app ./app && git submodule update --init && yarn install --cwd ./web",
     "start": "electron . --enable-logging --icon _icon/icon.png",
