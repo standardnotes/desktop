@@ -106,6 +106,7 @@ module.exports = function ({
     },
     output: {
       path: path.resolve(__dirname, 'app', 'dist', 'javascripts', 'renderer'),
+      publicPath: '/',
     },
     target: 'electron-renderer',
     devtool: 'inline-cheap-source-map',
