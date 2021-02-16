@@ -1,0 +1,21 @@
+name: Upload snap
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14.x'
+          registry-url: 'https://registry.npmjs.org'
+      - uses: samuelmeuli/action-snapcraft@v1
+        with:
+          snapcraft_token: ${{ secrets.SNAPCRAFT_TOKEN }}
+      - run: yarn setup
+      - run: yarn build snap
