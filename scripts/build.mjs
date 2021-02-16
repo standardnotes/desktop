@@ -19,10 +19,11 @@ function runCommand(fullCommand) {
 }
 
 const appimage = 'appimage';
+const appimageX64 = 'appimage-x64';
 const mac = 'mac';
 const snap = 'snap';
 const windows = 'windows';
-const availableTargets = [appimage, mac, snap, windows];
+const availableTargets = [appimage, appimageX64, mac, snap, windows];
 
 (async () => {
   try {
@@ -45,6 +46,12 @@ const availableTargets = [appimage, mac, snap, windows];
         await runCommand('yarn run webpack --config webpack.prod.js');
         await runCommand(
           'yarn run electron-builder --linux --x64 --ia32 -c.linux.target=AppImage'
+        );
+        break;
+      case appimageX64:
+        await runCommand('yarn run webpack --config webpack.prod.js');
+        await runCommand(
+          'yarn run electron-builder --linux --x64 -c.linux.target=AppImage'
         );
         break;
       case mac:

@@ -20,4 +20,4 @@ jobs:
         with:
           snapcraft_token: ${{ secrets.SNAPCRAFT_TOKEN }}
       - run: yarn setup
-      - run: yarn build appimage
+      - run: yarn build appimage-x64
