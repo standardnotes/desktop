@@ -11,7 +11,7 @@
     "strict": true,
     /** Import non-ES modules as default imports. */
     "esModuleInterop": true,
-    "typeRoots": ["./app/@types"],
+    "typeRoots": ["./app/@types", "./node_modules/@types"],
     "baseUrl": ".",
     "paths": {
       "@web/*": ["./web/app/assets/javascripts/*"]
