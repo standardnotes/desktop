@@ -13,21 +13,23 @@ This application makes use of the core JS/CSS/HTML code found in the [web repo](
 
 ## Running Locally
 
+Make sure [Yarn](https://classic.yarnpkg.com/en/) is installed on your system.
+
 ```bash
-npm run setup
-npm run build:web # Or `npm run dev:web`
-npm run dev
+yarn setup
+yarn build:web # Or `yarn dev:web`
+yarn dev
 
 # In another terminal
-npm start
+yarn start
 ```
 
 We use [commitlint](https://github.com/conventional-changelog/commitlint) to validate commit messages.
 Before making a pull request, make sure to check the output of the following commands:
 
 ```bash
-npm run lint
-npm test # make sure to start `npm run dev` before running the tests
+yarn lint
+yarn test # make sure to start `yarn dev` before running the tests
 ```
 
 Pull requests should target the `develop` branch.
@@ -45,13 +47,13 @@ To determine where to install a dependency:
 
 Build for all platforms:
 
-- `npm run build`
+- `yarn build`
 
 or
 
-- `npm run build:win`
-- `npm run build:linux`
-- `npm run build:mac`
+- `yarn build:win`
+- `yarn build:linux`
+- `yarn build:mac`
 
 ## Installation
 
