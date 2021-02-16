@@ -17,5 +17,9 @@
       "@web/*": ["./web/app/assets/javascripts/*"]
     }
   },
-  "files": ["app/index.ts", "app/javascripts/renderer/renderer.ts"]
+  "files": [
+    "app/index.ts",
+    "app/javascripts/renderer/renderer.ts",
+    "app/javascripts/renderer/grantKeyringAccess.ts"
+  ]
 }
