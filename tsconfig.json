@@ -20,6 +20,6 @@
   "files": [
     "app/index.ts",
     "app/javascripts/renderer/renderer.ts",
-    "app/javascripts/renderer/grantKeyringAccess.ts"
+    "app/javascripts/renderer/grantLinuxPasswordsAccess.ts"
   ]
 }
