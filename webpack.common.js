@@ -76,6 +76,7 @@ module.exports = function ({
     plugins: [
       new DefinePlugin({
         EXPERIMENTAL_FEATURES: JSON.stringify(experimentalFeatures),
+        AUTO_UPDATING_AVAILABLE: JSON.stringify(snap ? false : true),
       }),
       new CopyPlugin({
         patterns: [
@@ -137,7 +138,6 @@ module.exports = function ({
         ),
         BUGSNAG_API_KEY: JSON.stringify(process.env.BUGSNAG_API_KEY),
         EXPERIMENTAL_FEATURES: JSON.stringify(experimentalFeatures),
-        AUTO_UPDATING_AVAILABLE: JSON.stringify(snap ? false : true),
       }),
     ],
   };
