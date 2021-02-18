@@ -689,7 +689,7 @@ function keyringMenu(
     submenu: [
       {
         enabled: !useNativeKeychain,
-        checked: useNativeKeychain,
+        checked: useNativeKeychain ?? false,
         type: 'checkbox',
         label: str().security.useKeyringtoStorePassword,
         async click() {
