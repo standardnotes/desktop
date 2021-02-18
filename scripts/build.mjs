@@ -20,10 +20,11 @@ function runCommand(fullCommand) {
 
 const appimage = 'appimage';
 const appimageX64 = 'appimage-x64';
+const dir = 'dir';
 const mac = 'mac';
 const snap = 'snap';
 const windows = 'windows';
-const availableTargets = [appimage, appimageX64, mac, snap, windows];
+const availableTargets = [appimage, appimageX64, dir, mac, snap, windows];
 
 (async () => {
   try {
@@ -60,6 +61,12 @@ const availableTargets = [appimage, appimageX64, mac, snap, windows];
           'yarn run electron-builder --mac --x64 --publish=never'
         );
         await runCommand('node scripts/fix-mac-zip');
+        break;
+      case dir:
+        await runCommand('yarn run webpack --config webpack.prod.js');
+        await runCommand(
+          'yarn run electron-builder --linux --x64 -c.linux.target=dir --publish=never'
+        );
         break;
       case snap:
         await runCommand(
