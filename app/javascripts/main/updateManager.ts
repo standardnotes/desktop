@@ -12,6 +12,8 @@ import { updates as str } from './strings';
 import { handle } from './testing';
 import { isTesting } from './utils';
 
+declare const AUTO_UPDATING_AVAILABLE: boolean;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function logError(...message: any) {
   console.error('updateManager:', ...message);
@@ -88,6 +90,9 @@ export function setupUpdates(
   appState: AppState,
   backupsManager: BackupsManager
 ): void {
+  if (!AUTO_UPDATING_AVAILABLE) {
+    return;
+  }
   if (updatesSetup) {
     throw Error('Already set up updates.');
   }

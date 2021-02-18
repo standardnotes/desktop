@@ -89,8 +89,7 @@
         "StartupWMClass": "standard notes"
       },
       "target": [
-        "AppImage",
-        "snap"
+        "AppImage"
       ]
     },
     "snap": {
@@ -101,8 +100,9 @@
     }
   },
   "scripts": {
-    "build:all": "yarn lint && yarn build:web && yarn clean:build && electron-builder -mwl --x64 --ia32 && yarn build:write-sums",
     "build": "yarn lint && yarn build:web && node scripts/build.mjs",
+    "build:all": "yarn lint && yarn build:web && yarn clean:build && electron-builder -mwl --x64 --ia32 && && yarn build:snap && yarn build:write-sums",
+    "build:snap": "node scripts/build.mjs snap",
     "build:write-sums": "node scripts/sums.mjs",
     "build:remove-unpacked": "rimraf dist/{linux-*,mac,win-*}",
     "build:web": "git submodule update && cd web && rimraf node_modules && yarn && yarn run bundle:desktop",
