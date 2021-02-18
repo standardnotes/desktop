@@ -55,9 +55,7 @@ const availableTargets = [appimage, appimageX64, mac, snap, windows];
         );
         break;
       case mac:
-        await runCommand(
-          'yarn run webpack --config webpack.prod.js --env snap'
-        );
+        await runCommand('yarn run webpack --config webpack.prod.js');
         await runCommand(
           'yarn run electron-builder --mac --x64 --publish=never'
         );
@@ -72,9 +70,7 @@ const availableTargets = [appimage, appimageX64, mac, snap, windows];
         );
         break;
       case windows:
-        await runCommand(
-          'yarn run webpack --config webpack.prod.js --env snap'
-        );
+        await runCommand('yarn run webpack --config webpack.prod.js');
         await runCommand(
           'yarn run electron-builder --windows --x64 --ia32 --publish=never'
         );
