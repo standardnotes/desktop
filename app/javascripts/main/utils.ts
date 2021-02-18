@@ -1,5 +1,9 @@
 import { CommandLineArgs } from '../shared/CommandLineArgs';
 
+declare const AUTO_UPDATING_AVAILABLE: boolean;
+
+export const autoUpdatingAvailable = AUTO_UPDATING_AVAILABLE;
+
 export function isDev(): boolean {
   return process.env.NODE_ENV === 'development';
 }
