@@ -47,9 +47,8 @@ export async function ensureKeychainAccess(
 
 function askForKeychainAccess(store: Store): Promise<BrowserWindow> {
   const window = new BrowserWindow({
-    frame: false,
-    width: 520,
-    height: 820,
+    width: 540,
+    height: 400,
     center: true,
     show: false,
     webPreferences: {
@@ -59,15 +58,21 @@ function askForKeychainAccess(store: Store): Promise<BrowserWindow> {
   window.on('ready-to-show', window.show);
   window.loadURL(grantLinuxPasswordsAccessUrl);
 
-  const quitListener = () => {
+  const quit = () => {
     app.quit();
   };
-  ipcMain.once(IpcMessages.Quit, quitListener);
+  ipcMain.once(IpcMessages.Quit, quit);
+  window.once('close', quit);
+
+  ipcMain.on(IpcMessages.LearnMoreAboutKeychainAccess, () => {
+    window.setSize(window.getSize()[0], 600, true);
+  });
 
   return new Promise((resolve) => {
     ipcMain.once(IpcMessages.UseLocalstorageForKeychain, () => {
       store.set(StoreKeys.UseNativeKeychain, false);
-      ipcMain.removeListener(IpcMessages.Quit, quitListener);
+      ipcMain.removeListener(IpcMessages.Quit, quit);
+      window.removeListener('close', quit);
       resolve(window);
     });
   });

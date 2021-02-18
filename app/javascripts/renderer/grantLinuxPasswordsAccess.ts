@@ -10,3 +10,15 @@ Object.assign(window, {
     ipcRenderer.send(IpcMessages.UseLocalstorageForKeychain);
   },
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  const learnMoreButton = document.getElementById('learn-more')!;
+  const moreInfo = document.getElementById('more-info')!;
+
+  learnMoreButton.addEventListener('click', (event) => {
+    ipcRenderer.send(IpcMessages.LearnMoreAboutKeychainAccess);
+    event.preventDefault();
+    moreInfo.style.display = 'block';
+    learnMoreButton.style.display = 'none';
+  });
+});
