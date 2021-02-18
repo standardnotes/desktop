@@ -3,7 +3,13 @@ import fs from 'fs';
 import path from 'path';
 import { MessageType } from '../../../test/TestIpcMessage';
 import { Language } from './spellcheckerManager';
-import { ensureIsBoolean, isTesting, stringOrNull, isDev } from './utils';
+import {
+  ensureIsBoolean,
+  isTesting,
+  stringOrNull,
+  isDev,
+  isBoolean,
+} from './utils';
 import { FileDoesNotExist } from './fileUtils';
 import { BackupsDirectoryName } from './backupsManager';
 import { handle } from './testing';
@@ -33,7 +39,7 @@ interface StoreData {
   [StoreKeys.BackupsDisabled]: boolean;
   [StoreKeys.MinimizeToTray]: boolean;
   [StoreKeys.EnableAutoUpdate]: boolean;
-  [StoreKeys.UseNativeKeychain]: boolean;
+  [StoreKeys.UseNativeKeychain]: boolean | null;
   [StoreKeys.ZoomFactor]: number;
   [StoreKeys.SelectedSpellCheckerLanguageCodes]: Set<Language> | null;
 }
@@ -60,10 +66,9 @@ function createSanitizedStoreData(data: any = {}): StoreData {
       data[StoreKeys.EnableAutoUpdate],
       true
     ),
-    [StoreKeys.UseNativeKeychain]: ensureIsBoolean(
-      data[StoreKeys.UseNativeKeychain],
-      true
-    ),
+    [StoreKeys.UseNativeKeychain]: isBoolean(data[StoreKeys.UseNativeKeychain])
+      ? data[StoreKeys.UseNativeKeychain]
+      : null,
     [StoreKeys.ExtServerHost]: stringOrNull(data[StoreKeys.ExtServerHost]),
     [StoreKeys.BackupsLocation]: sanitizeBackupsLocation(
       data[StoreKeys.BackupsLocation]

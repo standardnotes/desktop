@@ -48,6 +48,12 @@ module.exports = function ({
     },
   };
 
+  const EXPERIMENTAL_FEATURES = JSON.stringify(experimentalFeatures);
+  const AUTO_UPDATING_AVAILABLE = JSON.stringify(snap ? false : true);
+  const KEYCHAIN_ACCESS_IS_USER_CONFIGURABLE = JSON.stringify(
+    snap ? true : false
+  );
+
   const electronMainConfig = {
     entry: {
       index: './app/index.ts',
@@ -75,8 +81,9 @@ module.exports = function ({
     },
     plugins: [
       new DefinePlugin({
-        EXPERIMENTAL_FEATURES: JSON.stringify(experimentalFeatures),
-        AUTO_UPDATING_AVAILABLE: JSON.stringify(snap ? false : true),
+        EXPERIMENTAL_FEATURES,
+        AUTO_UPDATING_AVAILABLE,
+        KEYCHAIN_ACCESS_IS_USER_CONFIGURABLE,
       }),
       new CopyPlugin({
         patterns: [
@@ -113,7 +120,8 @@ module.exports = function ({
     entry: {
       preload: './app/javascripts/renderer/preload.js',
       renderer: './app/javascripts/renderer/renderer.ts',
-      grantKeyringAccess: './app/javascripts/renderer/grantKeyringAccess.ts',
+      grantLinuxPasswordsAccess:
+        './app/javascripts/renderer/grantLinuxPasswordsAccess.ts',
     },
     output: {
       path: path.resolve(__dirname, 'app', 'dist', 'javascripts', 'renderer'),
@@ -137,8 +145,9 @@ module.exports = function ({
           process.env.DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org'
         ),
         BUGSNAG_API_KEY: JSON.stringify(process.env.BUGSNAG_API_KEY),
-        EXPERIMENTAL_FEATURES: JSON.stringify(experimentalFeatures),
-        AUTO_UPDATING_AVAILABLE: JSON.stringify(snap ? false : true),
+        EXPERIMENTAL_FEATURES,
+        AUTO_UPDATING_AVAILABLE,
+        KEYCHAIN_ACCESS_IS_USER_CONFIGURABLE,
       }),
     ],
   };

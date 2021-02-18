@@ -1,18 +1,18 @@
 import path from 'path';
 import index from '../../index.html';
-import grantKeyringAccess from '../../grantKeyringAccess.html';
+import grantLinuxPasswordsAccess from '../../grantLinuxPasswordsAccess.html';
 import decryptScript from 'decrypt/dist/decrypt.html';
 
 export const indexUrl = url(index);
-export const grantKeyringAccessUrl = url(grantKeyringAccess);
+export const grantLinuxPasswordsAccessUrl = url(grantLinuxPasswordsAccess);
 export const decryptScriptPath = filePath(decryptScript);
 export const preloadJsPath = path.join(
   __dirname,
   'javascripts/renderer/preload.js'
 );
-export const grantKeyringAccessJsPath = path.join(
+export const grantLinuxPasswordsAccessJsPath = path.join(
   __dirname,
-  'javascripts/renderer/grantKeyringAccess.js'
+  'javascripts/renderer/grantLinuxPasswordsAccess.js'
 );
 
 function url(fileName: string): string {
