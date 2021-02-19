@@ -101,7 +101,7 @@
   },
   "scripts": {
     "build": "yarn lint && yarn build:web && node scripts/build.mjs",
-    "build:all": "yarn lint && yarn build:web && yarn clean:build && electron-builder -mwl --x64 --ia32 && && yarn build:snap && yarn build:write-sums",
+    "build:all": "yarn lint && yarn build:web && yarn clean:build && yarn bundle && electron-builder -mwl --x64 --ia32 && yarn build:snap && yarn build:write-sums",
     "build:snap": "node scripts/build.mjs snap",
     "build:write-sums": "node scripts/sums.mjs",
     "build:remove-unpacked": "rimraf dist/{linux-*,mac,win-*}",
