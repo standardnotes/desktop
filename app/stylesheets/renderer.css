@@ -1,8 +1,3 @@
-.editor-content .editable {
-  font-family: Menlo, Consolas, 'DejaVu Sans Mono', monospace;
-  font-size: 16px;
-}
-
 :root {
   --sn-desktop-titlebar-height: 35px;
   --sn-desktop-titlebar-icon-font-size: 16px;
