@@ -10,7 +10,7 @@ import { isMac } from './platforms';
 import { StoreKeys } from './store';
 import { updates as str } from './strings';
 import { handle } from './testing';
-import { isTesting } from './utils';
+import { autoUpdatingAvailable, isTesting } from './utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function logError(...message: any) {
@@ -30,7 +30,8 @@ export class UpdateState {
   lastCheck: Date | null = null;
 
   constructor(private appState: AppState) {
-    this.enableAutoUpdate = appState.store.get(StoreKeys.EnableAutoUpdate);
+    this.enableAutoUpdate =
+      autoUpdatingAvailable && appState.store.get(StoreKeys.EnableAutoUpdate);
     makeObservable(this, {
       latestVersion: observable,
       enableAutoUpdate: observable,
@@ -88,6 +89,9 @@ export function setupUpdates(
   appState: AppState,
   backupsManager: BackupsManager
 ): void {
+  if (!autoUpdatingAvailable) {
+    return;
+  }
   if (updatesSetup) {
     throw Error('Already set up updates.');
   }
@@ -221,6 +225,8 @@ export async function checkForUpdate(
   state: UpdateState,
   userTriggered = false
 ): Promise<void> {
+  if (!autoUpdatingAvailable) return;
+
   if (state.enableAutoUpdate || userTriggered) {
     state.setCheckingForUpdate(true);
     try {
@@ -241,7 +247,6 @@ export async function checkForUpdate(
         });
       }
     } catch (error) {
-      logError('Exception caught while checking for autoupdates:', error);
       if (userTriggered) {
         dialog.showMessageBox({
           title: str().finishedChecking.title,

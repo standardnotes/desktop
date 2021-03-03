@@ -3,10 +3,13 @@
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
-    "semistandard",
     "prettier"
   ],
   "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": "./tsconfig.json",
+    "extraFileExtensions": [".mjs"]
+  },
   "rules": {
     /** Style */
     "semi": 1,

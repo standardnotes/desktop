@@ -2,9 +2,12 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import keytar from 'keytar';
 import { isLinux } from './platforms';
 import { AppName } from './strings';
-import { isDev, isTesting } from './utils';
+import { isDev, isTesting, keychainAccessIsUserConfigurable } from './utils';
 import { IpcMessages } from '../shared/ipcMessages';
-import { grantKeyringAccessJsPath, grantKeyringAccessUrl } from './paths';
+import {
+  grantLinuxPasswordsAccessJsPath,
+  grantLinuxPasswordsAccessUrl,
+} from './paths';
 import { Store, StoreKeys } from './store';
 
 const ServiceName = isTesting()
@@ -21,42 +24,55 @@ export async function ensureKeychainAccess(
     /** Assume keychain is accessible */
     return;
   }
-  if (!store.get(StoreKeys.UseNativeKeychain)) {
-    /** Not using native keychain, no need to check if it is accessible */
-    return;
-  }
-
-  try {
-    await getKeychainValue();
-  } catch (_) {
-    /** Can't access keychain. Ask users to grant access */
-    return askForKeychainAccess(store);
+  const useNativeKeychain = store.get(StoreKeys.UseNativeKeychain);
+  if (useNativeKeychain === null) {
+    /**
+     * App has never attempted to access keychain before. Do it and set the
+     * store value according to what happens
+     */
+    try {
+      await getKeychainValue();
+      store.set(StoreKeys.UseNativeKeychain, true);
+    } catch (_) {
+      /** Can't access keychain. */
+      if (keychainAccessIsUserConfigurable) {
+        return askForKeychainAccess(store);
+      } else {
+        /** User can't configure keychain access, fall back to local storage */
+        store.set(StoreKeys.UseNativeKeychain, false);
+      }
+    }
   }
 }
 
 function askForKeychainAccess(store: Store): Promise<BrowserWindow> {
   const window = new BrowserWindow({
-    frame: false,
-    width: 550,
-    height: 600,
+    width: 540,
+    height: 400,
     center: true,
     show: false,
     webPreferences: {
-      preload: grantKeyringAccessJsPath,
+      preload: grantLinuxPasswordsAccessJsPath,
     },
   });
   window.on('ready-to-show', window.show);
-  window.loadURL(grantKeyringAccessUrl);
+  window.loadURL(grantLinuxPasswordsAccessUrl);
 
-  const quitListener = () => {
+  const quit = () => {
     app.quit();
   };
-  ipcMain.once(IpcMessages.Quit, quitListener);
+  ipcMain.once(IpcMessages.Quit, quit);
+  window.once('close', quit);
+
+  ipcMain.on(IpcMessages.LearnMoreAboutKeychainAccess, () => {
+    window.setSize(window.getSize()[0], 600, true);
+  });
 
   return new Promise((resolve) => {
     ipcMain.once(IpcMessages.UseLocalstorageForKeychain, () => {
       store.set(StoreKeys.UseNativeKeychain, false);
-      ipcMain.removeListener(IpcMessages.Quit, quitListener);
+      ipcMain.removeListener(IpcMessages.Quit, quit);
+      window.removeListener('close', quit);
       resolve(window);
     });
   });

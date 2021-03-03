@@ -16,4 +16,5 @@ export enum IpcMessages {
   ClearKeychainValue = 'ClearKeychainValue',
   Quit = 'Quit',
   UseLocalstorageForKeychain = 'UseLocalstorageForKeychain',
+  LearnMoreAboutKeychainAccess = 'LearnMoreAboutKeychainAccess',
 }

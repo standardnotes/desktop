@@ -1,5 +1,11 @@
 import { CommandLineArgs } from '../shared/CommandLineArgs';
 
+declare const AUTO_UPDATING_AVAILABLE: boolean;
+declare const KEYCHAIN_ACCESS_IS_USER_CONFIGURABLE: boolean;
+
+export const autoUpdatingAvailable = AUTO_UPDATING_AVAILABLE;
+export const keychainAccessIsUserConfigurable = KEYCHAIN_ACCESS_IS_USER_CONFIGURABLE;
+
 export function isDev(): boolean {
   return process.env.NODE_ENV === 'development';
 }
@@ -8,8 +14,12 @@ export function isTesting(): boolean {
   return isDev() && process.argv.includes(CommandLineArgs.Testing);
 }
 
+export function isBoolean(arg: unknown): arg is boolean {
+  return typeof arg === 'boolean';
+}
+
 export function ensureIsBoolean(arg: unknown, fallbackValue: boolean): boolean {
-  if (typeof arg === 'boolean') {
+  if (isBoolean(arg)) {
     return arg;
   }
   return fallbackValue;

@@ -11,11 +11,15 @@
     "strict": true,
     /** Import non-ES modules as default imports. */
     "esModuleInterop": true,
-    "typeRoots": ["./app/@types"],
+    "typeRoots": ["./app/@types", "./node_modules/@types"],
     "baseUrl": ".",
     "paths": {
       "@web/*": ["./web/app/assets/javascripts/*"]
     }
   },
-  "files": ["app/index.ts", "app/javascripts/renderer/renderer.ts"]
+  "files": [
+    "app/index.ts",
+    "app/javascripts/renderer/renderer.ts",
+    "app/javascripts/renderer/grantLinuxPasswordsAccess.ts"
+  ]
 }

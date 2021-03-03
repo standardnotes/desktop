@@ -1,12 +1,15 @@
+require('dotenv').config();
+
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
-const env = require('./.env');
 const { DefinePlugin } = require('webpack');
+const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = function ({
   onlyTranspileTypescript = false,
   experimentalFeatures = false,
+  snap = false,
 } = {}) {
   const moduleConfig = {
     rules: [
@@ -45,6 +48,12 @@ module.exports = function ({
     },
   };
 
+  const EXPERIMENTAL_FEATURES = JSON.stringify(experimentalFeatures);
+  const AUTO_UPDATING_AVAILABLE = JSON.stringify(snap ? false : true);
+  const KEYCHAIN_ACCESS_IS_USER_CONFIGURABLE = JSON.stringify(
+    snap ? true : false
+  );
+
   const electronMainConfig = {
     entry: {
       index: './app/index.ts',
@@ -63,9 +72,18 @@ module.exports = function ({
     externals: {
       keytar: 'commonjs keytar',
     },
+    optimization: {
+      minimizer: [
+        new TerserPlugin({
+          exclude: ['extensions', 'vendor', 'web', 'node_modules'],
+        }),
+      ],
+    },
     plugins: [
       new DefinePlugin({
-        EXPERIMENTAL_FEATURES: JSON.stringify(experimentalFeatures),
+        EXPERIMENTAL_FEATURES,
+        AUTO_UPDATING_AVAILABLE,
+        KEYCHAIN_ACCESS_IS_USER_CONFIGURABLE,
       }),
       new CopyPlugin({
         patterns: [
@@ -102,10 +120,12 @@ module.exports = function ({
     entry: {
       preload: './app/javascripts/renderer/preload.js',
       renderer: './app/javascripts/renderer/renderer.ts',
-      grantKeyringAccess: './app/javascripts/renderer/grantKeyringAccess.ts',
+      grantLinuxPasswordsAccess:
+        './app/javascripts/renderer/grantLinuxPasswordsAccess.ts',
     },
     output: {
       path: path.resolve(__dirname, 'app', 'dist', 'javascripts', 'renderer'),
+      publicPath: '/',
     },
     target: 'electron-renderer',
     devtool: 'inline-cheap-source-map',
@@ -124,8 +144,10 @@ module.exports = function ({
         DEFAULT_SYNC_SERVER: JSON.stringify(
           process.env.DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org'
         ),
-        BUGSNAG_API_KEY: JSON.stringify(env.BUGSNAG_API_KEY),
-        EXPERIMENTAL_FEATURES: JSON.stringify(experimentalFeatures),
+        BUGSNAG_API_KEY: JSON.stringify(process.env.BUGSNAG_API_KEY),
+        EXPERIMENTAL_FEATURES,
+        AUTO_UPDATING_AVAILABLE,
+        KEYCHAIN_ACCESS_IS_USER_CONFIGURABLE,
       }),
     ],
   };

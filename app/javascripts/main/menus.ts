@@ -23,7 +23,7 @@ import {
   openChangelog,
   showUpdateInstallationDialog,
 } from './updateManager';
-import { isDev, isTesting } from './utils';
+import { autoUpdatingAvailable, isDev, isTesting } from './utils';
 
 export const enum MenuId {
   SpellcheckerLanguages = 'SpellcheckerLanguages',
@@ -544,27 +544,29 @@ function updateMenu(window: BrowserWindow, appState: AppState) {
   const submenu: MenuItemConstructorOptions[] = [];
   const structure = { label, submenu };
 
-  if (updateState.autoUpdateDownloaded && updateState.latestVersion) {
+  if (autoUpdatingAvailable) {
+    if (updateState.autoUpdateDownloaded && updateState.latestVersion) {
+      submenu.push({
+        label: str().installPendingUpdate(updateState.latestVersion),
+        click() {
+          showUpdateInstallationDialog(window, appState);
+        },
+      });
+    }
+
     submenu.push({
-      label: str().installPendingUpdate(updateState.latestVersion),
+      type: 'checkbox',
+      checked: updateState.enableAutoUpdate,
+      label: str().enableAutomaticUpdates,
       click() {
-        showUpdateInstallationDialog(window, appState);
+        updateState.toggleAutoUpdate();
       },
     });
+
+    submenu.push(Separator);
   }
 
-  submenu.push({
-    type: 'checkbox',
-    checked: updateState.enableAutoUpdate,
-    label: str().enableAutomaticUpdates,
-    click() {
-      updateState.toggleAutoUpdate();
-    },
-  });
-
   const latestVersion = updateState.latestVersion;
-
-  submenu.push(Separator);
 
   submenu.push({
     label: str().yourVersion(appState.version),
@@ -588,21 +590,23 @@ function updateMenu(window: BrowserWindow, appState: AppState) {
     });
   }
 
-  submenu.push(Separator);
+  if (autoUpdatingAvailable) {
+    submenu.push(Separator);
 
-  if (!updateState.checkingForUpdate) {
-    submenu.push({
-      label: str().checkForUpdate,
-      click() {
-        checkForUpdate(appState, updateState, true);
-      },
-    });
-  }
+    if (!updateState.checkingForUpdate) {
+      submenu.push({
+        label: str().checkForUpdate,
+        click() {
+          checkForUpdate(appState, updateState, true);
+        },
+      });
+    }
 
-  if (updateState.lastCheck && !updateState.checkingForUpdate) {
-    submenu.push({
-      label: str().lastUpdateCheck(updateState.lastCheck),
-    });
+    if (updateState.lastCheck && !updateState.checkingForUpdate) {
+      submenu.push({
+        label: str().lastUpdateCheck(updateState.lastCheck),
+      });
+    }
   }
 
   return structure;
@@ -685,7 +689,7 @@ function keyringMenu(
     submenu: [
       {
         enabled: !useNativeKeychain,
-        checked: useNativeKeychain,
+        checked: useNativeKeychain ?? false,
         type: 'checkbox',
         label: str().security.useKeyringtoStorePassword,
         async click() {
