@@ -104,6 +104,7 @@
     "build:all": "yarn bundle && electron-builder -wl --x64 --ia32 && yarn build:mac && yarn build:snap && yarn build:write-sums",
     "build:mac": "node scripts/build.mjs mac",
     "build:snap": "node scripts/build.mjs snap",
+    "build:deb": "node scripts/build.mjs deb",
     "build:write-sums": "node scripts/sums.mjs",
     "build:remove-unpacked": "rimraf dist/{linux-*,mac,win-*}",
     "build:web": "git submodule update && cd web && rimraf node_modules && yarn setup && yarn run bundle:desktop",

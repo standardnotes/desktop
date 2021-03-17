@@ -23,8 +23,9 @@ const appimageX64 = 'appimage-x64';
 const dir = 'dir';
 const mac = 'mac';
 const snap = 'snap';
+const deb = 'deb';
 const windows = 'windows';
-const availableTargets = [appimage, appimageX64, dir, mac, snap, windows];
+const availableTargets = [appimage, appimageX64, dir, mac, snap, deb, windows];
 
 (async () => {
   try {
@@ -74,6 +75,12 @@ const availableTargets = [appimage, appimageX64, dir, mac, snap, windows];
         );
         await runCommand(
           'yarn run electron-builder --linux --x64 --ia32 -c.linux.target=snap --publish=never'
+        );
+        break;
+      case deb:
+        await runCommand('yarn run webpack --config webpack.prod.js --env deb');
+        await runCommand(
+          'yarn run electron-builder --linux --x64 --ia32 -c.linux.target=deb --publish=never'
         );
         break;
       case windows:
