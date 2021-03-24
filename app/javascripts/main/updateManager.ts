@@ -3,6 +3,7 @@ import { BrowserWindow, dialog, shell } from 'electron';
 import electronLog from 'electron-log';
 import { autoUpdater } from 'electron-updater';
 import { action, autorun, computed, makeObservable, observable } from 'mobx';
+import { autoUpdatingAvailable } from './constants';
 import { MessageType } from '../../../test/TestIpcMessage';
 import { AppState } from '../../application';
 import { BackupsManager } from './backupsManager';
@@ -10,7 +11,7 @@ import { isMac } from './platforms';
 import { StoreKeys } from './store';
 import { updates as str } from './strings';
 import { handle } from './testing';
-import { autoUpdatingAvailable, isTesting } from './utils';
+import { isTesting } from './utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function logError(...message: any) {
