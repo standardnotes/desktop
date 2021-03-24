@@ -48,7 +48,7 @@ window._bugsnag_api_key = BUGSNAG_API_KEY;
   await new Promise((resolve) =>
     window.angular.element(document).ready(resolve)
   );
-  registerIpcMessageListener(webBridge);
+  registerIpcMessageListener(window.bridge);
 })();
 loadZipLibrary();
 
