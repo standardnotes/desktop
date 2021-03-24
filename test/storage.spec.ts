@@ -1,6 +1,8 @@
 import anyTest, { TestInterface, ExecutionContext } from 'ava';
 import fs from 'fs';
+import path from 'path';
 import proxyquire from 'proxyquire';
+import { timeout } from '../app/javascripts/main/utils';
 import { createDriver, Driver } from './driver';
 
 const { serializeStoreData } = proxyquire('../app/javascripts/main/store', {
@@ -10,7 +12,7 @@ const { serializeStoreData } = proxyquire('../app/javascripts/main/store', {
 });
 
 async function validateData(t: ExecutionContext<Driver>) {
-  const data = await t.context.store.dataOnDisk();
+  const data = await t.context.storage.dataOnDisk();
 
   /**
    * There should always be 8 values in the store.
@@ -41,7 +43,7 @@ async function validateData(t: ExecutionContext<Driver>) {
 
   t.is(typeof data.backupsLocation, 'string');
 
-  t.is(typeof data.useNativeKeychain, 'boolean');
+  t.is(data.useNativeKeychain, null);
 
   if (process.platform === 'darwin') {
     t.is(data.selectedSpellCheckerLanguageCodes, null);
@@ -67,7 +69,7 @@ test('has valid data', async (t) => {
 });
 
 test('recreates a missing data file', async (t) => {
-  const location = await t.context.store.dataLocation();
+  const location = await t.context.storage.dataLocation();
   /** Delete the store's backing file */
   await fs.promises.unlink(location);
   await t.context.restart();
@@ -75,7 +77,7 @@ test('recreates a missing data file', async (t) => {
 });
 
 test('recovers from corrupted data', async (t) => {
-  const location = await t.context.store.dataLocation();
+  const location = await t.context.storage.dataLocation();
   /** Write bad data in the store's file */
   await fs.promises.writeFile(location, '\uFFFF'.repeat(300));
   await t.context.restart();
@@ -84,8 +86,8 @@ test('recovers from corrupted data', async (t) => {
 
 test('persists changes to disk after setting a value', async (t) => {
   const factor = 4.8;
-  await t.context.store.setZoomFactor(factor);
-  const diskData = await t.context.store.dataOnDisk();
+  await t.context.storage.setZoomFactor(factor);
+  const diskData = await t.context.storage.dataOnDisk();
   t.is(diskData.zoomFactor, factor);
 });
 
@@ -98,4 +100,32 @@ test('serializes string sets to an array', (t) => {
       set: ['value'],
     })
   );
+});
+
+test.only('deletes local storage data after signing out', async (t) => {
+  function readLocalStorageContents() {
+    return fs.promises.readFile(
+      path.join(
+        t.context.userDataPath,
+        'Local Storage',
+        'leveldb',
+        '000003.log'
+      ),
+      {
+        encoding: 'utf8',
+      }
+    );
+  }
+  await t.context.windowLoaded;
+  await t.context.storage.setLocalStorageValue('foo', 'bar');
+  let localStorageContents = await readLocalStorageContents();
+  t.is(localStorageContents.includes('foo'), true);
+  t.is(localStorageContents.includes('bar'), true);
+
+  await timeout(1_000);
+  await t.context.window.executeJavascript('bridge.onSignOut()');
+  await timeout(1_000);
+  localStorageContents = await readLocalStorageContents();
+  t.is(localStorageContents.includes('foo'), false);
+  t.is(localStorageContents.includes('bar'), false);
 });

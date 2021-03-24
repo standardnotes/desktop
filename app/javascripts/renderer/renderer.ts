@@ -17,6 +17,7 @@ declare global {
     electronAppVersion: string;
     zip: any;
     startApplication: StartApplication;
+    bridge: Bridge;
   }
 }
 
@@ -37,11 +38,11 @@ window._bugsnag_api_key = BUGSNAG_API_KEY;
 
   await configureWindow(mainThread);
 
-  const webBridge = await createWebBridge(mainThread);
+  window.bridge = await createWebBridge(mainThread);
   window.startApplication(
     // eslint-disable-next-line no-undef
     DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org',
-    webBridge
+    window.bridge
   );
 
   await new Promise((resolve) =>
@@ -126,6 +127,9 @@ async function createWebBridge(mainThread: any): Promise<Bridge> {
     },
     onInitialDataLoad() {
       mainThread.sendIpcMessage(IpcMessages.InitialDataLoaded, {});
+    },
+    onSignOut() {
+      mainThread.sendIpcMessage(IpcMessages.SigningOut, {});
     },
     async downloadBackup() {
       const desktopManager = window.desktopManager;
