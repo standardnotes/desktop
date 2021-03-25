@@ -110,7 +110,12 @@ class Driver {
   appStateCall = (methodName: string, ...args: any): Promise<any> =>
     this.send(MessageType.AppStateCall, methodName, ...args);
 
-  readonly store = {
+  readonly window = {
+    executeJavascript: (code: string): Promise<unknown> =>
+      this.send(MessageType.ExecuteJavaScript, code),
+  };
+
+  readonly storage = {
     dataOnDisk: async (): Promise<{ [key in StoreKeys]: any }> => {
       const location = await this.send(MessageType.StoreSettingsLocation);
       return readJSONFile(location);
@@ -119,6 +124,8 @@ class Driver {
       this.send(MessageType.StoreSettingsLocation),
     setZoomFactor: (factor: number) =>
       this.send(MessageType.StoreSet, 'zoomFactor', factor),
+    setLocalStorageValue: (key: string, value: string): Promise<void> =>
+      this.send(MessageType.SetLocalStorageValue, key, value),
   };
 
   readonly appMenu = {

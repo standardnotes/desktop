@@ -17,4 +17,5 @@ export enum IpcMessages {
   Quit = 'Quit',
   UseLocalstorageForKeychain = 'UseLocalstorageForKeychain',
   LearnMoreAboutKeychainAccess = 'LearnMoreAboutKeychainAccess',
+  SigningOut = 'SigningOut',
 }

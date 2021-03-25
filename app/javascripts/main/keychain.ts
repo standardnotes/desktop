@@ -2,7 +2,8 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import keytar from 'keytar';
 import { isLinux } from './platforms';
 import { AppName } from './strings';
-import { isDev, isTesting, keychainAccessIsUserConfigurable } from './utils';
+import { keychainAccessIsUserConfigurable } from './constants';
+import { isDev, isTesting } from './utils';
 import { IpcMessages } from '../shared/ipcMessages';
 import {
   grantLinuxPasswordsAccessJsPath,

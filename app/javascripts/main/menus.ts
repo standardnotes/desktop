@@ -10,6 +10,7 @@ import {
   WebContents,
 } from 'electron';
 import { autorun } from 'mobx';
+import { autoUpdatingAvailable } from './constants';
 import { MessageType } from '../../../test/TestIpcMessage';
 import { BackupsManager } from './backupsManager';
 import { isLinux, isMac } from './platforms';
@@ -23,7 +24,7 @@ import {
   openChangelog,
   showUpdateInstallationDialog,
 } from './updateManager';
-import { autoUpdatingAvailable, isDev, isTesting } from './utils';
+import { isDev, isTesting } from './utils';
 
 export const enum MenuId {
   SpellcheckerLanguages = 'SpellcheckerLanguages',

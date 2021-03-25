@@ -26,6 +26,7 @@ export enum MessageType {
   StoreData,
   StoreSettingsLocation,
   StoreSet,
+  SetLocalStorageValue,
   AppMenuItems,
   SpellCheckerManager,
   SpellCheckerLanguages,
@@ -46,4 +47,5 @@ export enum MessageType {
   AutoUpdateEnabled,
   HasReloadedMenu,
   AppStateCall,
+  ExecuteJavaScript,
 }
