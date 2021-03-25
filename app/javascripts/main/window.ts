@@ -74,13 +74,6 @@ export async function createWindowState({
     window.show();
   });
 
-  window.webContents.on('ipc-message', async (_event, message) => {
-    if (message === IpcMessages.SigningOut) {
-      await window.webContents.session.clearStorageData();
-      window.webContents.session.flushStorageData();
-    }
-  });
-
   window.on('close', (event) => {
     if (
       !appState.willQuitApp &&
@@ -99,6 +92,17 @@ export async function createWindowState({
         window.setFullScreen(false);
       }
       window.hide();
+    }
+  });
+
+  window.webContents.session.setSpellCheckerDictionaryDownloadURL(
+    'https://dictionaries.standardnotes.org/9.4.4/'
+  );
+
+  window.webContents.on('ipc-message', async (_event, message) => {
+    if (message === IpcMessages.SigningOut) {
+      await window.webContents.session.clearStorageData();
+      window.webContents.session.flushStorageData();
     }
   });
 
