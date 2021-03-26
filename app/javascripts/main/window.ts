@@ -19,7 +19,7 @@ import { isMac, isWindows } from './platforms';
 import { initializeSearchManager } from './searchManager';
 import { createSpellcheckerManager } from './spellcheckerManager';
 import { Store, StoreKeys } from './store';
-import { handle, send } from './testing';
+import { handleTestMessage, send } from './testing';
 import { createTrayManager, TrayManager } from './trayManager';
 import { checkForUpdate, setupUpdates } from './updateManager';
 import { isTesting, lowercaseDriveLetter } from './utils';
@@ -51,13 +51,86 @@ export async function createWindowState({
 }): Promise<WindowState> {
   const window = await createWindow(appState.store);
   const services = createWindowServices(window, appState, appLocale);
-  registerWindowEventListeners({
-    shell,
-    appState,
-    window,
-    backupsManager: services.backupsManager,
-    trayManager: services.trayManager,
-    onClosed: teardown,
+
+  const shouldOpenUrl = (url: string) =>
+    url.startsWith('http') || url.startsWith('mailto');
+
+  window.on('closed', teardown);
+
+  window.on('show', () => {
+    checkForUpdate(appState, appState.updates, false);
+  });
+
+  window.on('focus', () => {
+    window.webContents.send(IpcMessages.WindowFocused, null);
+  });
+
+  window.on('blur', () => {
+    window.webContents.send(IpcMessages.WindowBlurred, null);
+    services.backupsManager.applicationDidBlur();
+  });
+
+  window.once('ready-to-show', () => {
+    window.show();
+  });
+
+  window.on('close', (event) => {
+    if (
+      !appState.willQuitApp &&
+      (isMac() || services.trayManager.shouldMinimizeToTray())
+    ) {
+      /**
+       * On MacOS, closing a window does not quit the app. On Window and Linux,
+       * it only does if you haven't enabled minimize to tray.
+       */
+      event.preventDefault();
+      /**
+       * Handles Mac full screen issue where pressing close results
+       * in a black screen.
+       */
+      if (window.isFullScreen()) {
+        window.setFullScreen(false);
+      }
+      window.hide();
+    }
+  });
+
+  window.webContents.session.setSpellCheckerDictionaryDownloadURL(
+    'https://dictionaries.standardnotes.org/9.4.4/'
+  );
+
+  window.webContents.on('ipc-message', async (_event, message) => {
+    if (message === IpcMessages.SigningOut) {
+      await window.webContents.session.clearStorageData();
+      window.webContents.session.flushStorageData();
+    }
+  });
+
+  /** handle link clicks */
+  window.webContents.on('new-window', (event, url) => {
+    if (shouldOpenUrl(url)) {
+      shell.openExternal(url);
+    }
+    event.preventDefault();
+  });
+
+  /**
+   * handle link clicks (this event is fired instead of 'new-window' when
+   * target is not set to _blank)
+   */
+  window.webContents.on('will-navigate', (event, url) => {
+    /** Check for windowUrl equality in the case of window.reload() calls. */
+    if (fileUrlsAreEqual(url, appState.startUrl)) {
+      return;
+    }
+    if (shouldOpenUrl(url)) {
+      shell.openExternal(url);
+    }
+    event.preventDefault();
+  });
+
+  window.webContents.on('context-menu', (_event, params) => {
+    buildContextMenu(window.webContents, params).popup();
   });
 
   return {
@@ -95,8 +168,17 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
   persistWindowPosition(window);
 
   if (isTesting()) {
-    handle(MessageType.SpellCheckerLanguages, () =>
+    handleTestMessage(MessageType.SpellCheckerLanguages, () =>
       window.webContents.session.getSpellCheckerLanguages()
+    );
+    handleTestMessage(MessageType.SetLocalStorageValue, async (key, value) => {
+      await window.webContents.executeJavaScript(
+        `localStorage.setItem("${key}", "${value}")`
+      );
+      window.webContents.session.flushStorageData();
+    });
+    handleTestMessage(MessageType.SignOut, () =>
+      window.webContents.executeJavaScript('window.bridge.onSignOut()')
     );
     window.webContents.once('did-finish-load', () => {
       send(AppMessageType.WindowLoaded);
@@ -127,7 +209,10 @@ function createWindowServices(
     appLocale
   );
   if (isTesting()) {
-    handle(MessageType.SpellCheckerManager, () => spellcheckerManager);
+    handleTestMessage(
+      MessageType.SpellCheckerManager,
+      () => spellcheckerManager
+    );
   }
   const menuManager = createMenuManager({
     appState,
@@ -169,92 +254,6 @@ function fileUrlsAreEqual(a: string, b: string): boolean {
   } catch (error) {
     return false;
   }
-}
-
-function registerWindowEventListeners({
-  shell,
-  appState,
-  window,
-  backupsManager,
-  trayManager,
-  onClosed,
-}: {
-  shell: Shell;
-  appState: AppState;
-  window: Electron.BrowserWindow;
-  backupsManager: BackupsManager;
-  trayManager: TrayManager;
-  onClosed: () => void;
-}) {
-  const shouldOpenUrl = (url: string) =>
-    url.startsWith('http') || url.startsWith('mailto');
-
-  window.on('closed', onClosed);
-
-  window.on('show', () => {
-    checkForUpdate(appState, appState.updates, false);
-  });
-
-  window.on('focus', () => {
-    window.webContents.send(IpcMessages.WindowFocused, null);
-  });
-
-  window.on('blur', () => {
-    window.webContents.send(IpcMessages.WindowBlurred, null);
-    backupsManager.applicationDidBlur();
-  });
-
-  window.once('ready-to-show', () => {
-    window.show();
-  });
-
-  window.on('close', (event) => {
-    if (
-      !appState.willQuitApp &&
-      (isMac() || trayManager.shouldMinimizeToTray())
-    ) {
-      /**
-       * On MacOS, closing a window does not quit the app. On Window and Linux,
-       * it only does if you haven't enabled minimize to tray.
-       */
-      event.preventDefault();
-      /**
-       * Handles Mac full screen issue where pressing close results
-       * in a black screen.
-       */
-      if (window.isFullScreen()) {
-        window.setFullScreen(false);
-      }
-      window.hide();
-    }
-  });
-
-  /** handle link clicks */
-  window.webContents.on('new-window', (event, url) => {
-    if (shouldOpenUrl(url)) {
-      shell.openExternal(url);
-    }
-    event.preventDefault();
-  });
-
-  /**
-   * handle link clicks (this event is fired instead of 'new-window' when
-   * target is not set to _blank)
-   */
-  window.webContents.on('will-navigate', (event, url) => {
-    /** Check for windowUrl equality in the case of window.reload() calls. */
-    if (fileUrlsAreEqual(url, appState.startUrl)) {
-      return;
-    }
-    if (shouldOpenUrl(url)) {
-      shell.openExternal(url);
-    }
-    event.preventDefault();
-  });
-
-  window.webContents.on('context-menu', (_event, params) => {
-    buildContextMenu(window.webContents, params).popup();
-  });
 }
 
 interface WindowPosition {

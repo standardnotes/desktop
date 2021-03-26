@@ -5,14 +5,14 @@ import { pipeline as pipelineFn } from 'stream';
 import { promisify } from 'util';
 import { MessageType } from '../../../test/TestIpcMessage';
 import { ensureDirectoryExists } from './fileUtils';
-import { handle } from './testing';
+import { handleTestMessage } from './testing';
 import { isTesting } from './utils';
 
 const pipeline = promisify(pipelineFn);
 
 if (isTesting()) {
-  handle(MessageType.GetJSON, getJSON);
-  handle(MessageType.DownloadFile, downloadFile);
+  handleTestMessage(MessageType.GetJSON, getJSON);
+  handleTestMessage(MessageType.DownloadFile, downloadFile);
 }
 
 /**

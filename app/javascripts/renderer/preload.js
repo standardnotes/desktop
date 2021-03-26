@@ -42,7 +42,7 @@ process.once('loaded', function () {
 function loadTransmitter() {
   transmitter.expose({
     extServerHost: Store.get(StoreKeys.ExtServerHost),
-    useNativeKeychain: Store.get(StoreKeys.UseNativeKeychain),
+    useNativeKeychain: Store.get(StoreKeys.UseNativeKeychain) ?? true,
     rendererPath,
     isMacOS: process.platform === 'darwin',
     appVersion: remote.app.getVersion(),

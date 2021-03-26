@@ -10,20 +10,21 @@ import {
   WebContents,
 } from 'electron';
 import { autorun } from 'mobx';
+import { autoUpdatingAvailable } from './constants';
 import { MessageType } from '../../../test/TestIpcMessage';
 import { BackupsManager } from './backupsManager';
 import { isLinux, isMac } from './platforms';
 import { SpellcheckerManager } from './spellcheckerManager';
 import { Store, StoreKeys } from './store';
 import { appMenu as str, contextMenu } from './strings';
-import { handle } from './testing';
+import { handleTestMessage } from './testing';
 import { TrayManager } from './trayManager';
 import {
   checkForUpdate,
   openChangelog,
   showUpdateInstallationDialog,
 } from './updateManager';
-import { autoUpdatingAvailable, isDev, isTesting } from './utils';
+import { isDev, isTesting } from './utils';
 
 export const enum MenuId {
   SpellcheckerLanguages = 'SpellcheckerLanguages',
@@ -145,7 +146,7 @@ export function createMenuManager({
     var hasReloaded = false;
     // eslint-disable-next-line no-var
     var hasReloadedTimeout: any;
-    handle(MessageType.AppMenuItems, () =>
+    handleTestMessage(MessageType.AppMenuItems, () =>
       menu.items.map((item) => ({
         label: item.label,
         role: item.role,
@@ -157,10 +158,10 @@ export function createMenuManager({
         },
       }))
     );
-    handle(MessageType.ClickLanguage, (code) => {
+    handleTestMessage(MessageType.ClickLanguage, (code) => {
       menu.getMenuItemById(MessageType.ClickLanguage + code)!.click();
     });
-    handle(MessageType.HasReloadedMenu, () => hasReloaded);
+    handleTestMessage(MessageType.HasReloadedMenu, () => hasReloaded);
   }
 
   function reload() {

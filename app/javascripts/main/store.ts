@@ -12,7 +12,7 @@ import {
 } from './utils';
 import { FileDoesNotExist } from './fileUtils';
 import { BackupsDirectoryName } from './backupsManager';
-import { handle } from './testing';
+import { handleTestMessage } from './testing';
 
 function logError(...message: any) {
   console.error('store:', ...message);
@@ -178,8 +178,8 @@ export class Store {
     this.data = parseDataFile(this.path);
 
     if (isTesting()) {
-      handle(MessageType.StoreSettingsLocation, () => this.path);
-      handle(MessageType.StoreSet, (key, value) => {
+      handleTestMessage(MessageType.StoreSettingsLocation, () => this.path);
+      handleTestMessage(MessageType.StoreSet, (key, value) => {
         this.set(key, value);
       });
     }
