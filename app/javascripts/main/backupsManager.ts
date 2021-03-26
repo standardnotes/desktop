@@ -13,7 +13,7 @@ import {
 import { decryptScriptPath } from './paths';
 import { StoreKeys } from './store';
 import { backups as str } from './strings';
-import { handle, send } from './testing';
+import { handleTestMessage, send } from './testing';
 import { isTesting, last } from './utils';
 
 function log(...message: any) {
@@ -172,12 +172,14 @@ export function createBackupsManager(
   }
 
   if (isTesting()) {
-    handle(MessageType.DataArchive, (data: any) => archiveData(data));
-    handle(MessageType.BackupsAreEnabled, () => !backupsDisabled);
-    handle(MessageType.ToggleBackupsEnabled, toggleBackupsStatus);
-    handle(MessageType.BackupsLocation, () => backupsLocation);
-    handle(MessageType.PerformBackup, performBackup);
-    handle(MessageType.ChangeBackupsLocation, setBackupsLocation);
+    handleTestMessage(MessageType.DataArchive, (data: any) =>
+      archiveData(data)
+    );
+    handleTestMessage(MessageType.BackupsAreEnabled, () => !backupsDisabled);
+    handleTestMessage(MessageType.ToggleBackupsEnabled, toggleBackupsStatus);
+    handleTestMessage(MessageType.BackupsLocation, () => backupsLocation);
+    handleTestMessage(MessageType.PerformBackup, performBackup);
+    handleTestMessage(MessageType.ChangeBackupsLocation, setBackupsLocation);
   }
 
   return {

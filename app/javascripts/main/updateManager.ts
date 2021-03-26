@@ -10,7 +10,7 @@ import { BackupsManager } from './backupsManager';
 import { isMac } from './platforms';
 import { StoreKeys } from './store';
 import { updates as str } from './strings';
-import { handle } from './testing';
+import { handleTestMessage } from './testing';
 import { isTesting } from './utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,7 +49,7 @@ export class UpdateState {
     });
 
     if (isTesting()) {
-      handle(MessageType.UpdateState, () => ({
+      handleTestMessage(MessageType.UpdateState, () => ({
         lastCheck: this.lastCheck,
       }));
     }
@@ -133,13 +133,13 @@ export function setupUpdates(
   updatesSetup = true;
 
   if (isTesting()) {
-    handle(MessageType.AutoUpdateEnabled, () =>
+    handleTestMessage(MessageType.AutoUpdateEnabled, () =>
       store.get(StoreKeys.EnableAutoUpdate)
     );
-    handle(MessageType.CheckForUpdate, () =>
+    handleTestMessage(MessageType.CheckForUpdate, () =>
       checkForUpdate(appState, updateState)
     );
-    handle(
+    handleTestMessage(
       MessageType.UpdateManagerNotifiedStateChange,
       () => notifiedStateUpdate
     );

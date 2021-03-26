@@ -10,11 +10,13 @@ const messageHandlers: {
   [key in MessageType]?: (...args: any) => unknown;
 } = {};
 
-export function handle(
+export function handleTestMessage(
   type: MessageType,
   handler: (...args: any) => unknown
 ): void {
-  if (!isTesting()) return;
+  if (!isTesting()) {
+    throw Error('Tried to invoke test handler in non-test build.');
+  }
   messageHandlers[type] = handler;
 }
 
@@ -54,7 +56,10 @@ export function setupTesting(): void {
     }
   });
 
-  handle(MessageType.WindowCount, () => BrowserWindow.getAllWindows().length);
+  handleTestMessage(
+    MessageType.WindowCount,
+    () => BrowserWindow.getAllWindows().length
+  );
 
   app.on('ready', () => {
     setTimeout(() => {

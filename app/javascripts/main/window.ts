@@ -19,7 +19,7 @@ import { isMac, isWindows } from './platforms';
 import { initializeSearchManager } from './searchManager';
 import { createSpellcheckerManager } from './spellcheckerManager';
 import { Store, StoreKeys } from './store';
-import { handle, send } from './testing';
+import { handleTestMessage, send } from './testing';
 import { createTrayManager, TrayManager } from './trayManager';
 import { checkForUpdate, setupUpdates } from './updateManager';
 import { isTesting, lowercaseDriveLetter } from './utils';
@@ -168,17 +168,17 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
   persistWindowPosition(window);
 
   if (isTesting()) {
-    handle(MessageType.SpellCheckerLanguages, () =>
+    handleTestMessage(MessageType.SpellCheckerLanguages, () =>
       window.webContents.session.getSpellCheckerLanguages()
     );
-    handle(MessageType.SetLocalStorageValue, async (key, value) => {
+    handleTestMessage(MessageType.SetLocalStorageValue, async (key, value) => {
       await window.webContents.executeJavaScript(
         `localStorage.setItem("${key}", "${value}")`
       );
       window.webContents.session.flushStorageData();
     });
-    handle(MessageType.ExecuteJavaScript, (code) =>
-      window.webContents.executeJavaScript(code)
+    handleTestMessage(MessageType.SignOut, () =>
+      window.webContents.executeJavaScript('window.bridge.onSignOut()')
     );
     window.webContents.once('did-finish-load', () => {
       send(AppMessageType.WindowLoaded);
@@ -209,7 +209,10 @@ function createWindowServices(
     appLocale
   );
   if (isTesting()) {
-    handle(MessageType.SpellCheckerManager, () => spellcheckerManager);
+    handleTestMessage(
+      MessageType.SpellCheckerManager,
+      () => spellcheckerManager
+    );
   }
   const menuManager = createMenuManager({
     appState,

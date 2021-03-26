@@ -17,7 +17,7 @@ import { isDev, isTesting } from './javascripts/main/utils';
 import { indexUrl } from './javascripts/main/paths';
 import { action, makeObservable, observable } from 'mobx';
 import { UpdateState } from './javascripts/main/updateManager';
-import { handle } from './javascripts/main/testing';
+import { handleTestMessage } from './javascripts/main/testing';
 import { MessageType } from '../test/TestIpcMessage';
 
 export class AppState {
@@ -41,7 +41,7 @@ export class AppState {
     this.updates = new UpdateState(this);
 
     if (isTesting()) {
-      handle(MessageType.AppStateCall, (method, ...args) => {
+      handleTestMessage(MessageType.AppStateCall, (method, ...args) => {
         (this as any)[method](...args);
       });
     }
