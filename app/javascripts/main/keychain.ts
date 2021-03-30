@@ -5,10 +5,7 @@ import { AppName } from './strings';
 import { keychainAccessIsUserConfigurable } from './constants';
 import { isDev, isTesting } from './utils';
 import { IpcMessages } from '../shared/ipcMessages';
-import {
-  grantLinuxPasswordsAccessJsPath,
-  grantLinuxPasswordsAccessUrl,
-} from './paths';
+import { Urls, Paths } from './paths';
 import { Store, StoreKeys } from './store';
 
 const ServiceName = isTesting()
@@ -53,12 +50,12 @@ function askForKeychainAccess(store: Store): Promise<BrowserWindow> {
     center: true,
     show: false,
     webPreferences: {
-      preload: grantLinuxPasswordsAccessJsPath,
+      preload: Paths.grantLinuxPasswordsAccessJs,
     },
     autoHideMenuBar: true,
   });
   window.on('ready-to-show', window.show);
-  window.loadURL(grantLinuxPasswordsAccessUrl);
+  window.loadURL(Urls.grantLinuxPasswordsAccessHtml);
 
   const quit = () => {
     app.quit();

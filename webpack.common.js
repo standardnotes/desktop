@@ -49,10 +49,7 @@ module.exports = function ({
   };
 
   const EXPERIMENTAL_FEATURES = JSON.stringify(experimentalFeatures);
-  const AUTO_UPDATING_AVAILABLE = JSON.stringify(snap ? false : true);
-  const KEYCHAIN_ACCESS_IS_USER_CONFIGURABLE = JSON.stringify(
-    snap ? true : false
-  );
+  const IS_SNAP = JSON.stringify(snap ? true : false);
 
   const electronMainConfig = {
     entry: {
@@ -82,8 +79,7 @@ module.exports = function ({
     plugins: [
       new DefinePlugin({
         EXPERIMENTAL_FEATURES,
-        AUTO_UPDATING_AVAILABLE,
-        KEYCHAIN_ACCESS_IS_USER_CONFIGURABLE,
+        IS_SNAP,
       }),
       new CopyPlugin({
         patterns: [
@@ -146,8 +142,6 @@ module.exports = function ({
         ),
         BUGSNAG_API_KEY: JSON.stringify(process.env.BUGSNAG_API_KEY),
         EXPERIMENTAL_FEATURES,
-        AUTO_UPDATING_AVAILABLE,
-        KEYCHAIN_ACCESS_IS_USER_CONFIGURABLE,
       }),
     ],
   };

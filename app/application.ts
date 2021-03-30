@@ -14,7 +14,7 @@ import {
 } from './javascripts/main/keychain';
 import { IpcMessages } from './javascripts/shared/ipcMessages';
 import { isDev, isTesting } from './javascripts/main/utils';
-import { indexUrl } from './javascripts/main/paths';
+import { Urls, Paths } from './javascripts/main/paths';
 import { action, makeObservable, observable } from 'mobx';
 import { UpdateState } from './javascripts/main/updateManager';
 import { handleTestMessage } from './javascripts/main/testing';
@@ -23,7 +23,7 @@ import { MessageType } from '../test/TestIpcMessage';
 export class AppState {
   readonly version: string;
   readonly store: Store;
-  readonly startUrl = indexUrl;
+  readonly startUrl = Urls.indexHtml;
   readonly isPrimaryInstance: boolean;
   public willQuitApp = false;
   public lastBackupDate: number | null = null;
@@ -32,7 +32,7 @@ export class AppState {
 
   constructor(app: Electron.App) {
     this.version = app.getVersion();
-    this.store = new Store(app.getPath('userData'));
+    this.store = new Store(Paths.userDataDir);
     this.isPrimaryInstance = app.requestSingleInstanceLock();
     makeObservable(this, {
       lastBackupDate: observable,

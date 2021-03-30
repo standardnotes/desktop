@@ -10,7 +10,7 @@ import {
   FileDoesNotExist,
   moveFiles,
 } from './fileUtils';
-import { decryptScriptPath } from './paths';
+import { Paths } from './paths';
 import { StoreKeys } from './store';
 import { backups as str } from './strings';
 import { handleTestMessage, send } from './testing';
@@ -69,8 +69,8 @@ export function createBackupsManager(
     ensureDirectoryExists(backupsLocation)
       .then(() =>
         fs.copyFile(
-          decryptScriptPath,
-          path.join(backupsLocation, path.basename(decryptScriptPath))
+          Paths.decryptScript,
+          path.join(backupsLocation, path.basename(Paths.decryptScript))
         )
       )
       .catch(console.error);
@@ -98,14 +98,14 @@ export function createBackupsManager(
 
     await moveFiles(backupFiles, newLocation);
     await fs.copyFile(
-      decryptScriptPath,
-      path.join(newLocation, path.basename(decryptScriptPath))
+      Paths.decryptScript,
+      path.join(newLocation, path.basename(Paths.decryptScript))
     );
 
     previousLocationFiles = await fs.readdir(previousLocation);
     if (
       previousLocationFiles.length === 0 ||
-      previousLocationFiles[0] === path.basename(decryptScriptPath)
+      previousLocationFiles[0] === path.basename(Paths.decryptScript)
     ) {
       await deleteDir(previousLocation);
     }

@@ -1,11 +1,4 @@
-import {
-  app,
-  BrowserWindow,
-  ipcMain,
-  Rectangle,
-  screen,
-  Shell,
-} from 'electron';
+import { BrowserWindow, ipcMain, Rectangle, screen, Shell } from 'electron';
 import fs from 'fs';
 import { debounce } from 'lodash';
 import path from 'path';
@@ -24,7 +17,7 @@ import { createTrayManager, TrayManager } from './trayManager';
 import { checkForUpdate, setupUpdates } from './updateManager';
 import { isTesting, lowercaseDriveLetter } from './utils';
 import { initializeZoomManager } from './zoomManager';
-import { preloadJsPath } from './paths';
+import { Paths } from './paths';
 
 const WINDOW_DEFAULT_WIDTH = 1100;
 const WINDOW_DEFAULT_HEIGHT = 800;
@@ -155,7 +148,7 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
       spellcheck: true,
       nodeIntegration: isTesting(),
       contextIsolation: !isTesting(),
-      preload: preloadJsPath,
+      preload: Paths.preloadJs,
     },
   });
   if (position.isFullScreen) {
@@ -267,7 +260,7 @@ async function getPreviousWindowPosition() {
   try {
     position = JSON.parse(
       await fs.promises.readFile(
-        path.join(app.getPath('userData'), 'window-position.json'),
+        path.join(Paths.userDataDir, 'window-position.json'),
         'utf8'
       )
     );
@@ -312,7 +305,6 @@ async function getPreviousWindowPosition() {
 }
 
 function persistWindowPosition(window: BrowserWindow) {
-  const savePath = path.join(app.getPath('userData'), 'window-position.json');
   let writingToDisk = false;
 
   const saveWindowBounds = debounce(async () => {
@@ -324,7 +316,11 @@ function persistWindowPosition(window: BrowserWindow) {
     if (writingToDisk) return;
     writingToDisk = true;
     try {
-      await fs.promises.writeFile(savePath, JSON.stringify(position), 'utf-8');
+      await fs.promises.writeFile(
+        Paths.windowPositionJson,
+        JSON.stringify(position),
+        'utf-8'
+      );
     } catch (error) {
       console.error('Could not write to window-position.json', error);
     } finally {
