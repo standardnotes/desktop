@@ -55,6 +55,7 @@ function askForKeychainAccess(store: Store): Promise<BrowserWindow> {
     webPreferences: {
       preload: grantLinuxPasswordsAccessJsPath,
     },
+    autoHideMenuBar: true,
   });
   window.on('ready-to-show', window.show);
   window.loadURL(grantLinuxPasswordsAccessUrl);
