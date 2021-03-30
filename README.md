@@ -47,13 +47,14 @@ To determine where to install a dependency:
 
 Build for all platforms:
 
-- `yarn build`
+- `yarn build:all`
 
 or
 
-- `yarn build:win`
-- `yarn build:linux`
-- `yarn build:mac`
+- `yarn build appimage`
+- `yarn build mac`
+- `yarn build snap`
+- `yarn build windows`
 
 ## Installation
 
