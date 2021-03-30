@@ -50,8 +50,12 @@ panel-resizer {
   max-width: var(--sn-desktop-titlebar-icon-font-size);
 }
 
-#desktop-title-bar button:hover svg {
+#desktop-title-bar button:hover svg,
+#desktop-title-bar button:focus svg {
   color: var(--sn-stylekit-info-color);
+}
+#desktop-title-bar button:focus {
+  box-shadow: none;
 }
 
 #desktop-title-bar .title-bar-left-buttons,
