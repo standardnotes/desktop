@@ -54,7 +54,7 @@ initializeApplication({
  * running, because it will not copy over anything that is saved to
  * localStorage or IndexedDB after the installation has completed.
  *
- * So counteract this, we change the userData directory to be the snap's
+ * To counteract this, we change the userData directory to be the snap's
  * 'common' directory, shared by all revisions.
  * We also migrate existing content in the the default user folder to the
  * common directory.
