@@ -32,6 +32,7 @@ panel-resizer {
   border-bottom: 1px solid var(--sn-stylekit-contrast-border-color);
   display: flex;
   justify-content: space-between;
+  z-index: 99999;
 }
 
 #desktop-title-bar button {
