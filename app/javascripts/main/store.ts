@@ -91,7 +91,7 @@ function sanitizeZoomFactor(factor?: any): number {
 function sanitizeBackupsLocation(location?: unknown): string {
   const defaultPath = path.join(
     isDev()
-      ? (app || remote.app).getPath('userData')
+      ? (app || remote.app).getPath('documents')
       : (app || remote.app).getPath('home'),
     BackupsDirectoryName
   );
