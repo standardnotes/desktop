@@ -51,6 +51,9 @@ export const Paths = {
   get tempDir(): string {
     return app.getPath('temp');
   },
+  get extensionsDirRelative(): string {
+    return 'Extensions';
+  },
   get extensionsDir(): string {
     return path.join(Paths.userDataDir, 'Extensions');
   },

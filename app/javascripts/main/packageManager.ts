@@ -380,7 +380,7 @@ async function installComponent(
 
 function pathsForComponent(component: Pick<Component, 'content'>) {
   const relativePath = path.join(
-    Paths.extensionsDir,
+    Paths.extensionsDirRelative,
     component.content!.package_info.identifier
   );
   return {
