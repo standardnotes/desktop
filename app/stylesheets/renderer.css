@@ -33,6 +33,9 @@ panel-resizer {
   display: flex;
   justify-content: space-between;
   z-index: 99999;
+  position: absolute;
+  width: 100%;
+  top: 0;
 }
 
 #desktop-title-bar button {

@@ -203,6 +203,10 @@ async function configureWindow(mainThread: any) {
     /* Use custom title bar. Take the sn-titlebar-height off of
     the app content height so its not overflowing */
     sheet.insertRule(
+      'body { padding-top: var(--sn-desktop-titlebar-height); }',
+      sheet.cssRules.length
+    );
+    sheet.insertRule(
       `.main-ui-view { height: calc(100vh - var(--sn-desktop-titlebar-height)) !important;
         min-height: calc(100vh - var(--sn-desktop-titlebar-height)) !important; }`,
       sheet.cssRules.length
