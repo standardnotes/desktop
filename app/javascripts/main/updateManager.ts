@@ -187,7 +187,7 @@ export async function showUpdateInstallationDialog(
       message: str().updateReady.message(appState.updates.latestVersion),
       buttons: [
         str().updateReady.installLater,
-        str().updateReady.installAndRestart,
+        str().updateReady.quitAndInstall,
       ],
       cancelId: 0,
     });
@@ -207,9 +207,7 @@ export async function showUpdateInstallationDialog(
       checkboxChecked: false,
       buttons: [
         str().updateReady.installLater,
-        isMac()
-          ? str().updateReady.installAndRestart
-          : str().updateReady.quitAndInstall,
+        str().updateReady.quitAndInstall,
       ],
       cancelId,
     });

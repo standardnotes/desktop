@@ -91,7 +91,6 @@ interface UpdateStrings {
   updateReady: {
     title: string;
     message(version: string): string;
-    installAndRestart: string;
     quitAndInstall: string;
     installLater: string;
     noRecentBackupMessage: string;

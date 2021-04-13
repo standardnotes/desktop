@@ -124,7 +124,6 @@ export function createEnglishStrings(): Strings {
         message(version: string) {
           return `A new update (version ${version}) is ready to install.`;
         },
-        installAndRestart: 'Install and Restart',
         quitAndInstall: 'Quit and Install',
         installLater: 'Install Later',
         noRecentBackupMessage:
