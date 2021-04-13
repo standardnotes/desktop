@@ -123,7 +123,7 @@ test.only('deletes local storage data after signing out', async (t) => {
   t.is(localStorageContents.includes('bar'), true);
 
   await timeout(1_000);
-  await t.context.window.executeJavascript('bridge.onSignOut()');
+  await t.context.window.signOut();
   await timeout(1_000);
   localStorageContents = await readLocalStorageContents();
   t.is(localStorageContents.includes('foo'), false);

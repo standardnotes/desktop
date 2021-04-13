@@ -32,6 +32,10 @@ panel-resizer {
   border-bottom: 1px solid var(--sn-stylekit-contrast-border-color);
   display: flex;
   justify-content: space-between;
+  z-index: 99999;
+  position: absolute;
+  width: 100%;
+  top: 0;
 }
 
 #desktop-title-bar button {
@@ -49,8 +53,12 @@ panel-resizer {
   max-width: var(--sn-desktop-titlebar-icon-font-size);
 }
 
-#desktop-title-bar button:hover svg {
+#desktop-title-bar button:hover svg,
+#desktop-title-bar button:focus svg {
   color: var(--sn-stylekit-info-color);
+}
+#desktop-title-bar button:focus {
+  box-shadow: none;
 }
 
 #desktop-title-bar .title-bar-left-buttons,

@@ -10,10 +10,10 @@ import {
   FileDoesNotExist,
   moveFiles,
 } from './fileUtils';
-import { decryptScriptPath } from './paths';
+import { Paths } from './paths';
 import { StoreKeys } from './store';
 import { backups as str } from './strings';
-import { handle, send } from './testing';
+import { handleTestMessage, send } from './testing';
 import { isTesting, last } from './utils';
 
 function log(...message: any) {
@@ -69,8 +69,8 @@ export function createBackupsManager(
     ensureDirectoryExists(backupsLocation)
       .then(() =>
         fs.copyFile(
-          decryptScriptPath,
-          path.join(backupsLocation, path.basename(decryptScriptPath))
+          Paths.decryptScript,
+          path.join(backupsLocation, path.basename(Paths.decryptScript))
         )
       )
       .catch(console.error);
@@ -98,14 +98,14 @@ export function createBackupsManager(
 
     await moveFiles(backupFiles, newLocation);
     await fs.copyFile(
-      decryptScriptPath,
-      path.join(newLocation, path.basename(decryptScriptPath))
+      Paths.decryptScript,
+      path.join(newLocation, path.basename(Paths.decryptScript))
     );
 
     previousLocationFiles = await fs.readdir(previousLocation);
     if (
       previousLocationFiles.length === 0 ||
-      previousLocationFiles[0] === path.basename(decryptScriptPath)
+      previousLocationFiles[0] === path.basename(Paths.decryptScript)
     ) {
       await deleteDir(previousLocation);
     }
@@ -172,12 +172,14 @@ export function createBackupsManager(
   }
 
   if (isTesting()) {
-    handle(MessageType.DataArchive, (data: any) => archiveData(data));
-    handle(MessageType.BackupsAreEnabled, () => !backupsDisabled);
-    handle(MessageType.ToggleBackupsEnabled, toggleBackupsStatus);
-    handle(MessageType.BackupsLocation, () => backupsLocation);
-    handle(MessageType.PerformBackup, performBackup);
-    handle(MessageType.ChangeBackupsLocation, setBackupsLocation);
+    handleTestMessage(MessageType.DataArchive, (data: any) =>
+      archiveData(data)
+    );
+    handleTestMessage(MessageType.BackupsAreEnabled, () => !backupsDisabled);
+    handleTestMessage(MessageType.ToggleBackupsEnabled, toggleBackupsStatus);
+    handleTestMessage(MessageType.BackupsLocation, () => backupsLocation);
+    handleTestMessage(MessageType.PerformBackup, performBackup);
+    handleTestMessage(MessageType.ChangeBackupsLocation, setBackupsLocation);
   }
 
   return {

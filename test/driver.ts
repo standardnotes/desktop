@@ -111,8 +111,7 @@ class Driver {
     this.send(MessageType.AppStateCall, methodName, ...args);
 
   readonly window = {
-    executeJavascript: (code: string): Promise<unknown> =>
-      this.send(MessageType.ExecuteJavaScript, code),
+    signOut: (): Promise<void> => this.send(MessageType.SignOut),
   };
 
   readonly storage = {

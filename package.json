@@ -1,7 +1,7 @@
 {
   "name": "standard-notes",
   "main": "./app/dist/index.js",
-  "version": "3.6.4",
+  "version": "3.6.6",
   "repository": {
     "type": "git",
     "url": "git://github.com/standardnotes/desktop"
@@ -12,6 +12,7 @@
     "decrypt": "github:standardnotes/decrypt#master",
     "electron-log": "^4.3.1",
     "electron-updater": "^4.3.5",
+    "fs-extra": "^9.1.0",
     "mime-types": "^2.1.27",
     "mobx": "^6.1.6"
   },

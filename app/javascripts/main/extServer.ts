@@ -1,14 +1,13 @@
-import { app } from 'electron';
 import fs from 'fs';
 import http, { IncomingMessage, ServerResponse } from 'http';
 import mime from 'mime-types';
 import path from 'path';
 import { URL } from 'url';
 import { FileDoesNotExist } from './fileUtils';
+import { Paths } from './paths';
 import { extensions as str } from './strings';
 
 const Protocol = 'http';
-const UserDataPath = app.getPath('userData');
 
 function logError(...message: any) {
   console.error('extServer:', ...message);
@@ -18,7 +17,7 @@ function log(...message: any) {
   console.log('extServer:', ...message);
 }
 
-export function normalizeFilePath(requestUrl: string, host: string): string {
+function normalizeFilePath(requestUrl: string, host: string): string {
   if (!requestUrl.startsWith('/Extensions')) {
     throw new Error(
       `URL '${requestUrl}' falls outside of the Extensions domain.`
@@ -33,7 +32,7 @@ export function normalizeFilePath(requestUrl: string, host: string): string {
    * joining a fully resolved path to the Extensions dir.
    */
   const modifiedReqUrl = path.normalize(url.pathname);
-  return path.join(UserDataPath, 'Extensions', modifiedReqUrl);
+  return path.join(Paths.extensionsDir, modifiedReqUrl);
 }
 
 async function handleRequest(req: IncomingMessage, res: ServerResponse) {

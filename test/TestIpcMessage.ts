@@ -47,5 +47,5 @@ export enum MessageType {
   AutoUpdateEnabled,
   HasReloadedMenu,
   AppStateCall,
-  ExecuteJavaScript,
+  SignOut,
 }

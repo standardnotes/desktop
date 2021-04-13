@@ -12,7 +12,7 @@ import {
 } from './utils';
 import { FileDoesNotExist } from './fileUtils';
 import { BackupsDirectoryName } from './backupsManager';
-import { handle } from './testing';
+import { handleTestMessage } from './testing';
 
 function logError(...message: any) {
   console.error('store:', ...message);
@@ -91,7 +91,7 @@ function sanitizeZoomFactor(factor?: any): number {
 function sanitizeBackupsLocation(location?: unknown): string {
   const defaultPath = path.join(
     isDev()
-      ? (app || remote.app).getPath('userData')
+      ? (app || remote.app).getPath('documents')
       : (app || remote.app).getPath('home'),
     BackupsDirectoryName
   );
@@ -178,8 +178,8 @@ export class Store {
     this.data = parseDataFile(this.path);
 
     if (isTesting()) {
-      handle(MessageType.StoreSettingsLocation, () => this.path);
-      handle(MessageType.StoreSet, (key, value) => {
+      handleTestMessage(MessageType.StoreSettingsLocation, () => this.path);
+      handleTestMessage(MessageType.StoreSet, (key, value) => {
         this.set(key, value);
       });
     }

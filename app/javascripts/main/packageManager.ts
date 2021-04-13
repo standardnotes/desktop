@@ -1,5 +1,5 @@
 import compareVersions from 'compare-versions';
-import { app, IpcMain } from 'electron';
+import { IpcMain } from 'electron';
 import fs from 'fs';
 import path from 'path';
 import { IpcMessages } from '../shared/ipcMessages';
@@ -13,12 +13,9 @@ import {
   readJSONFile,
 } from './fileUtils';
 import { downloadFile, getJSON } from './networking';
+import { Paths } from './paths';
 import { AppName } from './strings';
 import { timeout } from './utils';
-
-const tempPath = app.getPath('temp');
-const appPath = app.getPath('userData');
-const ExtensionsFolderName = 'Extensions';
 
 function log(...message: any) {
   console.log('PackageManager:', ...message);
@@ -67,17 +64,13 @@ class MappingFileHandler {
     let mapping: MappingFile;
 
     try {
-      mapping = await readJSONFile<MappingFile>(
-        MappingFileHandler.fileLocation
-      );
+      mapping = await readJSONFile<MappingFile>(Paths.extensionsMappingJson);
     } catch (error) {
       /**
        * Mapping file might be absent (first start, corrupted data)
        */
       if (error.code === FileDoesNotExist) {
-        await ensureDirectoryExists(
-          path.dirname(MappingFileHandler.fileLocation)
-        );
+        await ensureDirectoryExists(path.dirname(Paths.extensionsMappingJson));
       } else {
         logError(error);
       }
@@ -86,12 +79,6 @@ class MappingFileHandler {
 
     return new MappingFileHandler(mapping);
   }
-
-  private static fileLocation = path.join(
-    appPath,
-    ExtensionsFolderName,
-    'mapping.json'
-  );
 
   constructor(private mapping: MappingFile) {}
 
@@ -133,7 +120,7 @@ class MappingFileHandler {
 
   private writeToDisk = debouncedJSONDiskWriter(
     100,
-    MappingFileHandler.fileLocation,
+    Paths.extensionsMappingJson,
     () => this.mapping
   );
 }
@@ -393,14 +380,14 @@ async function installComponent(
 
 function pathsForComponent(component: Pick<Component, 'content'>) {
   const relativePath = path.join(
-    ExtensionsFolderName,
+    Paths.extensionsDirRelative,
     component.content!.package_info.identifier
   );
   return {
     relativePath,
-    absolutePath: path.join(appPath, relativePath),
+    absolutePath: path.join(Paths.userDataDir, relativePath),
     downloadPath: path.join(
-      tempPath,
+      Paths.tempDir,
       AppName,
       'downloads',
       component.content!.name + '.zip'
@@ -414,7 +401,7 @@ async function uninstallComponent(mapping: MappingFileHandler, uuid: string) {
     /** No mapping for component */
     return;
   }
-  await deleteDir(path.join(appPath, componentMapping.location));
+  await deleteDir(path.join(Paths.userDataDir, componentMapping.location));
   mapping.remove(uuid);
 }
 

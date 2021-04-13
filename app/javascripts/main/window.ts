@@ -1,11 +1,4 @@
-import {
-  app,
-  BrowserWindow,
-  ipcMain,
-  Rectangle,
-  screen,
-  Shell,
-} from 'electron';
+import { BrowserWindow, ipcMain, Rectangle, screen, Shell } from 'electron';
 import fs from 'fs';
 import { debounce } from 'lodash';
 import path from 'path';
@@ -19,12 +12,12 @@ import { isMac, isWindows } from './platforms';
 import { initializeSearchManager } from './searchManager';
 import { createSpellcheckerManager } from './spellcheckerManager';
 import { Store, StoreKeys } from './store';
-import { handle, send } from './testing';
+import { handleTestMessage, send } from './testing';
 import { createTrayManager, TrayManager } from './trayManager';
 import { checkForUpdate, setupUpdates } from './updateManager';
 import { isTesting, lowercaseDriveLetter } from './utils';
 import { initializeZoomManager } from './zoomManager';
-import { preloadJsPath } from './paths';
+import { Paths } from './paths';
 
 const WINDOW_DEFAULT_WIDTH = 1100;
 const WINDOW_DEFAULT_HEIGHT = 800;
@@ -74,13 +67,6 @@ export async function createWindowState({
     window.show();
   });
 
-  window.webContents.on('ipc-message', async (_event, message) => {
-    if (message === IpcMessages.SigningOut) {
-      await window.webContents.session.clearStorageData();
-      window.webContents.session.flushStorageData();
-    }
-  });
-
   window.on('close', (event) => {
     if (
       !appState.willQuitApp &&
@@ -99,6 +85,17 @@ export async function createWindowState({
         window.setFullScreen(false);
       }
       window.hide();
+    }
+  });
+
+  window.webContents.session.setSpellCheckerDictionaryDownloadURL(
+    'https://dictionaries.standardnotes.org/9.4.4/'
+  );
+
+  window.webContents.on('ipc-message', async (_event, message) => {
+    if (message === IpcMessages.SigningOut) {
+      await window.webContents.session.clearStorageData();
+      window.webContents.session.flushStorageData();
     }
   });
 
@@ -151,7 +148,7 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
       spellcheck: true,
       nodeIntegration: isTesting(),
       contextIsolation: !isTesting(),
-      preload: preloadJsPath,
+      preload: Paths.preloadJs,
     },
   });
   if (position.isFullScreen) {
@@ -164,17 +161,17 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
   persistWindowPosition(window);
 
   if (isTesting()) {
-    handle(MessageType.SpellCheckerLanguages, () =>
+    handleTestMessage(MessageType.SpellCheckerLanguages, () =>
       window.webContents.session.getSpellCheckerLanguages()
     );
-    handle(MessageType.SetLocalStorageValue, async (key, value) => {
+    handleTestMessage(MessageType.SetLocalStorageValue, async (key, value) => {
       await window.webContents.executeJavaScript(
         `localStorage.setItem("${key}", "${value}")`
       );
       window.webContents.session.flushStorageData();
     });
-    handle(MessageType.ExecuteJavaScript, (code) =>
-      window.webContents.executeJavaScript(code)
+    handleTestMessage(MessageType.SignOut, () =>
+      window.webContents.executeJavaScript('window.bridge.onSignOut()')
     );
     window.webContents.once('did-finish-load', () => {
       send(AppMessageType.WindowLoaded);
@@ -205,7 +202,10 @@ function createWindowServices(
     appLocale
   );
   if (isTesting()) {
-    handle(MessageType.SpellCheckerManager, () => spellcheckerManager);
+    handleTestMessage(
+      MessageType.SpellCheckerManager,
+      () => spellcheckerManager
+    );
   }
   const menuManager = createMenuManager({
     appState,
@@ -260,7 +260,7 @@ async function getPreviousWindowPosition() {
   try {
     position = JSON.parse(
       await fs.promises.readFile(
-        path.join(app.getPath('userData'), 'window-position.json'),
+        path.join(Paths.userDataDir, 'window-position.json'),
         'utf8'
       )
     );
@@ -305,7 +305,6 @@ async function getPreviousWindowPosition() {
 }
 
 function persistWindowPosition(window: BrowserWindow) {
-  const savePath = path.join(app.getPath('userData'), 'window-position.json');
   let writingToDisk = false;
 
   const saveWindowBounds = debounce(async () => {
@@ -317,7 +316,11 @@ function persistWindowPosition(window: BrowserWindow) {
     if (writingToDisk) return;
     writingToDisk = true;
     try {
-      await fs.promises.writeFile(savePath, JSON.stringify(position), 'utf-8');
+      await fs.promises.writeFile(
+        Paths.windowPositionJson,
+        JSON.stringify(position),
+        'utf-8'
+      );
     } catch (error) {
       console.error('Could not write to window-position.json', error);
     } finally {
