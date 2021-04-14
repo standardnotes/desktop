@@ -146,6 +146,15 @@ async function createWebBridge(mainThread: any): Promise<Bridge> {
         desktopManager.desktop_didFinishBackup(false);
       }
     },
+    async localBackupsCount() {
+      return mainThread.localBackupsCount();
+    },
+    viewlocalBackups() {
+      mainThread.viewlocalBackups();
+    },
+    async deleteLocalBackups() {
+      mainThread.deleteLocalBackups();
+    },
   };
 }
 

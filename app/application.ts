@@ -1,4 +1,4 @@
-import { App, IpcMain, Shell } from 'electron';
+import { App, IpcMain, shell, Shell } from 'electron';
 import { BackupsManager } from './javascripts/main/backupsManager';
 import { createExtensionsServer } from './javascripts/main/extServer';
 import { MenuManager } from './javascripts/main/menus';
@@ -184,18 +184,18 @@ function initializeExtensionsServer(store: Store) {
 function registerIpcEventListeners(
   ipcMain: Electron.IpcMain,
   menuManager: MenuManager,
-  archiveManager: BackupsManager
+  backupsManager: BackupsManager
 ) {
   ipcMain.on(IpcMessages.DisplayAppMenu, () => {
     menuManager.popupMenu();
   });
 
   ipcMain.on(IpcMessages.InitialDataLoaded, () => {
-    archiveManager.beginBackups();
+    backupsManager.beginBackups();
   });
 
   ipcMain.on(IpcMessages.MajorDataChange, () => {
-    archiveManager.performBackup();
+    backupsManager.performBackup();
   });
 
   ipcMain.handle(IpcMessages.GetKeychainValue, getKeychainValue);
@@ -203,4 +203,13 @@ function registerIpcEventListeners(
     setKeychainValue(value)
   );
   ipcMain.handle(IpcMessages.ClearKeychainValue, clearKeychainValue);
+  ipcMain.handle(IpcMessages.LocalBackupsCount, () =>
+    backupsManager.backupsCount()
+  );
+  ipcMain.on(IpcMessages.ViewLocalBackups, () => {
+    shell.openPath(backupsManager.backupsLocation);
+  });
+  ipcMain.handle(IpcMessages.DeleteLocalBackups, () =>
+    backupsManager.deleteBackups()
+  );
 }
