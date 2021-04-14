@@ -35,6 +35,7 @@
     "dotenv": "^8.2.0",
     "electron": "^9.4.0",
     "electron-builder": "^22.9.1",
+    "electron-clear-data": "^1.0.3",
     "electron-notarize": "^1.0.0",
     "eslint": "^7.20.0",
     "eslint-config-prettier": "^6.11.0",

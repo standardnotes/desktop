@@ -18,6 +18,7 @@ import { checkForUpdate, setupUpdates } from './updateManager';
 import { isTesting, lowercaseDriveLetter } from './utils';
 import { initializeZoomManager } from './zoomManager';
 import { Paths } from './paths';
+import { clearSensitiveDirectories } from 'electron-clear-data';
 
 const WINDOW_DEFAULT_WIDTH = 1100;
 const WINDOW_DEFAULT_HEIGHT = 800;
@@ -94,8 +95,7 @@ export async function createWindowState({
 
   window.webContents.on('ipc-message', async (_event, message) => {
     if (message === IpcMessages.SigningOut) {
-      await window.webContents.session.clearStorageData();
-      window.webContents.session.flushStorageData();
+      clearSensitiveDirectories();
     }
   });
 
