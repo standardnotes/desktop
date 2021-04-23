@@ -1,0 +1,14 @@
+name: "Custom CodeQL Config"
+
+queries:
+- uses: security-and-quality
+
+paths:
+- app
+
+paths-ignore:
+- build
+- dist
+- node_modules
+- test
+- web
