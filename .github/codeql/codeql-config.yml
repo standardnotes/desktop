@@ -2,6 +2,7 @@ name: "Custom CodeQL Config"
 
 queries:
 - uses: security-and-quality
+- uses: ./.github/codeql/custom-queries/javascript
 
 paths:
 - app
