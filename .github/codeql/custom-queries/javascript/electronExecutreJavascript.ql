@@ -1,7 +1,7 @@
 /**
  * @id javascript/call-to-electron-webcontents-execute-javascript
- * @name Use of webcontents.executeJavascript
- * @description Finds dangerous calls to webcontents.executeJavascript
+ * @name Use of webContents.executeJavascript
+ * @description Finds dangerous calls to webContents.executeJavascript
  * @kind problem
  * @problem.severity warning
  * @precision high
