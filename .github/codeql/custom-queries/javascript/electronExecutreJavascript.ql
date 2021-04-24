@@ -10,4 +10,6 @@
 
 import javascript
 
-select "hello world"
+from CallExpr c
+where c.getCalleeName() = "executeJavaScript"
+select c
