@@ -4,7 +4,7 @@
  * @description Finds dangerous calls to webcontents.executeJavascript
  * @kind problem
  * @problem.severity warning
- * @precision very-high
+ * @precision high
  * @tags correctness
  */
 
@@ -12,4 +12,4 @@ import javascript
 
 from CallExpr c
 where c.getCalleeName() = "executeJavaScript"
-select c
+select c, "Call to 'executeJavascript()' detected."
