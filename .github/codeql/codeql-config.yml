@@ -13,3 +13,5 @@ paths-ignore:
 - node_modules
 - test
 - web
+- app/dist
+- app/node_modules
