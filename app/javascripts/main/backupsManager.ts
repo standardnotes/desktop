@@ -6,6 +6,7 @@ import { AppState } from '../../application';
 import { IpcMessages } from '../shared/ipcMessages';
 import {
   deleteDir,
+  deleteDirContents,
   ensureDirectoryExists,
   FileDoesNotExist,
   moveFiles,
@@ -50,10 +51,24 @@ export interface BackupsManager {
   backupsAreEnabled: boolean;
   toggleBackupsStatus(): void;
   backupsLocation: string;
+  backupsCount(): Promise<number>;
   applicationDidBlur(): void;
   changeBackupsLocation(): void;
   beginBackups(): void;
   performBackup(): void;
+  deleteBackups(): Promise<void>;
+}
+
+async function copyDecryptScript(location: string) {
+  try {
+    await ensureDirectoryExists(location);
+    await fs.copyFile(
+      Paths.decryptScript,
+      path.join(location, path.basename(Paths.decryptScript))
+    );
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 export function createBackupsManager(
@@ -66,14 +81,7 @@ export function createBackupsManager(
   let needsBackup = false;
 
   if (!backupsDisabled) {
-    ensureDirectoryExists(backupsLocation)
-      .then(() =>
-        fs.copyFile(
-          Paths.decryptScript,
-          path.join(backupsLocation, path.basename(Paths.decryptScript))
-        )
-      )
-      .catch(console.error);
+    copyDecryptScript(backupsLocation);
   }
 
   determineLastBackupDate(backupsLocation)
@@ -192,11 +200,22 @@ export function createBackupsManager(
     performBackup,
     beginBackups,
     toggleBackupsStatus,
+    async backupsCount(): Promise<number> {
+      let files = await fs.readdir(backupsLocation);
+      files = files.filter((fileName) =>
+        fileName.endsWith(BackupFileExtension)
+      );
+      return files.length;
+    },
     applicationDidBlur() {
       if (needsBackup) {
         needsBackup = false;
         performBackup();
       }
+    },
+    async deleteBackups() {
+      await deleteDirContents(backupsLocation);
+      return copyDecryptScript(backupsLocation);
     },
     async changeBackupsLocation() {
       const result = await dialog.showOpenDialog({

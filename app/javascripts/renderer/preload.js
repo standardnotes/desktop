@@ -32,6 +32,9 @@ const transmitter = new Transmitter(messageBus, {
     argValidators: [{ type: 'object' }],
   },
   clearKeychainValue: { type: PropertyType.METHOD },
+  localBackupsCount: { type: PropertyType.METHOD },
+  viewlocalBackups: { type: PropertyType.METHOD },
+  deleteLocalBackups: { type: PropertyType.METHOD },
 });
 
 process.once('loaded', function () {
@@ -75,6 +78,12 @@ function loadTransmitter() {
       ipcRenderer.invoke(IpcMessages.SetKeychainValue, value),
     clearKeychainValue: () =>
       ipcRenderer.invoke(IpcMessages.ClearKeychainValue),
+    localBackupsCount: () => ipcRenderer.invoke(IpcMessages.LocalBackupsCount),
+    viewlocalBackups: async () => {
+      ipcRenderer.send(IpcMessages.ViewLocalBackups);
+    },
+    deleteLocalBackups: async () =>
+      ipcRenderer.invoke(IpcMessages.DeleteLocalBackups),
   });
 }
 

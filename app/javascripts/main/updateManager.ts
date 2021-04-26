@@ -102,14 +102,18 @@ export function setupUpdates(
 
   const updateState = appState.updates;
 
-  function checkUpdateSafety() {
-    const isSafeToUpdate =
-      appState.store.get(StoreKeys.BackupsDisabled) ||
-      (updateState.enableAutoUpdate &&
-        typeof appState.lastBackupDate === 'number' &&
-        isLessThanOneHourFromNow(appState.lastBackupDate));
-    autoUpdater.autoInstallOnAppQuit = isSafeToUpdate;
-    autoUpdater.autoDownload = isSafeToUpdate;
+  function checkUpdateSafety(): boolean {
+    let canUpdate: boolean;
+    if (appState.store.get(StoreKeys.BackupsDisabled)) {
+      canUpdate = true;
+    } else {
+      canUpdate =
+        updateState.enableAutoUpdate &&
+        isLessThanOneHourFromNow(appState.lastBackupDate);
+    }
+    autoUpdater.autoInstallOnAppQuit = canUpdate;
+    autoUpdater.autoDownload = canUpdate;
+    return canUpdate;
   }
   autorun(checkUpdateSafety);
 
@@ -124,7 +128,12 @@ export function setupUpdates(
   autoUpdater.on('error', logError);
   autoUpdater.on('update-available', (info: { version?: string }) => {
     updateState.checkedForUpdate(info.version || null);
-    backupsManager.performBackup();
+    if (updateState.enableAutoUpdate) {
+      const canUpdate = checkUpdateSafety();
+      if (!canUpdate) {
+        backupsManager.performBackup();
+      }
+    }
   });
   autoUpdater.on('update-not-available', (info: { version?: string }) => {
     updateState.checkedForUpdate(info.version || null);
@@ -166,10 +175,10 @@ function quitAndInstall(window: BrowserWindow) {
   }, 0);
 }
 
-function isLessThanOneHourFromNow(date: number) {
+function isLessThanOneHourFromNow(date: number | null) {
   const now = Date.now();
   const onHourMs = 1 * 60 * 60 * 1000;
-  return now - date < onHourMs;
+  return now - (date ?? 0) < onHourMs;
 }
 
 export async function showUpdateInstallationDialog(
@@ -187,7 +196,7 @@ export async function showUpdateInstallationDialog(
       message: str().updateReady.message(appState.updates.latestVersion),
       buttons: [
         str().updateReady.installLater,
-        str().updateReady.installAndRestart,
+        str().updateReady.quitAndInstall,
       ],
       cancelId: 0,
     });
@@ -207,9 +216,7 @@ export async function showUpdateInstallationDialog(
       checkboxChecked: false,
       buttons: [
         str().updateReady.installLater,
-        isMac()
-          ? str().updateReady.installAndRestart
-          : str().updateReady.quitAndInstall,
+        str().updateReady.quitAndInstall,
       ],
       cancelId,
     });
