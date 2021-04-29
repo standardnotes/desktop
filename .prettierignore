@@ -5,3 +5,5 @@ app/vendor/
 app/extensions/
 test/data/tmp/
 web/
+.github
+codeqldb
