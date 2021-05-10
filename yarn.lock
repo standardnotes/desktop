@@ -2507,10 +2507,10 @@ electron-builder@^22.9.1:
     update-notifier "^4.1.1"
     yargs "^16.0.3"
 
-electron-clear-data@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/electron-clear-data/-/electron-clear-data-1.0.3.tgz#589b1b3daa9e77dbd321b5ba17b53cc6a86e5033"
-  integrity sha512-QSownRD/JOqN7c4ypD0+dEtz44hwNqCrsepqcyTciA8w4DJ6fk81JoFOdJbqngOHS/wqXpgXJU09J60s37138A==
+electron-clear-data@1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/electron-clear-data/-/electron-clear-data-1.0.4.tgz#d1d1429bb5e922eb0747c3b0ae21523a126e1010"
+  integrity sha512-wexnE8KkBUn9vG9AzciiGu8b30tGGtdoDcR7iS35BWxpZZLK+fZ9FKBEUe7S6M7npbRZXQit1gRmjFr1QuPE+w==
 
 electron-log@^4.3.1:
   version "4.3.1"
