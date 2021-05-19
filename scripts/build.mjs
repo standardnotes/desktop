@@ -80,7 +80,7 @@ const availableTargets = [appimage, appimageX64, deb, dir, mac, snap, windows];
           'yarn run webpack --config webpack.prod.js --env snap'
         );
         await runCommand(
-          'yarn run electron-builder --linux --x64 --ia32 -c.linux.target=snap --publish=never'
+          'yarn run electron-builder --linux --x64 -c.linux.target=snap --publish=never'
         );
         break;
       case windows:

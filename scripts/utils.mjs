@@ -9,7 +9,6 @@ export async function getLatestBuiltFilesList() {
     `standard-notes-${version}-mac.dmg.blockmap`,
 
     `standard-notes-${version}-linux-i386.AppImage`,
-    `standard-notes-${version}-linux-i386.snap`,
     `standard-notes-${version}-linux-x86_64.AppImage`,
     `standard-notes-${version}-linux-amd64.snap`,
 
