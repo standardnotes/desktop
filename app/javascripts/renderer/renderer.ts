@@ -41,7 +41,7 @@ window._bugsnag_api_key = BUGSNAG_API_KEY;
   window.bridge = await createWebBridge(mainThread);
   window.startApplication(
     // eslint-disable-next-line no-undef
-    DEFAULT_SYNC_SERVER || 'https://syncing-server-js-prod.standardnotes.org',
+    DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org',
     window.bridge
   );
 
