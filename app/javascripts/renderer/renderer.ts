@@ -4,6 +4,7 @@ import { Bridge } from '@web/services/bridge';
 
 declare const BUGSNAG_API_KEY: string;
 declare const DEFAULT_SYNC_SERVER: string;
+declare const NEXT_VERSION_SYNC_SERVER: string;
 declare global {
   interface Window {
     ElectronValence: any;
@@ -42,7 +43,8 @@ window._bugsnag_api_key = BUGSNAG_API_KEY;
   window.startApplication(
     // eslint-disable-next-line no-undef
     DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org',
-    window.bridge
+    window.bridge,
+    NEXT_VERSION_SYNC_SERVER || 'https://api.standardnotes.com'
   );
 
   await new Promise((resolve) =>
