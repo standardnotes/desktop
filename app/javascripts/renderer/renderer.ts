@@ -10,7 +10,6 @@ declare global {
     ElectronValence: any;
     /* eslint-disable camelcase */
     _extensions_manager_location: string;
-    _batch_manager_location: string;
     _bugsnag_api_key: string;
     /* eslint-enable camelcase */
     angular: any;
@@ -29,7 +28,6 @@ const receiver = new window.ElectronValence.Receiver(messageBus);
 /* eslint-disable camelcase */
 window._extensions_manager_location =
   'extensions/extensions-manager/dist/index.html';
-window._batch_manager_location = 'extensions/batch-manager/dist/index.html';
 window._bugsnag_api_key = BUGSNAG_API_KEY;
 /* eslint-enable camelcase */
 
