@@ -1,9 +1,6 @@
 [submodule "app/extensions/extensions-manager"]
 	path = app/extensions/extensions-manager
 	url = https://github.com/sn-extensions/extensions-manager.git
-[submodule "app/extensions/batch-manager"]
-	path = app/extensions/batch-manager
-	url = https://github.com/sn-extensions/batch-manager.git
 [submodule "web"]
 	path = web
 	url = https://github.com/standardnotes/web.git
