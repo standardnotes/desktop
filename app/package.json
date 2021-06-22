@@ -3,7 +3,7 @@
   "productName": "Standard Notes",
   "description": "A simple and private place for your notes, thoughts, and life's work.",
   "author": "Standard Notes <help@standardnotes.org>",
-  "version": "3.8.7",
+  "version": "3.8.8",
   "main": "./dist/index.js",
   "dependencies": {
     "keytar": "^7.4.0",
