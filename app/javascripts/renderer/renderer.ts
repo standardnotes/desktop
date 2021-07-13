@@ -40,7 +40,7 @@ window._bugsnag_api_key = BUGSNAG_API_KEY;
   window.startApplication(
     // eslint-disable-next-line no-undef
     DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org',
-    window.bridge,
+    window.bridge
   );
 
   await new Promise((resolve) =>
