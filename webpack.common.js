@@ -138,11 +138,7 @@ module.exports = function ({
     plugins: [
       new webpack.DefinePlugin({
         DEFAULT_SYNC_SERVER: JSON.stringify(
-          process.env.DEFAULT_SYNC_SERVER || 'https://sync.standardnotes.org'
-        ),
-        NEXT_VERSION_SYNC_SERVER: JSON.stringify(
-          process.env.NEXT_VERSION_SYNC_SERVER ||
-            'https://api.standardnotes.com'
+          process.env.DEFAULT_SYNC_SERVER || 'https://api.standardnotes.com'
         ),
         BUGSNAG_API_KEY: JSON.stringify(process.env.BUGSNAG_API_KEY),
         EXPERIMENTAL_FEATURES,
