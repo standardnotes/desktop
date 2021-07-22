@@ -142,7 +142,7 @@ module.exports = function ({
         ),
         BUGSNAG_API_KEY: JSON.stringify(process.env.BUGSNAG_API_KEY),
         EXPERIMENTAL_FEATURES,
-        WEBSOCKET_URL: JSON.stringify(process.env.WEBSOCKET_URL)
+        WEBSOCKET_URL: JSON.stringify(process.env.WEBSOCKET_URL),
       }),
     ],
   };
