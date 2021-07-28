@@ -84,6 +84,9 @@
       "publisherName": "Standard Notes Ltd.",
       "signDlls": true
     },
+    "nsis": {
+      "deleteAppDataOnUninstall": true
+    },
     "linux": {
       "category": "Office",
       "icon": "build/icon/",
