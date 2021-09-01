@@ -1,7 +1,7 @@
 {
   "name": "standard-notes",
   "main": "./app/dist/index.js",
-  "version": "3.8.18",
+  "version": "3.8.21",
   "repository": {
     "type": "git",
     "url": "git://github.com/standardnotes/desktop"
@@ -83,6 +83,9 @@
       "certificateSubjectName": "Standard Notes Ltd.",
       "publisherName": "Standard Notes Ltd.",
       "signDlls": true
+    },
+    "nsis": {
+      "deleteAppDataOnUninstall": true
     },
     "linux": {
       "category": "Office",
