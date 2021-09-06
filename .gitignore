@@ -6,6 +6,7 @@ test/data/tmp/
 
 /app/dist
 .vscode
+.idea
 .env
 
 codeqldb
