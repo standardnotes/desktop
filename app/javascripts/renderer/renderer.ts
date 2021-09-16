@@ -5,12 +5,14 @@ import { Bridge } from '@web/services/bridge';
 declare const BUGSNAG_API_KEY: string;
 declare const DEFAULT_SYNC_SERVER: string;
 declare const WEBSOCKET_URL: string;
+declare const ENABLE_UNFINISHED_FEATURES: string;
 declare global {
   interface Window {
     ElectronValence: any;
     /* eslint-disable camelcase */
     _extensions_manager_location: string;
     _bugsnag_api_key: string;
+    _enable_unfinished_features: boolean;
     /* eslint-enable camelcase */
     angular: any;
     desktopManager: any;
@@ -29,6 +31,7 @@ const receiver = new window.ElectronValence.Receiver(messageBus);
 window._extensions_manager_location =
   'extensions/extensions-manager/dist/index.html';
 window._bugsnag_api_key = BUGSNAG_API_KEY;
+window._enable_unfinished_features = ENABLE_UNFINISHED_FEATURES === 'true';
 /* eslint-enable camelcase */
 
 (async () => {
