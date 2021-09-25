@@ -114,7 +114,7 @@
     "build:web": "git submodule update && cd web && rimraf node_modules && yarn setup && yarn bundle:desktop",
     "bundle": "yarn run lint && yarn clean:build && yarn run build:web && webpack --config webpack.prod.js",
     "bundle:arm64": "yarn run lint && yarn clean:build && yarn run build:web:arm64 && webpack --config webpack.prod.js",
-    "build:web:arm64": "git submodule update && yarn --cwd ./web run rimraf node_modules && npm_config_target=14.17.1 npm_config_runtime=node yarn --cwd ./web setup && node scripts/rebuildSass.mjs && yarn --cwd ./web bundle:desktop",
+    "build:web:arm64": "git submodule update && yarn --cwd ./web run rimraf node_modules && npm_config_target=14.17.3 npm_config_runtime=node yarn --cwd ./web setup && npm --prefix ./web rebuild && yarn --cwd ./web bundle:desktop",
     "build:all:arm64": "yarn bundle:arm64 && yarn build:dir:arm64 && yarn build:appimage:arm64 && yarn build:snap:arm64 && yarn build:deb:arm64 && yarn build:write-sums",
     "build:dir:arm64": "node scripts/build.mjs dir-arm64",
     "build:appimage:arm64": "node scripts/build.mjs appimage-arm64",
