@@ -12,6 +12,10 @@ export async function getLatestBuiltFilesList() {
     `standard-notes-${version}-linux-x86_64.AppImage`,
     `standard-notes-${version}-linux-amd64.snap`,
 
+    `standard-notes-${version}-linux-arm64.AppImage`,
+    `standard-notes-${version}-linux-arm64.snap`,
+    // `standard-notes-${version}-linux-arm64.deb`,
+
     `standard-notes-${version}-win.exe`,
     `standard-notes-${version}-win.exe.blockmap`,
 
