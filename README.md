@@ -45,8 +45,6 @@ To determine where to install a dependency:
 
 ## Building
 
-### Amd64
-
 Build for all platforms:
 
 - `yarn build:all`
@@ -57,25 +55,14 @@ or
 - `yarn build mac`
 - `yarn build snap`
 - `yarn build windows`
+- `yarn build appimage:arm64`
+- `yarn build deb:arm64`
 
-### Arm64
+## Building natively on arm64
 
-Building on amd64 machines is only possible with AppImage, Debian and universal "dir" targets.
+Building arm64 releases on amd64 systems is only possible with AppImage, Debian and universal "dir" targets.
 
-`npm_config_target_arch=arm64` needs to be set as an environment variable before building (eg. with `export npm_config_target_arch=arm64`).
-
-The required steps are, mostly analogous to the regular build / run process:
-
-- `yarn setup`
-- `yarn bundle:arm64`
-
-Followed by any or all of the following:
-
-- `yarn build:dir:arm64`
-- `yarn build:appimage:arm64`
-- `yarn build:deb:arm64`
-
-Building snap releases (or natively building the other release types natively on an arm64machine) requires some extra preparation.
+Building arm64 releases natively on arm64 systems requires some additional preparation:
 
 - `export npm_config_target_arch=arm64`
 - `export npm_config_arch=arm64`
@@ -88,12 +75,12 @@ and making sure `$GEM_HOME/bin` is added to `$PATH`.
 
 Snap releases also require a working snapcraft / `snapd` installation.
 
-Building then follows the same steps as above:
+Building can then be done by running:
 
 - `yarn setup`
 - `yarn bundle:arm64`
 
-Then followed by either:
+Followed by either:
 
 - `yarn build:all:arm64`
 
