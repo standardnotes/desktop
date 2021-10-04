@@ -1,4 +1,4 @@
-import { App, IpcMain, shell, Shell } from 'electron';
+import { app, App, IpcMain, shell, Shell } from 'electron';
 import { BackupsManager } from './javascripts/main/backupsManager';
 import { createExtensionsServer } from './javascripts/main/extServer';
 import { MenuManager } from './javascripts/main/menus';
@@ -25,6 +25,7 @@ export class AppState {
   readonly store: Store;
   readonly startUrl = Urls.indexHtml;
   readonly isPrimaryInstance: boolean;
+  deepLinkUrl?: string;
   public willQuitApp = false;
   public lastBackupDate: number | null = null;
   public windowState?: WindowState;
@@ -63,6 +64,7 @@ export function initializeApplication(args: {
   app.allowRendererProcessReuse = true;
 
   const state = new AppState(app);
+  setupDeepLinking();
   registerSingleInstanceHandler(app, state);
   registerAppEventListeners({
     ...args,
@@ -127,6 +129,12 @@ function registerAppEventListeners(args: {
 
     finishApplicationInitialization(args);
   });
+}
+
+async function setupDeepLinking() {
+  if (!app.isDefaultProtocolClient('standardnotes')) {
+    app.setAsDefaultProtocolClient('standardnotes');
+  }
 }
 
 async function finishApplicationInitialization({
