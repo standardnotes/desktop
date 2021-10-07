@@ -1,4 +1,4 @@
-import { app, App, IpcMain, shell, Shell } from 'electron';
+import { App, IpcMain, shell, Shell } from 'electron';
 import { BackupsManager } from './javascripts/main/backupsManager';
 import { createExtensionsServer } from './javascripts/main/extServer';
 import { MenuManager } from './javascripts/main/menus';
@@ -66,7 +66,7 @@ export function initializeApplication(args: {
   app.allowRendererProcessReuse = true;
 
   const state = new AppState(app);
-  setupDeepLinking();
+  setupDeepLinking(app);
   registerSingleInstanceHandler(app, state);
   registerAppEventListeners({
     ...args,
@@ -144,7 +144,7 @@ function registerAppEventListeners(args: {
   });
 }
 
-async function setupDeepLinking() {
+async function setupDeepLinking(app: Electron.App) {
   if (!app.isDefaultProtocolClient(deepLinkScheme)) {
     app.setAsDefaultProtocolClient(deepLinkScheme);
   }
