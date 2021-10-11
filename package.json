@@ -73,6 +73,14 @@
       "node_modules/standard-notes-web/dist/**/*",
       "node_modules/sn-electron-valence/**/*"
     ],
+    "protocols": [
+      {
+        "name": "Standard Notes",
+        "schemes": [
+          "standardnotes"
+        ]
+      }
+    ],
     "mac": {
       "category": "public.app-category.productivity",
       "hardenedRuntime": true,

@@ -20,6 +20,8 @@ import { UpdateState } from './javascripts/main/updateManager';
 import { handleTestMessage } from './javascripts/main/testing';
 import { MessageType } from '../test/TestIpcMessage';
 
+const deepLinkScheme = 'standardnotes';
+
 export class AppState {
   readonly version: string;
   readonly store: Store;
@@ -28,6 +30,7 @@ export class AppState {
   public willQuitApp = false;
   public lastBackupDate: number | null = null;
   public windowState?: WindowState;
+  public deepLinkUrl?: string;
   public readonly updates: UpdateState;
 
   constructor(app: Electron.App) {
@@ -63,6 +66,7 @@ export function initializeApplication(args: {
   app.allowRendererProcessReuse = true;
 
   const state = new AppState(app);
+  setupDeepLinking(app);
   registerSingleInstanceHandler(app, state);
   registerAppEventListeners({
     ...args,
@@ -75,22 +79,28 @@ export function initializeApplication(args: {
   }
 }
 
-function registerSingleInstanceHandler(
-  app: Electron.App,
-  appState: Pick<AppState, 'windowState'>
-) {
-  app.on('second-instance', () => {
-    /* Someone tried to run a second instance, we should focus our window. */
-    const window = appState.windowState?.window;
-    if (window) {
-      if (!window.isVisible()) {
-        window.show();
-      }
-      if (window.isMinimized()) {
-        window.restore();
-      }
-      window.focus();
+function focusWindow(appState: AppState) {
+  const window = appState.windowState?.window;
+
+  if (window) {
+    if (!window.isVisible()) {
+      window.show();
     }
+    if (window.isMinimized()) {
+      window.restore();
+    }
+    window.focus();
+  }
+}
+
+function registerSingleInstanceHandler(app: Electron.App, appState: AppState) {
+  app.on('second-instance', (_event: Event, argv: string[]) => {
+    if (isWindows()) {
+      appState.deepLinkUrl = argv.find((arg) => arg.startsWith(deepLinkScheme));
+    }
+
+    /* Someone tried to run a second instance, we should focus our window. */
+    focusWindow(appState);
   });
 }
 
@@ -118,6 +128,11 @@ function registerAppEventListeners(args: {
     windowState.window.show();
   });
 
+  app.on('open-url', (_event, url) => {
+    state.deepLinkUrl = url;
+    focusWindow(state);
+  });
+
   app.on('ready', () => {
     if (!state.isPrimaryInstance) {
       console.warn('Quiting app and focusing existing instance.');
@@ -127,6 +142,12 @@ function registerAppEventListeners(args: {
 
     finishApplicationInitialization(args);
   });
+}
+
+async function setupDeepLinking(app: Electron.App) {
+  if (!app.isDefaultProtocolClient(deepLinkScheme)) {
+    app.setAsDefaultProtocolClient(deepLinkScheme);
+  }
 }
 
 async function finishApplicationInitialization({
