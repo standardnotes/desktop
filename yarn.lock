@@ -2705,10 +2705,10 @@ electron-updater@^4.3.5:
     lodash.isequal "^4.5.0"
     semver "^7.3.2"
 
-electron@^9.4.0:
-  version "9.4.3"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-9.4.3.tgz"
-  integrity sha512-FQjVH0jdFj9EIxpHk/CK6nKmPawdayZ01N+o0sVHAGK0qcvTVCkBZT/1qbsJaTBPD1yf3PcN2frpwfTDBCn9GA==
+electron@^11.5.0:
+  version "11.5.0"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-11.5.0.tgz#f1650543b9d8f2047d3807755bdb120153ed210f"
+  integrity sha512-WjNDd6lGpxyiNjE3LhnFCAk/D9GIj1rU3GSDealVShhkkkPR3Vh4q8ErXGDl1OAO/faomVa10KoFPUN/pLbNxg==
   dependencies:
     "@electron/get" "^1.0.1"
     "@types/node" "^12.0.12"
