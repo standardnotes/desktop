@@ -10,3 +10,4 @@ test/data/tmp/
 .env
 
 codeqldb
+yarn-error.log

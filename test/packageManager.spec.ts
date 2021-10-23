@@ -1,4 +1,4 @@
-import test from 'ava';
+import { serial as test } from 'ava';
 import { IpcMainEvent } from 'electron';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -11,20 +11,20 @@ import { SyncTask } from '../app/javascripts/main/packageManager';
 import { IpcMessages } from '../app/javascripts/shared/ipcMessages';
 import { createTmpDir } from './testUtils';
 import { AppName } from '../app/javascripts/main/strings';
+import makeFakePaths from './fakePaths';
 
 const tmpDir = createTmpDir(__filename);
+const FakePaths = makeFakePaths(tmpDir.path);
 
 const contentDir = path.join(tmpDir.path, 'Extensions');
 let downloadFileCallCount = 0;
+
 const { initializePackageManager } = proxyquire(
   '../app/javascripts/main/packageManager',
   {
-    electron: {
-      app: {
-        getPath() {
-          return tmpDir.path;
-        },
-      },
+    './paths': {
+      Paths: FakePaths,
+      '@noCallThru': true,
     },
     './networking': {
       /** Download a fake component file */
@@ -118,7 +118,7 @@ test.beforeEach(function () {
   downloadFileCallCount = 0;
 });
 
-test.serial('installs multiple components', async (t) => {
+test('installs multiple components', async (t) => {
   await fakeIpcMain.syncComponents({
     components: modifiers.map((modifier) => fakeComponent({ modifier })),
   });
@@ -162,7 +162,7 @@ test.serial('installs multiple components', async (t) => {
   }
 });
 
-test.serial('uninstalls multiple components', async (t) => {
+test('uninstalls multiple components', async (t) => {
   await fakeIpcMain.syncComponents({
     components: modifiers.map((modifier) =>
       fakeComponent({ deleted: true, modifier })
@@ -176,7 +176,7 @@ test.serial('uninstalls multiple components', async (t) => {
   t.deepEqual(await readJSONFile(path.join(contentDir, 'mapping.json')), {});
 });
 
-test.serial(
+test(
   "doesn't download anything when two install/uninstall tasks are queued",
   async (t) => {
     await Promise.all([
@@ -194,7 +194,7 @@ test.serial(
   }
 );
 
-test.serial(
+test(
   "Relies on download_url's version field to store the version number",
   async (t) => {
     await fakeIpcMain.syncComponents({

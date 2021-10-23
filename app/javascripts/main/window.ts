@@ -44,6 +44,7 @@ export async function createWindowState({
   teardown: () => void;
 }): Promise<WindowState> {
   const window = await createWindow(appState.store);
+  require('@electron/remote/main').enable(window.webContents);
   const services = createWindowServices(window, appState, appLocale);
 
   const shouldOpenUrl = (url: string) =>
@@ -93,9 +94,9 @@ export async function createWindowState({
     'https://dictionaries.standardnotes.org/9.4.4/'
   );
 
-  window.webContents.on('ipc-message', async (_event, message) => {
+  window.webContents.on('ipc-message', async (event, message, data) => {
     if (message === IpcMessages.SigningOut) {
-      clearSensitiveDirectories();
+      clearSensitiveDirectories(data?.restart);
     }
   });
 
@@ -144,7 +145,6 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
     titleBarStyle: isMac() || useSystemMenuBar ? 'hiddenInset' : undefined,
     frame: isMac() ? false : useSystemMenuBar,
     webPreferences: {
-      enableRemoteModule: true,
       spellcheck: true,
       nodeIntegration: isTesting(),
       contextIsolation: !isTesting(),
@@ -171,7 +171,7 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
       window.webContents.session.flushStorageData();
     });
     handleTestMessage(MessageType.SignOut, () =>
-      window.webContents.executeJavaScript('window.bridge.onSignOut()')
+      window.webContents.executeJavaScript('window.bridge.onSignOut(false)')
     );
     window.webContents.once('did-finish-load', () => {
       send(AppMessageType.WindowLoaded);

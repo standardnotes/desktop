@@ -1,4 +1,4 @@
-import anyTest, { TestInterface, ExecutionContext } from 'ava';
+import { serial as anyTest, TestInterface, ExecutionContext } from 'ava';
 import fs from 'fs';
 import path from 'path';
 import proxyquire from 'proxyquire';
@@ -7,6 +7,12 @@ import { createDriver, Driver } from './driver';
 
 const { serializeStoreData } = proxyquire('../app/javascripts/main/store', {
   './backupsManager': {
+    '@noCallThru': true,
+  },
+  '@electron': {
+    '@noCallThru': true,
+  },
+  '@electron/remote': {
     '@noCallThru': true,
   },
 });
@@ -102,7 +108,7 @@ test('serializes string sets to an array', (t) => {
   );
 });
 
-test.only('deletes local storage data after signing out', async (t) => {
+test('deletes local storage data after signing out', async (t) => {
   function readLocalStorageContents() {
     return fs.promises.readFile(
       path.join(
@@ -119,6 +125,7 @@ test.only('deletes local storage data after signing out', async (t) => {
   await t.context.windowLoaded;
   await t.context.storage.setLocalStorageValue('foo', 'bar');
   let localStorageContents = await readLocalStorageContents();
+
   t.is(localStorageContents.includes('foo'), true);
   t.is(localStorageContents.includes('bar'), true);
 

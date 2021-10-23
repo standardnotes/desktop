@@ -17,7 +17,7 @@ function log(...message: any) {
   console.log('extServer:', ...message);
 }
 
-function normalizeFilePath(requestUrl: string, host: string): string {
+export function normalizeFilePath(requestUrl: string, host: string): string {
   if (!requestUrl.startsWith('/Extensions')) {
     throw new Error(
       `URL '${requestUrl}' falls outside of the Extensions domain.`
@@ -54,7 +54,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     const stream = fs.createReadStream(filePath);
     stream.on('error', (error: Error) => onRequestError(error, res));
     stream.pipe(res);
-  } catch (error) {
+  } catch (error: any) {
     onRequestError(error, res);
   }
 }

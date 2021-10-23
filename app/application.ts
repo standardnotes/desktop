@@ -63,7 +63,6 @@ export function initializeApplication(args: {
   const { app } = args;
 
   app.name = AppName;
-  app.allowRendererProcessReuse = true;
 
   const state = new AppState(app);
   setupDeepLinking(app);

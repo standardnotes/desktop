@@ -129,8 +129,8 @@ async function createWebBridge(mainThread: any): Promise<Bridge> {
     onInitialDataLoad() {
       mainThread.sendIpcMessage(IpcMessages.InitialDataLoaded, {});
     },
-    onSignOut() {
-      mainThread.sendIpcMessage(IpcMessages.SigningOut, {});
+    onSignOut(restart = true) {
+      mainThread.sendIpcMessage(IpcMessages.SigningOut, { restart });
     },
     async downloadBackup() {
       const desktopManager = window.desktopManager;

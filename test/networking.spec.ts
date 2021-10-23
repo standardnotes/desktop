@@ -1,4 +1,4 @@
-import anyTest, { TestInterface } from 'ava';
+import { serial as anyTest, TestInterface } from 'ava';
 import { promises as fs } from 'fs';
 import http from 'http';
 import { AddressInfo } from 'net';
@@ -32,7 +32,7 @@ test.before(
         server.listen(0, '127.0.0.1', () => {
           const { address, port } = server.address() as AddressInfo;
           serverAddress = `http://${address}:${port}`;
-          resolve();
+          resolve(null);
         });
       }),
     ])

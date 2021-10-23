@@ -1,4 +1,4 @@
-import test from 'ava';
+import { serial as test } from 'ava';
 import { promises as fs } from 'fs';
 import path from 'path';
 import {
@@ -24,7 +24,7 @@ test.afterEach(async () => {
   await deleteDir(tmpPath);
 });
 
-test.serial(
+test(
   'extracts a zip and unnests the folders by one level',
   async (t) => {
     await extractNestedZip(
@@ -38,7 +38,7 @@ test.serial(
   }
 );
 
-test.serial(
+test(
   'creates a directory even when parent directories are non-existent',
   async (t) => {
     await ensureDirectoryExists(path.join(root, 'tmp2', 'tmp3'));
@@ -47,13 +47,13 @@ test.serial(
   }
 );
 
-test.serial('deletes a deeply-nesting directory', async (t) => {
+test('deletes a deeply-nesting directory', async (t) => {
   await ensureDirectoryExists(path.join(root, 'tmp2', 'tmp3'));
   await deleteDir(root);
   try {
     await fs.readdir(path.join(tmpPath, 'tmp1'));
     t.fail('Should not have been able to read');
-  } catch (error) {
+  } catch (error: any) {
     if (error.code === FileDoesNotExist) {
       t.pass();
     } else {
@@ -62,7 +62,7 @@ test.serial('deletes a deeply-nesting directory', async (t) => {
   }
 });
 
-test.serial('moves the contents of one directory to the other', async (t) => {
+test('moves the contents of one directory to the other', async (t) => {
   const fileNames = [
     '1.txt',
     '2.txt',
@@ -93,7 +93,7 @@ test.serial('moves the contents of one directory to the other', async (t) => {
   );
 });
 
-test.serial(
+test(
   'moves the contents of one directory to a child directory',
   async (t) => {
     const srcFileNames = [
@@ -138,7 +138,7 @@ test.serial(
   }
 );
 
-test.serial(
+test(
   'serializes and deserializes an object to the same values',
   async (t) => {
     const data = {

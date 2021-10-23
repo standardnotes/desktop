@@ -60,7 +60,7 @@ export async function ensureDirectoryExists(dirPath: string): Promise<void> {
           `name already exists: ${dirPath}`
       );
     }
-  } catch (error) {
+  } catch (error: any) {
     if (error.code === FileDoesNotExist) {
       /**
        * No directory here. Make sure there is a *parent* directory, and then
@@ -71,7 +71,7 @@ export async function ensureDirectoryExists(dirPath: string): Promise<void> {
       /** Now that its parent(s) exist, create the directory */
       try {
         await fs.promises.mkdir(dirPath);
-      } catch (error) {
+      } catch (error: any) {
         if (error.code === FileAlreadyExists) {
           /**
            * A concurrent process must have created the directory already.
@@ -95,7 +95,7 @@ export async function ensureDirectoryExists(dirPath: string): Promise<void> {
 export async function deleteDir(dirPath: string): Promise<void> {
   try {
     await deleteDirContents(dirPath);
-  } catch (error) {
+  } catch (error: any) {
     if (error.code === FileDoesNotExist) {
       /** Directory has already been deleted. */
       return;
@@ -202,7 +202,7 @@ export async function extractNestedZip(
             );
             try {
               await ensureDirectoryExists(path.dirname(filepath));
-            } catch (error) {
+            } catch (error: any) {
               return tryReject(error);
             }
             const writeStream = fs
@@ -235,7 +235,7 @@ export async function moveFiles(
 async function moveFile(source: PathLike, destination: PathLike) {
   try {
     await fs.promises.rename(source, destination);
-  } catch (error) {
+  } catch (error: any) {
     if (error.code === CrossDeviceLink) {
       /** Fall back to copying and then deleting. */
       await fs.promises.copyFile(source, destination);
@@ -252,7 +252,7 @@ export async function deleteFile(filePath: PathLike): Promise<void> {
     try {
       await fs.promises.unlink(filePath);
       break;
-    } catch (error) {
+    } catch (error: any) {
       if (error.code === OperationNotPermitted || error.code === DeviceIsBusy) {
         await new Promise((resolve) => setTimeout(resolve, 300));
         continue;

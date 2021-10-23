@@ -36,6 +36,7 @@ export enum MessageType {
   BackupsLocation,
   PerformBackup,
   ChangeBackupsLocation,
+  CopyDecryptScript,
   MenuReloaded,
   UpdateState,
   CheckForUpdate,

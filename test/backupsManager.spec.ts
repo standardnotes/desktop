@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import anyTest, { TestInterface } from 'ava';
+import { serial as anyTest, TestInterface } from 'ava';
 import { Driver, createDriver } from './driver';
 
 const test = anyTest as TestInterface<Driver>;
@@ -9,6 +9,9 @@ const BackupsDirectoryName = 'Standard Notes Backups';
 
 test.beforeEach(async (t) => {
   t.context = await createDriver();
+  const backupsLocation = await t.context.backups.location();
+  await fs.rmdir(backupsLocation, { recursive: true });
+  await t.context.backups.copyDecryptScript(backupsLocation);
 });
 test.afterEach.always(async (t) => {
   await t.context.stop();
@@ -40,7 +43,7 @@ test('saves the decrypt script to the backups folder', async (t) => {
   t.true(files.includes('decrypt.html'));
 });
 
-test.serial('performs a backup', async (t) => {
+test('performs a backup', async (t) => {
   t.timeout(timeoutDuration);
   await wait();
   await t.context.backups.perform();
@@ -49,7 +52,7 @@ test.serial('performs a backup', async (t) => {
   t.true(files.length >= 1);
 });
 
-test.serial('changes backups folder location', async (t) => {
+test('changes backups folder location', async (t) => {
   t.timeout(timeoutDuration);
   await wait();
   await t.context.backups.perform();
@@ -62,7 +65,7 @@ test.serial('changes backups folder location', async (t) => {
   t.deepEqual(fileNames, await fs.readdir(newLocation));
 
   /** Assert that the setting was saved */
-  const data = await t.context.store.dataOnDisk();
+  const data = await t.context.storage.dataOnDisk();
   t.is(data.backupsLocation, newLocation);
 
   /** Perform backup and make sure there is one more file in the directory */
@@ -71,7 +74,7 @@ test.serial('changes backups folder location', async (t) => {
   t.deepEqual(newFileNames.length, fileNames.length + 1);
 });
 
-test.serial('changes backups location to a child directory', async (t) => {
+test('changes backups location to a child directory', async (t) => {
   t.timeout(timeoutDuration);
   await wait();
   await t.context.backups.perform();
@@ -86,7 +89,7 @@ test.serial('changes backups location to a child directory', async (t) => {
   );
 });
 
-test.serial(
+test(
   'changing backups location to the same directory should not do anything',
   async (t) => {
     t.timeout(timeoutDuration);

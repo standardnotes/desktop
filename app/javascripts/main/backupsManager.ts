@@ -105,10 +105,7 @@ export function createBackupsManager(
       .map((fileName) => path.join(previousLocation, fileName));
 
     await moveFiles(backupFiles, newLocation);
-    await fs.copyFile(
-      Paths.decryptScript,
-      path.join(newLocation, path.basename(Paths.decryptScript))
-    );
+    await copyDecryptScript(newLocation);
 
     previousLocationFiles = await fs.readdir(previousLocation);
     if (
@@ -187,6 +184,7 @@ export function createBackupsManager(
     handleTestMessage(MessageType.ToggleBackupsEnabled, toggleBackupsStatus);
     handleTestMessage(MessageType.BackupsLocation, () => backupsLocation);
     handleTestMessage(MessageType.PerformBackup, performBackup);
+    handleTestMessage(MessageType.CopyDecryptScript, copyDecryptScript);
     handleTestMessage(MessageType.ChangeBackupsLocation, setBackupsLocation);
   }
 
@@ -256,7 +254,7 @@ async function determineLastBackupDate(
       return null;
     }
     return backupDate;
-  } catch (error) {
+  } catch (error: any) {
     if (error.code !== FileDoesNotExist) {
       console.error(error);
     }

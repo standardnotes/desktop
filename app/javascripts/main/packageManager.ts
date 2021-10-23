@@ -65,7 +65,7 @@ class MappingFileHandler {
 
     try {
       mapping = await readJSONFile<MappingFile>(Paths.extensionsMappingJson);
-    } catch (error) {
+    } catch (error: any) {
       /**
        * Mapping file might be absent (first start, corrupted data)
        */
@@ -280,7 +280,7 @@ async function syncComponents(
           if (!component.content.autoupdateDisabled) {
             await checkForUpdate(webContents, mapping, component);
           }
-        } catch (error) {
+        } catch (error: any) {
           if (error.code === FileDoesNotExist) {
             /** We have a component but no content. Install the component */
             await installComponent(webContents, mapping, component, version);
@@ -361,7 +361,7 @@ async function installComponent(
     mapping.set(component.uuid, paths.relativePath, version);
 
     sendInstalledMessage(component);
-  } catch (error) {
+  } catch (error: any) {
     log(`Error while installing ${component.content.name}`, error.message);
 
     /**
