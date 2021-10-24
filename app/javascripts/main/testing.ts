@@ -48,7 +48,7 @@ export function setupTesting(): void {
         id: message.id,
         resolve: returnValue,
       });
-    } catch (error) {
+    } catch (error: any) {
       process.send!({
         id: message.id,
         reject: error.toString(),

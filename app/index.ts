@@ -11,6 +11,8 @@ import { CommandLineArgs } from './javascripts/shared/CommandLineArgs';
 import { Store, StoreKeys } from './javascripts/main/store';
 import { Paths } from './javascripts/main/paths';
 
+require('@electron/remote/main').initialize();
+
 /** Allow a custom userData path to be used. */
 const userDataPathIndex = process.argv.indexOf(CommandLineArgs.UserDataPath);
 if (userDataPathIndex > 0) {
@@ -87,7 +89,7 @@ function migrateSnapStorage() {
         fs.moveSync(fullFilePath, path.join(dest, fileName), {
           overwrite: false,
         });
-      } catch (error) {
+      } catch (error: any) {
         console.error(
           `Migration: error occured while moving ${fullFilePath} to ${dest}:`,
           error?.message ?? error
@@ -116,7 +118,7 @@ function migrateSnapStorage() {
       );
       try {
         fs.copySync(store.data.backupsLocation, newLocation);
-      } catch (error) {
+      } catch (error: any) {
         console.error(
           `Migration: error occured while moving ${store.data.backupsLocation} to ${Paths.documentsDir}:`,
           error?.message ?? error

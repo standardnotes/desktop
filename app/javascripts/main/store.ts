@@ -1,4 +1,3 @@
-import { app, remote } from 'electron';
 import fs from 'fs';
 import path from 'path';
 import { MessageType } from '../../../test/TestIpcMessage';
@@ -13,6 +12,11 @@ import {
 import { FileDoesNotExist } from './fileUtils';
 import { BackupsDirectoryName } from './backupsManager';
 import { handleTestMessage } from './testing';
+
+const app =
+  process.type === 'browser'
+    ? require('electron').app
+    : require('@electron/remote').app;
 
 function logError(...message: any) {
   console.error('store:', ...message);
@@ -74,9 +78,10 @@ function createSanitizedStoreData(data: any = {}): StoreData {
       data[StoreKeys.BackupsLocation]
     ),
     [StoreKeys.ZoomFactor]: sanitizeZoomFactor(data[StoreKeys.ZoomFactor]),
-    [StoreKeys.SelectedSpellCheckerLanguageCodes]: sanitizeSpellCheckerLanguageCodes(
-      data[StoreKeys.SelectedSpellCheckerLanguageCodes]
-    ),
+    [StoreKeys.SelectedSpellCheckerLanguageCodes]:
+      sanitizeSpellCheckerLanguageCodes(
+        data[StoreKeys.SelectedSpellCheckerLanguageCodes]
+      ),
   };
 }
 
@@ -90,9 +95,7 @@ function sanitizeZoomFactor(factor?: any): number {
 
 function sanitizeBackupsLocation(location?: unknown): string {
   const defaultPath = path.join(
-    isDev()
-      ? (app || remote.app).getPath('documents')
-      : (app || remote.app).getPath('home'),
+    isDev() ? app.getPath('documents') : app.getPath('home'),
     BackupsDirectoryName
   );
   if (typeof location !== 'string') {
@@ -142,7 +145,7 @@ function parseDataFile(filePath: string) {
     const fileData = fs.readFileSync(filePath);
     const userData = JSON.parse(fileData.toString());
     return createSanitizedStoreData(userData);
-  } catch (error) {
+  } catch (error: any) {
     if (error.code !== FileDoesNotExist) {
       logError(error);
     }
@@ -163,7 +166,7 @@ export class Store {
        * app data directory path.
        * TODO(baptiste): stop using Store in the renderer process.
        */
-      const userDataPath = (app || remote.app).getPath('userData');
+      const userDataPath = app.getPath('userData');
       this.instance = new Store(userDataPath);
     }
     return this.instance;

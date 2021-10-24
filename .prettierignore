@@ -2,7 +2,6 @@ node_modules/
 dist/
 app/dist/
 app/vendor/
-app/extensions/
 test/data/tmp/
 web/
 .github

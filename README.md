@@ -29,7 +29,7 @@ Before making a pull request, make sure to check the output of the following com
 
 ```bash
 yarn lint
-yarn test # make sure to start `yarn dev` before running the tests
+yarn test # Make sure to start `yarn dev` before running the tests, and quit any running Standard Notes applications so they don't conflict.
 ```
 
 Pull requests should target the `develop` branch.

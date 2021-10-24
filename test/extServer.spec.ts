@@ -1,4 +1,4 @@
-import anyTest, { TestInterface } from 'ava';
+import { serial as anyTest, TestInterface } from 'ava';
 import { promises as fs } from 'fs';
 import http from 'http';
 import { AddressInfo } from 'net';
@@ -7,6 +7,7 @@ import proxyquire from 'proxyquire';
 import { ensureDirectoryExists } from '../app/javascripts/main/fileUtils';
 import { initializeStrings } from '../app/javascripts/main/strings';
 import { createTmpDir } from './testUtils';
+import makeFakePaths from './fakePaths';
 
 const test = anyTest as TestInterface<{
   server: http.Server;
@@ -14,12 +15,17 @@ const test = anyTest as TestInterface<{
 }>;
 
 const tmpDir = createTmpDir(__filename);
+const FakePaths = makeFakePaths(tmpDir.path);
 
 let server: http.Server;
 
 const { createExtensionsServer, normalizeFilePath } = proxyquire(
   '../app/javascripts/main/extServer',
   {
+    './paths': {
+      Paths: FakePaths,
+      '@noCallThru': true,
+    },
     electron: {
       app: {
         getPath() {
@@ -43,41 +49,37 @@ initializeStrings('en');
 const log = console.log;
 const error = console.error;
 
-test.before(
-  (t): Promise<any> => {
-    /** Prevent the extensions server from outputting anything */
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    console.log = () => {};
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    console.error = () => {};
+test.before((t): Promise<any> => {
+  /** Prevent the extensions server from outputting anything */
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  console.log = () => {};
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  console.error = () => {};
 
-    return Promise.all([
-      ensureDirectoryExists(extensionsDir),
-      new Promise((resolve) => {
-        createExtensionsServer(resolve);
-        t.context.server = server;
-        server.once('listening', () => {
-          const { address, port } = server.address() as AddressInfo;
-          t.context.host = `http://${address}:${port}/`;
-          resolve();
-        });
-      }),
-    ]);
-  }
-);
+  return Promise.all([
+    ensureDirectoryExists(extensionsDir),
+    new Promise((resolve) => {
+      createExtensionsServer(resolve);
+      t.context.server = server;
+      server.once('listening', () => {
+        const { address, port } = server.address() as AddressInfo;
+        t.context.host = `http://${address}:${port}/`;
+        resolve(null);
+      });
+    }),
+  ]);
+});
 
-test.after(
-  (t): Promise<any> => {
-    /** Restore the console's functionality */
-    console.log = log;
-    console.error = error;
+test.after((t): Promise<any> => {
+  /** Restore the console's functionality */
+  console.log = log;
+  console.error = error;
 
-    return Promise.all([
-      tmpDir.clean(),
-      new Promise((resolve) => t.context.server.close(resolve)),
-    ]);
-  }
-);
+  return Promise.all([
+    tmpDir.clean(),
+    new Promise((resolve) => t.context.server.close(resolve)),
+  ]);
+});
 
 test('serves the files in the Extensions directory over HTTP', (t) => {
   const data = {

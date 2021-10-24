@@ -7,7 +7,6 @@ import { autoUpdatingAvailable } from './constants';
 import { MessageType } from '../../../test/TestIpcMessage';
 import { AppState } from '../../application';
 import { BackupsManager } from './backupsManager';
-import { isMac } from './platforms';
 import { StoreKeys } from './store';
 import { updates as str } from './strings';
 import { handleTestMessage } from './testing';

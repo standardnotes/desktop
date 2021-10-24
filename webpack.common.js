@@ -72,7 +72,7 @@ module.exports = function ({
     optimization: {
       minimizer: [
         new TerserPlugin({
-          exclude: ['extensions', 'vendor', 'web', 'node_modules'],
+          exclude: ['vendor', 'web', 'node_modules'],
         }),
       ],
     },
@@ -83,10 +83,6 @@ module.exports = function ({
       }),
       new CopyPlugin({
         patterns: [
-          {
-            from: 'app/extensions',
-            to: 'extensions',
-          },
           {
             from: 'app/vendor',
             to: 'vendor',

@@ -144,6 +144,9 @@ class Driver {
     toggleEnabled: (): Promise<boolean> =>
       this.send(MessageType.ToggleBackupsEnabled),
     location: (): Promise<string> => this.send(MessageType.BackupsLocation),
+    copyDecryptScript: async (location: string) => {
+      await this.send(MessageType.CopyDecryptScript, location);
+    },
     changeLocation: (location: string) =>
       this.send(MessageType.ChangeBackupsLocation, location),
     save: (data: any) => this.send(MessageType.DataArchive, data),
@@ -182,7 +185,7 @@ class Driver {
       try {
         await deleteDir(this.userDataPath);
         return;
-      } catch (error) {
+      } catch (error: any) {
         if (error.code === 'EPERM' || error.code === 'EBUSY') {
           await new Promise((resolve) => setTimeout(resolve, 300));
         } else {

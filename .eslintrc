@@ -1,4 +1,8 @@
 {
+  "env": {
+    "node": true,
+    "commonjs": true
+  },
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
@@ -10,7 +14,13 @@
     "project": "./tsconfig.json",
     "extraFileExtensions": [".mjs"]
   },
-  "ignorePatterns": ["test", "scripts"],
+  "ignorePatterns": [
+    "test",
+    "scripts",
+    ".eslintrc",
+    "tsconfig.json",
+    "node_modules"
+  ],
   "rules": {
     /** Style */
     "semi": 1,
@@ -19,6 +29,8 @@
     /** Preferences */
     "no-console": "off",
     "accessor-pairs": 0,
+    "no-nonoctal-decimal-escape": 0,
+    "no-unsafe-optional-chaining": 0,
     "@typescript-eslint/explicit-function-return-type": 0,
     "@typescript-eslint/no-use-before-define": ["error", "nofunc"],
     "@typescript-eslint/no-non-null-assertion": 0,

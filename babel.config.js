@@ -13,7 +13,6 @@ module.exports = function (api) {
   ];
 
   const ignore = [
-    './app/extensions',
     './app/vendor',
     './app/compiled',
     './app/assets',

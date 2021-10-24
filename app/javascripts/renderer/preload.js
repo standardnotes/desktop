@@ -5,9 +5,12 @@ const {
   FrameMessageBus,
   Validation,
 } = require('sn-electron-valence/Transmitter');
-const { ipcRenderer, remote } = require('electron');
+const { ipcRenderer } = require('electron');
 const path = require('path');
 const rendererPath = path.join('file://', __dirname, '/renderer.js');
+
+const remote = require('@electron/remote');
+const app = require('@electron/remote').app;
 
 const { PropertyType } = Validation;
 const messageBus = new FrameMessageBus();
@@ -48,7 +51,7 @@ function loadTransmitter() {
     useNativeKeychain: Store.get(StoreKeys.UseNativeKeychain) ?? true,
     rendererPath,
     isMacOS: process.platform === 'darwin',
-    appVersion: remote.app.getVersion(),
+    appVersion: app.getVersion(),
     useSystemMenuBar: Store.get(StoreKeys.UseSystemMenuBar),
 
     /**
@@ -89,6 +92,7 @@ function loadTransmitter() {
 
 function listenForIpcEvents() {
   const sendMessage = (message, payload = {}) => {
+    // eslint-disable-next-line no-undef
     window.postMessage(
       JSON.stringify({ message, data: payload }),
       rendererPath

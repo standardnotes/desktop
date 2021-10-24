@@ -74,11 +74,11 @@ export function createTrayManager(
 
       updateContextMenu = function updateContextMenu() {
         if (window.isVisible()) {
-          trayContextMenu.getMenuItemById(SHOW_WINDOW_ID).visible = false;
-          trayContextMenu.getMenuItemById(HIDE_WINDOW_ID).visible = true;
+          trayContextMenu.getMenuItemById(SHOW_WINDOW_ID)!.visible = false;
+          trayContextMenu.getMenuItemById(HIDE_WINDOW_ID)!.visible = true;
         } else {
-          trayContextMenu.getMenuItemById(SHOW_WINDOW_ID).visible = true;
-          trayContextMenu.getMenuItemById(HIDE_WINDOW_ID).visible = false;
+          trayContextMenu.getMenuItemById(SHOW_WINDOW_ID)!.visible = true;
+          trayContextMenu.getMenuItemById(HIDE_WINDOW_ID)!.visible = false;
         }
 
         tray!.setContextMenu(trayContextMenu);

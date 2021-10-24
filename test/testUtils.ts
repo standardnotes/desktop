@@ -4,9 +4,7 @@ import {
   ensureDirectoryExists,
 } from '../app/javascripts/main/fileUtils';
 
-export function createTmpDir(
-  name: string
-): {
+export function createTmpDir(name: string): {
   path: string;
   make(): Promise<string>;
   clean(): Promise<void>;

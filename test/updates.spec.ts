@@ -1,4 +1,4 @@
-import anyTest, { TestInterface } from 'ava';
+import { serial as anyTest, TestInterface } from 'ava';
 import { createDriver, Driver } from './driver';
 
 const test = anyTest as TestInterface<Driver>;

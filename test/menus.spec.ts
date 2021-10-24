@@ -1,4 +1,4 @@
-import anyTest, { TestInterface } from 'ava';
+import { serial as anyTest, TestInterface } from 'ava';
 import { MenuItem } from 'electron';
 import { AppName } from '../app/javascripts/main/strings';
 import { createDriver, Driver } from './driver';
