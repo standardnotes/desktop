@@ -6,7 +6,7 @@
     /** Process & infer types from .js files. */
     "types": ["node"],
     "allowJs": true,
-    "noEmit": true,
+    "noEmit": false,
     "sourceMap": true,
     "skipLibCheck": true,
     /** Enable strictest settings like strictNullChecks & noImplicitAny. */
@@ -20,7 +20,7 @@
     }
   },
   "include": ["app/**/*"],
-  "exclude": ["app/renderer/preload.js", "node_modules"],
+  "exclude": ["app/renderer/preload.js", "node_modules", "app/dist"],
   "files": [
     "app/index.ts",
     "app/javascripts/renderer/renderer.ts",
