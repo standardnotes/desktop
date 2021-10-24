@@ -46,6 +46,7 @@
     "@babel/preset-env": "^7.15.8",
     "@commitlint/config-conventional": "^13.2.0",
     "@electron/remote": "^2.0.1",
+    "@standardnotes/electron-clear-data": "^1.1.1",
     "@types/lodash": "^4.14.176",
     "@types/mime-types": "^2.1.1",
     "@types/node": "^16.11.4",
@@ -61,7 +62,6 @@
     "dotenv": "^10.0.0",
     "electron": "^15.3.0",
     "electron-builder": "22.13.1",
-    "electron-clear-data": "github:standardnotes/electron-clear-data#main",
     "electron-notarize": "^1.1.1",
     "eslint": "^8.1.0",
     "eslint-config-prettier": "^8.3.0",
@@ -139,9 +139,7 @@
     }
   },
   "husky": {
-    "hooks": {
-
-    }
+    "hooks": {}
   },
   "ava": {
     "concurrency": 3,

@@ -18,7 +18,7 @@ import { checkForUpdate, setupUpdates } from './updateManager';
 import { isTesting, lowercaseDriveLetter } from './utils';
 import { initializeZoomManager } from './zoomManager';
 import { Paths } from './paths';
-import { clearSensitiveDirectories } from 'electron-clear-data';
+import { clearSensitiveDirectories } from '@standardnotes/electron-clear-data';
 
 const WINDOW_DEFAULT_WIDTH = 1100;
 const WINDOW_DEFAULT_HEIGHT = 800;
