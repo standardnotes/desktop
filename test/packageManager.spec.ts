@@ -176,44 +176,38 @@ test('uninstalls multiple components', async (t) => {
   t.deepEqual(await readJSONFile(path.join(contentDir, 'mapping.json')), {});
 });
 
-test(
-  "doesn't download anything when two install/uninstall tasks are queued",
-  async (t) => {
-    await Promise.all([
-      fakeIpcMain.syncComponents({
-        components: [fakeComponent({ deleted: false })],
-      }),
-      fakeIpcMain.syncComponents({
-        components: [fakeComponent({ deleted: false })],
-      }),
-      fakeIpcMain.syncComponents({
-        components: [fakeComponent({ deleted: true })],
-      }),
-    ]);
-    t.is(downloadFileCallCount, 1);
-  }
-);
+test("doesn't download anything when two install/uninstall tasks are queued", async (t) => {
+  await Promise.all([
+    fakeIpcMain.syncComponents({
+      components: [fakeComponent({ deleted: false })],
+    }),
+    fakeIpcMain.syncComponents({
+      components: [fakeComponent({ deleted: false })],
+    }),
+    fakeIpcMain.syncComponents({
+      components: [fakeComponent({ deleted: true })],
+    }),
+  ]);
+  t.is(downloadFileCallCount, 1);
+});
 
-test(
-  "Relies on download_url's version field to store the version number",
-  async (t) => {
-    await fakeIpcMain.syncComponents({
-      components: [fakeComponent()],
-    });
-    await new Promise((resolve) => setTimeout(resolve, 200));
+test("Relies on download_url's version field to store the version number", async (t) => {
+  await fakeIpcMain.syncComponents({
+    components: [fakeComponent()],
+  });
+  await new Promise((resolve) => setTimeout(resolve, 200));
 
-    const mappingFileVersion = JSON.parse(
-      await fs.readFile(path.join(contentDir, 'mapping.json'), 'utf8')
-    )[uuid].version;
+  const mappingFileVersion = JSON.parse(
+    await fs.readFile(path.join(contentDir, 'mapping.json'), 'utf8')
+  )[uuid].version;
 
-    const packageJsonVersion = JSON.parse(
-      await fs.readFile(
-        path.join(contentDir, identifier, 'package.json'),
-        'utf-8'
-      )
-    ).version;
+  const packageJsonVersion = JSON.parse(
+    await fs.readFile(
+      path.join(contentDir, identifier, 'package.json'),
+      'utf-8'
+    )
+  ).version;
 
-    t.not(mappingFileVersion, packageJsonVersion);
-    t.is(mappingFileVersion, version);
-  }
-);
+  t.not(mappingFileVersion, packageJsonVersion);
+  t.is(mappingFileVersion, version);
+});

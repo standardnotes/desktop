@@ -89,21 +89,18 @@ test('changes backups location to a child directory', async (t) => {
   );
 });
 
-test(
-  'changing backups location to the same directory should not do anything',
-  async (t) => {
-    t.timeout(timeoutDuration);
-    await wait();
-    await t.context.backups.perform();
-    await t.context.backups.perform();
-    const currentLocation = await t.context.backups.location();
-    let totalFiles = (await fs.readdir(currentLocation)).length;
-    t.is(totalFiles, 3); /** 2 + decrypt script */
-    await t.context.backups.changeLocation(currentLocation);
-    totalFiles = (await fs.readdir(currentLocation)).length;
-    t.is(totalFiles, 3);
-  }
-);
+test('changing backups location to the same directory should not do anything', async (t) => {
+  t.timeout(timeoutDuration);
+  await wait();
+  await t.context.backups.perform();
+  await t.context.backups.perform();
+  const currentLocation = await t.context.backups.location();
+  let totalFiles = (await fs.readdir(currentLocation)).length;
+  t.is(totalFiles, 3); /** 2 + decrypt script */
+  await t.context.backups.changeLocation(currentLocation);
+  totalFiles = (await fs.readdir(currentLocation)).length;
+  t.is(totalFiles, 3);
+});
 
 test('backups are enabled by default', async (t) => {
   t.is(await t.context.backups.enabled(), true);
