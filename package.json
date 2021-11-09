@@ -1,7 +1,7 @@
 {
   "name": "standard-notes",
   "main": "./app/dist/index.js",
-  "version": "3.8.22",
+  "version": "3.9.0",
   "repository": {
     "type": "git",
     "url": "git://github.com/standardnotes/desktop"
@@ -30,7 +30,8 @@
     "release:draft": "node scripts/create-draft-release.mjs",
     "setup": "yarn && yarn --cwd ./app && git submodule update --init && yarn --cwd ./web",
     "start": "electron . --enable-logging --icon _icon/icon.png",
-    "test": "rimraf test/data/tmp && ava"
+    "test": "rimraf test/data/tmp && ava",
+    "update-web": "cd web && git checkout main && git pull && cd .."
   },
   "dependencies": {
     "compare-versions": "^3.6.0",
@@ -60,7 +61,7 @@
     "commitlint": "^13.2.1",
     "copy-webpack-plugin": "^9.0.1",
     "dotenv": "^10.0.0",
-    "electron": "^15.3.0",
+    "electron": "^15.3.1",
     "electron-builder": "22.13.1",
     "electron-notarize": "^1.1.1",
     "eslint": "^8.1.0",
