@@ -37,7 +37,6 @@ interface Component {
       identifier: string;
       version: string;
       download_url: string;
-      latest_url?: string;
     };
   };
 }
@@ -293,6 +292,25 @@ async function syncComponents(
   );
 }
 
+async function checkForUpdate(
+  webContents: Electron.WebContents,
+  mapping: MappingFileHandler,
+  component: Component
+) {
+  const installedVersion = await mapping.getInstalledVersionForComponent(component);
+  const latestVersion = component.content!.package_info.version;
+  log(
+    `Checking for update for ${component.content?.name}\n` +
+      `Latest: ${latestVersion} | Installed: ${installedVersion}`
+  );
+  if (compareVersions(latestVersion, installedVersion) === 1) {
+    /** Latest version is greater than installed version */
+    log('Downloading new version', component.content!.package_info.download_url);
+    await installComponent(webContents, mapping, component, latestVersion);
+  }
+}
+
+
 async function installComponent(
   webContents: Electron.WebContents,
   mapping: MappingFileHandler,
@@ -403,40 +421,4 @@ async function uninstallComponent(mapping: MappingFileHandler, uuid: string) {
   }
   await deleteDir(path.join(Paths.userDataDir, componentMapping.location));
   mapping.remove(uuid);
-}
-
-interface Package {
-  version: string;
-  // eslint-disable-next-line camelcase
-  download_url: string;
-}
-
-async function checkForUpdate(
-  webContents: Electron.WebContents,
-  mapping: MappingFileHandler,
-  component: Component
-) {
-  const latestURL = component.content!.package_info.latest_url;
-  if (!latestURL) {
-    console.warn(
-      `No latest url, skipping update for ${component.content?.name}`
-    );
-    return;
-  }
-
-  const [payload, installedVersion] = await Promise.all([
-    getJSON<Package>(latestURL),
-    mapping.getInstalledVersionForComponent(component),
-  ]);
-  log(
-    `Checking for update for ${component.content?.name}\n` +
-      `Latest: ${payload.version} | Installed: ${installedVersion}`
-  );
-  if (compareVersions(payload.version, installedVersion) === 1) {
-    /** Latest version is greater than installed version */
-    log('Downloading new version', payload.download_url);
-    component.content!.package_info.download_url = payload.download_url;
-    component.content!.package_info.version = payload.version;
-    await installComponent(webContents, mapping, component, payload.version);
-  }
 }
