@@ -297,7 +297,9 @@ async function checkForUpdate(
   mapping: MappingFileHandler,
   component: Component
 ) {
-  const installedVersion = await mapping.getInstalledVersionForComponent(component);
+  const installedVersion = await mapping.getInstalledVersionForComponent(
+    component
+  );
   const latestVersion = component.content!.package_info.version;
   log(
     `Checking for update for ${component.content?.name}\n` +
@@ -305,11 +307,13 @@ async function checkForUpdate(
   );
   if (compareVersions(latestVersion, installedVersion) === 1) {
     /** Latest version is greater than installed version */
-    log('Downloading new version', component.content!.package_info.download_url);
+    log(
+      'Downloading new version',
+      component.content!.package_info.download_url
+    );
     await installComponent(webContents, mapping, component, latestVersion);
   }
 }
-
 
 async function installComponent(
   webContents: Electron.WebContents,
