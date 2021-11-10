@@ -32,7 +32,7 @@ function exec(command) {
 async function getBlockMapInfo(fileName) {
   return JSON.parse(
     await exec(
-      './node_modules/app-builder-bin/mac/app-builder blockmap' +
+      './node_modules/app-builder-bin/mac/app-builder_amd64 blockmap' +
         ` -i ${fileName}` +
         ` -o ${os.tmpdir()}/a.zip`
     )
@@ -44,7 +44,7 @@ async function getBlockMapInfo(fileName) {
     const { version } = JSON.parse(
       await fs.promises.readFile('app/package.json')
     );
-    const zipName = `standard-notes-${version}-mac.zip`;
+    const zipName = `standard-notes-${version}-mac-x64.zip`;
     const zipPath = `dist/${zipName}`;
     console.log(`Removing ${zipPath}`);
     await fs.promises.unlink(zipPath);
@@ -61,7 +61,7 @@ async function getBlockMapInfo(fileName) {
 
     const [blockMapInfo, latestVersionInfo] = await Promise.all([
       getBlockMapInfo(zipPath),
-      fs.promises.readFile('dist/latest-mac.yml').then(yaml.safeLoad),
+      fs.promises.readFile('dist/latest-mac.yml').then(yaml.load),
     ]);
     const index = latestVersionInfo.files.findIndex(
       (file) => file.url === zipName
@@ -77,7 +77,7 @@ async function getBlockMapInfo(fileName) {
     );
     await fs.promises.writeFile(
       'dist/latest-mac.yml',
-      yaml.safeDump(latestVersionInfo, {
+      yaml.dump(latestVersionInfo, {
         lineWidth: Infinity,
       }),
       'utf8'
