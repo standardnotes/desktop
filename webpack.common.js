@@ -1,4 +1,7 @@
-require('dotenv').config();
+const env = process.env.NODE_ENV ?? 'production';
+require('dotenv').config({
+  path: `.env.${env}`,
+});
 
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
@@ -137,6 +140,9 @@ module.exports = function ({
           process.env.DEFAULT_SYNC_SERVER || 'https://api.standardnotes.com'
         ),
         BUGSNAG_API_KEY: JSON.stringify(process.env.BUGSNAG_API_KEY),
+        PURCHASE_URL: JSON.stringify(process.env.PURCHASE_URL),
+        PLANS_URL: JSON.stringify(process.env.PLANS_URL),
+        DASHBOARD_URL: JSON.stringify(process.env.DASHBOARD_URL),
         EXPERIMENTAL_FEATURES,
         WEBSOCKET_URL: JSON.stringify(process.env.WEBSOCKET_URL),
         ENABLE_UNFINISHED_FEATURES: JSON.stringify(

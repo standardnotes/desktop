@@ -17,7 +17,6 @@ function sha256(filePath) {
   console.log('Writing SHA256 sums to dist/SHA256SUMS');
 
   try {
-    const version = JSON.parse(fs.readFileSync('./package.json')).version;
     const files = await getLatestBuiltFilesList();
 
     process.chdir('dist');

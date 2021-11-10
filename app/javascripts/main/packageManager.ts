@@ -12,7 +12,7 @@ import {
   FileDoesNotExist,
   readJSONFile,
 } from './fileUtils';
-import { downloadFile, getJSON } from './networking';
+import { downloadFile } from './networking';
 import { Paths } from './paths';
 import { AppName } from './strings';
 import { timeout } from './utils';

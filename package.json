@@ -19,7 +19,7 @@
     "clean": "npm-run-all --parallel clean:*",
     "clean:build": "rimraf app/dist/",
     "clean:tests": "rimraf test/data/tmp/",
-    "dev": "webpack --config webpack.dev.js --watch",
+    "dev": "NODE_ENV=development webpack --config webpack.dev.js --watch",
     "dev:web": "cd web && yarn run watch:desktop",
     "format": "prettier --write .",
     "change-version": "node scripts/change-version.mjs",

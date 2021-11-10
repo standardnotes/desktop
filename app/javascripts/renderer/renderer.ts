@@ -6,12 +6,19 @@ declare const BUGSNAG_API_KEY: string;
 declare const DEFAULT_SYNC_SERVER: string;
 declare const WEBSOCKET_URL: string;
 declare const ENABLE_UNFINISHED_FEATURES: string;
+declare const PURCHASE_URL: string;
+declare const PLANS_URL: string;
+declare const DASHBOARD_URL: string;
+
 declare global {
   interface Window {
     ElectronValence: any;
     /* eslint-disable camelcase */
     _bugsnag_api_key: string;
     _enable_unfinished_features: boolean;
+    _purchase_url: string;
+    _plans_url: string;
+    _dashboard_url: string;
     /* eslint-enable camelcase */
     angular: any;
     desktopManager: any;
@@ -29,6 +36,9 @@ const receiver = new window.ElectronValence.Receiver(messageBus);
 /* eslint-disable camelcase */
 window._bugsnag_api_key = BUGSNAG_API_KEY;
 window._enable_unfinished_features = ENABLE_UNFINISHED_FEATURES === 'true';
+window._purchase_url = PURCHASE_URL;
+window._plans_url = PLANS_URL;
+window._dashboard_url = DASHBOARD_URL;
 /* eslint-enable camelcase */
 
 (async () => {
@@ -40,7 +50,7 @@ window._enable_unfinished_features = ENABLE_UNFINISHED_FEATURES === 'true';
   window.bridge = await createWebBridge(mainThread);
   window.startApplication(
     // eslint-disable-next-line no-undef
-    DEFAULT_SYNC_SERVER || 'https://api.standardnotes.com',
+    DEFAULT_SYNC_SERVER,
     window.bridge,
     window._enable_unfinished_features,
     WEBSOCKET_URL
