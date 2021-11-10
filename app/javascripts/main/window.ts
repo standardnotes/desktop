@@ -110,7 +110,7 @@ export async function createWindowState({
 
   /**
    * handle link clicks (this event is fired instead of 'new-window' when
-   * target is not set to _blank)
+   * target is not set to _blank, such as with window.location.assign)
    */
   window.webContents.on('will-navigate', (event, url) => {
     /** Check for windowUrl equality in the case of window.reload() calls. */
