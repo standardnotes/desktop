@@ -243,10 +243,10 @@ const enum MenuItemTypes {
 }
 
 const Urls = {
-  Support: 'mailto:help@standardnotes.org',
-  Website: 'https://standardnotes.org',
+  Support: 'mailto:help@standardnotes.com',
+  Website: 'https://standardnotes.com',
   GitHub: 'https://github.com/standardnotes',
-  Slack: 'https://standardnotes.org/slack',
+  Slack: 'https://standardnotes.com/slack',
   Twitter: 'https://twitter.com/StandardNotes',
   GitHubReleases: 'https://github.com/standardnotes/desktop/releases',
 };

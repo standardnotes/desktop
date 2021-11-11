@@ -91,7 +91,7 @@ function fakeComponent({ deleted = false, modifier = '' } = {}) {
       package_info: {
         version,
         identifier: identifier + modifier,
-        download_url: 'https://standardnotes.org',
+        download_url: 'https://standardnotes.com',
       },
     },
   };
