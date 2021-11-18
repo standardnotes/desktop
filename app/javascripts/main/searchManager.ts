@@ -7,7 +7,7 @@ export function initializeSearchManager(webContents: WebContents): void {
     if (text && text.length > 0) {
       // This option arrangement is required to avoid an issue where clicking on a
       // different note causes scroll to jump.
-      webContents.findInPage(text, { forward: true, findNext: false });
+      webContents.findInPage(text);
     }
   });
 }
