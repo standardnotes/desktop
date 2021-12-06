@@ -14,7 +14,7 @@
     "build:snap": "node scripts/build.mjs snap",
     "build:write-sums": "node scripts/sums.mjs",
     "build:remove-unpacked": "rimraf dist/{linux-*,mac,win-*}",
-    "build:web": "git submodule update && cd web && rimraf node_modules && yarn setup && yarn run bundle:desktop",
+    "build:web": "git submodule update && cd web && rimraf node_modules && yarn --ignore-engines && yarn run bundle:desktop",
     "bundle": "yarn run lint && yarn clean:build && yarn run build:web && webpack --config webpack.prod.js",
     "clean": "npm-run-all --parallel clean:*",
     "clean:build": "rimraf app/dist/",
