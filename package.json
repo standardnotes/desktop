@@ -31,7 +31,8 @@
     "setup": "yarn --ignore-engines && yarn --ignore-engines --cwd ./app && git submodule update --init && yarn --ignore-engines --cwd ./web",
     "start": "electron . --enable-logging --icon _icon/icon.png",
     "test": "rimraf test/data/tmp && ava",
-    "update-web": "cd web && git checkout main && git pull && cd .."
+    "update-web": "cd web && git checkout main && git pull && cd ..",
+    "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
     "compare-versions": "^4.1.2",
