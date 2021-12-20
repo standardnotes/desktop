@@ -55,6 +55,41 @@ or
 - `yarn build mac`
 - `yarn build snap`
 - `yarn build windows`
+- `yarn build appimage:arm64`
+- `yarn build deb:arm64`
+
+## Building natively on arm64
+
+Building arm64 releases on amd64 systems is only possible with AppImage, Debian and universal "dir" targets.
+
+Building arm64 releases natively on arm64 systems requires some additional preparation:
+
+- `export npm_config_target_arch=arm64`
+- `export npm_config_arch=arm64`
+
+A native `fpm` installation is needed for Debian builds. `fpm` needs to be available in `$PATH`, which can be achieved by running
+
+- `gem install fpm --no-document`
+
+and making sure `$GEM_HOME/bin` is added to `$PATH`.
+
+Snap releases also require a working snapcraft / `snapd` installation.
+
+Building can then be done by running:
+
+- `yarn setup`
+- `yarn bundle:arm64`
+
+Followed by either:
+
+- `yarn build:all:arm64`
+
+Or the individual commands:
+
+- `yarn build:dir:arm64`
+- `yarn build:appimage:arm64`
+- `yarn build:deb:arm64`
+- `yarn build:snap:arm64`
 
 ## Installation
 
