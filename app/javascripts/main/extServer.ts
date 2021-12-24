@@ -18,21 +18,28 @@ function log(...message: any) {
 }
 
 export function normalizeFilePath(requestUrl: string, host: string): string {
-  if (!requestUrl.startsWith('/Extensions')) {
+  const isThirdPartyComponent = requestUrl.startsWith('/Extensions');
+  const isNativeComponent = requestUrl.startsWith('/components');
+  if (!isThirdPartyComponent && !isNativeComponent) {
     throw new Error(
-      `URL '${requestUrl}' falls outside of the Extensions domain.`
+      `URL '${requestUrl}' falls outside of the extensions/features domain.`
     );
   }
-  const url = new URL(
-    requestUrl.replace('/Extensions', ''),
-    `${Protocol}://${host}`
-  );
+
+  const removedPrefix = requestUrl
+    .replace('/components', '')
+    .replace('Extensions', '');
+  const url = new URL(removedPrefix, `${Protocol}://${host}`);
   /**
    * Normalize path (parse '..' and '.') so that we prevent path traversal by
    * joining a fully resolved path to the Extensions dir.
    */
   const modifiedReqUrl = path.normalize(url.pathname);
-  return path.join(Paths.extensionsDir, modifiedReqUrl);
+  if (isThirdPartyComponent) {
+    return path.join(Paths.extensionsDir, modifiedReqUrl);
+  } else {
+    return path.join(Paths.features, modifiedReqUrl);
+  }
 }
 
 async function handleRequest(req: IncomingMessage, res: ServerResponse) {
@@ -78,7 +85,7 @@ function onRequestError(error: Error | { code: string }, res: ServerResponse) {
 export function createExtensionsServer(): string {
   const port = 45653;
   const ip = '127.0.0.1';
-  const host = `${Protocol}://${ip}:${port}/`;
+  const host = `${Protocol}://${ip}:${port}`;
   http.createServer(handleRequest).listen(port, ip, () => {
     log(`Server started at ${host}`);
   });

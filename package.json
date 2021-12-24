@@ -37,7 +37,7 @@
     "lint:types": "tsc --noEmit",
     "release:draft": "node scripts/create-draft-release.mjs",
     "setup": "yarn --ignore-engines && yarn --ignore-engines --cwd ./app && git submodule update --init && yarn --ignore-engines --cwd ./web",
-    "start": "electron . --enable-logging --icon _icon/icon.png",
+    "start": "electron ./app --enable-logging --icon _icon/icon.png",
     "test": "rimraf test/data/tmp && ava",
     "update-web": "cd web && git checkout main && git pull && cd ..",
     "postinstall": "electron-builder install-app-deps"
@@ -106,7 +106,6 @@
       "stylesheets/**/*",
       "assets/**/*",
       "icon/**/*",
-      "node_modules/standard-notes-web/dist/**/*",
       "node_modules/sn-electron-valence/**/*"
     ],
     "protocols": [
