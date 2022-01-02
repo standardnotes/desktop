@@ -69,6 +69,9 @@ export const Paths = {
   get preloadJs(): string {
     return path.join(__dirname, 'javascripts/renderer/preload.js');
   },
+  get components(): string {
+    return `${app.getAppPath()}/dist/standard-notes-web/components`;
+  },
   get grantLinuxPasswordsAccessJs(): string {
     return path.join(
       __dirname,
