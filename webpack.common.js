@@ -95,6 +95,10 @@ module.exports = function ({
             to: 'standard-notes-web',
           },
           {
+            from: 'web/public/components',
+            to: 'standard-notes-web/components',
+          },
+          {
             from: 'app/node_modules',
             to: 'node_modules',
           },
