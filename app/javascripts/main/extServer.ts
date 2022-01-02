@@ -41,7 +41,7 @@ export function normalizeFilePath(requestUrl: string, host: string): string {
   if (isThirdPartyComponent) {
     return path.join(Paths.extensionsDir, modifiedReqUrl);
   } else {
-    return path.join(Paths.features, modifiedReqUrl);
+    return path.join(Paths.components, modifiedReqUrl);
   }
 }
 
