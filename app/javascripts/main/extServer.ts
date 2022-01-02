@@ -28,8 +28,11 @@ export function normalizeFilePath(requestUrl: string, host: string): string {
 
   const removedPrefix = requestUrl
     .replace('/components', '')
-    .replace('Extensions', '');
-  const url = new URL(removedPrefix, `${Protocol}://${host}`);
+    .replace('/Extensions', '');
+
+  const base = `${Protocol}://${host}`;
+  const url = new URL(removedPrefix, base);
+
   /**
    * Normalize path (parse '..' and '.') so that we prevent path traversal by
    * joining a fully resolved path to the Extensions dir.
