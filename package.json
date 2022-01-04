@@ -1,7 +1,7 @@
 {
   "name": "standard-notes",
   "main": "./app/dist/index.js",
-  "version": "3.9.11",
+  "version": "3.9.12",
   "repository": {
     "type": "git",
     "url": "git://github.com/standardnotes/desktop"
@@ -9,7 +9,7 @@
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "build": "yarn lint && yarn build:web && node scripts/build.mjs",
-    "build:all": "yarn bundle && electron-builder -wl --x64 --ia32 && yarn build:snap && yarn build:appimage:arm64 && yarn build:deb:arm64 && yarn build:mac && yarn build:mac-arm64 && yarn build:write-sums",
+    "build:all": "yarn bundle && electron-builder -wl --x64 --ia32 && yarn build:snap && yarn build:appimage:arm64 && yarn build:deb:arm64 && yarn build:mac && yarn build:mac-arm64 && yarn build:write-sums && yarn release:draft",
     "build:mac": "node scripts/build.mjs mac",
     "build:mac-arm64": "node scripts/build.mjs mac-arm64",
     "build:snap": "node scripts/build.mjs snap",
