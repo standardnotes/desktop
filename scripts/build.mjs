@@ -26,6 +26,7 @@ const dir = 'dir';
 const dirArm64 = 'dir-arm64';
 const mac = 'mac';
 const macArm64 = 'mac-arm64';
+const macAll = 'mac-all';
 const snap = 'snap';
 const snapArm64 = 'snap-arm64';
 const deb = 'deb';
@@ -42,6 +43,7 @@ const availableTargets = [
   dirArm64,
   mac,
   macArm64,
+  macAll,
   snap,
   snapArm64,
   windows,
@@ -110,6 +112,12 @@ const availableTargets = [
         await runCommand('yarn run webpack --config webpack.prod.js');
         await runCommand(
           'yarn run electron-builder --mac --arm64 --publish=never'
+        );
+        break;
+      case macAll:
+        await runCommand('yarn run webpack --config webpack.prod.js');
+        await runCommand(
+          'yarn run electron-builder --macos --arm64 --x64 --publish=never'
         );
         break;
       case dir:
