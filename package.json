@@ -9,8 +9,9 @@
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "build": "yarn lint && yarn build:web && node scripts/build.mjs",
-    "build:all": "yarn bundle && electron-builder -wl --x64 --ia32 && yarn build:snap && yarn build:appimage:arm64 && yarn build:deb:arm64 && yarn build:mac && yarn build:mac-arm64 && yarn build:write-sums && yarn release:draft",
+    "build:all": "yarn bundle && electron-builder -wl --x64 --ia32 && yarn build:snap && yarn build:appimage:arm64 && yarn build:deb:arm64 && yarn build:mac-all && yarn build:write-sums && yarn release:draft",
     "build:mac": "node scripts/build.mjs mac",
+    "build:mac-all": "node scripts/build.mjs mac-all",
     "build:mac-arm64": "node scripts/build.mjs mac-arm64",
     "build:snap": "node scripts/build.mjs snap",
     "build:write-sums": "node scripts/sums.mjs",
@@ -120,7 +121,11 @@
       "category": "public.app-category.productivity",
       "hardenedRuntime": true,
       "entitlements": "./build/entitlements.mac.inherit.plist",
-      "entitlementsInherit": "./build/entitlements.mac.inherit.plist"
+      "entitlementsInherit": "./build/entitlements.mac.inherit.plist",
+      "target": [
+        "dmg",
+        "zip"
+      ]
     },
     "win": {
       "certificateSubjectName": "Standard Notes Ltd.",
