@@ -22,6 +22,12 @@ export async function getLatestBuiltFilesList() {
     `standard-notes-${version}-win-x64.exe`,
     `standard-notes-${version}-win-x64.exe.blockmap`,
 
+    `standard-notes-${version}-win.exe`,
+    `standard-notes-${version}-win.exe.blockmap`,
+
+    `standard-notes-${version}-win-ia32.exe`,
+    `standard-notes-${version}-win-ia32.exe.blockmap`,
+
     'latest-linux-ia32.yml',
     'latest-linux.yml',
     'latest-linux-arm64.yml',
