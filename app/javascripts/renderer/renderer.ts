@@ -208,7 +208,7 @@ async function configureWindow(mainThread: any) {
   const sheet = window.document.styleSheets[0];
   if (isMacOS) {
     sheet.insertRule(
-      '#tags-column { padding-top: 25px !important; }',
+      '#navigation { padding-top: 25px !important; }',
       sheet.cssRules.length
     );
   }
