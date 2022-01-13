@@ -74,7 +74,6 @@ Followed by
 
 - `node scripts/build.mjs deb-arm64`
 
-
 ## Installation
 
 On Linux, download the latest AppImage from the [Releases](https://github.com/standardnotes/desktop/releases/latest) page, and give it executable permission:
