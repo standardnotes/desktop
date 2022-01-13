@@ -47,16 +47,7 @@ To determine where to install a dependency:
 
 Build for all platforms:
 
-- `yarn build:all`
-
-or
-
-- `yarn build appimage`
-- `yarn build mac`
-- `yarn build snap`
-- `yarn build windows`
-- `yarn build appimage:arm64`
-- `yarn build deb:arm64`
+- `yarn release`
 
 ## Building natively on arm64
 
@@ -78,18 +69,11 @@ Snap releases also require a working snapcraft / `snapd` installation.
 Building can then be done by running:
 
 - `yarn setup`
-- `yarn bundle:arm64`
 
-Followed by either:
+Followed by
 
-- `yarn build:all:arm64`
+- `node scripts/build.mjs deb-arm64`
 
-Or the individual commands:
-
-- `yarn build:dir:arm64`
-- `yarn build:appimage:arm64`
-- `yarn build:deb:arm64`
-- `yarn build:snap:arm64`
 
 ## Installation
 
