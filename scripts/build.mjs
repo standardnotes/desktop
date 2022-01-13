@@ -3,9 +3,9 @@ import fs from 'fs';
 
 async function buildTargets(targets) {
   console.log('Building targets: ', targets);
-  await runCommand(
-    Command('yarn run lint && yarn clean:build && yarn run build:web')
-  );
+  await runCommand(Command('yarn run lint'));
+  await runCommand(Command('yarn clean:build'));
+  await runCommand(Command('yarn run build:web'));
 
   for (const group of CompileGroups) {
     let didCompileGroup = false;
