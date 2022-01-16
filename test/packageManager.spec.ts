@@ -92,6 +92,8 @@ function fakeComponent({ deleted = false, modifier = '' } = {}) {
         version,
         identifier: identifier + modifier,
         download_url: 'https://standardnotes.com',
+        url: 'https://standardnotes.com',
+        latest_url: 'https://standardnotes.com',
       },
     },
   };

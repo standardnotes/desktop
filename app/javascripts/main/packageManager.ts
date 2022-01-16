@@ -12,18 +12,27 @@ import {
   FileDoesNotExist,
   readJSONFile,
 } from './fileUtils';
-import { downloadFile } from './networking';
+import { downloadFile, getJSON } from './networking';
 import { Paths } from './paths';
 import { AppName } from './strings';
 import { timeout } from './utils';
+import log from 'electron-log';
 
-function log(...message: any) {
-  console.log('PackageManager:', ...message);
+function logMessage(...message: any) {
+  log.info('PackageManager:', ...message);
 }
 
 function logError(...message: any) {
   console.error('PackageManager:', ...message);
 }
+
+type PackageInfo = {
+  identifier: string;
+  version: string;
+  download_url: string;
+  latest_url: string;
+  url: string;
+};
 
 /* eslint-disable camelcase */
 interface Component {
@@ -33,11 +42,7 @@ interface Component {
     name?: string;
     autoupdateDisabled: boolean;
     local_url?: string;
-    package_info: {
-      identifier: string;
-      version: string;
-      download_url: string;
-    };
+    package_info: PackageInfo;
   };
 }
 /* eslint-enable camelcase */
@@ -138,7 +143,7 @@ export async function initializePackageManager(
     async (_event, data: { componentsData: Component[] }) => {
       const components = data.componentsData;
 
-      log(
+      logMessage(
         'received sync event for:',
         components
           .map(
@@ -254,14 +259,14 @@ async function syncComponents(
     components.map(async (component) => {
       if (component.deleted) {
         /** Uninstall */
-        log(`Uninstalling ${component.content?.name}`);
+        logMessage(`Uninstalling ${component.content?.name}`);
         await uninstallComponent(mapping, component.uuid);
         return;
       }
 
       // eslint-disable-next-line camelcase
       if (!component.content?.package_info) {
-        log('Package info is null, skipping');
+        logMessage('Package info is null, skipping');
         return;
       }
 
@@ -271,7 +276,13 @@ async function syncComponents(
         /**
          * We have a component but it is not mapped to anything on the file system
          */
-        await installComponent(webContents, mapping, component, version);
+        await installComponent(
+          webContents,
+          mapping,
+          component,
+          component.content.package_info,
+          version
+        );
       } else {
         try {
           /** Will trigger an error if the directory does not exist. */
@@ -282,7 +293,13 @@ async function syncComponents(
         } catch (error: any) {
           if (error.code === FileDoesNotExist) {
             /** We have a component but no content. Install the component */
-            await installComponent(webContents, mapping, component, version);
+            await installComponent(
+              webContents,
+              mapping,
+              component,
+              component.content.package_info,
+              version
+            );
           } else {
             throw error;
           }
@@ -300,18 +317,33 @@ async function checkForUpdate(
   const installedVersion = await mapping.getInstalledVersionForComponent(
     component
   );
-  const latestVersion = component.content!.package_info.version;
-  log(
+
+  const latestUrl = component.content?.package_info?.latest_url;
+  if (!latestUrl) {
+    return;
+  }
+
+  const latestJson = (await getJSON(latestUrl)) as PackageInfo;
+  if (!latestJson) {
+    return;
+  }
+
+  const latestVersion = latestJson.version;
+  logMessage(
     `Checking for update for ${component.content?.name}\n` +
       `Latest: ${latestVersion} | Installed: ${installedVersion}`
   );
+
   if (compareVersions(latestVersion, installedVersion) === 1) {
     /** Latest version is greater than installed version */
-    log(
-      'Downloading new version',
-      component.content!.package_info.download_url
+    logMessage('Downloading new version', latestVersion);
+    await installComponent(
+      webContents,
+      mapping,
+      component,
+      latestJson,
+      latestVersion
     );
-    await installComponent(webContents, mapping, component, latestVersion);
   }
 }
 
@@ -319,18 +351,19 @@ async function installComponent(
   webContents: Electron.WebContents,
   mapping: MappingFileHandler,
   component: Component,
+  packageInfo: PackageInfo,
   version: string
 ) {
   if (!component.content) {
     return;
   }
-  const downloadUrl = component.content.package_info.download_url;
+  const downloadUrl = packageInfo.download_url;
   if (!downloadUrl) {
     return;
   }
   const name = component.content.name;
 
-  log('Installing ', name, downloadUrl);
+  logMessage('Installing ', name, downloadUrl);
 
   const sendInstalledMessage = (
     component: Component,
@@ -339,7 +372,7 @@ async function installComponent(
     if (error) {
       logError(`Error when installing component ${name}: ` + error.message);
     } else {
-      log(`Installed component ${name} (${version})`);
+      logMessage(`Installed component ${name} (${version})`);
     }
     webContents.send(IpcMessages.InstallComponentComplete, {
       component,
@@ -349,7 +382,7 @@ async function installComponent(
 
   const paths = pathsForComponent(component);
   try {
-    log(`Downloading from ${downloadUrl}`);
+    logMessage(`Downloading from ${downloadUrl}`);
     /** Download the zip and clear the component's directory in parallel */
     await Promise.all([
       downloadFile(downloadUrl, paths.downloadPath),
@@ -360,7 +393,7 @@ async function installComponent(
       })(),
     ]);
 
-    log('Extracting', paths.downloadPath, 'to', paths.absolutePath);
+    logMessage('Extracting', paths.downloadPath, 'to', paths.absolutePath);
     await extractNestedZip(paths.downloadPath, paths.absolutePath);
 
     let main = 'index.html';
@@ -380,11 +413,18 @@ async function installComponent(
     }
 
     component.content.local_url = 'sn://' + paths.relativePath + '/' + main;
+    component.content.package_info.download_url = packageInfo.download_url;
+    component.content.package_info.latest_url = packageInfo.latest_url;
+    component.content.package_info.url = packageInfo.url;
+    component.content.package_info.version = packageInfo.version;
     mapping.set(component.uuid, paths.relativePath, version);
 
     sendInstalledMessage(component);
   } catch (error: any) {
-    log(`Error while installing ${component.content.name}`, error.message);
+    logMessage(
+      `Error while installing ${component.content.name}`,
+      error.message
+    );
 
     /**
      * Waiting five seconds prevents clients from spamming install requests
