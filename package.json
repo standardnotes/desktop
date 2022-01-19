@@ -1,7 +1,7 @@
 {
   "name": "standard-notes",
   "main": "./app/dist/index.js",
-  "version": "3.9.15",
+  "version": "3.9.20",
   "repository": {
     "type": "git",
     "url": "git://github.com/standardnotes/desktop"
@@ -57,7 +57,7 @@
     "commitlint": "^15.0.0",
     "copy-webpack-plugin": "^10.0.0",
     "dotenv": "^10.0.0",
-    "electron": "^16.0.4",
+    "electron": "16.0.7",
     "electron-builder": "22.14.5",
     "electron-notarize": "^1.1.1",
     "eslint": "^8.4.1",
