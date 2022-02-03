@@ -1,7 +1,6 @@
 import { IpcMessages } from '../shared/ipcMessages';
 import { StartApplication } from '@web/startApplication';
-import { Bridge } from '@web/services/bridge';
-import { ElectronDesktopCallbacks } from '@web/services/desktopManager';
+import { Bridge, ElectronDesktopCallbacks } from '@web/services/bridge';
 
 declare const BUGSNAG_API_KEY: string;
 declare const DEFAULT_SYNC_SERVER: string;
