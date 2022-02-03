@@ -49,7 +49,6 @@
   },
   "plugins": ["@typescript-eslint"],
   "globals": {
-    "angular": true,
     "ElectronValence": true,
     "zip": true
   }
