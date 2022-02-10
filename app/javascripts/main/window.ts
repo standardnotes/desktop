@@ -19,6 +19,7 @@ import { isTesting, lowercaseDriveLetter } from './utils';
 import { initializeZoomManager } from './zoomManager';
 import { Paths } from './paths';
 import { clearSensitiveDirectories } from '@standardnotes/electron-clear-data';
+import SecureSpellChecker from '@standardnotes/electron-secure-spellchecker';
 
 const WINDOW_DEFAULT_WIDTH = 1100;
 const WINDOW_DEFAULT_HEIGHT = 800;
@@ -52,6 +53,7 @@ export async function createWindowState({
   const window = await createWindow(appState.store);
   require('@electron/remote/main').enable(window.webContents);
   const services = createWindowServices(window, appState, appLocale);
+  const spellchecker = SecureSpellChecker.initialize();
 
   const shouldOpenUrl = (url: string) =>
     url.startsWith('http') || url.startsWith('mailto');
@@ -131,6 +133,10 @@ export async function createWindowState({
   });
 
   window.webContents.on('context-menu', (_event, params) => {
+    if (params.misspelledWord) {
+      params.dictionarySuggestions = spellchecker.getSpellingSuggestions(params.misspelledWord);
+    }
+
     buildContextMenu(window.webContents, params).popup();
   });
 
