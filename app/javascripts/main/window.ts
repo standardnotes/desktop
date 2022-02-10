@@ -134,7 +134,9 @@ export async function createWindowState({
 
   window.webContents.on('context-menu', (_event, params) => {
     if (params.misspelledWord) {
-      params.dictionarySuggestions = spellchecker.getSpellingSuggestions(params.misspelledWord);
+      params.dictionarySuggestions = spellchecker.getSpellingSuggestions(
+        params.misspelledWord
+      );
     }
 
     buildContextMenu(window.webContents, params).popup();
