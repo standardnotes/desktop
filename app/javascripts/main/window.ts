@@ -32,6 +32,12 @@ export interface WindowState {
   trayManager: TrayManager;
 }
 
+function hideWindowsTaskbarPreviewThumbnail(window: BrowserWindow) {
+  if (isWindows()) {
+    window.setThumbnailClip({ x: 0, y: 0, width: 1, height: 1 });
+  }
+}
+
 export async function createWindowState({
   shell,
   appState,
@@ -54,6 +60,7 @@ export async function createWindowState({
 
   window.on('show', () => {
     checkForUpdate(appState, appState.updates, false);
+    hideWindowsTaskbarPreviewThumbnail(window);
   });
 
   window.on('focus', () => {

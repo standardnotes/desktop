@@ -21,12 +21,8 @@
     <meta content="width=device-width, initial-scale=1" name="viewport" />
     <meta name="theme-color" content="#ffffff" />
 
-    <meta
-      ng-bind="title"
-      content="Standard Notes"
-      name="apple-mobile-web-app-title"
-    />
-    <meta ng-bind="title" content="Standard Notes" name="application-name" />
+    <meta content="Standard Notes" name="apple-mobile-web-app-title" />
+    <meta content="Standard Notes" name="application-name" />
 
     <script src="standard-notes-web/javascripts/app.js"></script>
     <script src="../node_modules/sn-electron-valence/Receiver.js"></script>
@@ -40,7 +36,7 @@
     <link rel="stylesheet" media="all" href="stylesheets/renderer.css" />
   </head>
 
-  <body ng-class="bodyClass">
+  <body>
     <div id="desktop-title-bar">
       <div class="title-bar-left-buttons">
         <button id="menu-btn">
@@ -117,6 +113,5 @@
         </button>
       </div>
     </div>
-    <application-group-view />
   </body>
 </html>

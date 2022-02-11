@@ -1,6 +1,6 @@
 import { IpcMessages } from '../shared/ipcMessages';
 import { StartApplication } from '@web/startApplication';
-import { Bridge } from '@web/services/bridge';
+import { Bridge, ElectronDesktopCallbacks } from '@web/services/bridge';
 
 declare const BUGSNAG_API_KEY: string;
 declare const DEFAULT_SYNC_SERVER: string;
@@ -19,9 +19,7 @@ declare global {
     _purchase_url: string;
     _plans_url: string;
     _dashboard_url: string;
-    /* eslint-enable camelcase */
-    angular: any;
-    desktopManager: any;
+    desktopManager: ElectronDesktopCallbacks;
     electronAppVersion: string;
     zip: any;
     startApplication: StartApplication;
@@ -56,11 +54,9 @@ window._dashboard_url = DASHBOARD_URL;
     WEBSOCKET_URL
   );
 
-  await new Promise((resolve) =>
-    window.angular.element(document).ready(resolve)
-  );
   registerIpcMessageListener(window.bridge);
 })();
+
 loadZipLibrary();
 
 /** @returns whether the keychain structure is up to date or not */
@@ -264,11 +260,7 @@ function registerIpcMessageListener(webBridge: any) {
         data.error
       );
     } else if (message === IpcMessages.UpdateAvailable) {
-      const controllerElement = document.querySelector(
-        'application-group-view'
-      );
-      const controllerScope = window.angular.element(controllerElement).scope();
-      controllerScope.$root.$broadcast('new-update-available');
+      desktopManager.desktop_updateAvailable();
     } else if (message === IpcMessages.DownloadBackup) {
       webBridge.downloadBackup();
     } else if (message === IpcMessages.FinishedSavingBackup) {
