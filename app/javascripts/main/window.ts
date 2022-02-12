@@ -133,7 +133,7 @@ export async function createWindowState({
   });
 
   window.webContents.on('context-menu', (_event, params) => {
-    if (params.misspelledWord) {
+    if (params.misspelledWord && process.platform !== 'darwin') {
       params.dictionarySuggestions = spellchecker.getSpellingSuggestions(
         params.misspelledWord
       );
