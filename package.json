@@ -44,7 +44,7 @@
     "@commitlint/config-conventional": "^15.0.0",
     "@electron/remote": "^2.0.1",
     "@standardnotes/electron-clear-data": "^1.1.1",
-    "@standardnotes/electron-secure-spellchecker": "1.0.2",
+    "@standardnotes/electron-secure-spellchecker": "1.0.3",
     "@types/lodash": "^4.14.178",
     "@types/mime-types": "^2.1.1",
     "@types/node": "^16.11.12",
