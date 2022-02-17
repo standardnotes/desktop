@@ -1,7 +1,7 @@
 {
   "name": "standard-notes",
   "main": "./app/dist/index.js",
-  "version": "3.10.0",
+  "version": "3.11.0",
   "repository": {
     "type": "git",
     "url": "git://github.com/standardnotes/desktop"
