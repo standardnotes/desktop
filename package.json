@@ -1,7 +1,7 @@
 {
   "name": "standard-notes",
   "main": "./app/dist/index.js",
-  "version": "3.11.2",
+  "version": "3.12.0-beta.1",
   "repository": {
     "type": "git",
     "url": "git://github.com/standardnotes/desktop"
@@ -44,6 +44,7 @@
     "@commitlint/config-conventional": "^15.0.0",
     "@electron/remote": "^2.0.1",
     "@standardnotes/electron-clear-data": "^1.1.1",
+    "@standardnotes/electron-secure-spellchecker": "1.0.3",
     "@types/lodash": "^4.14.178",
     "@types/mime-types": "^2.1.1",
     "@types/node": "^16.11.12",
