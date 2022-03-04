@@ -4,6 +4,7 @@ import { Bridge, ElectronDesktopCallbacks } from '@web/services/bridge';
 
 declare const BUGSNAG_API_KEY: string;
 declare const DEFAULT_SYNC_SERVER: string;
+declare const DEFAULT_FILES_SERVER: string;
 declare const WEBSOCKET_URL: string;
 declare const ENABLE_UNFINISHED_FEATURES: string;
 declare const PURCHASE_URL: string;
@@ -49,6 +50,7 @@ window._dashboard_url = DASHBOARD_URL;
   window.startApplication(
     // eslint-disable-next-line no-undef
     DEFAULT_SYNC_SERVER,
+    DEFAULT_FILES_SERVER,
     window.bridge,
     window._enable_unfinished_features,
     WEBSOCKET_URL
