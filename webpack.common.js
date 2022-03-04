@@ -120,7 +120,7 @@ module.exports = function ({
       preload: './app/javascripts/renderer/preload.js',
       renderer: './app/javascripts/renderer/renderer.ts',
       grantLinuxPasswordsAccess:
-        './app/javascripts/renderer/grantLinuxPasswordsAccess.ts',
+        './app/javascripts/renderer/grantLinuxPasswordsAccess.js',
     },
     output: {
       path: path.resolve(__dirname, 'app', 'dist', 'javascripts', 'renderer'),
