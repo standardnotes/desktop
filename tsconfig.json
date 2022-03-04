@@ -23,7 +23,6 @@
   "exclude": ["app/renderer/preload.js", "node_modules", "app/dist"],
   "files": [
     "app/index.ts",
-    "app/javascripts/renderer/renderer.ts",
-    "app/javascripts/renderer/grantLinuxPasswordsAccess.ts"
+    "app/javascripts/renderer/renderer.ts"
   ]
 }
