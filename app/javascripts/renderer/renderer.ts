@@ -13,18 +13,17 @@ declare const DASHBOARD_URL: string;
 
 declare global {
   interface Window {
-    ElectronValence: any;
-    /* eslint-disable camelcase */
-    _bugsnag_api_key: string;
-    _enable_unfinished_features: boolean;
-    _purchase_url: string;
-    _plans_url: string;
-    _dashboard_url: string;
+    bridge: Bridge;
+    bugsnagApiKey: string;
+    dashboardUrl: string;
     desktopManager: ElectronDesktopCallbacks;
     electronAppVersion: string;
-    zip: any;
+    ElectronValence: any;
+    enableUnfinishedFeatures: boolean;
+    plansUrl: string;
+    purchaseUrl: string;
     startApplication: StartApplication;
-    bridge: Bridge;
+    zip: any;
   }
 }
 
@@ -32,13 +31,11 @@ const messageBus = new window.ElectronValence.FrameMessageBus();
 const receiver = new window.ElectronValence.Receiver(messageBus);
 
 /** Accessed by web app */
-/* eslint-disable camelcase */
-window._bugsnag_api_key = BUGSNAG_API_KEY;
-window._enable_unfinished_features = ENABLE_UNFINISHED_FEATURES === 'true';
-window._purchase_url = PURCHASE_URL;
-window._plans_url = PLANS_URL;
-window._dashboard_url = DASHBOARD_URL;
-/* eslint-enable camelcase */
+window.bugsnagApiKey = BUGSNAG_API_KEY;
+window.dashboardUrl = DASHBOARD_URL;
+window.enableUnfinishedFeatures = ENABLE_UNFINISHED_FEATURES === 'true';
+window.plansUrl = PLANS_URL;
+window.purchaseUrl = PURCHASE_URL;
 
 (async () => {
   await receiver.ready;
@@ -48,11 +45,10 @@ window._dashboard_url = DASHBOARD_URL;
 
   window.bridge = await createWebBridge(mainThread);
   window.startApplication(
-    // eslint-disable-next-line no-undef
     DEFAULT_SYNC_SERVER,
     DEFAULT_FILES_SERVER,
     window.bridge,
-    window._enable_unfinished_features,
+    window.enableUnfinishedFeatures,
     WEBSOCKET_URL
   );
 
@@ -205,18 +201,12 @@ async function configureWindow(mainThread: any) {
   // For Mac inset window
   const sheet = window.document.styleSheets[0];
   if (isMacOS) {
-    sheet.insertRule(
-      '#navigation { padding-top: 25px !important; }',
-      sheet.cssRules.length
-    );
+    sheet.insertRule('#navigation { padding-top: 25px !important; }', sheet.cssRules.length);
   }
 
   if (isMacOS || useSystemMenuBar) {
     // !important is important here because #desktop-title-bar has display: flex.
-    sheet.insertRule(
-      '#desktop-title-bar { display: none !important; }',
-      sheet.cssRules.length
-    );
+    sheet.insertRule('#desktop-title-bar { display: none !important; }', sheet.cssRules.length);
   } else {
     /* Use custom title bar. Take the sn-titlebar-height off of
     the app content height so its not overflowing */
@@ -257,10 +247,7 @@ function registerIpcMessageListener(webBridge: any) {
       desktopManager.desktop_windowGainedFocus();
     } else if (message === IpcMessages.InstallComponentComplete) {
       // Responses from packageManager
-      desktopManager.desktop_onComponentInstallationComplete(
-        data.component,
-        data.error
-      );
+      desktopManager.desktop_onComponentInstallationComplete(data.component, data.error);
     } else if (message === IpcMessages.UpdateAvailable) {
       desktopManager.desktop_updateAvailable();
     } else if (message === IpcMessages.DownloadBackup) {
