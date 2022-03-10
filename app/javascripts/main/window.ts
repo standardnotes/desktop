@@ -53,7 +53,7 @@ export async function createWindowState({
   const window = await createWindow(appState.store);
   require('@electron/remote/main').enable(window.webContents);
   const services = createWindowServices(window, appState, appLocale);
-  const spellchecker = SecureSpellChecker.initialize();
+  const spellchecker = SecureSpellChecker.getInstance();
 
   const shouldOpenUrl = (url: string) =>
     url.startsWith('http') || url.startsWith('mailto');
