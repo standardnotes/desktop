@@ -4,7 +4,6 @@ import { Bridge, ElectronDesktopCallbacks } from '@web/services/bridge';
 
 declare const BUGSNAG_API_KEY: string;
 declare const DEFAULT_SYNC_SERVER: string;
-declare const DEFAULT_FILES_SERVER: string;
 declare const WEBSOCKET_URL: string;
 declare const ENABLE_UNFINISHED_FEATURES: string;
 declare const PURCHASE_URL: string;
@@ -46,7 +45,6 @@ window.purchaseUrl = PURCHASE_URL;
   window.bridge = await createWebBridge(mainThread);
   window.startApplication(
     DEFAULT_SYNC_SERVER,
-    DEFAULT_FILES_SERVER,
     window.bridge,
     window.enableUnfinishedFeatures,
     WEBSOCKET_URL
