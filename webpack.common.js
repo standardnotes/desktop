@@ -143,7 +143,6 @@ module.exports = function ({
         DEFAULT_SYNC_SERVER: JSON.stringify(
           process.env.DEFAULT_SYNC_SERVER || 'https://api.standardnotes.com'
         ),
-        BUGSNAG_API_KEY: JSON.stringify(process.env.BUGSNAG_API_KEY),
         PURCHASE_URL: JSON.stringify(process.env.PURCHASE_URL),
         PLANS_URL: JSON.stringify(process.env.PLANS_URL),
         DASHBOARD_URL: JSON.stringify(process.env.DASHBOARD_URL),
