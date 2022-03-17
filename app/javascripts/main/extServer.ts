@@ -21,14 +21,10 @@ export function normalizeFilePath(requestUrl: string, host: string): string {
   const isThirdPartyComponent = requestUrl.startsWith('/Extensions');
   const isNativeComponent = requestUrl.startsWith('/components');
   if (!isThirdPartyComponent && !isNativeComponent) {
-    throw new Error(
-      `URL '${requestUrl}' falls outside of the extensions/features domain.`
-    );
+    throw new Error(`URL '${requestUrl}' falls outside of the extensions/features domain.`);
   }
 
-  const removedPrefix = requestUrl
-    .replace('/components', '')
-    .replace('/Extensions', '');
+  const removedPrefix = requestUrl.replace('/components', '').replace('/Extensions', '');
 
   const base = `${Protocol}://${host}`;
   const url = new URL(removedPrefix, base);
@@ -63,6 +59,9 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     });
     const stream = fs.createReadStream(filePath);
     stream.on('error', (error: Error) => onRequestError(error, res));
+    stream.on('end', () => {
+      res.end();
+    });
     stream.pipe(res);
   } catch (error: any) {
     onRequestError(error, res);
