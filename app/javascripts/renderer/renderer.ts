@@ -2,9 +2,7 @@ import { IpcMessages } from '../shared/ipcMessages';
 import { StartApplication } from '@web/startApplication';
 import { Bridge, ElectronDesktopCallbacks } from '@web/services/bridge';
 
-declare const BUGSNAG_API_KEY: string;
 declare const DEFAULT_SYNC_SERVER: string;
-declare const DEFAULT_FILES_SERVER: string;
 declare const WEBSOCKET_URL: string;
 declare const ENABLE_UNFINISHED_FEATURES: string;
 declare const PURCHASE_URL: string;
@@ -14,7 +12,6 @@ declare const DASHBOARD_URL: string;
 declare global {
   interface Window {
     bridge: Bridge;
-    bugsnagApiKey: string;
     dashboardUrl: string;
     desktopManager: ElectronDesktopCallbacks;
     electronAppVersion: string;
@@ -31,7 +28,6 @@ const messageBus = new window.ElectronValence.FrameMessageBus();
 const receiver = new window.ElectronValence.Receiver(messageBus);
 
 /** Accessed by web app */
-window.bugsnagApiKey = BUGSNAG_API_KEY;
 window.dashboardUrl = DASHBOARD_URL;
 window.enableUnfinishedFeatures = ENABLE_UNFINISHED_FEATURES === 'true';
 window.plansUrl = PLANS_URL;
@@ -46,7 +42,6 @@ window.purchaseUrl = PURCHASE_URL;
   window.bridge = await createWebBridge(mainThread);
   window.startApplication(
     DEFAULT_SYNC_SERVER,
-    DEFAULT_FILES_SERVER,
     window.bridge,
     window.enableUnfinishedFeatures,
     WEBSOCKET_URL
