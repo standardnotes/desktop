@@ -2,21 +2,12 @@ import fs from 'fs';
 import path from 'path';
 import { MessageType } from '../../../test/TestIpcMessage';
 import { Language } from './spellcheckerManager';
-import {
-  ensureIsBoolean,
-  isTesting,
-  stringOrNull,
-  isDev,
-  isBoolean,
-} from './utils';
+import { ensureIsBoolean, isTesting, stringOrNull, isDev, isBoolean } from './utils';
 import { FileDoesNotExist } from './fileUtils';
 import { BackupsDirectoryName } from './backupsManager';
 import { handleTestMessage } from './testing';
 
-const app =
-  process.type === 'browser'
-    ? require('electron').app
-    : require('@electron/remote').app;
+const app = process.type === 'browser' ? require('electron').app : require('@electron/remote').app;
 
 function logError(...message: any) {
   console.error('store:', ...message);
@@ -50,38 +41,20 @@ interface StoreData {
 
 function createSanitizedStoreData(data: any = {}): StoreData {
   return {
-    [StoreKeys.MenuBarVisible]: ensureIsBoolean(
-      data[StoreKeys.MenuBarVisible],
-      true
-    ),
-    [StoreKeys.UseSystemMenuBar]: ensureIsBoolean(
-      data[StoreKeys.UseSystemMenuBar],
-      false
-    ),
-    [StoreKeys.BackupsDisabled]: ensureIsBoolean(
-      data[StoreKeys.BackupsDisabled],
-      false
-    ),
-    [StoreKeys.MinimizeToTray]: ensureIsBoolean(
-      data[StoreKeys.MinimizeToTray],
-      false
-    ),
-    [StoreKeys.EnableAutoUpdate]: ensureIsBoolean(
-      data[StoreKeys.EnableAutoUpdate],
-      true
-    ),
+    [StoreKeys.MenuBarVisible]: ensureIsBoolean(data[StoreKeys.MenuBarVisible], true),
+    [StoreKeys.UseSystemMenuBar]: ensureIsBoolean(data[StoreKeys.UseSystemMenuBar], false),
+    [StoreKeys.BackupsDisabled]: ensureIsBoolean(data[StoreKeys.BackupsDisabled], false),
+    [StoreKeys.MinimizeToTray]: ensureIsBoolean(data[StoreKeys.MinimizeToTray], false),
+    [StoreKeys.EnableAutoUpdate]: ensureIsBoolean(data[StoreKeys.EnableAutoUpdate], true),
     [StoreKeys.UseNativeKeychain]: isBoolean(data[StoreKeys.UseNativeKeychain])
       ? data[StoreKeys.UseNativeKeychain]
       : null,
     [StoreKeys.ExtServerHost]: stringOrNull(data[StoreKeys.ExtServerHost]),
-    [StoreKeys.BackupsLocation]: sanitizeBackupsLocation(
-      data[StoreKeys.BackupsLocation]
-    ),
+    [StoreKeys.BackupsLocation]: sanitizeBackupsLocation(data[StoreKeys.BackupsLocation]),
     [StoreKeys.ZoomFactor]: sanitizeZoomFactor(data[StoreKeys.ZoomFactor]),
-    [StoreKeys.SelectedSpellCheckerLanguageCodes]:
-      sanitizeSpellCheckerLanguageCodes(
-        data[StoreKeys.SelectedSpellCheckerLanguageCodes]
-      ),
+    [StoreKeys.SelectedSpellCheckerLanguageCodes]: sanitizeSpellCheckerLanguageCodes(
+      data[StoreKeys.SelectedSpellCheckerLanguageCodes]
+    ),
   };
 }
 
@@ -115,9 +88,7 @@ function sanitizeBackupsLocation(location?: unknown): string {
   }
 }
 
-function sanitizeSpellCheckerLanguageCodes(
-  languages?: unknown
-): Set<Language> | null {
+function sanitizeSpellCheckerLanguageCodes(languages?: unknown): Set<Language> | null {
   if (!languages) return null;
   if (!Array.isArray(languages)) return null;
 

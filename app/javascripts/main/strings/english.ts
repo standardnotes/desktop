@@ -142,14 +142,12 @@ export function createEnglishStrings(): Strings {
                 ).toLocaleString()}.`;
           return `${downloadInstructions}\n${lastAutomaticBackup}`;
         },
-        noRecentBackupChecbox:
-          'I have downloaded a backup, proceed with installation',
+        noRecentBackupChecbox: 'I have downloaded a backup, proceed with installation',
       },
       errorDownloading: {
         title: 'Error Downloading',
         message:
-          'An error occurred while trying to download your ' +
-          'update file. Please try again.',
+          'An error occurred while trying to download your ' + 'update file. Please try again.',
       },
       unknownVersionName: 'Unknown',
     },

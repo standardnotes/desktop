@@ -25,14 +25,8 @@ test.afterEach(async () => {
 });
 
 test('extracts a zip and unnests the folders by one level', async (t) => {
-  await extractNestedZip(
-    path.join(dataPath, 'zip-file.zip'),
-    zipFileDestination
-  );
-  t.deepEqual(await fs.readdir(zipFileDestination), [
-    'package.json',
-    'test-file.txt',
-  ]);
+  await extractNestedZip(path.join(dataPath, 'zip-file.zip'), zipFileDestination);
+  t.deepEqual(await fs.readdir(zipFileDestination), ['package.json', 'test-file.txt']);
 });
 
 test('creates a directory even when parent directories are non-existent', async (t) => {
@@ -57,24 +51,13 @@ test('deletes a deeply-nesting directory', async (t) => {
 });
 
 test('moves the contents of one directory to the other', async (t) => {
-  const fileNames = [
-    '1.txt',
-    '2.txt',
-    '3.txt',
-    'nested/4.txt',
-    'nested/5.txt',
-    'nested/6.txt',
-  ];
+  const fileNames = ['1.txt', '2.txt', '3.txt', 'nested/4.txt', 'nested/5.txt', 'nested/6.txt'];
 
   /** Create a temp directory and fill it with files */
   const dir = path.join(tmpPath, 'move_contents_src');
   await ensureDirectoryExists(dir);
   await ensureDirectoryExists(path.join(dir, 'nested'));
-  await Promise.all(
-    fileNames.map((fileName) =>
-      fs.writeFile(path.join(dir, fileName), fileName)
-    )
-  );
+  await Promise.all(fileNames.map((fileName) => fs.writeFile(path.join(dir, fileName), fileName)));
 
   /** Now move its contents */
   const dest = path.join(tmpPath, 'move_contents_dest');
@@ -88,14 +71,7 @@ test('moves the contents of one directory to the other', async (t) => {
 });
 
 test('moves the contents of one directory to a child directory', async (t) => {
-  const srcFileNames = [
-    '1.txt',
-    '2.txt',
-    '3.txt',
-    'nested/4.txt',
-    'nested/5.txt',
-    'nested/6.txt',
-  ];
+  const srcFileNames = ['1.txt', '2.txt', '3.txt', 'nested/4.txt', 'nested/5.txt', 'nested/6.txt'];
   const destFileNames = ['1.txt', '2.txt', '3.txt', '4.txt', '5.txt', '6.txt'];
 
   /** Create a temp directory and fill it with files */
@@ -103,9 +79,7 @@ test('moves the contents of one directory to a child directory', async (t) => {
   await ensureDirectoryExists(dir);
   await ensureDirectoryExists(path.join(dir, 'nested'));
   await Promise.all(
-    srcFileNames.map((fileName) =>
-      fs.writeFile(path.join(dir, fileName), fileName)
-    )
+    srcFileNames.map((fileName) => fs.writeFile(path.join(dir, fileName), fileName))
   );
 
   /** Now move its contents */

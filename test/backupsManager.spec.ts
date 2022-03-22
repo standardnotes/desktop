@@ -83,10 +83,7 @@ test('changes backups location to a child directory', async (t) => {
   t.is(backups.length, 2); /** 1 + decrypt script */
   const newLocation = path.join(currentLocation, 'child_dir');
   await t.context.backups.changeLocation(newLocation);
-  t.deepEqual(
-    await fs.readdir(path.join(newLocation, BackupsDirectoryName)),
-    backups
-  );
+  t.deepEqual(await fs.readdir(path.join(newLocation, BackupsDirectoryName)), backups);
 });
 
 test('changing backups location to the same directory should not do anything', async (t) => {

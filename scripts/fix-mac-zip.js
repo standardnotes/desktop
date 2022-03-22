@@ -5,9 +5,7 @@
  */
 
 if (process.platform !== 'darwin') {
-  console.error(
-    `this script (${__filename}) can only be run from a darwin platform.`
-  );
+  console.error(`this script (${__filename}) can only be run from a darwin platform.`);
   process.exitCode = 1;
   return;
 }
@@ -41,9 +39,7 @@ async function getBlockMapInfo(fileName) {
 
 (async () => {
   try {
-    const { version } = JSON.parse(
-      await fs.promises.readFile('app/package.json')
-    );
+    const { version } = JSON.parse(await fs.promises.readFile('app/package.json'));
     const zipName = `standard-notes-${version}-mac-x64.zip`;
     const zipPath = `dist/${zipName}`;
     console.log(`Removing ${zipPath}`);
@@ -54,27 +50,21 @@ async function getBlockMapInfo(fileName) {
       ? 'Standard\\ Notes\\ \\(Beta\\).app'
       : 'Standard\\ Notes.app';
     /** @see https://superuser.com/questions/574032/what-is-the-equivalent-unix-command-to-a-mac-osx-compress-menu-action */
-    await exec(
-      `ditto -c -k --sequesterRsrc --keepParent ${appName} ../${zipName}`
-    );
+    await exec(`ditto -c -k --sequesterRsrc --keepParent ${appName} ../${zipName}`);
     process.chdir('../..');
 
     const [blockMapInfo, latestVersionInfo] = await Promise.all([
       getBlockMapInfo(zipPath),
       fs.promises.readFile('dist/latest-mac.yml').then(yaml.load),
     ]);
-    const index = latestVersionInfo.files.findIndex(
-      (file) => file.url === zipName
-    );
+    const index = latestVersionInfo.files.findIndex((file) => file.url === zipName);
     assert(index >= 0);
     latestVersionInfo.files[index] = {
       ...latestVersionInfo.files[index],
       ...blockMapInfo,
     };
     latestVersionInfo.sha512 = blockMapInfo.sha512;
-    console.log(
-      'Writing new size, hash and blockMap size to dist/latest-mac.yml'
-    );
+    console.log('Writing new size, hash and blockMap size to dist/latest-mac.yml');
     await fs.promises.writeFile(
       'dist/latest-mac.yml',
       yaml.dump(latestVersionInfo, {

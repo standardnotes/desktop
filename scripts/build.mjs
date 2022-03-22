@@ -110,36 +110,23 @@ const CompileGroups = [
     ],
   },
   {
-    compileCommand: Command(
-      'yarn run webpack --config webpack.prod.js --env deb'
-    ),
+    compileCommand: Command('yarn run webpack --config webpack.prod.js --env deb'),
     targets: [Targets.Deb],
   },
   {
-    compileCommand: Command(
-      'yarn run webpack --config webpack.prod.js --env deb',
-      arm64Env
-    ),
+    compileCommand: Command('yarn run webpack --config webpack.prod.js --env deb', arm64Env),
     targets: [Targets.DebArm64],
   },
   {
-    compileCommand: Command(
-      'yarn run webpack --config webpack.prod.js',
-      arm64Env
-    ),
+    compileCommand: Command('yarn run webpack --config webpack.prod.js', arm64Env),
     targets: [Targets.DirArm64],
   },
   {
-    compileCommand: Command(
-      'yarn run webpack --config webpack.prod.js --env snap'
-    ),
+    compileCommand: Command('yarn run webpack --config webpack.prod.js --env snap'),
     targets: [Targets.Snap],
   },
   {
-    compileCommand: Command(
-      'yarn run webpack --config webpack.prod.js --env snap',
-      arm64Env
-    ),
+    compileCommand: Command('yarn run webpack --config webpack.prod.js --env snap', arm64Env),
     targets: [Targets.SnapArm64],
   },
 ];
@@ -151,14 +138,10 @@ const BuildCommands = {
     ),
   ],
   [Targets.AppimageX64]: [
-    Command(
-      'yarn run electron-builder --linux --x64 -c.linux.target=AppImage --publish=never'
-    ),
+    Command('yarn run electron-builder --linux --x64 -c.linux.target=AppImage --publish=never'),
   ],
   [Targets.AppimageArm64]: [
-    Command(
-      'yarn run electron-builder --linux --arm64 -c.linux.target=AppImage --publish=never'
-    ),
+    Command('yarn run electron-builder --linux --arm64 -c.linux.target=AppImage --publish=never'),
   ],
   [Targets.AppimageAll]: [
     Command(
@@ -166,30 +149,22 @@ const BuildCommands = {
     ),
   ],
   [Targets.Deb]: [
-    Command(
-      'yarn run electron-builder --linux --x64 --ia32 -c.linux.target=deb --publish=never'
-    ),
+    Command('yarn run electron-builder --linux --x64 --ia32 -c.linux.target=deb --publish=never'),
   ],
   [Targets.DebArm64]: [
-    Command(
-      'yarn run electron-builder --linux --arm64 -c.linux.target=deb --publish=never',
-      { npm_config_target_arch: 'arm64', USE_SYSTEM_FPM: 'true' }
-    ),
+    Command('yarn run electron-builder --linux --arm64 -c.linux.target=deb --publish=never', {
+      npm_config_target_arch: 'arm64',
+      USE_SYSTEM_FPM: 'true',
+    }),
   ],
   [Targets.Mac]: [
     Command('yarn run electron-builder --mac --x64 --publish=never'),
     Command('node scripts/fix-mac-zip'),
   ],
-  [Targets.MacArm64]: [
-    Command('yarn run electron-builder --mac --arm64 --publish=never'),
-  ],
-  [Targets.MacAll]: [
-    Command('yarn run electron-builder --macos --arm64 --x64 --publish=never'),
-  ],
+  [Targets.MacArm64]: [Command('yarn run electron-builder --mac --arm64 --publish=never')],
+  [Targets.MacAll]: [Command('yarn run electron-builder --macos --arm64 --x64 --publish=never')],
   [Targets.Dir]: [
-    Command(
-      'yarn run electron-builder --linux --x64 -c.linux.target=dir --publish=never'
-    ),
+    Command('yarn run electron-builder --linux --x64 -c.linux.target=dir --publish=never'),
   ],
   [Targets.DirArm64]: [
     Command(
@@ -198,30 +173,21 @@ const BuildCommands = {
     ),
   ],
   [Targets.Snap]: [
-    Command(
-      'yarn run electron-builder --linux --x64 -c.linux.target=snap --publish=never'
-    ),
+    Command('yarn run electron-builder --linux --x64 -c.linux.target=snap --publish=never'),
   ],
   [Targets.SnapArm64]: [
-    Command(
-      'yarn run electron-builder --linux --arm64 -c.linux.target=snap --publish=never',
-      {
-        npm_config_target_arch: 'arm64',
-        SNAPCRAFT_BUILD_ENVIRONMENT: 'host',
-      }
-    ),
+    Command('yarn run electron-builder --linux --arm64 -c.linux.target=snap --publish=never', {
+      npm_config_target_arch: 'arm64',
+      SNAPCRAFT_BUILD_ENVIRONMENT: 'host',
+    }),
   ],
-  [Targets.Windows]: [
-    Command('yarn run electron-builder --windows --x64 --ia32 --publish=never'),
-  ],
+  [Targets.Windows]: [Command('yarn run electron-builder --windows --x64 --ia32 --publish=never')],
 };
 
 async function publishSnap() {
   const packageJson = await fs.promises.readFile('./package.json');
   const version = JSON.parse(packageJson).version;
-  await runCommand(
-    Command(`snapcraft upload dist/standard-notes-${version}-linux-amd64.snap`)
-  );
+  await runCommand(Command(`snapcraft upload dist/standard-notes-${version}-linux-amd64.snap`));
 }
 
 (async () => {

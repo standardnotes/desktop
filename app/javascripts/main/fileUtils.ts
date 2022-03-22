@@ -39,10 +39,7 @@ export function readJSONFileSync<T>(filepath: string): T {
   return JSON.parse(data);
 }
 
-export async function writeJSONFile(
-  filepath: string,
-  data: unknown
-): Promise<void> {
+export async function writeJSONFile(filepath: string, data: unknown): Promise<void> {
   await ensureDirectoryExists(path.dirname(filepath));
   await fs.promises.writeFile(filepath, JSON.stringify(data, null, 2), 'utf8');
 }
@@ -56,8 +53,7 @@ export async function ensureDirectoryExists(dirPath: string): Promise<void> {
     const stat = await fs.promises.lstat(dirPath);
     if (!stat.isDirectory()) {
       throw new Error(
-        'Tried to create a directory where a file of the same ' +
-          `name already exists: ${dirPath}`
+        'Tried to create a directory where a file of the same ' + `name already exists: ${dirPath}`
       );
     }
   } catch (error: any) {
@@ -138,10 +134,7 @@ function isChildOfDir(parent: string, potentialChild: string) {
   return relative && !relative.startsWith('..') && !path.isAbsolute(relative);
 }
 
-export async function moveDirContents(
-  srcDir: string,
-  destDir: string
-): Promise<void[]> {
+export async function moveDirContents(srcDir: string, destDir: string): Promise<void[]> {
   let fileNames = await fs.promises.readdir(srcDir);
   await ensureDirectoryExists(destDir);
 
@@ -158,77 +151,65 @@ export async function moveDirContents(
   );
 }
 
-export async function extractNestedZip(
-  source: string,
-  dest: string
-): Promise<void> {
+export async function extractNestedZip(source: string, dest: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    yauzl.open(
-      source,
-      { lazyEntries: true, autoClose: true },
-      (err, zipFile) => {
-        let cancelled = false;
-        const tryReject = (err: Error) => {
-          if (!cancelled) {
-            cancelled = true;
-            reject(err);
-          }
-        };
-        if (err) return tryReject(err);
-        if (!zipFile) return tryReject(new Error('zipFile === undefined'));
+    yauzl.open(source, { lazyEntries: true, autoClose: true }, (err, zipFile) => {
+      let cancelled = false;
+      const tryReject = (err: Error) => {
+        if (!cancelled) {
+          cancelled = true;
+          reject(err);
+        }
+      };
+      if (err) return tryReject(err);
+      if (!zipFile) return tryReject(new Error('zipFile === undefined'));
 
-        zipFile.readEntry();
-        zipFile.on('close', resolve);
-        zipFile.on('entry', (entry) => {
+      zipFile.readEntry();
+      zipFile.on('close', resolve);
+      zipFile.on('entry', (entry) => {
+        if (cancelled) return;
+        if (entry.fileName.endsWith('/')) {
+          /** entry is a directory, skip and read next entry */
+          zipFile.readEntry();
+          return;
+        }
+
+        zipFile.openReadStream(entry, async (err, stream) => {
           if (cancelled) return;
-          if (entry.fileName.endsWith('/')) {
-            /** entry is a directory, skip and read next entry */
-            zipFile.readEntry();
-            return;
+          if (err) return tryReject(err);
+          if (!stream) return tryReject(new Error('stream === undefined'));
+          stream.on('error', tryReject);
+          const filepath = path.join(
+            dest,
+            /**
+             * Remove the first element of the entry's path, which is the base
+             * directory we want to ignore
+             */
+            entry.fileName.substring(entry.fileName.indexOf('/') + 1)
+          );
+          try {
+            await ensureDirectoryExists(path.dirname(filepath));
+          } catch (error: any) {
+            return tryReject(error);
           }
+          const writeStream = fs
+            .createWriteStream(filepath)
+            .on('error', tryReject)
+            .on('error', tryReject);
 
-          zipFile.openReadStream(entry, async (err, stream) => {
-            if (cancelled) return;
-            if (err) return tryReject(err);
-            if (!stream) return tryReject(new Error('stream === undefined'));
-            stream.on('error', tryReject);
-            const filepath = path.join(
-              dest,
-              /**
-               * Remove the first element of the entry's path, which is the base
-               * directory we want to ignore
-               */
-              entry.fileName.substring(entry.fileName.indexOf('/') + 1)
-            );
-            try {
-              await ensureDirectoryExists(path.dirname(filepath));
-            } catch (error: any) {
-              return tryReject(error);
-            }
-            const writeStream = fs
-              .createWriteStream(filepath)
-              .on('error', tryReject)
-              .on('error', tryReject);
-
-            stream.pipe(writeStream).on('close', () => {
-              zipFile.readEntry(); /** Reads next entry. */
-            });
+          stream.pipe(writeStream).on('close', () => {
+            zipFile.readEntry(); /** Reads next entry. */
           });
         });
-      }
-    );
+      });
+    });
   });
 }
 
-export async function moveFiles(
-  sources: string[],
-  destDir: string
-): Promise<void[]> {
+export async function moveFiles(sources: string[], destDir: string): Promise<void[]> {
   await ensureDirectoryExists(destDir);
   return Promise.all(
-    sources.map((fileName) =>
-      moveFile(fileName, path.join(destDir, path.basename(fileName)))
-    )
+    sources.map((fileName) => moveFile(fileName, path.join(destDir, path.basename(fileName))))
   );
 }
 

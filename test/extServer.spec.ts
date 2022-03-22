@@ -75,10 +75,7 @@ test.after((t): Promise<any> => {
   console.log = log;
   console.error = error;
 
-  return Promise.all([
-    tmpDir.clean(),
-    new Promise((resolve) => t.context.server.close(resolve)),
-  ]);
+  return Promise.all([tmpDir.clean(), new Promise((resolve) => t.context.server.close(resolve))]);
 });
 
 test('serves the files in the Extensions directory over HTTP', (t) => {
@@ -88,44 +85,33 @@ test('serves the files in the Extensions directory over HTTP', (t) => {
       4: 4,
     },
     syncopation: true,
-    instruments: [
-      'Drums',
-      'Bass',
-      'Vocals',
-      { name: 'Piano', type: 'Electric' },
-    ],
+    instruments: ['Drums', 'Bass', 'Vocals', { name: 'Piano', type: 'Electric' }],
   };
 
-  return fs
-    .writeFile(path.join(extensionsDir, 'file.json'), JSON.stringify(data))
-    .then(
-      () =>
-        new Promise((resolve) => {
-          let serverData = '';
-          http
-            .get(t.context.host + 'Extensions/file.json')
-            .on('response', (response) => {
-              response
-                .setEncoding('utf-8')
-                .on('data', (chunk) => {
-                  serverData += chunk;
-                })
-                .on('end', () => {
-                  t.deepEqual(data, JSON.parse(serverData));
-                  resolve();
-                });
+  return fs.writeFile(path.join(extensionsDir, 'file.json'), JSON.stringify(data)).then(
+    () =>
+      new Promise((resolve) => {
+        let serverData = '';
+        http.get(t.context.host + 'Extensions/file.json').on('response', (response) => {
+          response
+            .setEncoding('utf-8')
+            .on('data', (chunk) => {
+              serverData += chunk;
+            })
+            .on('end', () => {
+              t.deepEqual(data, JSON.parse(serverData));
+              resolve();
             });
-        })
-    );
+        });
+      })
+  );
 });
 
 test.cb('does not serve files outside the Extensions directory', (t) => {
-  http
-    .get(t.context.host + 'Extensions/../../../package.json')
-    .on('response', (response) => {
-      t.is(response.statusCode, 500);
-      t.end();
-    });
+  http.get(t.context.host + 'Extensions/../../../package.json').on('response', (response) => {
+    t.is(response.statusCode, 500);
+    t.end();
+  });
 });
 
 test.cb('returns a 404 for files that are not present', (t) => {
@@ -141,17 +127,7 @@ test('normalizes file paths to always point somewhere in the Extensions director
     path.join(tmpDir.path, 'Extensions', 'test', 'yes')
   );
   t.is(
-    normalizeFilePath(
-      '/Extensions/../../data/outside/the/extensions/directory'
-    ),
-    path.join(
-      tmpDir.path,
-      'Extensions',
-      'data',
-      'outside',
-      'the',
-      'extensions',
-      'directory'
-    )
+    normalizeFilePath('/Extensions/../../data/outside/the/extensions/directory'),
+    path.join(tmpDir.path, 'Extensions', 'data', 'outside', 'the', 'extensions', 'directory')
   );
 });

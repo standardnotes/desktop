@@ -111,12 +111,7 @@ test('serializes string sets to an array', (t) => {
 test('deletes local storage data after signing out', async (t) => {
   function readLocalStorageContents() {
     return fs.promises.readFile(
-      path.join(
-        t.context.userDataPath,
-        'Local Storage',
-        'leveldb',
-        '000003.log'
-      ),
+      path.join(t.context.userDataPath, 'Local Storage', 'leveldb', '000003.log'),
       {
         encoding: 'utf8',
       }
