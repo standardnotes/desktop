@@ -129,12 +129,7 @@ export async function createWindowState({
   });
 
   window.webContents.on('context-menu', (_event, params) => {
-    /**
-     * On macOS, the system's spellchecker APIs are used to get spelling suggestions.
-     * The SecureSpellChecker is used for the rest of operative systems.
-     */
-    const shouldGetSpellingSuggestions = params.misspelledWord && process.platform !== 'darwin';
-    if (shouldGetSpellingSuggestions) {
+    if (params.misspelledWord) {
       params.dictionarySuggestions = spellchecker.getSpellingSuggestions(params.misspelledWord);
     }
 
