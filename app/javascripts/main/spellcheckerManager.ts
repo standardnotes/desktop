@@ -143,14 +143,13 @@ export function createSpellcheckerManager(
     ko: '한국어' /** Korean */,
   };
 
-  const availableSpellCheckerLanguages = Object.values(Language).filter(
-    (language) => session.availableSpellCheckerLanguages.includes(language)
+  const availableSpellCheckerLanguages = Object.values(Language).filter((language) =>
+    session.availableSpellCheckerLanguages.includes(language)
   );
 
   if (
     isDev() &&
-    availableSpellCheckerLanguages.length !==
-      session.availableSpellCheckerLanguages.length
+    availableSpellCheckerLanguages.length !== session.availableSpellCheckerLanguages.length
   ) {
     /** This means that not every available language has been accounted for. */
     const firstOutlier = session.availableSpellCheckerLanguages.find(
@@ -180,8 +179,7 @@ export function createSpellcheckerManager(
     availableSpellCheckerLanguages: string[],
     userLocale: string
   ): Set<Language> {
-    const localeIsSupported =
-      availableSpellCheckerLanguages.includes(userLocale);
+    const localeIsSupported = availableSpellCheckerLanguages.includes(userLocale);
     if (localeIsSupported && isLanguage(userLocale)) {
       return new Set([userLocale]);
     } else {

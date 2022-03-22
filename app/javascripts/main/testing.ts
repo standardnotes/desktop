@@ -1,19 +1,12 @@
 import { app, BrowserWindow } from 'electron';
-import {
-  AppMessageType,
-  MessageType,
-  TestIPCMessage,
-} from '../../../test/TestIpcMessage';
+import { AppMessageType, MessageType, TestIPCMessage } from '../../../test/TestIpcMessage';
 import { isTesting } from './utils';
 
 const messageHandlers: {
   [key in MessageType]?: (...args: any) => unknown;
 } = {};
 
-export function handleTestMessage(
-  type: MessageType,
-  handler: (...args: any) => unknown
-): void {
+export function handleTestMessage(type: MessageType, handler: (...args: any) => unknown): void {
   if (!isTesting()) {
     throw Error('Tried to invoke test handler in non-test build.');
   }
@@ -32,9 +25,7 @@ export function setupTesting(): void {
     if (!handler) {
       process.send!({
         id: message.id,
-        reject: `No handler registered for message type ${
-          MessageType[message.type]
-        }`,
+        reject: `No handler registered for message type ${MessageType[message.type]}`,
       });
       return;
     }
@@ -56,10 +47,7 @@ export function setupTesting(): void {
     }
   });
 
-  handleTestMessage(
-    MessageType.WindowCount,
-    () => BrowserWindow.getAllWindows().length
-  );
+  handleTestMessage(MessageType.WindowCount, () => BrowserWindow.getAllWindows().length);
 
   app.on('ready', () => {
     setTimeout(() => {

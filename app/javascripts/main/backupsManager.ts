@@ -62,10 +62,7 @@ export interface BackupsManager {
 async function copyDecryptScript(location: string) {
   try {
     await ensureDirectoryExists(location);
-    await fs.copyFile(
-      Paths.decryptScript,
-      path.join(location, path.basename(Paths.decryptScript))
-    );
+    await fs.copyFile(Paths.decryptScript, path.join(location, path.basename(Paths.decryptScript)));
   } catch (error) {
     console.error(error);
   }
@@ -177,9 +174,7 @@ export function createBackupsManager(
   }
 
   if (isTesting()) {
-    handleTestMessage(MessageType.DataArchive, (data: any) =>
-      archiveData(data)
-    );
+    handleTestMessage(MessageType.DataArchive, (data: any) => archiveData(data));
     handleTestMessage(MessageType.BackupsAreEnabled, () => !backupsDisabled);
     handleTestMessage(MessageType.ToggleBackupsEnabled, toggleBackupsStatus);
     handleTestMessage(MessageType.BackupsLocation, () => backupsLocation);
@@ -200,9 +195,7 @@ export function createBackupsManager(
     toggleBackupsStatus,
     async backupsCount(): Promise<number> {
       let files = await fs.readdir(backupsLocation);
-      files = files.filter((fileName) =>
-        fileName.endsWith(BackupFileExtension)
-      );
+      files = files.filter((fileName) => fileName.endsWith(BackupFileExtension));
       return files.length;
     },
     applicationDidBlur() {
@@ -234,15 +227,12 @@ export function createBackupsManager(
   };
 }
 
-async function determineLastBackupDate(
-  backupsLocation: string
-): Promise<number | null> {
+async function determineLastBackupDate(backupsLocation: string): Promise<number | null> {
   try {
     const files = (await fs.readdir(backupsLocation))
       .filter(
         (filename) =>
-          filename.endsWith(BackupFileExtension) &&
-          !Number.isNaN(backupFileNameToDate(filename))
+          filename.endsWith(BackupFileExtension) && !Number.isNaN(backupFileNameToDate(filename))
       )
       .sort();
     const lastBackupFileName = last(files);

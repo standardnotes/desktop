@@ -103,9 +103,7 @@ class MappingFileHandler {
     this.writeToDisk();
   };
 
-  getInstalledVersionForComponent = async (
-    component: Component
-  ): Promise<string> => {
+  getInstalledVersionForComponent = async (component: Component): Promise<string> => {
     const version = this.get(component.uuid)?.version;
     if (version) {
       return version;
@@ -138,30 +136,26 @@ export async function initializePackageManager(
 
   const mapping = await MappingFileHandler.create();
 
-  ipcMain.on(
-    IpcMessages.SyncComponents,
-    async (_event, data: { componentsData: Component[] }) => {
-      const components = data.componentsData;
+  ipcMain.on(IpcMessages.SyncComponents, async (_event, data: { componentsData: Component[] }) => {
+    const components = data.componentsData;
 
-      logMessage(
-        'received sync event for:',
-        components
-          .map(
-            ({ content, deleted }) =>
-              // eslint-disable-next-line camelcase
-              `${content?.name} (${content?.package_info?.version}) ` +
-              `(deleted: ${deleted})`
-          )
-          .join(', ')
-      );
-      syncTasks.push({ components });
+    logMessage(
+      'received sync event for:',
+      components
+        .map(
+          ({ content, deleted }) =>
+            // eslint-disable-next-line camelcase
+            `${content?.name} (${content?.package_info?.version}) ` + `(deleted: ${deleted})`
+        )
+        .join(', ')
+    );
+    syncTasks.push({ components });
 
-      if (isRunningTasks) return;
-      isRunningTasks = true;
-      await runTasks(webContents, mapping, syncTasks);
-      isRunningTasks = false;
-    }
-  );
+    if (isRunningTasks) return;
+    isRunningTasks = true;
+    await runTasks(webContents, mapping, syncTasks);
+    isRunningTasks = false;
+  });
 }
 
 async function runTasks(
@@ -171,12 +165,7 @@ async function runTasks(
 ) {
   while (tasks.length > 0) {
     try {
-      const oppositeTask = await runTask(
-        webContents,
-        mapping,
-        tasks[0],
-        tasks.slice(1)
-      );
+      const oppositeTask = await runTask(webContents, mapping, tasks[0], tasks.slice(1));
       if (oppositeTask) {
         tasks.splice(tasks.indexOf(oppositeTask), 1);
       }
@@ -223,8 +212,7 @@ async function runTask(
           }
           const otherComponent = otherTask.components[0];
           return (
-            component.uuid === otherComponent.uuid &&
-            component.deleted !== otherComponent.deleted
+            component.uuid === otherComponent.uuid && component.deleted !== otherComponent.deleted
           );
         });
         if (oppositeTask) {
@@ -314,9 +302,7 @@ async function checkForUpdate(
   mapping: MappingFileHandler,
   component: Component
 ) {
-  const installedVersion = await mapping.getInstalledVersionForComponent(
-    component
-  );
+  const installedVersion = await mapping.getInstalledVersionForComponent(component);
 
   const latestUrl = component.content?.package_info?.latest_url;
   if (!latestUrl) {
@@ -337,13 +323,7 @@ async function checkForUpdate(
   if (compareVersions(latestVersion, installedVersion) === 1) {
     /** Latest version is greater than installed version */
     logMessage('Downloading new version', latestVersion);
-    await installComponent(
-      webContents,
-      mapping,
-      component,
-      latestJson,
-      latestVersion
-    );
+    await installComponent(webContents, mapping, component, latestJson, latestVersion);
   }
 }
 
@@ -365,10 +345,7 @@ async function installComponent(
 
   logMessage('Installing ', name, downloadUrl);
 
-  const sendInstalledMessage = (
-    component: Component,
-    error?: { message: string; tag: string }
-  ) => {
+  const sendInstalledMessage = (component: Component, error?: { message: string; tag: string }) => {
     if (error) {
       logError(`Error when installing component ${name}: ` + error.message);
     } else {
@@ -421,10 +398,7 @@ async function installComponent(
 
     sendInstalledMessage(component);
   } catch (error: any) {
-    logMessage(
-      `Error while installing ${component.content.name}`,
-      error.message
-    );
+    logMessage(`Error while installing ${component.content.name}`, error.message);
 
     /**
      * Waiting five seconds prevents clients from spamming install requests
@@ -448,12 +422,7 @@ function pathsForComponent(component: Pick<Component, 'content'>) {
   return {
     relativePath,
     absolutePath: path.join(Paths.userDataDir, relativePath),
-    downloadPath: path.join(
-      Paths.tempDir,
-      AppName,
-      'downloads',
-      component.content!.name + '.zip'
-    ),
+    downloadPath: path.join(Paths.tempDir, AppName, 'downloads', component.content!.name + '.zip'),
   };
 }
 

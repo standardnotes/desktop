@@ -13,10 +13,7 @@ export interface TrayManager {
   destroyTrayIcon(): void;
 }
 
-export function createTrayManager(
-  window: Electron.BrowserWindow,
-  store: Store
-): TrayManager {
+export function createTrayManager(window: Electron.BrowserWindow, store: Store): TrayManager {
   let tray: Tray | undefined;
   let updateContextMenu: (() => void) | undefined;
 

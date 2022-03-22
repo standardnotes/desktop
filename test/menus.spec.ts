@@ -23,9 +23,7 @@ test.beforeEach(async (t) => {
 function findSpellCheckerLanguagesMenu(menuItems: MenuItem[]) {
   return menuItems.find((item) => {
     if (item.role?.toLowerCase() === 'editmenu') {
-      return item?.submenu?.items?.find(
-        (item) => item.id === 'SpellcheckerLanguages'
-      );
+      return item?.submenu?.items?.find((item) => item.id === 'SpellcheckerLanguages');
     }
   });
 }

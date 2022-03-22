@@ -1,10 +1,6 @@
 import { IpcMessages } from '../shared/ipcMessages';
 import { Store, StoreKeys } from '../main/store';
-const {
-  Transmitter,
-  FrameMessageBus,
-  Validation,
-} = require('sn-electron-valence/Transmitter');
+const { Transmitter, FrameMessageBus, Validation } = require('sn-electron-valence/Transmitter');
 const { ipcRenderer } = require('electron');
 const path = require('path');
 const rendererPath = path.join('file://', __dirname, '/renderer.js');
@@ -77,26 +73,20 @@ function loadTransmitter() {
       return remote.getCurrentWindow().isMaximized();
     },
     getKeychainValue: () => ipcRenderer.invoke(IpcMessages.GetKeychainValue),
-    setKeychainValue: (value) =>
-      ipcRenderer.invoke(IpcMessages.SetKeychainValue, value),
-    clearKeychainValue: () =>
-      ipcRenderer.invoke(IpcMessages.ClearKeychainValue),
+    setKeychainValue: (value) => ipcRenderer.invoke(IpcMessages.SetKeychainValue, value),
+    clearKeychainValue: () => ipcRenderer.invoke(IpcMessages.ClearKeychainValue),
     localBackupsCount: () => ipcRenderer.invoke(IpcMessages.LocalBackupsCount),
     viewlocalBackups: async () => {
       ipcRenderer.send(IpcMessages.ViewLocalBackups);
     },
-    deleteLocalBackups: async () =>
-      ipcRenderer.invoke(IpcMessages.DeleteLocalBackups),
+    deleteLocalBackups: async () => ipcRenderer.invoke(IpcMessages.DeleteLocalBackups),
   });
 }
 
 function listenForIpcEvents() {
   const sendMessage = (message, payload = {}) => {
     // eslint-disable-next-line no-undef
-    window.postMessage(
-      JSON.stringify({ message, data: payload }),
-      rendererPath
-    );
+    window.postMessage(JSON.stringify({ message, data: payload }), rendererPath);
   };
 
   ipcRenderer.on(IpcMessages.UpdateAvailable, function (_event, data) {

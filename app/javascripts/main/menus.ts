@@ -19,11 +19,7 @@ import { Store, StoreKeys } from './store';
 import { appMenu as str, contextMenu } from './strings';
 import { handleTestMessage } from './testing';
 import { TrayManager } from './trayManager';
-import {
-  checkForUpdate,
-  openChangelog,
-  showUpdateInstallationDialog,
-} from './updateManager';
+import { checkForUpdate, openChangelog, showUpdateInstallationDialog } from './updateManager';
 import { isDev, isTesting } from './utils';
 
 export const enum MenuId {
@@ -34,10 +30,7 @@ const Separator: MenuItemConstructorOptions = {
   type: 'separator',
 };
 
-export function buildContextMenu(
-  webContents: WebContents,
-  params: ContextMenuParams
-): Menu {
+export function buildContextMenu(webContents: WebContents, params: ContextMenuParams): Menu {
   if (!params.isEditable) {
     return Menu.buildFromTemplate([
       {
@@ -399,11 +392,7 @@ function viewMenu(
   };
 }
 
-function menuBarOptions(
-  window: Electron.BrowserWindow,
-  store: Store,
-  reload: () => any
-) {
+function menuBarOptions(window: Electron.BrowserWindow, store: Store, reload: () => any) {
   const useSystemMenuBar = store.get(StoreKeys.UseSystemMenuBar);
   let isMenuBarVisible = store.get(StoreKeys.MenuBarVisible);
   window.setMenuBarVisibility(isMenuBarVisible);
@@ -449,9 +438,7 @@ function windowMenu(
         role: Roles.Close,
       },
       Separator,
-      ...(isMac()
-        ? macWindowItems()
-        : [minimizeToTrayItem(store, trayManager, reload)]),
+      ...(isMac() ? macWindowItems() : [minimizeToTrayItem(store, trayManager, reload)]),
     ],
   };
 }
@@ -480,11 +467,7 @@ function macWindowItems(): MenuItemConstructorOptions[] {
   ];
 }
 
-function minimizeToTrayItem(
-  store: Store,
-  trayManager: TrayManager,
-  reload: () => any
-) {
+function minimizeToTrayItem(store: Store, trayManager: TrayManager, reload: () => any) {
   const minimizeToTray = trayManager.shouldMinimizeToTray();
   return {
     label: str().minimizeToTrayOnClose,
@@ -574,9 +557,7 @@ function updateMenu(window: BrowserWindow, appState: AppState) {
   });
 
   submenu.push({
-    label: latestVersion
-      ? str().latestVersion(latestVersion)
-      : str().releaseNotes,
+    label: latestVersion ? str().latestVersion(latestVersion) : str().releaseNotes,
     click() {
       openChangelog(updateState);
     },
@@ -680,10 +661,7 @@ function helpMenu(window: Electron.BrowserWindow, shell: Electron.Shell) {
 }
 
 /** It's called keyring on Ubuntu */
-function keyringMenu(
-  window: BrowserWindow,
-  store: Store
-): MenuItemConstructorOptions {
+function keyringMenu(window: BrowserWindow, store: Store): MenuItemConstructorOptions {
   const useNativeKeychain = store.get(StoreKeys.UseNativeKeychain);
   return {
     label: str().security.security,
@@ -697,10 +675,7 @@ function keyringMenu(
           store.set(StoreKeys.UseNativeKeychain, true);
           const { response } = await dialog.showMessageBox(window, {
             message: str().security.enabledKeyringAccessMessage,
-            buttons: [
-              str().security.enabledKeyringQuitNow,
-              str().security.enabledKeyringPostpone,
-            ],
+            buttons: [str().security.enabledKeyringQuitNow, str().security.enabledKeyringPostpone],
           });
           if (response === 0) {
             app.quit();
