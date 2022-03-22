@@ -1418,10 +1418,10 @@
   resolved "https://registry.yarnpkg.com/@standardnotes/electron-clear-data/-/electron-clear-data-1.1.1.tgz#45eab118ed5d1ee9369b540d7e62a9ca96778335"
   integrity sha512-R0YivtSwSQpNt5nPOi7YRTGlk6kpcz6/2/sAQZf6ZCU8vIGm1cBMo++6kkGQcDEumkwbmagxmLWinL9d1W5g3Q==
 
-"@standardnotes/electron-secure-spellchecker@1.1.1":
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/@standardnotes/electron-secure-spellchecker/-/electron-secure-spellchecker-1.1.1.tgz#581b348044efedf6dd92dd20e3e51c984b66ea29"
-  integrity sha512-RKaP6+tDwjRHLN+n0dkZjAQktN3ZWMspDXCtv/aT7CNJ6rV3T9KfD7znn0qysHwWPCIfywPVwZqWUaz5UmgFJQ==
+"@standardnotes/electron-secure-spellchecker@1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@standardnotes/electron-secure-spellchecker/-/electron-secure-spellchecker-1.1.2.tgz#f4bc572f14675a0fbbb15526d879e2a9a6fdc957"
+  integrity sha512-ByHHDcsinlHQl5DAGV6MbV9sFMhrBG5uHgMCFjjgmtToBcxQn8V/nqO4CUI56ZW4ClnfYdPjfD/nGq+PCWOfUw==
 
 "@standardnotes/sncrypto-common@^1.2.9", "@standardnotes/sncrypto-common@^1.3.0":
   version "1.3.0"
