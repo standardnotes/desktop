@@ -39,11 +39,7 @@ test.before(
 );
 
 test.after(
-  (): Promise<any> =>
-    Promise.all([
-      tmpDir.clean(),
-      new Promise((resolve) => server.close(resolve)),
-    ])
+  (): Promise<any> => Promise.all([tmpDir.clean(), new Promise((resolve) => server.close(resolve))])
 );
 
 test.beforeEach(async (t) => {

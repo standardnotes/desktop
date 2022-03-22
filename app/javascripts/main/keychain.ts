@@ -15,9 +15,7 @@ const ServiceName = isTesting()
   : AppName;
 const AccountName = 'Standard Notes Account';
 
-export async function ensureKeychainAccess(
-  store: Store
-): Promise<BrowserWindow | undefined> {
+export async function ensureKeychainAccess(store: Store): Promise<BrowserWindow | undefined> {
   if (!isLinux()) {
     /** Assume keychain is accessible */
     return;

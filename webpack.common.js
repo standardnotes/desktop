@@ -119,8 +119,7 @@ module.exports = function ({
     entry: {
       preload: './app/javascripts/renderer/preload.js',
       renderer: './app/javascripts/renderer/renderer.ts',
-      grantLinuxPasswordsAccess:
-        './app/javascripts/renderer/grantLinuxPasswordsAccess.js',
+      grantLinuxPasswordsAccess: './app/javascripts/renderer/grantLinuxPasswordsAccess.js',
     },
     output: {
       path: path.resolve(__dirname, 'app', 'dist', 'javascripts', 'renderer'),
@@ -135,8 +134,7 @@ module.exports = function ({
     module: moduleConfig,
     externals: {
       electron: 'commonjs electron',
-      'sn-electron-valence/Transmitter':
-        'commonjs sn-electron-valence/Transmitter',
+      'sn-electron-valence/Transmitter': 'commonjs sn-electron-valence/Transmitter',
     },
     plugins: [
       new webpack.DefinePlugin({
@@ -148,9 +146,7 @@ module.exports = function ({
         DASHBOARD_URL: JSON.stringify(process.env.DASHBOARD_URL),
         EXPERIMENTAL_FEATURES,
         WEBSOCKET_URL: JSON.stringify(process.env.WEBSOCKET_URL),
-        ENABLE_UNFINISHED_FEATURES: JSON.stringify(
-          process.env.ENABLE_UNFINISHED_FEATURES
-        ),
+        ENABLE_UNFINISHED_FEATURES: JSON.stringify(process.env.ENABLE_UNFINISHED_FEATURES),
       }),
     ],
   };

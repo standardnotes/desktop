@@ -55,8 +55,7 @@ export async function createWindowState({
   const services = createWindowServices(window, appState, appLocale);
   const spellchecker = SecureSpellChecker.getInstance();
 
-  const shouldOpenUrl = (url: string) =>
-    url.startsWith('http') || url.startsWith('mailto');
+  const shouldOpenUrl = (url: string) => url.startsWith('http') || url.startsWith('mailto');
 
   window.on('closed', teardown);
 
@@ -79,10 +78,7 @@ export async function createWindowState({
   });
 
   window.on('close', (event) => {
-    if (
-      !appState.willQuitApp &&
-      (isMac() || services.trayManager.shouldMinimizeToTray())
-    ) {
+    if (!appState.willQuitApp && (isMac() || services.trayManager.shouldMinimizeToTray())) {
       /**
        * On MacOS, closing a window does not quit the app. On Window and Linux,
        * it only does if you haven't enabled minimize to tray.
@@ -180,9 +176,7 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
       window.webContents.session.getSpellCheckerLanguages()
     );
     handleTestMessage(MessageType.SetLocalStorageValue, async (key, value) => {
-      await window.webContents.executeJavaScript(
-        `localStorage.setItem("${key}", "${value}")`
-      );
+      await window.webContents.executeJavaScript(`localStorage.setItem("${key}", "${value}")`);
       window.webContents.session.flushStorageData();
     });
     handleTestMessage(MessageType.SignOut, () =>
@@ -204,11 +198,7 @@ function createWindowServices(
   initializePackageManager(ipcMain, window.webContents);
   initializeSearchManager(window.webContents);
   initializeZoomManager(window, appState.store);
-  const backupsManager = createBackupsManager(
-    window.webContents,
-    appState,
-    ipcMain
-  );
+  const backupsManager = createBackupsManager(window.webContents, appState, ipcMain);
   const updateManager = setupUpdates(window, appState, backupsManager);
   const trayManager = createTrayManager(window, appState.store);
   const spellcheckerManager = createSpellcheckerManager(
@@ -217,10 +207,7 @@ function createWindowServices(
     appLocale
   );
   if (isTesting()) {
-    handleTestMessage(
-      MessageType.SpellCheckerManager,
-      () => spellcheckerManager
-    );
+    handleTestMessage(MessageType.SpellCheckerManager, () => spellcheckerManager);
   }
   const menuManager = createMenuManager({
     appState,
@@ -274,10 +261,7 @@ async function getPreviousWindowPosition() {
   let position: WindowPosition;
   try {
     position = JSON.parse(
-      await fs.promises.readFile(
-        path.join(Paths.userDataDir, 'window-position.json'),
-        'utf8'
-      )
+      await fs.promises.readFile(path.join(Paths.userDataDir, 'window-position.json'), 'utf8')
     );
   } catch (e) {
     return {
@@ -331,11 +315,7 @@ function persistWindowPosition(window: BrowserWindow) {
     if (writingToDisk) return;
     writingToDisk = true;
     try {
-      await fs.promises.writeFile(
-        Paths.windowPositionJson,
-        JSON.stringify(position),
-        'utf-8'
-      );
+      await fs.promises.writeFile(Paths.windowPositionJson, JSON.stringify(position), 'utf-8');
     } catch (error) {
       console.error('Could not write to window-position.json', error);
     } finally {

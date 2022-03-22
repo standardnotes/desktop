@@ -182,16 +182,9 @@ async function finishApplicationInitialization({
   keychainWindow?.close();
 
   state.windowState = windowState;
-  registerIpcEventListeners(
-    ipcMain,
-    windowState.menuManager,
-    windowState.backupsManager
-  );
+  registerIpcEventListeners(ipcMain, windowState.menuManager, windowState.backupsManager);
 
-  if (
-    (isWindows() || isLinux()) &&
-    state.windowState.trayManager.shouldMinimizeToTray()
-  ) {
+  if ((isWindows() || isLinux()) && state.windowState.trayManager.shouldMinimizeToTray()) {
     state.windowState.trayManager.createTrayIcon();
   }
 
@@ -221,17 +214,11 @@ function registerIpcEventListeners(
   });
 
   ipcMain.handle(IpcMessages.GetKeychainValue, getKeychainValue);
-  ipcMain.handle(IpcMessages.SetKeychainValue, (_event, value) =>
-    setKeychainValue(value)
-  );
+  ipcMain.handle(IpcMessages.SetKeychainValue, (_event, value) => setKeychainValue(value));
   ipcMain.handle(IpcMessages.ClearKeychainValue, clearKeychainValue);
-  ipcMain.handle(IpcMessages.LocalBackupsCount, () =>
-    backupsManager.backupsCount()
-  );
+  ipcMain.handle(IpcMessages.LocalBackupsCount, () => backupsManager.backupsCount());
   ipcMain.on(IpcMessages.ViewLocalBackups, () => {
     shell.openPath(backupsManager.backupsLocation);
   });
-  ipcMain.handle(IpcMessages.DeleteLocalBackups, () =>
-    backupsManager.deleteBackups()
-  );
+  ipcMain.handle(IpcMessages.DeleteLocalBackups, () => backupsManager.deleteBackups());
 }

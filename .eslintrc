@@ -14,13 +14,7 @@
     "project": "./tsconfig.json",
     "extraFileExtensions": [".mjs"]
   },
-  "ignorePatterns": [
-    "test",
-    "scripts",
-    ".eslintrc",
-    "tsconfig.json",
-    "node_modules"
-  ],
+  "ignorePatterns": ["test", "scripts", ".eslintrc", "tsconfig.json", "node_modules"],
   "rules": {
     /** Style */
     "semi": 1,

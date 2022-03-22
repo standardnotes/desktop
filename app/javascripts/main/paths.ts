@@ -6,23 +6,14 @@ import { app } from 'electron';
 
 function url(fileName: string): string {
   if ('APP_RELATIVE_PATH' in process.env) {
-    return path.join(
-      'file://',
-      __dirname,
-      process.env.APP_RELATIVE_PATH as string,
-      fileName
-    );
+    return path.join('file://', __dirname, process.env.APP_RELATIVE_PATH as string, fileName);
   }
   return path.join('file://', __dirname, fileName);
 }
 
 function filePath(fileName: string): string {
   if ('APP_RELATIVE_PATH' in process.env) {
-    return path.join(
-      __dirname,
-      process.env.APP_RELATIVE_PATH as string,
-      fileName
-    );
+    return path.join(__dirname, process.env.APP_RELATIVE_PATH as string, fileName);
   }
   return path.join(__dirname, fileName);
 }
@@ -73,9 +64,6 @@ export const Paths = {
     return `${app.getAppPath()}/dist/standard-notes-web/components`;
   },
   get grantLinuxPasswordsAccessJs(): string {
-    return path.join(
-      __dirname,
-      'javascripts/renderer/grantLinuxPasswordsAccess.js'
-    );
+    return path.join(__dirname, 'javascripts/renderer/grantLinuxPasswordsAccess.js');
   },
 };

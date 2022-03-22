@@ -3,10 +3,7 @@ import { IpcMainEvent } from 'electron';
 import { promises as fs } from 'fs';
 import path from 'path';
 import proxyquire from 'proxyquire';
-import {
-  ensureDirectoryExists,
-  readJSONFile,
-} from '../app/javascripts/main/fileUtils';
+import { ensureDirectoryExists, readJSONFile } from '../app/javascripts/main/fileUtils';
 import { SyncTask } from '../app/javascripts/main/packageManager';
 import { IpcMessages } from '../app/javascripts/shared/ipcMessages';
 import { createTmpDir } from './testUtils';
@@ -19,29 +16,23 @@ const FakePaths = makeFakePaths(tmpDir.path);
 const contentDir = path.join(tmpDir.path, 'Extensions');
 let downloadFileCallCount = 0;
 
-const { initializePackageManager } = proxyquire(
-  '../app/javascripts/main/packageManager',
-  {
-    './paths': {
-      Paths: FakePaths,
-      '@noCallThru': true,
+const { initializePackageManager } = proxyquire('../app/javascripts/main/packageManager', {
+  './paths': {
+    Paths: FakePaths,
+    '@noCallThru': true,
+  },
+  './networking': {
+    /** Download a fake component file */
+    async downloadFile(_src: string, dest: string) {
+      downloadFileCallCount += 1;
+      if (!path.normalize(dest).startsWith(tmpDir.path)) {
+        throw new Error(`Bad download destination: ${dest}`);
+      }
+      await ensureDirectoryExists(path.dirname(dest));
+      await fs.copyFile(path.join(__dirname, 'data', 'zip-file.zip'), path.join(dest));
     },
-    './networking': {
-      /** Download a fake component file */
-      async downloadFile(_src: string, dest: string) {
-        downloadFileCallCount += 1;
-        if (!path.normalize(dest).startsWith(tmpDir.path)) {
-          throw new Error(`Bad download destination: ${dest}`);
-        }
-        await ensureDirectoryExists(path.dirname(dest));
-        await fs.copyFile(
-          path.join(__dirname, 'data', 'zip-file.zip'),
-          path.join(dest)
-        );
-      },
-    },
-  }
-);
+  },
+});
 
 const fakeWebContents = {
   send(_eventName: string, { error }) {
@@ -132,10 +123,7 @@ test('installs multiple components', async (t) => {
     t.true(files.includes(identifier + modifier));
   }
   t.true(files.includes('mapping.json'));
-  const mappingContents = await fs.readFile(
-    path.join(contentDir, 'mapping.json'),
-    'utf8'
-  );
+  const mappingContents = await fs.readFile(path.join(contentDir, 'mapping.json'), 'utf8');
 
   t.deepEqual(
     JSON.parse(mappingContents),
@@ -148,27 +136,21 @@ test('installs multiple components', async (t) => {
     }, {})
   );
 
-  const downloads = await fs.readdir(
-    path.join(tmpDir.path, AppName, 'downloads')
-  );
+  const downloads = await fs.readdir(path.join(tmpDir.path, AppName, 'downloads'));
   t.is(downloads.length, modifiers.length);
   for (const modifier of modifiers) {
     t.true(downloads.includes(`${name + modifier}.zip`));
   }
 
   for (const modifier of modifiers) {
-    const componentFiles = await fs.readdir(
-      path.join(contentDir, identifier + modifier)
-    );
+    const componentFiles = await fs.readdir(path.join(contentDir, identifier + modifier));
     t.is(componentFiles.length, 2);
   }
 });
 
 test('uninstalls multiple components', async (t) => {
   await fakeIpcMain.syncComponents({
-    components: modifiers.map((modifier) =>
-      fakeComponent({ deleted: true, modifier })
-    ),
+    components: modifiers.map((modifier) => fakeComponent({ deleted: true, modifier })),
   });
   await new Promise((resolve) => setTimeout(resolve, 200));
 
@@ -204,10 +186,7 @@ test("Relies on download_url's version field to store the version number", async
   )[uuid].version;
 
   const packageJsonVersion = JSON.parse(
-    await fs.readFile(
-      path.join(contentDir, identifier, 'package.json'),
-      'utf-8'
-    )
+    await fs.readFile(path.join(contentDir, identifier, 'package.json'), 'utf-8')
   ).version;
 
   t.not(mappingFileVersion, packageJsonVersion);

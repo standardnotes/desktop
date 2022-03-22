@@ -2,11 +2,7 @@
 import { ChildProcess, spawn } from 'child_process';
 import electronPath, { MenuItem } from 'electron';
 import path from 'path';
-import {
-  deleteDir,
-  ensureDirectoryExists,
-  readJSONFile,
-} from '../app/javascripts/main/fileUtils';
+import { deleteDir, ensureDirectoryExists, readJSONFile } from '../app/javascripts/main/fileUtils';
 import { Language } from '../app/javascripts/main/spellcheckerManager';
 import { StoreKeys } from '../app/javascripts/main/store';
 import { UpdateState } from '../app/javascripts/main/updateManager';
@@ -55,15 +51,13 @@ class Driver {
       if (message.type === AppMessageType.Log) {
         console.log(message);
       }
-      this.awaitedOnMessages = this.awaitedOnMessages.filter(
-        ({ type, resolve }) => {
-          if (type === message.type) {
-            resolve();
-            return false;
-          }
-          return true;
+      this.awaitedOnMessages = this.awaitedOnMessages.filter(({ type, resolve }) => {
+        if (type === message.type) {
+          resolve();
+          return false;
         }
-      );
+        return true;
+      });
     }
     if ('id' in message) {
       const call = this.calls[message.id]!;
@@ -119,18 +113,15 @@ class Driver {
       const location = await this.send(MessageType.StoreSettingsLocation);
       return readJSONFile(location);
     },
-    dataLocation: (): Promise<string> =>
-      this.send(MessageType.StoreSettingsLocation),
-    setZoomFactor: (factor: number) =>
-      this.send(MessageType.StoreSet, 'zoomFactor', factor),
+    dataLocation: (): Promise<string> => this.send(MessageType.StoreSettingsLocation),
+    setZoomFactor: (factor: number) => this.send(MessageType.StoreSet, 'zoomFactor', factor),
     setLocalStorageValue: (key: string, value: string): Promise<void> =>
       this.send(MessageType.SetLocalStorageValue, key, value),
   };
 
   readonly appMenu = {
     items: (): Promise<MenuItem[]> => this.send(MessageType.AppMenuItems),
-    clickLanguage: (language: Language) =>
-      this.send(MessageType.ClickLanguage, language),
+    clickLanguage: (language: Language) => this.send(MessageType.ClickLanguage, language),
     hasReloaded: () => this.send(MessageType.HasReloadedMenu),
   };
 
@@ -141,14 +132,12 @@ class Driver {
 
   readonly backups = {
     enabled: (): Promise<boolean> => this.send(MessageType.BackupsAreEnabled),
-    toggleEnabled: (): Promise<boolean> =>
-      this.send(MessageType.ToggleBackupsEnabled),
+    toggleEnabled: (): Promise<boolean> => this.send(MessageType.ToggleBackupsEnabled),
     location: (): Promise<string> => this.send(MessageType.BackupsLocation),
     copyDecryptScript: async (location: string) => {
       await this.send(MessageType.CopyDecryptScript, location);
     },
-    changeLocation: (location: string) =>
-      this.send(MessageType.ChangeBackupsLocation, location),
+    changeLocation: (location: string) => this.send(MessageType.ChangeBackupsLocation, location),
     save: (data: any) => this.send(MessageType.DataArchive, data),
     perform: async () => {
       await this.windowLoaded;
@@ -159,8 +148,7 @@ class Driver {
 
   readonly updates = {
     state: (): Promise<UpdateState> => this.send(MessageType.UpdateState),
-    autoUpdateEnabled: (): Promise<boolean> =>
-      this.send(MessageType.AutoUpdateEnabled),
+    autoUpdateEnabled: (): Promise<boolean> => this.send(MessageType.AutoUpdateEnabled),
     check: () => this.send(MessageType.CheckForUpdate),
   };
 
@@ -193,9 +181,7 @@ class Driver {
         }
       }
     }
-    throw new Error(
-      `Couldn't delete user data directory after ${maxTries} tries`
-    );
+    throw new Error(`Couldn't delete user data directory after ${maxTries} tries`);
   };
 
   restart = async () => {

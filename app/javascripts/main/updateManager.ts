@@ -30,8 +30,7 @@ export class UpdateState {
   lastCheck: Date | null = null;
 
   constructor(private appState: AppState) {
-    this.enableAutoUpdate =
-      autoUpdatingAvailable && appState.store.get(StoreKeys.EnableAutoUpdate);
+    this.enableAutoUpdate = autoUpdatingAvailable && appState.store.get(StoreKeys.EnableAutoUpdate);
     makeObservable(this, {
       latestVersion: observable,
       enableAutoUpdate: observable,
@@ -106,9 +105,7 @@ export function setupUpdates(
     if (appState.store.get(StoreKeys.BackupsDisabled)) {
       canUpdate = true;
     } else {
-      canUpdate =
-        updateState.enableAutoUpdate &&
-        isLessThanOneHourFromNow(appState.lastBackupDate);
+      canUpdate = updateState.enableAutoUpdate && isLessThanOneHourFromNow(appState.lastBackupDate);
     }
     autoUpdater.autoInstallOnAppQuit = canUpdate;
     autoUpdater.autoDownload = canUpdate;
@@ -141,16 +138,9 @@ export function setupUpdates(
   updatesSetup = true;
 
   if (isTesting()) {
-    handleTestMessage(MessageType.AutoUpdateEnabled, () =>
-      store.get(StoreKeys.EnableAutoUpdate)
-    );
-    handleTestMessage(MessageType.CheckForUpdate, () =>
-      checkForUpdate(appState, updateState)
-    );
-    handleTestMessage(
-      MessageType.UpdateManagerNotifiedStateChange,
-      () => notifiedStateUpdate
-    );
+    handleTestMessage(MessageType.AutoUpdateEnabled, () => store.get(StoreKeys.EnableAutoUpdate));
+    handleTestMessage(MessageType.CheckForUpdate, () => checkForUpdate(appState, updateState));
+    handleTestMessage(MessageType.UpdateManagerNotifiedStateChange, () => notifiedStateUpdate);
   } else {
     checkForUpdate(appState, updateState);
   }
@@ -185,18 +175,12 @@ export async function showUpdateInstallationDialog(
   appState: AppState
 ): Promise<void> {
   if (!appState.updates.latestVersion) return;
-  if (
-    appState.lastBackupDate &&
-    isLessThanOneHourFromNow(appState.lastBackupDate)
-  ) {
+  if (appState.lastBackupDate && isLessThanOneHourFromNow(appState.lastBackupDate)) {
     const result = await dialog.showMessageBox(parentWindow, {
       type: 'info',
       title: str().updateReady.title,
       message: str().updateReady.message(appState.updates.latestVersion),
-      buttons: [
-        str().updateReady.installLater,
-        str().updateReady.quitAndInstall,
-      ],
+      buttons: [str().updateReady.installLater, str().updateReady.quitAndInstall],
       cancelId: 0,
     });
 
@@ -213,10 +197,7 @@ export async function showUpdateInstallationDialog(
       detail: str().updateReady.noRecentBackupDetail(appState.lastBackupDate),
       checkboxLabel: str().updateReady.noRecentBackupChecbox,
       checkboxChecked: false,
-      buttons: [
-        str().updateReady.installLater,
-        str().updateReady.quitAndInstall,
-      ],
+      buttons: [str().updateReady.installLater, str().updateReady.quitAndInstall],
       cancelId,
     });
 
