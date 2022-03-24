@@ -1,17 +1,13 @@
 {
   "compilerOptions": {
     "target": "ES2019",
-    /** Search under node_modules for non-relative imports. */
     "moduleResolution": "node",
-    /** Process & infer types from .js files. */
     "types": ["node"],
     "allowJs": true,
     "noEmit": false,
     "sourceMap": true,
     "skipLibCheck": true,
-    /** Enable strictest settings like strictNullChecks & noImplicitAny. */
     "strict": true,
-    /** Import non-ES modules as default imports. */
     "esModuleInterop": true,
     "typeRoots": ["./app/@types", "./node_modules/@types"],
     "baseUrl": ".",
