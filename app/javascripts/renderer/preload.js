@@ -1,5 +1,6 @@
 import { IpcMessages } from '../shared/ipcMessages';
 import { Store, StoreKeys } from '../main/store';
+import SecureSpellChecker from '@standardnotes/electron-secure-spellchecker';
 const { Transmitter, FrameMessageBus, Validation } = require('sn-electron-valence/Transmitter');
 const { ipcRenderer } = require('electron');
 const path = require('path');
@@ -39,6 +40,7 @@ const transmitter = new Transmitter(messageBus, {
 process.once('loaded', function () {
   loadTransmitter();
   listenForIpcEvents();
+  SecureSpellChecker.setSpellCheckProvider();
 });
 
 function loadTransmitter() {
