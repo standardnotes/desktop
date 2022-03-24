@@ -40,7 +40,11 @@ const transmitter = new Transmitter(messageBus, {
 process.once('loaded', function () {
   loadTransmitter();
   listenForIpcEvents();
-  SecureSpellChecker.setSpellCheckProvider();
+  try {
+    SecureSpellChecker.setSpellCheckProvider();
+  } catch (error) {
+    console.error('Error setting spellcheck provider', error);
+  }
 });
 
 function loadTransmitter() {
