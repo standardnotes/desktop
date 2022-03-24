@@ -11,6 +11,7 @@
       content="
         default-src 'self';
         script-src 'self' 'unsafe-eval';
+        worker-src blob:;
         connect-src * data:;
         style-src 'unsafe-inline' 'self' http://127.0.0.1:45653;
         frame-src *
