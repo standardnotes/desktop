@@ -3,7 +3,7 @@
   "productName": "Standard Notes",
   "description": "An end-to-end encrypted notes app for digitalists and professionals.",
   "author": "Standard Notes <help@standardnotes.com>",
-  "version": "3.14.0",
+  "version": "3.14.1",
   "main": "./dist/index.js",
   "dependencies": {
     "keytar": "^7.9.0",
