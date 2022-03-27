@@ -19,13 +19,6 @@ import { action, makeObservable, observable } from 'mobx';
 import { UpdateState } from './javascripts/main/updateManager';
 import { handleTestMessage } from './javascripts/main/testing';
 import { MessageType } from '../test/TestIpcMessage';
-import SecureSpellChecker from '@standardnotes/electron-secure-spellchecker';
-
-try {
-  SecureSpellChecker.setup();
-} catch (error) {
-  console.error('Error setting up SecureSpellChecker', error);
-}
 
 const deepLinkScheme = 'standardnotes';
 
