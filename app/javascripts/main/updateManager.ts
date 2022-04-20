@@ -218,8 +218,12 @@ export async function checkForUpdate(
   if (state.enableAutoUpdate || userTriggered) {
     state.setCheckingForUpdate(true);
     try {
-      const { updateInfo } = await autoUpdater.checkForUpdates();
-      state.checkedForUpdate(updateInfo.version);
+      const result = await autoUpdater.checkForUpdates();
+      if (!result) {
+        return;
+      }
+
+      state.checkedForUpdate(result.updateInfo.version);
 
       if (userTriggered) {
         let message;

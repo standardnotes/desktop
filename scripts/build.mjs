@@ -76,12 +76,12 @@ const TargetGroups = {
     Targets.Windows,
   ],
   [MainstreamTargetGroup]: [
+    Targets.Windows,
     Targets.AppimageAll,
     Targets.Deb,
+    Targets.Snap,
     Targets.DebArm64,
     Targets.MacAll,
-    Targets.Snap,
-    Targets.Windows,
   ],
 };
 

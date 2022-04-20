@@ -34,7 +34,7 @@ export async function downloadFile(url: string, filePath: string): Promise<void>
   );
 }
 
-export async function getJSON<T>(url: string): Promise<T> {
+export async function getJSON<T>(url: string): Promise<T | undefined> {
   const response = await get(url);
   let data = '';
   return new Promise((resolve, reject) => {
@@ -44,7 +44,12 @@ export async function getJSON<T>(url: string): Promise<T> {
       })
       .on('error', reject)
       .on('end', () => {
-        resolve(JSON.parse(data));
+        try {
+          const parsed = JSON.parse(data);
+          resolve(parsed);
+        } catch (error) {
+          resolve(undefined);
+        }
       });
   });
 }

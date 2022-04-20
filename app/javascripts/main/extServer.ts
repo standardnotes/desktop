@@ -41,36 +41,39 @@ export function normalizeFilePath(requestUrl: string, host: string): string {
   }
 }
 
-async function handleRequest(req: IncomingMessage, res: ServerResponse) {
+async function handleRequest(request: IncomingMessage, response: ServerResponse) {
   try {
-    if (!req.url) throw new Error('No url.');
-    if (!req.headers.host) throw new Error('No `host` header.');
+    if (!request.url) throw new Error('No url.');
+    if (!request.headers.host) throw new Error('No `host` header.');
 
-    const filePath = normalizeFilePath(req.url, req.headers.host);
+    const filePath = normalizeFilePath(request.url, request.headers.host);
+
     const stat = await fs.promises.lstat(filePath);
+
     if (!stat.isFile()) {
       throw new Error('Client requested something that is not a file.');
     }
-    const ext = path.parse(filePath).ext;
-    const mimeType = mime.lookup(ext);
-    res.setHeader('Content-Type', `${mimeType}; charset=utf-8`);
-    res.writeHead(200, {
-      'Access-Control-Allow-Origin': '*',
-    });
-    const stream = fs.createReadStream(filePath);
-    stream.on('error', (error: Error) => onRequestError(error, res));
-    stream.on('end', () => {
-      res.end();
-    });
-    stream.pipe(res);
+
+    const mimeType = mime.lookup(path.parse(filePath).ext);
+
+    response.setHeader('Access-Control-Allow-Origin', '*');
+    response.setHeader('Cache-Control', 'max-age=604800');
+    response.setHeader('Content-Type', `${mimeType}; charset=utf-8`);
+
+    const data = fs.readFileSync(filePath);
+
+    response.writeHead(200);
+
+    response.end(data);
   } catch (error: any) {
-    onRequestError(error, res);
+    onRequestError(error, response);
   }
 }
 
-function onRequestError(error: Error | { code: string }, res: ServerResponse) {
+function onRequestError(error: Error | { code: string }, response: ServerResponse) {
   let responseCode: number;
   let message: string;
+
   if ('code' in error && error.code === FileDoesNotExist) {
     responseCode = 404;
     message = str().missingExtension;
@@ -79,17 +82,20 @@ function onRequestError(error: Error | { code: string }, res: ServerResponse) {
     responseCode = 500;
     message = str().unableToLoadExtension;
   }
-  res.writeHead(responseCode);
-  res.write(message);
-  res.end();
+
+  response.writeHead(responseCode);
+  response.end(message);
 }
 
 export function createExtensionsServer(): string {
   const port = 45653;
   const ip = '127.0.0.1';
   const host = `${Protocol}://${ip}:${port}`;
-  http.createServer(handleRequest).listen(port, ip, () => {
+  const initCallback = () => {
     log(`Server started at ${host}`);
-  });
+  };
+
+  http.createServer(handleRequest).listen(port, ip, initCallback);
+
   return host;
 }

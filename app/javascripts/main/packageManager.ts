@@ -309,7 +309,7 @@ async function checkForUpdate(
     return;
   }
 
-  const latestJson = (await getJSON(latestUrl)) as PackageInfo;
+  const latestJson = await getJSON<PackageInfo>(latestUrl);
   if (!latestJson) {
     return;
   }
