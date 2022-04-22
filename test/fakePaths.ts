@@ -1,29 +1,29 @@
-import path from 'path';
+import path from 'path'
 
 export default function makeFakePaths(tmpDir: string) {
   const Paths = {
     get userDataDir(): string {
-      return tmpDir;
+      return tmpDir
     },
     get documentsDir(): string {
-      return tmpDir;
+      return tmpDir
     },
     get tempDir(): string {
-      return tmpDir;
+      return tmpDir
     },
     get extensionsDirRelative(): string {
-      return 'Extensions';
+      return 'Extensions'
     },
     get extensionsDir(): string {
-      return path.join(Paths.userDataDir, 'Extensions');
+      return path.join(Paths.userDataDir, 'Extensions')
     },
     get extensionsMappingJson(): string {
-      return path.join(Paths.extensionsDir, 'mapping.json');
+      return path.join(Paths.extensionsDir, 'mapping.json')
     },
     get windowPositionJson(): string {
-      return path.join(Paths.userDataDir, 'window-position.json');
+      return path.join(Paths.userDataDir, 'window-position.json')
     },
-  };
+  }
 
-  return Paths;
+  return Paths
 }

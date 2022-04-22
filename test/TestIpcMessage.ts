@@ -1,17 +1,17 @@
 export interface TestIPCMessage {
-  id: number;
-  type: MessageType;
-  args: any[];
+  id: number
+  type: MessageType
+  args: any[]
 }
 
 export interface TestIPCMessageResult {
-  id: number;
-  resolve?: any;
-  reject?: any;
+  id: number
+  resolve?: any
+  reject?: any
 }
 
 export interface AppTestMessage {
-  type: AppMessageType;
+  type: AppMessageType
 }
 
 export enum AppMessageType {

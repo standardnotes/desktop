@@ -1,21 +1,21 @@
-import path from 'path';
-import { deleteDir, ensureDirectoryExists } from '../app/javascripts/main/fileUtils';
+import path from 'path'
+import { deleteDir, ensureDirectoryExists } from '../app/javascripts/main/fileUtils'
 
 export function createTmpDir(name: string): {
-  path: string;
-  make(): Promise<string>;
-  clean(): Promise<void>;
+  path: string
+  make(): Promise<string>
+  clean(): Promise<void>
 } {
-  const tmpDirPath = path.join(__dirname, 'data', 'tmp', path.basename(name));
+  const tmpDirPath = path.join(__dirname, 'data', 'tmp', path.basename(name))
 
   return {
     path: tmpDirPath,
     async make() {
-      await ensureDirectoryExists(tmpDirPath);
-      return tmpDirPath;
+      await ensureDirectoryExists(tmpDirPath)
+      return tmpDirPath
     },
     async clean() {
-      await deleteDir(tmpDirPath);
+      await deleteDir(tmpDirPath)
     },
-  };
+  }
 }
