@@ -1,6 +1,6 @@
-import { isMac } from './platforms';
-import { Store, StoreKeys } from './store';
-import { isDev } from './utils';
+import { isMac } from './platforms'
+import { Store, StoreKeys } from './store'
+import { isDev } from './utils'
 
 export enum Language {
   AF = 'af',
@@ -56,35 +56,35 @@ export enum Language {
 }
 
 function isLanguage(language: any): language is Language {
-  return Object.values(Language).includes(language);
+  return Object.values(Language).includes(language)
 }
 
 function log(...message: any) {
-  console.log('spellcheckerMaager:', ...message);
+  console.log('spellcheckerMaager:', ...message)
 }
 
 export interface SpellcheckerManager {
   languages(): Array<{
-    code: string;
-    name: string;
-    enabled: boolean;
-  }>;
-  addLanguage(code: string): void;
-  removeLanguage(code: string): void;
+    code: string
+    name: string
+    enabled: boolean
+  }>
+  addLanguage(code: string): void
+  removeLanguage(code: string): void
 }
 
 export function createSpellcheckerManager(
   store: Store,
   webContents: Electron.WebContents,
-  userLocale: string
+  userLocale: string,
 ): SpellcheckerManager | undefined {
   /**
    * On MacOS the system spellchecker is used and every related Electron method
    * is a no-op. Return early to prevent unnecessary code execution/allocations
    */
-  if (isMac()) return;
+  if (isMac()) return
 
-  const session = webContents.session;
+  const session = webContents.session
 
   /**
    * Mapping of language codes predominantly based on
@@ -141,77 +141,71 @@ export function createSpellcheckerManager(
     hi: 'हिन्दी, हिंदी' /** Hindi */,
     ta: 'தமிழ்' /** Tamil */,
     ko: '한국어' /** Korean */,
-  };
-
-  const availableSpellCheckerLanguages = Object.values(Language).filter((language) =>
-    session.availableSpellCheckerLanguages.includes(language)
-  );
-
-  if (
-    isDev() &&
-    availableSpellCheckerLanguages.length !== session.availableSpellCheckerLanguages.length
-  ) {
-    /** This means that not every available language has been accounted for. */
-    const firstOutlier = session.availableSpellCheckerLanguages.find(
-      (language, index) => availableSpellCheckerLanguages[index] !== language
-    );
-    throw new Error(`Found unsupported language code: ${firstOutlier}`);
   }
 
-  setSpellcheckerLanguages();
+  const availableSpellCheckerLanguages = Object.values(Language).filter((language) =>
+    session.availableSpellCheckerLanguages.includes(language),
+  )
+
+  if (isDev() && availableSpellCheckerLanguages.length !== session.availableSpellCheckerLanguages.length) {
+    /** This means that not every available language has been accounted for. */
+    const firstOutlier = session.availableSpellCheckerLanguages.find(
+      (language, index) => availableSpellCheckerLanguages[index] !== language,
+    )
+    throw new Error(`Found unsupported language code: ${firstOutlier}`)
+  }
+
+  setSpellcheckerLanguages()
 
   function setSpellcheckerLanguages() {
-    const { session } = webContents;
-    let selectedCodes = store.get(StoreKeys.SelectedSpellCheckerLanguageCodes);
+    const { session } = webContents
+    let selectedCodes = store.get(StoreKeys.SelectedSpellCheckerLanguageCodes)
 
     if (selectedCodes === null) {
       /** First-time setup. Set a default language */
-      selectedCodes = determineDefaultSpellcheckerLanguageCodes(
-        session.availableSpellCheckerLanguages,
-        userLocale
-      );
-      store.set(StoreKeys.SelectedSpellCheckerLanguageCodes, selectedCodes);
+      selectedCodes = determineDefaultSpellcheckerLanguageCodes(session.availableSpellCheckerLanguages, userLocale)
+      store.set(StoreKeys.SelectedSpellCheckerLanguageCodes, selectedCodes)
     }
-    session.setSpellCheckerLanguages([...selectedCodes]);
+    session.setSpellCheckerLanguages([...selectedCodes])
   }
 
   function determineDefaultSpellcheckerLanguageCodes(
     availableSpellCheckerLanguages: string[],
-    userLocale: string
+    userLocale: string,
   ): Set<Language> {
-    const localeIsSupported = availableSpellCheckerLanguages.includes(userLocale);
+    const localeIsSupported = availableSpellCheckerLanguages.includes(userLocale)
     if (localeIsSupported && isLanguage(userLocale)) {
-      return new Set([userLocale]);
+      return new Set([userLocale])
     } else {
-      log(`Spellchecker doesn't support locale '${userLocale}'.`);
-      return new Set();
+      log(`Spellchecker doesn't support locale '${userLocale}'.`)
+      return new Set()
     }
   }
 
   function selectedLanguageCodes(): Set<Language> {
-    return store.get(StoreKeys.SelectedSpellCheckerLanguageCodes) || new Set();
+    return store.get(StoreKeys.SelectedSpellCheckerLanguageCodes) || new Set()
   }
 
   return {
     languages() {
-      const codes = selectedLanguageCodes();
+      const codes = selectedLanguageCodes()
       return availableSpellCheckerLanguages.map((code) => ({
         code,
         name: LanguageCodes[code],
         enabled: codes.has(code),
-      }));
+      }))
     },
     addLanguage(code: Language) {
-      const selectedCodes = selectedLanguageCodes();
-      selectedCodes.add(code);
-      store.set(StoreKeys.SelectedSpellCheckerLanguageCodes, selectedCodes);
-      session.setSpellCheckerLanguages(Array.from(selectedCodes));
+      const selectedCodes = selectedLanguageCodes()
+      selectedCodes.add(code)
+      store.set(StoreKeys.SelectedSpellCheckerLanguageCodes, selectedCodes)
+      session.setSpellCheckerLanguages(Array.from(selectedCodes))
     },
     removeLanguage(code: Language) {
-      const selectedCodes = selectedLanguageCodes();
-      selectedCodes.delete(code);
-      store.set(StoreKeys.SelectedSpellCheckerLanguageCodes, selectedCodes);
-      session.setSpellCheckerLanguages(Array.from(selectedCodes));
+      const selectedCodes = selectedLanguageCodes()
+      selectedCodes.delete(code)
+      store.set(StoreKeys.SelectedSpellCheckerLanguageCodes, selectedCodes)
+      session.setSpellCheckerLanguages(Array.from(selectedCodes))
     },
-  };
+  }
 }

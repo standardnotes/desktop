@@ -1,40 +1,40 @@
-import { BrowserWindow, ipcMain, Rectangle, screen, Shell } from 'electron';
-import fs from 'fs';
-import { debounce } from 'lodash';
-import path from 'path';
-import { AppMessageType, MessageType } from '../../../test/TestIpcMessage';
-import { AppState } from '../../application';
-import { IpcMessages } from '../shared/ipcMessages';
-import { BackupsManager, createBackupsManager } from './backupsManager';
-import { buildContextMenu, createMenuManager, MenuManager } from './menus';
-import { initializePackageManager } from './packageManager';
-import { isMac, isWindows } from './platforms';
-import { initializeSearchManager } from './searchManager';
-import { createSpellcheckerManager } from './spellcheckerManager';
-import { Store, StoreKeys } from './store';
-import { handleTestMessage, send } from './testing';
-import { createTrayManager, TrayManager } from './trayManager';
-import { checkForUpdate, setupUpdates } from './updateManager';
-import { isTesting, lowercaseDriveLetter } from './utils';
-import { initializeZoomManager } from './zoomManager';
-import { Paths } from './paths';
-import { clearSensitiveDirectories } from '@standardnotes/electron-clear-data';
+import { BrowserWindow, ipcMain, Rectangle, screen, Shell } from 'electron'
+import fs from 'fs'
+import { debounce } from 'lodash'
+import path from 'path'
+import { AppMessageType, MessageType } from '../../../test/TestIpcMessage'
+import { AppState } from '../../application'
+import { IpcMessages } from '../shared/ipcMessages'
+import { BackupsManager, createBackupsManager } from './backupsManager'
+import { buildContextMenu, createMenuManager, MenuManager } from './menus'
+import { initializePackageManager } from './packageManager'
+import { isMac, isWindows } from './platforms'
+import { initializeSearchManager } from './searchManager'
+import { createSpellcheckerManager } from './spellcheckerManager'
+import { Store, StoreKeys } from './store'
+import { handleTestMessage, send } from './testing'
+import { createTrayManager, TrayManager } from './trayManager'
+import { checkForUpdate, setupUpdates } from './updateManager'
+import { isTesting, lowercaseDriveLetter } from './utils'
+import { initializeZoomManager } from './zoomManager'
+import { Paths } from './paths'
+import { clearSensitiveDirectories } from '@standardnotes/electron-clear-data'
 
-const WINDOW_DEFAULT_WIDTH = 1100;
-const WINDOW_DEFAULT_HEIGHT = 800;
-const WINDOW_MIN_WIDTH = 300;
-const WINDOW_MIN_HEIGHT = 400;
+const WINDOW_DEFAULT_WIDTH = 1100
+const WINDOW_DEFAULT_HEIGHT = 800
+const WINDOW_MIN_WIDTH = 300
+const WINDOW_MIN_HEIGHT = 400
 
 export interface WindowState {
-  window: Electron.BrowserWindow;
-  menuManager: MenuManager;
-  backupsManager: BackupsManager;
-  trayManager: TrayManager;
+  window: Electron.BrowserWindow
+  menuManager: MenuManager
+  backupsManager: BackupsManager
+  trayManager: TrayManager
 }
 
 function hideWindowsTaskbarPreviewThumbnail(window: BrowserWindow) {
   if (isWindows()) {
-    window.setThumbnailClip({ x: 0, y: 0, width: 1, height: 1 });
+    window.setThumbnailClip({ x: 0, y: 0, width: 1, height: 1 })
   }
 }
 
@@ -44,36 +44,36 @@ export async function createWindowState({
   appLocale,
   teardown,
 }: {
-  shell: Shell;
-  appLocale: string;
-  appState: AppState;
-  teardown: () => void;
+  shell: Shell
+  appLocale: string
+  appState: AppState
+  teardown: () => void
 }): Promise<WindowState> {
-  const window = await createWindow(appState.store);
-  require('@electron/remote/main').enable(window.webContents);
-  const services = createWindowServices(window, appState, appLocale);
+  const window = await createWindow(appState.store)
+  require('@electron/remote/main').enable(window.webContents)
+  const services = createWindowServices(window, appState, appLocale)
 
-  const shouldOpenUrl = (url: string) => url.startsWith('http') || url.startsWith('mailto');
+  const shouldOpenUrl = (url: string) => url.startsWith('http') || url.startsWith('mailto')
 
-  window.on('closed', teardown);
+  window.on('closed', teardown)
 
   window.on('show', () => {
-    checkForUpdate(appState, appState.updates, false);
-    hideWindowsTaskbarPreviewThumbnail(window);
-  });
+    checkForUpdate(appState, appState.updates, false)
+    hideWindowsTaskbarPreviewThumbnail(window)
+  })
 
   window.on('focus', () => {
-    window.webContents.send(IpcMessages.WindowFocused, null);
-  });
+    window.webContents.send(IpcMessages.WindowFocused, null)
+  })
 
   window.on('blur', () => {
-    window.webContents.send(IpcMessages.WindowBlurred, null);
-    services.backupsManager.applicationDidBlur();
-  });
+    window.webContents.send(IpcMessages.WindowBlurred, null)
+    services.backupsManager.applicationDidBlur()
+  })
 
   window.once('ready-to-show', () => {
-    window.show();
-  });
+    window.show()
+  })
 
   window.on('close', (event) => {
     if (!appState.willQuitApp && (isMac() || services.trayManager.shouldMinimizeToTray())) {
@@ -81,35 +81,33 @@ export async function createWindowState({
        * On MacOS, closing a window does not quit the app. On Window and Linux,
        * it only does if you haven't enabled minimize to tray.
        */
-      event.preventDefault();
+      event.preventDefault()
       /**
        * Handles Mac full screen issue where pressing close results
        * in a black screen.
        */
       if (window.isFullScreen()) {
-        window.setFullScreen(false);
+        window.setFullScreen(false)
       }
-      window.hide();
+      window.hide()
     }
-  });
+  })
 
-  window.webContents.session.setSpellCheckerDictionaryDownloadURL(
-    'https://dictionaries.standardnotes.org/9.4.4/'
-  );
+  window.webContents.session.setSpellCheckerDictionaryDownloadURL('https://dictionaries.standardnotes.org/9.4.4/')
 
   window.webContents.on('ipc-message', async (event, message, data) => {
     if (message === IpcMessages.SigningOut) {
-      clearSensitiveDirectories(data?.restart);
+      clearSensitiveDirectories(data?.restart)
     }
-  });
+  })
 
   /** handle link clicks */
   window.webContents.on('new-window', (event, url) => {
     if (shouldOpenUrl(url)) {
-      shell.openExternal(url);
+      shell.openExternal(url)
     }
-    event.preventDefault();
-  });
+    event.preventDefault()
+  })
 
   /**
    * handle link clicks (this event is fired instead of 'new-window' when
@@ -118,27 +116,27 @@ export async function createWindowState({
   window.webContents.on('will-navigate', (event, url) => {
     /** Check for windowUrl equality in the case of window.reload() calls. */
     if (fileUrlsAreEqual(url, appState.startUrl)) {
-      return;
+      return
     }
     if (shouldOpenUrl(url)) {
-      shell.openExternal(url);
+      shell.openExternal(url)
     }
-    event.preventDefault();
-  });
+    event.preventDefault()
+  })
 
   window.webContents.on('context-menu', (_event, params) => {
-    buildContextMenu(window.webContents, params).popup();
-  });
+    buildContextMenu(window.webContents, params).popup()
+  })
 
   return {
     window,
     ...services,
-  };
+  }
 }
 
 async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
-  const useSystemMenuBar = store.get(StoreKeys.UseSystemMenuBar);
-  const position = await getPreviousWindowPosition();
+  const useSystemMenuBar = store.get(StoreKeys.UseSystemMenuBar)
+  const position = await getPreviousWindowPosition()
   const window = new BrowserWindow({
     ...position.bounds,
     minWidth: WINDOW_MIN_WIDTH,
@@ -153,53 +151,41 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
       contextIsolation: !isTesting(),
       preload: Paths.preloadJs,
     },
-  });
+  })
   if (position.isFullScreen) {
-    window.setFullScreen(true);
+    window.setFullScreen(true)
   }
 
   if (position.isMaximized) {
-    window.maximize();
+    window.maximize()
   }
-  persistWindowPosition(window);
+  persistWindowPosition(window)
 
   if (isTesting()) {
-    handleTestMessage(MessageType.SpellCheckerLanguages, () =>
-      window.webContents.session.getSpellCheckerLanguages()
-    );
+    handleTestMessage(MessageType.SpellCheckerLanguages, () => window.webContents.session.getSpellCheckerLanguages())
     handleTestMessage(MessageType.SetLocalStorageValue, async (key, value) => {
-      await window.webContents.executeJavaScript(`localStorage.setItem("${key}", "${value}")`);
-      window.webContents.session.flushStorageData();
-    });
-    handleTestMessage(MessageType.SignOut, () =>
-      window.webContents.executeJavaScript('window.bridge.onSignOut(false)')
-    );
+      await window.webContents.executeJavaScript(`localStorage.setItem("${key}", "${value}")`)
+      window.webContents.session.flushStorageData()
+    })
+    handleTestMessage(MessageType.SignOut, () => window.webContents.executeJavaScript('window.bridge.onSignOut(false)'))
     window.webContents.once('did-finish-load', () => {
-      send(AppMessageType.WindowLoaded);
-    });
+      send(AppMessageType.WindowLoaded)
+    })
   }
 
-  return window;
+  return window
 }
 
-function createWindowServices(
-  window: Electron.BrowserWindow,
-  appState: AppState,
-  appLocale: string
-) {
-  initializePackageManager(ipcMain, window.webContents);
-  initializeSearchManager(window.webContents);
-  initializeZoomManager(window, appState.store);
-  const backupsManager = createBackupsManager(window.webContents, appState, ipcMain);
-  const updateManager = setupUpdates(window, appState, backupsManager);
-  const trayManager = createTrayManager(window, appState.store);
-  const spellcheckerManager = createSpellcheckerManager(
-    appState.store,
-    window.webContents,
-    appLocale
-  );
+function createWindowServices(window: Electron.BrowserWindow, appState: AppState, appLocale: string) {
+  initializePackageManager(ipcMain, window.webContents)
+  initializeSearchManager(window.webContents)
+  initializeZoomManager(window, appState.store)
+  const backupsManager = createBackupsManager(window.webContents, appState, ipcMain)
+  const updateManager = setupUpdates(window, appState, backupsManager)
+  const trayManager = createTrayManager(window, appState.store)
+  const spellcheckerManager = createSpellcheckerManager(appState.store, window.webContents, appLocale)
   if (isTesting()) {
-    handleTestMessage(MessageType.SpellCheckerManager, () => spellcheckerManager);
+    handleTestMessage(MessageType.SpellCheckerManager, () => spellcheckerManager)
   }
   const menuManager = createMenuManager({
     appState,
@@ -208,14 +194,14 @@ function createWindowServices(
     trayManager,
     store: appState.store,
     spellcheckerManager,
-  });
+  })
   return {
     backupsManager,
     updateManager,
     trayManager,
     spellcheckerManager,
     menuManager,
-  };
+  }
 }
 
 /**
@@ -230,57 +216,55 @@ function fileUrlsAreEqual(a: string, b: string): boolean {
      * Craft URL objects to eliminate production URL values that can
      * contain "#!/" suffixes (on Windows)
      */
-    let aPath = new URL(decodeURIComponent(a)).pathname;
-    let bPath = new URL(decodeURIComponent(b)).pathname;
+    let aPath = new URL(decodeURIComponent(a)).pathname
+    let bPath = new URL(decodeURIComponent(b)).pathname
     if (isWindows()) {
       /** On Windows, drive letter casing is inconsistent */
-      aPath = lowercaseDriveLetter(aPath);
-      bPath = lowercaseDriveLetter(bPath);
+      aPath = lowercaseDriveLetter(aPath)
+      bPath = lowercaseDriveLetter(bPath)
     }
-    return aPath === bPath;
+    return aPath === bPath
   } catch (error) {
-    return false;
+    return false
   }
 }
 
 interface WindowPosition {
-  bounds: Rectangle;
-  isMaximized: boolean;
-  isFullScreen: boolean;
+  bounds: Rectangle
+  isMaximized: boolean
+  isFullScreen: boolean
 }
 
 async function getPreviousWindowPosition() {
-  let position: WindowPosition;
+  let position: WindowPosition
   try {
-    position = JSON.parse(
-      await fs.promises.readFile(path.join(Paths.userDataDir, 'window-position.json'), 'utf8')
-    );
+    position = JSON.parse(await fs.promises.readFile(path.join(Paths.userDataDir, 'window-position.json'), 'utf8'))
   } catch (e) {
     return {
       bounds: {
         width: WINDOW_DEFAULT_WIDTH,
         height: WINDOW_DEFAULT_HEIGHT,
       },
-    };
+    }
   }
 
-  const options: Partial<Rectangle> = {};
-  const bounds = position.bounds;
+  const options: Partial<Rectangle> = {}
+  const bounds = position.bounds
   if (bounds) {
     /** Validate coordinates. Keep them if the window can fit on a screen */
-    const area = screen.getDisplayMatching(bounds).workArea;
+    const area = screen.getDisplayMatching(bounds).workArea
     if (
       bounds.x >= area.x &&
       bounds.y >= area.y &&
       bounds.x + bounds.width <= area.x + area.width &&
       bounds.y + bounds.height <= area.y + area.height
     ) {
-      options.x = bounds.x;
-      options.y = bounds.y;
+      options.x = bounds.x
+      options.y = bounds.y
     }
     if (bounds.width <= area.width || bounds.height <= area.height) {
-      options.width = bounds.width;
-      options.height = bounds.height;
+      options.width = bounds.width
+      options.height = bounds.height
     }
   }
 
@@ -292,29 +276,29 @@ async function getPreviousWindowPosition() {
       height: WINDOW_DEFAULT_HEIGHT,
       ...options,
     },
-  };
+  }
 }
 
 function persistWindowPosition(window: BrowserWindow) {
-  let writingToDisk = false;
+  let writingToDisk = false
 
   const saveWindowBounds = debounce(async () => {
     const position: WindowPosition = {
       bounds: window.getNormalBounds(),
       isMaximized: window.isMaximized(),
       isFullScreen: window.isFullScreen(),
-    };
-    if (writingToDisk) return;
-    writingToDisk = true;
-    try {
-      await fs.promises.writeFile(Paths.windowPositionJson, JSON.stringify(position), 'utf-8');
-    } catch (error) {
-      console.error('Could not write to window-position.json', error);
-    } finally {
-      writingToDisk = false;
     }
-  }, 500);
+    if (writingToDisk) return
+    writingToDisk = true
+    try {
+      await fs.promises.writeFile(Paths.windowPositionJson, JSON.stringify(position), 'utf-8')
+    } catch (error) {
+      console.error('Could not write to window-position.json', error)
+    } finally {
+      writingToDisk = false
+    }
+  }, 500)
 
-  window.on('resize', saveWindowBounds);
-  window.on('move', saveWindowBounds);
+  window.on('resize', saveWindowBounds)
+  window.on('move', saveWindowBounds)
 }

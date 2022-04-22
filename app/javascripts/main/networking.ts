@@ -1,18 +1,18 @@
-import { IncomingMessage, net } from 'electron';
-import fs from 'fs';
-import path from 'path';
-import { pipeline as pipelineFn } from 'stream';
-import { promisify } from 'util';
-import { MessageType } from '../../../test/TestIpcMessage';
-import { ensureDirectoryExists } from './fileUtils';
-import { handleTestMessage } from './testing';
-import { isTesting } from './utils';
+import { IncomingMessage, net } from 'electron'
+import fs from 'fs'
+import path from 'path'
+import { pipeline as pipelineFn } from 'stream'
+import { promisify } from 'util'
+import { MessageType } from '../../../test/TestIpcMessage'
+import { ensureDirectoryExists } from './fileUtils'
+import { handleTestMessage } from './testing'
+import { isTesting } from './utils'
 
-const pipeline = promisify(pipelineFn);
+const pipeline = promisify(pipelineFn)
 
 if (isTesting()) {
-  handleTestMessage(MessageType.GetJSON, getJSON);
-  handleTestMessage(MessageType.DownloadFile, downloadFile);
+  handleTestMessage(MessageType.GetJSON, getJSON)
+  handleTestMessage(MessageType.DownloadFile, downloadFile)
 }
 
 /**
@@ -21,8 +21,8 @@ if (isTesting()) {
  * not exist)
  */
 export async function downloadFile(url: string, filePath: string): Promise<void> {
-  await ensureDirectoryExists(path.dirname(filePath));
-  const response = await get(url);
+  await ensureDirectoryExists(path.dirname(filePath))
+  const response = await get(url)
   await pipeline(
     /**
      * IncomingMessage doesn't implement *every* property of ReadableStream
@@ -30,28 +30,28 @@ export async function downloadFile(url: string, filePath: string): Promise<void>
      * @see https://www.electronjs.org/docs/api/incoming-message
      */
     response as any,
-    fs.createWriteStream(filePath)
-  );
+    fs.createWriteStream(filePath),
+  )
 }
 
 export async function getJSON<T>(url: string): Promise<T | undefined> {
-  const response = await get(url);
-  let data = '';
+  const response = await get(url)
+  let data = ''
   return new Promise((resolve, reject) => {
     response
       .on('data', (chunk) => {
-        data += chunk;
+        data += chunk
       })
       .on('error', reject)
       .on('end', () => {
         try {
-          const parsed = JSON.parse(data);
-          resolve(parsed);
+          const parsed = JSON.parse(data)
+          resolve(parsed)
         } catch (error) {
-          resolve(undefined);
+          resolve(undefined)
         }
-      });
-  });
+      })
+  })
 }
 
 export function get(url: string): Promise<IncomingMessage> {
@@ -67,9 +67,9 @@ export function get(url: string): Promise<IncomingMessage> {
       url,
       method: Method.Get,
       redirect: RedirectMode.Follow,
-    });
-    request.on('response', resolve);
-    request.on('error', reject);
-    request.end();
-  });
+    })
+    request.on('response', resolve)
+    request.on('error', reject)
+    request.end()
+  })
 }

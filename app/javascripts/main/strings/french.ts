@@ -1,15 +1,15 @@
-import { Strings } from './types';
-import { createEnglishStrings } from './english';
-import { isDev } from '../utils';
+import { Strings } from './types'
+import { createEnglishStrings } from './english'
+import { isDev } from '../utils'
 
 export function createFrenchStrings(): Strings {
-  const fallback = createEnglishStrings();
+  const fallback = createEnglishStrings()
   if (!isDev()) {
     /**
      * Le Français est une langue expérimentale.
      * Don't show it in production yet.
      */
-    return fallback;
+    return fallback
   }
   return {
     appMenu: {
@@ -35,8 +35,8 @@ export function createFrenchStrings(): Strings {
           'sauvegardes. Si le problème est récurrent, contactez le support ' +
           'technique (en anglais) avec les informations suivantes:\n' +
           JSON.stringify(error)
-        );
+        )
       },
     },
-  };
+  }
 }

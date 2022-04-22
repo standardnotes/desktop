@@ -1,101 +1,101 @@
-import fs from 'fs';
-import http, { IncomingMessage, ServerResponse } from 'http';
-import mime from 'mime-types';
-import path from 'path';
-import { URL } from 'url';
-import { FileDoesNotExist } from './fileUtils';
-import { Paths } from './paths';
-import { extensions as str } from './strings';
+import fs from 'fs'
+import http, { IncomingMessage, ServerResponse } from 'http'
+import mime from 'mime-types'
+import path from 'path'
+import { URL } from 'url'
+import { FileDoesNotExist } from './fileUtils'
+import { Paths } from './paths'
+import { extensions as str } from './strings'
 
-const Protocol = 'http';
+const Protocol = 'http'
 
 function logError(...message: any) {
-  console.error('extServer:', ...message);
+  console.error('extServer:', ...message)
 }
 
 function log(...message: any) {
-  console.log('extServer:', ...message);
+  console.log('extServer:', ...message)
 }
 
 export function normalizeFilePath(requestUrl: string, host: string): string {
-  const isThirdPartyComponent = requestUrl.startsWith('/Extensions');
-  const isNativeComponent = requestUrl.startsWith('/components');
+  const isThirdPartyComponent = requestUrl.startsWith('/Extensions')
+  const isNativeComponent = requestUrl.startsWith('/components')
   if (!isThirdPartyComponent && !isNativeComponent) {
-    throw new Error(`URL '${requestUrl}' falls outside of the extensions/features domain.`);
+    throw new Error(`URL '${requestUrl}' falls outside of the extensions/features domain.`)
   }
 
-  const removedPrefix = requestUrl.replace('/components', '').replace('/Extensions', '');
+  const removedPrefix = requestUrl.replace('/components', '').replace('/Extensions', '')
 
-  const base = `${Protocol}://${host}`;
-  const url = new URL(removedPrefix, base);
+  const base = `${Protocol}://${host}`
+  const url = new URL(removedPrefix, base)
 
   /**
    * Normalize path (parse '..' and '.') so that we prevent path traversal by
    * joining a fully resolved path to the Extensions dir.
    */
-  const modifiedReqUrl = path.normalize(url.pathname);
+  const modifiedReqUrl = path.normalize(url.pathname)
   if (isThirdPartyComponent) {
-    return path.join(Paths.extensionsDir, modifiedReqUrl);
+    return path.join(Paths.extensionsDir, modifiedReqUrl)
   } else {
-    return path.join(Paths.components, modifiedReqUrl);
+    return path.join(Paths.components, modifiedReqUrl)
   }
 }
 
 async function handleRequest(request: IncomingMessage, response: ServerResponse) {
   try {
-    if (!request.url) throw new Error('No url.');
-    if (!request.headers.host) throw new Error('No `host` header.');
+    if (!request.url) throw new Error('No url.')
+    if (!request.headers.host) throw new Error('No `host` header.')
 
-    const filePath = normalizeFilePath(request.url, request.headers.host);
+    const filePath = normalizeFilePath(request.url, request.headers.host)
 
-    const stat = await fs.promises.lstat(filePath);
+    const stat = await fs.promises.lstat(filePath)
 
     if (!stat.isFile()) {
-      throw new Error('Client requested something that is not a file.');
+      throw new Error('Client requested something that is not a file.')
     }
 
-    const mimeType = mime.lookup(path.parse(filePath).ext);
+    const mimeType = mime.lookup(path.parse(filePath).ext)
 
-    response.setHeader('Access-Control-Allow-Origin', '*');
-    response.setHeader('Cache-Control', 'max-age=604800');
-    response.setHeader('Content-Type', `${mimeType}; charset=utf-8`);
+    response.setHeader('Access-Control-Allow-Origin', '*')
+    response.setHeader('Cache-Control', 'max-age=604800')
+    response.setHeader('Content-Type', `${mimeType}; charset=utf-8`)
 
-    const data = fs.readFileSync(filePath);
+    const data = fs.readFileSync(filePath)
 
-    response.writeHead(200);
+    response.writeHead(200)
 
-    response.end(data);
+    response.end(data)
   } catch (error: any) {
-    onRequestError(error, response);
+    onRequestError(error, response)
   }
 }
 
 function onRequestError(error: Error | { code: string }, response: ServerResponse) {
-  let responseCode: number;
-  let message: string;
+  let responseCode: number
+  let message: string
 
   if ('code' in error && error.code === FileDoesNotExist) {
-    responseCode = 404;
-    message = str().missingExtension;
+    responseCode = 404
+    message = str().missingExtension
   } else {
-    logError(error);
-    responseCode = 500;
-    message = str().unableToLoadExtension;
+    logError(error)
+    responseCode = 500
+    message = str().unableToLoadExtension
   }
 
-  response.writeHead(responseCode);
-  response.end(message);
+  response.writeHead(responseCode)
+  response.end(message)
 }
 
 export function createExtensionsServer(): string {
-  const port = 45653;
-  const ip = '127.0.0.1';
-  const host = `${Protocol}://${ip}:${port}`;
+  const port = 45653
+  const ip = '127.0.0.1'
+  const host = `${Protocol}://${ip}:${port}`
   const initCallback = () => {
-    log(`Server started at ${host}`);
-  };
+    log(`Server started at ${host}`)
+  }
 
-  http.createServer(handleRequest).listen(port, ip, initCallback);
+  http.createServer(handleRequest).listen(port, ip, initCallback)
 
-  return host;
+  return host
 }

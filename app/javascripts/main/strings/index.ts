@@ -1,9 +1,9 @@
-import { createEnglishStrings } from './english';
-import { createFrenchStrings } from './french';
-import { Strings } from './types';
-import { isDev } from '../utils';
+import { createEnglishStrings } from './english'
+import { createFrenchStrings } from './french'
+import { Strings } from './types'
+import { isDev } from '../utils'
 
-let strings: Strings;
+let strings: Strings
 
 /**
  * MUST be called (once) before using any other export in this file.
@@ -13,54 +13,54 @@ let strings: Strings;
 export function initializeStrings(locale: string): void {
   if (isDev()) {
     if (strings) {
-      throw new Error('`strings` has already been initialized');
+      throw new Error('`strings` has already been initialized')
     }
   }
-  if (strings) return;
-  strings = stringsForLocale(locale);
+  if (strings) return
+  strings = stringsForLocale(locale)
 }
 
 export function str(): Strings {
   if (isDev()) {
     if (!strings) {
-      throw new Error('tried to access strings before they were initialized.');
+      throw new Error('tried to access strings before they were initialized.')
     }
   }
-  return strings;
+  return strings
 }
 
 export function appMenu() {
-  return str().appMenu;
+  return str().appMenu
 }
 
 export function contextMenu() {
-  return str().contextMenu;
+  return str().contextMenu
 }
 
 export function tray() {
-  return str().tray;
+  return str().tray
 }
 
 export function extensions() {
-  return str().extensions;
+  return str().extensions
 }
 
 export function updates() {
-  return str().updates;
+  return str().updates
 }
 
 export function backups() {
-  return str().backups;
+  return str().backups
 }
 
 function stringsForLocale(locale: string): Strings {
   if (locale === 'en' || locale.startsWith('en-')) {
-    return createEnglishStrings();
+    return createEnglishStrings()
   } else if (locale === 'fr' || locale.startsWith('fr-')) {
-    return createFrenchStrings();
+    return createFrenchStrings()
   }
 
-  return createEnglishStrings();
+  return createEnglishStrings()
 }
 
-export const AppName = 'Standard Notes';
+export const AppName = 'Standard Notes'

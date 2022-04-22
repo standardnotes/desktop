@@ -1,108 +1,103 @@
-import { IpcMessages } from '../shared/ipcMessages';
-import { StartApplication } from '@web/startApplication';
-import { Bridge, ElectronDesktopCallbacks } from '@web/services/bridge';
+import { IpcMessages } from '../shared/ipcMessages'
+import { StartApplication } from '@web/startApplication'
+import { Bridge, ElectronDesktopCallbacks } from '@web/services/bridge'
 
-declare const DEFAULT_SYNC_SERVER: string;
-declare const WEBSOCKET_URL: string;
-declare const ENABLE_UNFINISHED_FEATURES: string;
-declare const PURCHASE_URL: string;
-declare const PLANS_URL: string;
-declare const DASHBOARD_URL: string;
+declare const DEFAULT_SYNC_SERVER: string
+declare const WEBSOCKET_URL: string
+declare const ENABLE_UNFINISHED_FEATURES: string
+declare const PURCHASE_URL: string
+declare const PLANS_URL: string
+declare const DASHBOARD_URL: string
 
 declare global {
   interface Window {
-    bridge: Bridge;
-    dashboardUrl: string;
-    desktopManager: ElectronDesktopCallbacks;
-    electronAppVersion: string;
-    ElectronValence: any;
-    enableUnfinishedFeatures: boolean;
-    plansUrl: string;
-    purchaseUrl: string;
-    startApplication: StartApplication;
-    zip: any;
+    bridge: Bridge
+    dashboardUrl: string
+    desktopManager: ElectronDesktopCallbacks
+    electronAppVersion: string
+    ElectronValence: any
+    enableUnfinishedFeatures: boolean
+    plansUrl: string
+    purchaseUrl: string
+    startApplication: StartApplication
+    zip: any
   }
 }
 
-const messageBus = new window.ElectronValence.FrameMessageBus();
-const receiver = new window.ElectronValence.Receiver(messageBus);
+const messageBus = new window.ElectronValence.FrameMessageBus()
+const receiver = new window.ElectronValence.Receiver(messageBus)
 
 /** Accessed by web app */
-window.dashboardUrl = DASHBOARD_URL;
-window.enableUnfinishedFeatures = ENABLE_UNFINISHED_FEATURES === 'true';
-window.plansUrl = PLANS_URL;
-window.purchaseUrl = PURCHASE_URL;
+window.dashboardUrl = DASHBOARD_URL
+window.enableUnfinishedFeatures = ENABLE_UNFINISHED_FEATURES === 'true'
+window.plansUrl = PLANS_URL
+window.purchaseUrl = PURCHASE_URL
 
-(async () => {
-  await receiver.ready;
-  const mainThread = receiver.items[0];
+;(async () => {
+  await receiver.ready
+  const mainThread = receiver.items[0]
 
-  await configureWindow(mainThread);
+  await configureWindow(mainThread)
 
-  window.bridge = await createWebBridge(mainThread);
-  window.startApplication(
-    DEFAULT_SYNC_SERVER,
-    window.bridge,
-    window.enableUnfinishedFeatures,
-    WEBSOCKET_URL
-  );
+  window.bridge = await createWebBridge(mainThread)
+  window.startApplication(DEFAULT_SYNC_SERVER, window.bridge, window.enableUnfinishedFeatures, WEBSOCKET_URL)
 
-  registerIpcMessageListener(window.bridge);
-})();
+  registerIpcMessageListener(window.bridge)
+})()
 
-loadZipLibrary();
+loadZipLibrary()
 
 /** @returns whether the keychain structure is up to date or not */
 async function migrateKeychain(mainThread: any): Promise<boolean> {
   if (!(await mainThread.useNativeKeychain)) {
     /** User chose not to use keychain, do not migrate. */
-    return false;
+    return false
   }
 
-  const key = 'keychain';
-  const localStorageValue = window.localStorage.getItem(key);
+  const key = 'keychain'
+  const localStorageValue = window.localStorage.getItem(key)
   if (localStorageValue) {
     /** Migrate to native keychain */
-    console.warn('Migrating keychain from localStorage to native keychain.');
-    window.localStorage.removeItem(key);
-    await mainThread.setKeychainValue(JSON.parse(localStorageValue));
+    console.warn('Migrating keychain from localStorage to native keychain.')
+    window.localStorage.removeItem(key)
+    await mainThread.setKeychainValue(JSON.parse(localStorageValue))
   }
-  return true;
+  return true
 }
 
 async function createWebBridge(mainThread: any): Promise<Bridge> {
-  let keychainMethods;
+  let keychainMethods
   if (await migrateKeychain(mainThread)) {
     /** Keychain is migrated, we can rely on native methods */
     keychainMethods = {
       async getKeychainValue() {
-        const keychainValue = await mainThread.getKeychainValue();
-        return keychainValue;
+        const keychainValue = await mainThread.getKeychainValue()
+        return keychainValue
       },
       setKeychainValue(value: unknown) {
-        return mainThread.setKeychainValue(value);
+        return mainThread.setKeychainValue(value)
       },
       clearKeychainValue() {
-        return mainThread.clearKeychainValue();
+        return mainThread.clearKeychainValue()
       },
-    };
+    }
   } else {
     /** Keychain is not migrated, use web-compatible keychain methods */
-    const key = 'keychain';
+    const key = 'keychain'
     keychainMethods = {
       async getKeychainValue() {
-        const value = window.localStorage.getItem(key);
+        const value = window.localStorage.getItem(key)
         if (value) {
-          return JSON.parse(value);
+          return JSON.parse(value)
         }
       },
       async setKeychainValue(value: unknown) {
-        window.localStorage.setItem(key, JSON.stringify(value));
+        window.localStorage.setItem(key, JSON.stringify(value))
       },
       async clearKeychainValue() {
-        window.localStorage.removeItem(key);
+        window.localStorage.removeItem(key)
       },
-    };
+    }
   }
 
   return {
@@ -117,45 +112,45 @@ async function createWebBridge(mainThread: any): Promise<Bridge> {
     syncComponents(componentsData: unknown) {
       mainThread.sendIpcMessage(IpcMessages.SyncComponents, {
         componentsData,
-      });
+      })
     },
     onMajorDataChange() {
-      mainThread.sendIpcMessage(IpcMessages.MajorDataChange, {});
+      mainThread.sendIpcMessage(IpcMessages.MajorDataChange, {})
     },
     onSearch(text: string) {
-      mainThread.sendIpcMessage(IpcMessages.SearchText, { text });
+      mainThread.sendIpcMessage(IpcMessages.SearchText, { text })
     },
     onInitialDataLoad() {
-      mainThread.sendIpcMessage(IpcMessages.InitialDataLoaded, {});
+      mainThread.sendIpcMessage(IpcMessages.InitialDataLoaded, {})
     },
     onSignOut(restart = true) {
-      mainThread.sendIpcMessage(IpcMessages.SigningOut, { restart });
+      mainThread.sendIpcMessage(IpcMessages.SigningOut, { restart })
     },
     async downloadBackup() {
-      const desktopManager = window.desktopManager;
-      desktopManager.desktop_didBeginBackup();
+      const desktopManager = window.desktopManager
+      desktopManager.desktop_didBeginBackup()
       try {
-        const data = await desktopManager.desktop_requestBackupFile();
+        const data = await desktopManager.desktop_requestBackupFile()
         if (data) {
-          mainThread.sendIpcMessage(IpcMessages.DataArchive, data);
+          mainThread.sendIpcMessage(IpcMessages.DataArchive, data)
         } else {
-          desktopManager.desktop_didFinishBackup(false);
+          desktopManager.desktop_didFinishBackup(false)
         }
       } catch (error) {
-        console.error(error);
-        desktopManager.desktop_didFinishBackup(false);
+        console.error(error)
+        desktopManager.desktop_didFinishBackup(false)
       }
     },
     async localBackupsCount() {
-      return mainThread.localBackupsCount();
+      return mainThread.localBackupsCount()
     },
     viewlocalBackups() {
-      mainThread.viewlocalBackups();
+      mainThread.viewlocalBackups()
     },
     async deleteLocalBackups() {
-      mainThread.deleteLocalBackups();
+      mainThread.deleteLocalBackups()
     },
-  };
+  }
 }
 
 async function configureWindow(mainThread: any) {
@@ -163,9 +158,9 @@ async function configureWindow(mainThread: any) {
     mainThread.isMacOS,
     mainThread.useSystemMenuBar,
     mainThread.appVersion,
-  ]);
+  ])
 
-  window.electronAppVersion = appVersion;
+  window.electronAppVersion = appVersion
 
   /*
   Title bar events
@@ -174,46 +169,43 @@ async function configureWindow(mainThread: any) {
     mainThread.sendIpcMessage(IpcMessages.DisplayAppMenu, {
       x: e.x,
       y: e.y,
-    });
-  });
+    })
+  })
 
   document.getElementById('min-btn')!.addEventListener('click', () => {
-    mainThread.minimizeWindow();
-  });
+    mainThread.minimizeWindow()
+  })
 
   document.getElementById('max-btn')!.addEventListener('click', async () => {
     if (await mainThread.isWindowMaximized()) {
-      mainThread.unmaximizeWindow();
+      mainThread.unmaximizeWindow()
     } else {
-      mainThread.maximizeWindow();
+      mainThread.maximizeWindow()
     }
-  });
+  })
 
   document.getElementById('close-btn')!.addEventListener('click', () => {
-    mainThread.closeWindow();
-  });
+    mainThread.closeWindow()
+  })
 
   // For Mac inset window
-  const sheet = window.document.styleSheets[0];
+  const sheet = window.document.styleSheets[0]
   if (isMacOS) {
-    sheet.insertRule('#navigation { padding-top: 25px !important; }', sheet.cssRules.length);
+    sheet.insertRule('#navigation { padding-top: 25px !important; }', sheet.cssRules.length)
   }
 
   if (isMacOS || useSystemMenuBar) {
     // !important is important here because #desktop-title-bar has display: flex.
-    sheet.insertRule('#desktop-title-bar { display: none !important; }', sheet.cssRules.length);
+    sheet.insertRule('#desktop-title-bar { display: none !important; }', sheet.cssRules.length)
   } else {
     /* Use custom title bar. Take the sn-titlebar-height off of
     the app content height so its not overflowing */
-    sheet.insertRule(
-      'body { padding-top: var(--sn-desktop-titlebar-height); }',
-      sheet.cssRules.length
-    );
+    sheet.insertRule('body { padding-top: var(--sn-desktop-titlebar-height); }', sheet.cssRules.length)
     sheet.insertRule(
       `.main-ui-view { height: calc(100vh - var(--sn-desktop-titlebar-height)) !important;
         min-height: calc(100vh - var(--sn-desktop-titlebar-height)) !important; }`,
-      sheet.cssRules.length
-    );
+      sheet.cssRules.length,
+    )
   }
 }
 
@@ -221,46 +213,46 @@ function registerIpcMessageListener(webBridge: any) {
   window.addEventListener('message', async (event) => {
     // We don't have access to the full file path.
     if (event.origin !== 'file://') {
-      return;
+      return
     }
 
-    let payload;
+    let payload
     try {
-      payload = JSON.parse(event.data);
+      payload = JSON.parse(event.data)
     } catch (e) {
       // message doesn't belong to us
-      return;
+      return
     }
 
-    const desktopManager = window.desktopManager;
-    const message = payload.message;
-    const data = payload.data;
+    const desktopManager = window.desktopManager
+    const message = payload.message
+    const data = payload.data
 
     if (message === IpcMessages.WindowBlurred) {
-      desktopManager.desktop_windowLostFocus();
+      desktopManager.desktop_windowLostFocus()
     } else if (message === IpcMessages.WindowFocused) {
-      desktopManager.desktop_windowGainedFocus();
+      desktopManager.desktop_windowGainedFocus()
     } else if (message === IpcMessages.InstallComponentComplete) {
       // Responses from packageManager
-      desktopManager.desktop_onComponentInstallationComplete(data.component, data.error);
+      desktopManager.desktop_onComponentInstallationComplete(data.component, data.error)
     } else if (message === IpcMessages.UpdateAvailable) {
-      desktopManager.desktop_updateAvailable();
+      desktopManager.desktop_updateAvailable()
     } else if (message === IpcMessages.DownloadBackup) {
-      webBridge.downloadBackup();
+      webBridge.downloadBackup()
     } else if (message === IpcMessages.FinishedSavingBackup) {
-      desktopManager.desktop_didFinishBackup(data.success);
+      desktopManager.desktop_didFinishBackup(data.success)
     }
-  });
+  })
 }
 
 async function loadZipLibrary() {
   // load zip library (for exporting items as zip)
-  const scriptTag = document.createElement('script');
-  scriptTag.src = './vendor/zip/zip.js';
-  scriptTag.async = true;
-  const headTag = document.getElementsByTagName('head')[0];
-  headTag.appendChild(scriptTag);
+  const scriptTag = document.createElement('script')
+  scriptTag.src = './vendor/zip/zip.js'
+  scriptTag.async = true
+  const headTag = document.getElementsByTagName('head')[0]
+  headTag.appendChild(scriptTag)
   scriptTag.onload = () => {
-    window.zip.workerScriptsPath = './vendor/zip/';
-  };
+    window.zip.workerScriptsPath = './vendor/zip/'
+  }
 }

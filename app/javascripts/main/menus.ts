@@ -1,4 +1,4 @@
-import { AppState } from 'app/application';
+import { AppState } from 'app/application'
 import {
   app,
   BrowserWindow,
@@ -8,19 +8,19 @@ import {
   MenuItemConstructorOptions,
   shell,
   WebContents,
-} from 'electron';
-import { autorun } from 'mobx';
-import { autoUpdatingAvailable } from './constants';
-import { MessageType } from '../../../test/TestIpcMessage';
-import { BackupsManager } from './backupsManager';
-import { isLinux, isMac } from './platforms';
-import { SpellcheckerManager } from './spellcheckerManager';
-import { Store, StoreKeys } from './store';
-import { appMenu as str, contextMenu } from './strings';
-import { handleTestMessage } from './testing';
-import { TrayManager } from './trayManager';
-import { checkForUpdate, openChangelog, showUpdateInstallationDialog } from './updateManager';
-import { isDev, isTesting } from './utils';
+} from 'electron'
+import { autorun } from 'mobx'
+import { autoUpdatingAvailable } from './constants'
+import { MessageType } from '../../../test/TestIpcMessage'
+import { BackupsManager } from './backupsManager'
+import { isLinux, isMac } from './platforms'
+import { SpellcheckerManager } from './spellcheckerManager'
+import { Store, StoreKeys } from './store'
+import { appMenu as str, contextMenu } from './strings'
+import { handleTestMessage } from './testing'
+import { TrayManager } from './trayManager'
+import { checkForUpdate, openChangelog, showUpdateInstallationDialog } from './updateManager'
+import { isDev, isTesting } from './utils'
 
 export const enum MenuId {
   SpellcheckerLanguages = 'SpellcheckerLanguages',
@@ -28,7 +28,7 @@ export const enum MenuId {
 
 const Separator: MenuItemConstructorOptions = {
   type: 'separator',
-};
+}
 
 export function buildContextMenu(webContents: WebContents, params: ContextMenuParams): Menu {
   if (!params.isEditable) {
@@ -36,16 +36,11 @@ export function buildContextMenu(webContents: WebContents, params: ContextMenuPa
       {
         role: 'copy',
       },
-    ]);
+    ])
   }
 
   return Menu.buildFromTemplate([
-    ...suggestionsMenu(
-      params.selectionText,
-      params.misspelledWord,
-      params.dictionarySuggestions,
-      webContents
-    ),
+    ...suggestionsMenu(params.selectionText, params.misspelledWord, params.dictionarySuggestions, webContents),
     Separator,
     {
       role: 'undo',
@@ -69,25 +64,25 @@ export function buildContextMenu(webContents: WebContents, params: ContextMenuPa
     {
       role: 'selectAll',
     },
-  ]);
+  ])
 }
 
 function suggestionsMenu(
   selection: string,
   misspelledWord: string,
   suggestions: string[],
-  webContents: WebContents
+  webContents: WebContents,
 ): MenuItemConstructorOptions[] {
   if (misspelledWord.length === 0) {
-    return [];
+    return []
   }
 
   const learnSpelling = {
     label: contextMenu().learnSpelling,
     click() {
-      webContents.session.addWordToSpellCheckerDictionary(misspelledWord);
+      webContents.session.addWordToSpellCheckerDictionary(misspelledWord)
     },
-  };
+  }
 
   if (suggestions.length === 0) {
     return [
@@ -97,24 +92,24 @@ function suggestionsMenu(
       },
       Separator,
       learnSpelling,
-    ];
+    ]
   }
 
   return [
     ...suggestions.map((suggestion) => ({
       label: suggestion,
       click() {
-        webContents.replaceMisspelling(suggestion);
+        webContents.replaceMisspelling(suggestion)
       },
     })),
     Separator,
     learnSpelling,
-  ];
+  ]
 }
 
 export interface MenuManager {
-  reload(): void;
-  popupMenu(): void;
+  reload(): void
+  popupMenu(): void
 }
 
 export function createMenuManager({
@@ -125,20 +120,20 @@ export function createMenuManager({
   store,
   spellcheckerManager,
 }: {
-  window: Electron.BrowserWindow;
-  appState: AppState;
-  backupsManager: BackupsManager;
-  trayManager: TrayManager;
-  store: Store;
-  spellcheckerManager?: SpellcheckerManager;
+  window: Electron.BrowserWindow
+  appState: AppState
+  backupsManager: BackupsManager
+  trayManager: TrayManager
+  store: Store
+  spellcheckerManager?: SpellcheckerManager
 }): MenuManager {
-  let menu: Menu;
+  let menu: Menu
 
   if (isTesting()) {
     // eslint-disable-next-line no-var
-    var hasReloaded = false;
+    var hasReloaded = false
     // eslint-disable-next-line no-var
-    var hasReloadedTimeout: any;
+    var hasReloadedTimeout: any
     handleTestMessage(MessageType.AppMenuItems, () =>
       menu.items.map((item) => ({
         label: item.label,
@@ -149,21 +144,21 @@ export function createMenuManager({
             label: subItem.label,
           })),
         },
-      }))
-    );
+      })),
+    )
     handleTestMessage(MessageType.ClickLanguage, (code) => {
-      menu.getMenuItemById(MessageType.ClickLanguage + code)!.click();
-    });
-    handleTestMessage(MessageType.HasReloadedMenu, () => hasReloaded);
+      menu.getMenuItemById(MessageType.ClickLanguage + code)!.click()
+    })
+    handleTestMessage(MessageType.HasReloadedMenu, () => hasReloaded)
   }
 
   function reload() {
     if (isTesting()) {
-      hasReloaded = true;
-      clearTimeout(hasReloadedTimeout);
+      hasReloaded = true
+      clearTimeout(hasReloadedTimeout)
       hasReloadedTimeout = setTimeout(() => {
-        hasReloaded = false;
-      }, 300);
+        hasReloaded = false
+      }, 300)
     }
     menu = Menu.buildFromTemplate([
       ...(isMac() ? [macAppMenu(app.name)] : []),
@@ -174,24 +169,24 @@ export function createMenuManager({
       updateMenu(window, appState),
       ...(isLinux() ? [keyringMenu(window, store)] : []),
       helpMenu(window, shell),
-    ]);
-    Menu.setApplicationMenu(menu);
+    ])
+    Menu.setApplicationMenu(menu)
   }
   autorun(() => {
-    reload(); // initialization
-  });
+    reload() // initialization
+  })
 
   return {
     reload,
     popupMenu() {
       if (isDev()) {
         /** Check the state */
-        if (!menu) throw new Error('called popupMenu() before loading');
+        if (!menu) throw new Error('called popupMenu() before loading')
       }
       // eslint-disable-next-line no-unused-expressions
-      menu?.popup();
+      menu?.popup()
     },
-  };
+  }
 }
 
 const enum Roles {
@@ -228,7 +223,7 @@ const KeyCombinations = {
   CmdOrCtrlW: 'CmdOrCtrl + W',
   CmdOrCtrlM: 'CmdOrCtrl + M',
   AltM: 'Alt + m',
-};
+}
 
 const enum MenuItemTypes {
   CheckBox = 'checkbox',
@@ -242,7 +237,7 @@ const Urls = {
   Slack: 'https://standardnotes.com/slack',
   Twitter: 'https://twitter.com/StandardNotes',
   GitHubReleases: 'https://github.com/standardnotes/desktop/releases',
-};
+}
 
 function macAppMenu(appName: string): MenuItemConstructorOptions {
   return {
@@ -272,17 +267,14 @@ function macAppMenu(appName: string): MenuItemConstructorOptions {
         role: Roles.Quit,
       },
     ],
-  };
+  }
 }
 
-function editMenu(
-  spellcheckerManager: SpellcheckerManager | undefined,
-  reload: () => any
-): MenuItemConstructorOptions {
+function editMenu(spellcheckerManager: SpellcheckerManager | undefined, reload: () => any): MenuItemConstructorOptions {
   if (isDev()) {
     /** Check for invalid state */
     if (!isMac() && spellcheckerManager === undefined) {
-      throw new Error('spellcheckerManager === undefined');
+      throw new Error('spellcheckerManager === undefined')
     }
   }
 
@@ -312,11 +304,9 @@ function editMenu(
       {
         role: Roles.SelectAll,
       },
-      ...(isMac()
-        ? [Separator, macSpeechMenu()]
-        : [spellcheckerMenu(spellcheckerManager!, reload)]),
+      ...(isMac() ? [Separator, macSpeechMenu()] : [spellcheckerMenu(spellcheckerManager!, reload)]),
     ],
-  };
+  }
 }
 
 function macSpeechMenu(): MenuItemConstructorOptions {
@@ -330,13 +320,10 @@ function macSpeechMenu(): MenuItemConstructorOptions {
         role: Roles.StopSeeking,
       },
     ],
-  };
+  }
 }
 
-function spellcheckerMenu(
-  spellcheckerManager: SpellcheckerManager,
-  reload: () => any
-): MenuItemConstructorOptions {
+function spellcheckerMenu(spellcheckerManager: SpellcheckerManager, reload: () => any): MenuItemConstructorOptions {
   return {
     id: MenuId.SpellcheckerLanguages,
     label: str().spellcheckerLanguages,
@@ -348,22 +335,18 @@ function spellcheckerMenu(
         checked: enabled,
         click: () => {
           if (enabled) {
-            spellcheckerManager.removeLanguage(code);
+            spellcheckerManager.removeLanguage(code)
           } else {
-            spellcheckerManager.addLanguage(code);
+            spellcheckerManager.addLanguage(code)
           }
-          reload();
+          reload()
         },
-      })
+      }),
     ),
-  };
+  }
 }
 
-function viewMenu(
-  window: Electron.BrowserWindow,
-  store: Store,
-  reload: () => any
-): MenuItemConstructorOptions {
+function viewMenu(window: Electron.BrowserWindow, store: Store, reload: () => any): MenuItemConstructorOptions {
   return {
     label: str().view,
     submenu: [
@@ -389,22 +372,22 @@ function viewMenu(
       },
       ...(isMac() ? [] : [Separator, ...menuBarOptions(window, store, reload)]),
     ],
-  };
+  }
 }
 
 function menuBarOptions(window: Electron.BrowserWindow, store: Store, reload: () => any) {
-  const useSystemMenuBar = store.get(StoreKeys.UseSystemMenuBar);
-  let isMenuBarVisible = store.get(StoreKeys.MenuBarVisible);
-  window.setMenuBarVisibility(isMenuBarVisible);
+  const useSystemMenuBar = store.get(StoreKeys.UseSystemMenuBar)
+  let isMenuBarVisible = store.get(StoreKeys.MenuBarVisible)
+  window.setMenuBarVisibility(isMenuBarVisible)
   return [
     {
       visible: !isMac() && useSystemMenuBar,
       label: str().hideMenuBar,
       accelerator: KeyCombinations.AltM,
       click: () => {
-        isMenuBarVisible = !isMenuBarVisible;
-        window.setMenuBarVisibility(isMenuBarVisible);
-        store.set(StoreKeys.MenuBarVisible, isMenuBarVisible);
+        isMenuBarVisible = !isMenuBarVisible
+        window.setMenuBarVisibility(isMenuBarVisible)
+        store.set(StoreKeys.MenuBarVisible, isMenuBarVisible)
       },
     },
     {
@@ -412,22 +395,18 @@ function menuBarOptions(window: Electron.BrowserWindow, store: Store, reload: ()
       type: MenuItemTypes.CheckBox,
       checked: !useSystemMenuBar,
       click: () => {
-        store.set(StoreKeys.UseSystemMenuBar, !useSystemMenuBar);
-        reload();
+        store.set(StoreKeys.UseSystemMenuBar, !useSystemMenuBar)
+        reload()
         dialog.showMessageBox({
           title: str().preferencesChanged.title,
           message: str().preferencesChanged.message,
-        });
+        })
       },
     },
-  ];
+  ]
 }
 
-function windowMenu(
-  store: Store,
-  trayManager: TrayManager,
-  reload: () => any
-): MenuItemConstructorOptions {
+function windowMenu(store: Store, trayManager: TrayManager, reload: () => any): MenuItemConstructorOptions {
   return {
     role: Roles.Window,
     submenu: [
@@ -440,7 +419,7 @@ function windowMenu(
       Separator,
       ...(isMac() ? macWindowItems() : [minimizeToTrayItem(store, trayManager, reload)]),
     ],
-  };
+  }
 }
 
 function macWindowItems(): MenuItemConstructorOptions[] {
@@ -464,25 +443,25 @@ function macWindowItems(): MenuItemConstructorOptions[] {
       label: str().bringAllToFront,
       role: Roles.Front,
     },
-  ];
+  ]
 }
 
 function minimizeToTrayItem(store: Store, trayManager: TrayManager, reload: () => any) {
-  const minimizeToTray = trayManager.shouldMinimizeToTray();
+  const minimizeToTray = trayManager.shouldMinimizeToTray()
   return {
     label: str().minimizeToTrayOnClose,
     type: MenuItemTypes.CheckBox,
     checked: minimizeToTray,
     click() {
-      store.set(StoreKeys.MinimizeToTray, !minimizeToTray);
+      store.set(StoreKeys.MinimizeToTray, !minimizeToTray)
       if (trayManager.shouldMinimizeToTray()) {
-        trayManager.createTrayIcon();
+        trayManager.createTrayIcon()
       } else {
-        trayManager.destroyTrayIcon();
+        trayManager.destroyTrayIcon()
       }
-      reload();
+      reload()
     },
-  };
+  }
 }
 
 function backupsMenu(archiveManager: BackupsManager, reload: () => any) {
@@ -490,52 +469,50 @@ function backupsMenu(archiveManager: BackupsManager, reload: () => any) {
     label: str().backups,
     submenu: [
       {
-        label: archiveManager.backupsAreEnabled
-          ? str().disableAutomaticBackups
-          : str().enableAutomaticBackups,
+        label: archiveManager.backupsAreEnabled ? str().disableAutomaticBackups : str().enableAutomaticBackups,
         click() {
-          archiveManager.toggleBackupsStatus();
-          reload();
+          archiveManager.toggleBackupsStatus()
+          reload()
         },
       },
       Separator,
       {
         label: str().changeBackupsLocation,
         click() {
-          archiveManager.changeBackupsLocation();
+          archiveManager.changeBackupsLocation()
         },
       },
       {
         label: str().openBackupsLocation,
         click() {
-          shell.openPath(archiveManager.backupsLocation);
+          shell.openPath(archiveManager.backupsLocation)
         },
       },
     ],
-  };
+  }
 }
 
 function updateMenu(window: BrowserWindow, appState: AppState) {
-  const updateState = appState.updates;
-  let label;
+  const updateState = appState.updates
+  let label
   if (updateState.checkingForUpdate) {
-    label = str().checkingForUpdate;
+    label = str().checkingForUpdate
   } else if (updateState.updateNeeded) {
-    label = str().updateAvailable;
+    label = str().updateAvailable
   } else {
-    label = str().updates;
+    label = str().updates
   }
-  const submenu: MenuItemConstructorOptions[] = [];
-  const structure = { label, submenu };
+  const submenu: MenuItemConstructorOptions[] = []
+  const structure = { label, submenu }
 
   if (autoUpdatingAvailable) {
     if (updateState.autoUpdateDownloaded && updateState.latestVersion) {
       submenu.push({
         label: str().installPendingUpdate(updateState.latestVersion),
         click() {
-          showUpdateInstallationDialog(window, appState);
+          showUpdateInstallationDialog(window, appState)
         },
-      });
+      })
     }
 
     submenu.push({
@@ -543,55 +520,55 @@ function updateMenu(window: BrowserWindow, appState: AppState) {
       checked: updateState.enableAutoUpdate,
       label: str().enableAutomaticUpdates,
       click() {
-        updateState.toggleAutoUpdate();
+        updateState.toggleAutoUpdate()
       },
-    });
+    })
 
-    submenu.push(Separator);
+    submenu.push(Separator)
   }
 
-  const latestVersion = updateState.latestVersion;
+  const latestVersion = updateState.latestVersion
 
   submenu.push({
     label: str().yourVersion(appState.version),
-  });
+  })
 
   submenu.push({
     label: latestVersion ? str().latestVersion(latestVersion) : str().releaseNotes,
     click() {
-      openChangelog(updateState);
+      openChangelog(updateState)
     },
-  });
+  })
 
   if (latestVersion) {
     submenu.push({
       label: str().viewReleaseNotes(latestVersion),
       click() {
-        openChangelog(updateState);
+        openChangelog(updateState)
       },
-    });
+    })
   }
 
   if (autoUpdatingAvailable) {
-    submenu.push(Separator);
+    submenu.push(Separator)
 
     if (!updateState.checkingForUpdate) {
       submenu.push({
         label: str().checkForUpdate,
         click() {
-          checkForUpdate(appState, updateState, true);
+          checkForUpdate(appState, updateState, true)
         },
-      });
+      })
     }
 
     if (updateState.lastCheck && !updateState.checkingForUpdate) {
       submenu.push({
         label: str().lastUpdateCheck(updateState.lastCheck),
-      });
+      })
     }
   }
 
-  return structure;
+  return structure
 }
 
 function helpMenu(window: Electron.BrowserWindow, shell: Electron.Shell) {
@@ -601,68 +578,68 @@ function helpMenu(window: Electron.BrowserWindow, shell: Electron.Shell) {
       {
         label: str().emailSupport,
         click() {
-          shell.openExternal(Urls.Support);
+          shell.openExternal(Urls.Support)
         },
       },
       {
         label: str().website,
         click() {
-          shell.openExternal(Urls.Website);
+          shell.openExternal(Urls.Website)
         },
       },
       {
         label: str().gitHub,
         click() {
-          shell.openExternal(Urls.GitHub);
+          shell.openExternal(Urls.GitHub)
         },
       },
       {
         label: str().slack,
         click() {
-          shell.openExternal(Urls.Slack);
+          shell.openExternal(Urls.Slack)
         },
       },
       {
         label: str().twitter,
         click() {
-          shell.openExternal(Urls.Twitter);
+          shell.openExternal(Urls.Twitter)
         },
       },
       Separator,
       {
         label: str().toggleErrorConsole,
         click() {
-          window.webContents.toggleDevTools();
+          window.webContents.toggleDevTools()
         },
       },
       {
         label: str().openDataDirectory,
         click() {
-          const userDataPath = app.getPath('userData');
-          shell.openPath(userDataPath);
+          const userDataPath = app.getPath('userData')
+          shell.openPath(userDataPath)
         },
       },
       {
         label: str().clearCacheAndReload,
         async click() {
-          await window.webContents.session.clearCache();
-          window.reload();
+          await window.webContents.session.clearCache()
+          window.reload()
         },
       },
       Separator,
       {
         label: str().version(app.getVersion()),
         click() {
-          shell.openExternal(Urls.GitHubReleases);
+          shell.openExternal(Urls.GitHubReleases)
         },
       },
     ],
-  };
+  }
 }
 
 /** It's called keyring on Ubuntu */
 function keyringMenu(window: BrowserWindow, store: Store): MenuItemConstructorOptions {
-  const useNativeKeychain = store.get(StoreKeys.UseNativeKeychain);
+  const useNativeKeychain = store.get(StoreKeys.UseNativeKeychain)
   return {
     label: str().security.security,
     submenu: [
@@ -672,16 +649,16 @@ function keyringMenu(window: BrowserWindow, store: Store): MenuItemConstructorOp
         type: 'checkbox',
         label: str().security.useKeyringtoStorePassword,
         async click() {
-          store.set(StoreKeys.UseNativeKeychain, true);
+          store.set(StoreKeys.UseNativeKeychain, true)
           const { response } = await dialog.showMessageBox(window, {
             message: str().security.enabledKeyringAccessMessage,
             buttons: [str().security.enabledKeyringQuitNow, str().security.enabledKeyringPostpone],
-          });
+          })
           if (response === 0) {
-            app.quit();
+            app.quit()
           }
         },
       },
     ],
-  };
+  }
 }

@@ -1,4 +1,4 @@
-import { Strings } from './types';
+import { Strings } from './types'
 
 export function createEnglishStrings(): Strings {
   return {
@@ -38,28 +38,27 @@ export function createEnglishStrings(): Strings {
       manuallyDownloadUpdate: 'Manually Download Update',
       spellcheckerLanguages: 'Spellchecker Languages',
       installPendingUpdate(versionNumber: string) {
-        return `Install Pending Update (${versionNumber})`;
+        return `Install Pending Update (${versionNumber})`
       },
       lastUpdateCheck(date: Date) {
-        return `Last checked ${date.toLocaleString()}`;
+        return `Last checked ${date.toLocaleString()}`
       },
       version(number: string) {
-        return `Version: ${number}`;
+        return `Version: ${number}`
       },
       yourVersion(number: string) {
-        return `Your Version: ${number}`;
+        return `Your Version: ${number}`
       },
       latestVersion(number: string) {
-        return `Latest Version: ${number}`;
+        return `Latest Version: ${number}`
       },
       viewReleaseNotes(versionNumber: string) {
-        return `View ${versionNumber} Release Notes`;
+        return `View ${versionNumber} Release Notes`
       },
       preferencesChanged: {
         title: 'Preference Changed',
         message:
-          'Your menu bar preference has been saved. Please restart the ' +
-          'application for the change to take effect.',
+          'Your menu bar preference has been saved. Please restart the ' + 'application for the change to take effect.',
       },
       security: {
         security: 'Security',
@@ -106,23 +105,23 @@ export function createEnglishStrings(): Strings {
             'An issue occurred while checking for updates. ' +
             'Please try again.\nIf this issue persists please contact ' +
             `support with the following information: ${description}`
-          );
+          )
         },
         updateAvailable(newVersion: string) {
           return (
             `A new update is available (version ${newVersion}). ` +
             'You can wait for the app to update itself, or manually ' +
             'download and install this update.'
-          );
+          )
         },
         noUpdateAvailable(currentVersion: string) {
-          return `Your version (${currentVersion}) is the latest available version.`;
+          return `Your version (${currentVersion}) is the latest available version.`
         },
       },
       updateReady: {
         title: 'Update Ready',
         message(version: string) {
-          return `A new update (version ${version}) is ready to install.`;
+          return `A new update (version ${version}) is ready to install.`
         },
         quitAndInstall: 'Quit and Install',
         installLater: 'Install Later',
@@ -132,22 +131,18 @@ export function createEnglishStrings(): Strings {
           'backup manually before proceeding with the installation.',
         noRecentBackupDetail(lastBackupDate: number | null) {
           const downloadInstructions =
-            'You can download a backup from the Account menu ' +
-            'in the bottom-left corner of the app.';
+            'You can download a backup from the Account menu ' + 'in the bottom-left corner of the app.'
           const lastAutomaticBackup =
             lastBackupDate === null
               ? 'Your backups folder is empty.'
-              : `Your latest automatic backup is from ${new Date(
-                  lastBackupDate
-                ).toLocaleString()}.`;
-          return `${downloadInstructions}\n${lastAutomaticBackup}`;
+              : `Your latest automatic backup is from ${new Date(lastBackupDate).toLocaleString()}.`
+          return `${downloadInstructions}\n${lastAutomaticBackup}`
         },
         noRecentBackupChecbox: 'I have downloaded a backup, proceed with installation',
       },
       errorDownloading: {
         title: 'Error Downloading',
-        message:
-          'An error occurred while trying to download your ' + 'update file. Please try again.',
+        message: 'An error occurred while trying to download your ' + 'update file. Please try again.',
       },
       unknownVersionName: 'Unknown',
     },
@@ -158,8 +153,8 @@ export function createEnglishStrings(): Strings {
           'If this issue persists, please contact support with the following ' +
           'information: \n' +
           JSON.stringify(error)
-        );
+        )
       },
     },
-  };
+  }
 }

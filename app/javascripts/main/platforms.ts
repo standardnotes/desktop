@@ -4,28 +4,28 @@
  */
 
 export function isWindows(): boolean {
-  return process.platform === 'win32';
+  return process.platform === 'win32'
 }
 export function isMac(): boolean {
-  return process.platform === 'darwin';
+  return process.platform === 'darwin'
 }
 export function isLinux(): boolean {
-  return process.platform === 'linux';
+  return process.platform === 'linux'
 }
 
-export type InstallerKey = 'mac' | 'windows' | 'appimage_64' | 'appimage_32';
+export type InstallerKey = 'mac' | 'windows' | 'appimage_64' | 'appimage_32'
 export function getInstallerKey(): InstallerKey {
   if (isWindows()) {
-    return 'windows';
+    return 'windows'
   } else if (isMac()) {
-    return 'mac';
+    return 'mac'
   } else if (isLinux()) {
     if (process.arch === 'x32') {
-      return 'appimage_32';
+      return 'appimage_32'
     } else {
-      return 'appimage_64';
+      return 'appimage_64'
     }
   } else {
-    throw new Error(`Unknown platform: ${process.platform}`);
+    throw new Error(`Unknown platform: ${process.platform}`)
   }
 }

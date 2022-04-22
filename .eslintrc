@@ -17,7 +17,6 @@
   "ignorePatterns": ["test", "scripts", ".eslintrc", "tsconfig.json", "node_modules"],
   "rules": {
     /** Style */
-    "semi": 1,
     "quotes": ["error", "single", { "avoidEscape": true }],
 
     /** Preferences */

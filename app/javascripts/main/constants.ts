@@ -1,6 +1,6 @@
 /** Build-time constants */
-declare const IS_SNAP: boolean;
+declare const IS_SNAP: boolean
 
-export const isSnap = IS_SNAP;
-export const autoUpdatingAvailable = !isSnap;
-export const keychainAccessIsUserConfigurable = isSnap;
+export const isSnap = IS_SNAP
+export const autoUpdatingAvailable = !isSnap
+export const keychainAccessIsUserConfigurable = isSnap
