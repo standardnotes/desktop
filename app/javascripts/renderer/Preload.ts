@@ -1,10 +1,11 @@
 import { IpcMessages } from '../shared/ipcMessages'
 import { Store, StoreKeys } from '../main/store'
+import { CrossProcessBridge } from './CrossProcessBridge'
+
 const { Transmitter, FrameMessageBus, Validation } = require('sn-electron-valence/Transmitter')
 const { ipcRenderer } = require('electron')
 const path = require('path')
 const rendererPath = path.join('file://', __dirname, '/renderer.js')
-
 const remote = require('@electron/remote')
 const app = require('@electron/remote').app
 
@@ -42,18 +43,13 @@ process.once('loaded', function () {
 })
 
 function loadTransmitter() {
-  transmitter.expose({
-    extServerHost: Store.get(StoreKeys.ExtServerHost),
-    useNativeKeychain: Store.get(StoreKeys.UseNativeKeychain) ?? true,
+  const bridge: CrossProcessBridge = {
+    extServerHost: Promise.resolve(Store.get(StoreKeys.ExtServerHost)),
+    useNativeKeychain: Promise.resolve(Store.get(StoreKeys.UseNativeKeychain) ?? true),
     rendererPath,
-    isMacOS: process.platform === 'darwin',
+    isMacOS: Promise.resolve(process.platform === 'darwin'),
     appVersion: app.getVersion(),
-    useSystemMenuBar: Store.get(StoreKeys.UseSystemMenuBar),
-
-    /**
-     * All functions must be async, as electron-valence expects to run .then()
-     * on them.
-     */
+    useSystemMenuBar: Promise.resolve(Store.get(StoreKeys.UseSystemMenuBar)),
     sendIpcMessage: async (message, data) => {
       ipcRenderer.send(message, data)
     },
@@ -80,12 +76,13 @@ function loadTransmitter() {
       ipcRenderer.send(IpcMessages.ViewLocalBackups)
     },
     deleteLocalBackups: async () => ipcRenderer.invoke(IpcMessages.DeleteLocalBackups),
-  })
+  }
+
+  transmitter.expose(bridge)
 }
 
 function listenForIpcEvents() {
-  const sendMessage = (message, payload = {}) => {
-    // eslint-disable-next-line no-undef
+  const sendMessage = (message: string, payload = {}) => {
     window.postMessage(JSON.stringify({ message, data: payload }), rendererPath)
   }
 

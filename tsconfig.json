@@ -16,6 +16,6 @@
     }
   },
   "include": ["app/**/*"],
-  "exclude": ["app/renderer/preload.js", "node_modules", "app/dist"],
+  "exclude": ["node_modules", "app/dist"],
   "files": ["app/index.ts", "app/javascripts/renderer/renderer.ts"]
 }

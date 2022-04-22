@@ -117,7 +117,7 @@ module.exports = function ({
 
   const electronRendererConfig = {
     entry: {
-      preload: './app/javascripts/renderer/preload.js',
+      preload: './app/javascripts/renderer/Preload.ts',
       renderer: './app/javascripts/renderer/renderer.ts',
       grantLinuxPasswordsAccess: './app/javascripts/renderer/grantLinuxPasswordsAccess.js',
     },

@@ -1,6 +1,8 @@
+import { DesktopDevice } from './DesktopDevice'
 import { IpcMessages } from '../shared/ipcMessages'
-import { StartApplication } from '@web/startApplication'
-import { Bridge, ElectronDesktopCallbacks } from '@web/services/bridge'
+import { DesktopCommunicationReceiver } from '@web/Device/DesktopWebCommunication'
+import { StartApplication } from '@web/Device/StartApplication'
+import { CrossProcessBridge } from './CrossProcessBridge'
 
 declare const DEFAULT_SYNC_SERVER: string
 declare const WEBSOCKET_URL: string
@@ -11,9 +13,9 @@ declare const DASHBOARD_URL: string
 
 declare global {
   interface Window {
-    bridge: Bridge
+    device: DesktopDevice
     dashboardUrl: string
-    desktopManager: ElectronDesktopCallbacks
+    desktopCommunicationReceiver: DesktopCommunicationReceiver
     electronAppVersion: string
     ElectronValence: any
     enableUnfinishedFeatures: boolean
@@ -27,28 +29,33 @@ declare global {
 const messageBus = new window.ElectronValence.FrameMessageBus()
 const receiver = new window.ElectronValence.Receiver(messageBus)
 
-/** Accessed by web app */
-window.dashboardUrl = DASHBOARD_URL
-window.enableUnfinishedFeatures = ENABLE_UNFINISHED_FEATURES === 'true'
-window.plansUrl = PLANS_URL
-window.purchaseUrl = PURCHASE_URL
+function loadWindowVarsRequiredByWebApp() {
+  window.dashboardUrl = DASHBOARD_URL
+  window.enableUnfinishedFeatures = ENABLE_UNFINISHED_FEATURES === 'true'
+  window.plansUrl = PLANS_URL
+  window.purchaseUrl = PURCHASE_URL
+}
 
 ;(async () => {
+  loadWindowVarsRequiredByWebApp()
+
   await receiver.ready
-  const mainThread = receiver.items[0]
+
+  const mainThread: CrossProcessBridge = receiver.items[0]
 
   await configureWindow(mainThread)
 
-  window.bridge = await createWebBridge(mainThread)
-  window.startApplication(DEFAULT_SYNC_SERVER, window.bridge, window.enableUnfinishedFeatures, WEBSOCKET_URL)
+  window.device = await createDesktopDevice(mainThread)
 
-  registerIpcMessageListener(window.bridge)
+  window.startApplication(DEFAULT_SYNC_SERVER, window.device, window.enableUnfinishedFeatures, WEBSOCKET_URL)
+
+  registerIpcMessageListener(window.device)
 })()
 
 loadZipLibrary()
 
 /** @returns whether the keychain structure is up to date or not */
-async function migrateKeychain(mainThread: any): Promise<boolean> {
+async function migrateKeychain(mainThread: CrossProcessBridge): Promise<boolean> {
   if (!(await mainThread.useNativeKeychain)) {
     /** User chose not to use keychain, do not migrate. */
     return false
@@ -56,104 +63,26 @@ async function migrateKeychain(mainThread: any): Promise<boolean> {
 
   const key = 'keychain'
   const localStorageValue = window.localStorage.getItem(key)
+
   if (localStorageValue) {
     /** Migrate to native keychain */
     console.warn('Migrating keychain from localStorage to native keychain.')
     window.localStorage.removeItem(key)
     await mainThread.setKeychainValue(JSON.parse(localStorageValue))
   }
+
   return true
 }
 
-async function createWebBridge(mainThread: any): Promise<Bridge> {
-  let keychainMethods
-  if (await migrateKeychain(mainThread)) {
-    /** Keychain is migrated, we can rely on native methods */
-    keychainMethods = {
-      async getKeychainValue() {
-        const keychainValue = await mainThread.getKeychainValue()
-        return keychainValue
-      },
-      setKeychainValue(value: unknown) {
-        return mainThread.setKeychainValue(value)
-      },
-      clearKeychainValue() {
-        return mainThread.clearKeychainValue()
-      },
-    }
-  } else {
-    /** Keychain is not migrated, use web-compatible keychain methods */
-    const key = 'keychain'
-    keychainMethods = {
-      async getKeychainValue() {
-        const value = window.localStorage.getItem(key)
-        if (value) {
-          return JSON.parse(value)
-        }
-      },
-      async setKeychainValue(value: unknown) {
-        window.localStorage.setItem(key, JSON.stringify(value))
-      },
-      async clearKeychainValue() {
-        window.localStorage.removeItem(key)
-      },
-    }
-  }
+async function createDesktopDevice(mainThread: CrossProcessBridge): Promise<DesktopDevice> {
+  const useNativeKeychain = await migrateKeychain(mainThread)
+  const extensionsServerHost = (await mainThread.extServerHost) as string
+  const appVersion = await mainThread.appVersion
 
-  return {
-    ...keychainMethods,
-    appVersion: await mainThread.appVersion,
-    /**
-     * Importing the Environment enum from SNJS results in a much larger bundle
-     * size, so we use the number literal corresponding to Environment.Desktop
-     */
-    environment: 2,
-    extensionsServerHost: await mainThread.extServerHost,
-    syncComponents(componentsData: unknown) {
-      mainThread.sendIpcMessage(IpcMessages.SyncComponents, {
-        componentsData,
-      })
-    },
-    onMajorDataChange() {
-      mainThread.sendIpcMessage(IpcMessages.MajorDataChange, {})
-    },
-    onSearch(text: string) {
-      mainThread.sendIpcMessage(IpcMessages.SearchText, { text })
-    },
-    onInitialDataLoad() {
-      mainThread.sendIpcMessage(IpcMessages.InitialDataLoaded, {})
-    },
-    onSignOut(restart = true) {
-      mainThread.sendIpcMessage(IpcMessages.SigningOut, { restart })
-    },
-    async downloadBackup() {
-      const desktopManager = window.desktopManager
-      desktopManager.desktop_didBeginBackup()
-      try {
-        const data = await desktopManager.desktop_requestBackupFile()
-        if (data) {
-          mainThread.sendIpcMessage(IpcMessages.DataArchive, data)
-        } else {
-          desktopManager.desktop_didFinishBackup(false)
-        }
-      } catch (error) {
-        console.error(error)
-        desktopManager.desktop_didFinishBackup(false)
-      }
-    },
-    async localBackupsCount() {
-      return mainThread.localBackupsCount()
-    },
-    viewlocalBackups() {
-      mainThread.viewlocalBackups()
-    },
-    async deleteLocalBackups() {
-      mainThread.deleteLocalBackups()
-    },
-  }
+  return new DesktopDevice(mainThread, useNativeKeychain, extensionsServerHost, appVersion)
 }
 
-async function configureWindow(mainThread: any) {
+async function configureWindow(mainThread: CrossProcessBridge) {
   const [isMacOS, useSystemMenuBar, appVersion] = await Promise.all([
     mainThread.isMacOS,
     mainThread.useSystemMenuBar,
@@ -209,7 +138,7 @@ async function configureWindow(mainThread: any) {
   }
 }
 
-function registerIpcMessageListener(webBridge: any) {
+function registerIpcMessageListener(device: DesktopDevice) {
   window.addEventListener('message', async (event) => {
     // We don't have access to the full file path.
     if (event.origin !== 'file://') {
@@ -224,23 +153,22 @@ function registerIpcMessageListener(webBridge: any) {
       return
     }
 
-    const desktopManager = window.desktopManager
+    const receiver = window.desktopCommunicationReceiver
     const message = payload.message
     const data = payload.data
 
     if (message === IpcMessages.WindowBlurred) {
-      desktopManager.desktop_windowLostFocus()
+      receiver.windowLostFocus()
     } else if (message === IpcMessages.WindowFocused) {
-      desktopManager.desktop_windowGainedFocus()
+      receiver.windowGainedFocus()
     } else if (message === IpcMessages.InstallComponentComplete) {
-      // Responses from packageManager
-      desktopManager.desktop_onComponentInstallationComplete(data.component, data.error)
+      receiver.onComponentInstallationComplete(data.component, data.error)
     } else if (message === IpcMessages.UpdateAvailable) {
-      desktopManager.desktop_updateAvailable()
+      receiver.updateAvailable()
     } else if (message === IpcMessages.DownloadBackup) {
-      webBridge.downloadBackup()
+      device.downloadBackup()
     } else if (message === IpcMessages.FinishedSavingBackup) {
-      desktopManager.desktop_didFinishBackup(data.success)
+      receiver.didFinishBackup(data.success)
     }
   })
 }

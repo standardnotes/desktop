@@ -167,7 +167,7 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
       await window.webContents.executeJavaScript(`localStorage.setItem("${key}", "${value}")`)
       window.webContents.session.flushStorageData()
     })
-    handleTestMessage(MessageType.SignOut, () => window.webContents.executeJavaScript('window.bridge.onSignOut(false)'))
+    handleTestMessage(MessageType.SignOut, () => window.webContents.executeJavaScript('window.device.onSignOut(false)'))
     window.webContents.once('did-finish-load', () => {
       send(AppMessageType.WindowLoaded)
     })
