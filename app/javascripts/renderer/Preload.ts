@@ -44,12 +44,12 @@ process.once('loaded', function () {
 
 function loadTransmitter() {
   const bridge: CrossProcessBridge = {
-    extServerHost: Promise.resolve(Store.get(StoreKeys.ExtServerHost)),
-    useNativeKeychain: Promise.resolve(Store.get(StoreKeys.UseNativeKeychain) ?? true),
+    extServerHost: Store.get(StoreKeys.ExtServerHost) as unknown as Promise<string>,
+    useNativeKeychain: (Store.get(StoreKeys.UseNativeKeychain) ?? true) as unknown as Promise<boolean>,
     rendererPath,
-    isMacOS: Promise.resolve(process.platform === 'darwin'),
+    isMacOS: (process.platform === 'darwin') as unknown as Promise<boolean>,
     appVersion: app.getVersion(),
-    useSystemMenuBar: Promise.resolve(Store.get(StoreKeys.UseSystemMenuBar)),
+    useSystemMenuBar: Store.get(StoreKeys.UseSystemMenuBar) as unknown as Promise<boolean>,
     sendIpcMessage: async (message, data) => {
       ipcRenderer.send(message, data)
     },

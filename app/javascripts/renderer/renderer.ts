@@ -76,7 +76,7 @@ async function migrateKeychain(mainThread: CrossProcessBridge): Promise<boolean>
 
 async function createDesktopDevice(mainThread: CrossProcessBridge): Promise<DesktopDevice> {
   const useNativeKeychain = await migrateKeychain(mainThread)
-  const extensionsServerHost = (await mainThread.extServerHost) as string
+  const extensionsServerHost = await mainThread.extServerHost
   const appVersion = await mainThread.appVersion
 
   return new DesktopDevice(mainThread, useNativeKeychain, extensionsServerHost, appVersion)

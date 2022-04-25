@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { MessageType } from '../../../test/TestIpcMessage'
 import { Language } from './spellcheckerManager'
-import { ensureIsBoolean, isTesting, stringOrNull, isDev, isBoolean } from './utils'
+import { ensureIsBoolean, isTesting, isDev, isBoolean } from './utils'
 import { FileDoesNotExist } from './fileUtils'
 import { BackupsDirectoryName } from './backupsManager'
 import { handleTestMessage } from './testing'
@@ -27,7 +27,7 @@ export enum StoreKeys {
 }
 
 interface StoreData {
-  [StoreKeys.ExtServerHost]: string | null
+  [StoreKeys.ExtServerHost]: string
   [StoreKeys.UseSystemMenuBar]: boolean
   [StoreKeys.MenuBarVisible]: boolean
   [StoreKeys.BackupsLocation]: string
@@ -49,7 +49,7 @@ function createSanitizedStoreData(data: any = {}): StoreData {
     [StoreKeys.UseNativeKeychain]: isBoolean(data[StoreKeys.UseNativeKeychain])
       ? data[StoreKeys.UseNativeKeychain]
       : null,
-    [StoreKeys.ExtServerHost]: stringOrNull(data[StoreKeys.ExtServerHost]),
+    [StoreKeys.ExtServerHost]: data[StoreKeys.ExtServerHost],
     [StoreKeys.BackupsLocation]: sanitizeBackupsLocation(data[StoreKeys.BackupsLocation]),
     [StoreKeys.ZoomFactor]: sanitizeZoomFactor(data[StoreKeys.ZoomFactor]),
     [StoreKeys.SelectedSpellCheckerLanguageCodes]: sanitizeSpellCheckerLanguageCodes(

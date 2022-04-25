@@ -1,5 +1,5 @@
 export interface CrossProcessBridge {
-  get extServerHost(): Promise<string | null>
+  get extServerHost(): Promise<string>
 
   get useNativeKeychain(): Promise<boolean>
 
