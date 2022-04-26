@@ -15,6 +15,7 @@ require('@electron/remote/main').initialize()
 
 /** Allow a custom userData path to be used. */
 const userDataPathIndex = process.argv.indexOf(CommandLineArgs.UserDataPath)
+
 if (userDataPathIndex > 0) {
   let userDataPath = process.argv[userDataPathIndex + 1]
   if (typeof userDataPath === 'string') {

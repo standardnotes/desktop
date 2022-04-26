@@ -169,5 +169,6 @@ async function finishApplicationInitialization({ app, shell, state }: { app: App
 
 function initializeExtensionsServer(store: Store) {
   const host = createExtensionsServer()
+
   store.set(StoreKeys.ExtServerHost, host)
 }

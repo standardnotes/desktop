@@ -148,6 +148,7 @@ function listenForMessagesSentFromMainToPreloadToUs(device: DesktopDevice) {
     const receiver = window.desktopCommunicationReceiver
     const message = payload.message
     const data = payload.data
+
     if (message === MessageToWebApp.WindowBlurred) {
       receiver.windowLostFocus()
     } else if (message === MessageToWebApp.WindowFocused) {

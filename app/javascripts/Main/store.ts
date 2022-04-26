@@ -67,10 +67,15 @@ function sanitizeZoomFactor(factor?: any): number {
 }
 
 function sanitizeBackupsLocation(location?: unknown): string {
-  const defaultPath = path.join(isDev() ? app.getPath('documents') : app.getPath('home'), BackupsDirectoryName)
+  const defaultPath = path.join(
+    isTesting() ? app.getPath('userData') : isDev() ? app.getPath('documents') : app.getPath('home'),
+    BackupsDirectoryName,
+  )
+
   if (typeof location !== 'string') {
     return defaultPath
   }
+
   try {
     const stat = fs.lstatSync(location)
     if (stat.isDirectory()) {
@@ -112,11 +117,13 @@ function parseDataFile(filePath: string) {
   try {
     const fileData = fs.readFileSync(filePath)
     const userData = JSON.parse(fileData.toString())
+
     return createSanitizedStoreData(userData)
   } catch (error: any) {
     if (error.code !== FileDoesNotExist) {
       logError(error)
     }
+
     return createSanitizedStoreData({})
   }
 }

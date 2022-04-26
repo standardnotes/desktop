@@ -1,4 +1,4 @@
-import { serial as anyTest, TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { promises as fs } from 'fs'
 import http from 'http'
 import { AddressInfo } from 'net'
@@ -9,7 +9,7 @@ import { initializeStrings } from '../app/javascripts/main/strings'
 import { createTmpDir } from './testUtils'
 import makeFakePaths from './fakePaths'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   server: http.Server
   host: string
 }>
@@ -46,25 +46,24 @@ initializeStrings('en')
 const log = console.log
 const error = console.error
 
-test.before((t): Promise<any> => {
+test.before(async (t) => {
   /** Prevent the extensions server from outputting anything */
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  console.log = () => {}
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  console.error = () => {}
+  // console.log = () => {}
 
-  return Promise.all([
-    ensureDirectoryExists(extensionsDir),
-    new Promise((resolve) => {
-      createExtensionsServer(resolve)
-      t.context.server = server
-      server.once('listening', () => {
-        const { address, port } = server.address() as AddressInfo
-        t.context.host = `http://${address}:${port}/`
-        resolve(null)
-      })
-    }),
-  ])
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  // console.error = () => {}
+
+  await ensureDirectoryExists(extensionsDir)
+  await new Promise((resolve) => {
+    createExtensionsServer(resolve)
+    t.context.server = server
+    server.once('listening', () => {
+      const { address, port } = server.address() as AddressInfo
+      t.context.host = `http://${address}:${port}/`
+      resolve(null)
+    })
+  })
 })
 
 test.after((t): Promise<any> => {
@@ -104,17 +103,21 @@ test('serves the files in the Extensions directory over HTTP', (t) => {
   )
 })
 
-test.cb('does not serve files outside the Extensions directory', (t) => {
-  http.get(t.context.host + 'Extensions/../../../package.json').on('response', (response) => {
-    t.is(response.statusCode, 500)
-    t.end()
+test('does not serve files outside the Extensions directory', async (t) => {
+  await new Promise((resolve) => {
+    http.get(t.context.host + 'Extensions/../../../package.json').on('response', (response) => {
+      t.is(response.statusCode, 500)
+      resolve(true)
+    })
   })
 })
 
-test.cb('returns a 404 for files that are not present', (t) => {
-  http.get(t.context.host + 'Extensions/nothing').on('response', (response) => {
-    t.is(response.statusCode, 404)
-    t.end()
+test('returns a 404 for files that are not present', async (t) => {
+  await new Promise((resolve) => {
+    http.get(t.context.host + 'Extensions/nothing').on('response', (response) => {
+      t.is(response.statusCode, 404)
+      resolve(true)
+    })
   })
 })
 

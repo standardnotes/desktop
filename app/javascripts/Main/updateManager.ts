@@ -6,7 +6,7 @@ import { action, autorun, computed, makeObservable, observable } from 'mobx'
 import { autoUpdatingAvailable } from './constants'
 import { MessageType } from '../../../test/TestIpcMessage'
 import { AppState } from '../../application'
-import { BackupsManagerInterface } from "./BackupsManagerInterface"
+import { BackupsManagerInterface } from './BackupsManagerInterface'
 import { StoreKeys } from './store'
 import { updates as str } from './strings'
 import { handleTestMessage } from './testing'
@@ -206,8 +206,10 @@ export async function checkForUpdate(appState: AppState, state: UpdateState, use
 
   if (state.enableAutoUpdate || userTriggered) {
     state.setCheckingForUpdate(true)
+
     try {
       const result = await autoUpdater.checkForUpdates()
+
       if (!result) {
         return
       }

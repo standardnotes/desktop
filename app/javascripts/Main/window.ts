@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain, Rectangle, screen, Shell } from 'electron'
+import { BrowserWindow, Rectangle, screen, Shell } from 'electron'
 import fs from 'fs'
 import { debounce } from 'lodash'
 import path from 'path'
@@ -157,7 +157,7 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
     webPreferences: {
       spellcheck: true,
       nodeIntegration: isTesting(),
-      contextIsolation: !isTesting(),
+      contextIsolation: true,
       preload: Paths.preloadJs,
     },
   })
@@ -186,7 +186,7 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
 }
 
 async function createWindowServices(window: Electron.BrowserWindow, appState: AppState, appLocale: string) {
-  const packageManager = await initializePackageManager(ipcMain, window.webContents)
+  const packageManager = await initializePackageManager(window.webContents)
   const searchManager = initializeSearchManager(window.webContents)
   initializeZoomManager(window, appState.store)
 

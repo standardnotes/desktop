@@ -7,6 +7,7 @@ const { contextBridge } = require('electron')
 
 process.once('loaded', function () {
   contextBridge.exposeInMainWorld('electronRemoteBridge', RemoteBridge.exposableValue)
+
   listenForIpcEventsFromMainProcess()
 })
 

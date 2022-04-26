@@ -10,13 +10,14 @@ import { CommandLineArgs } from '../app/javascripts/shared/CommandLineArgs'
 import { AppMessageType, AppTestMessage, MessageType, TestIPCMessage, TestIPCMessageResult } from './TestIpcMessage'
 
 function spawnAppprocess(userDataPath: string) {
-  return spawn(
+  const p = spawn(
     electronPath as any,
     [path.join(__dirname, '..'), CommandLineArgs.Testing, CommandLineArgs.UserDataPath, userDataPath],
     {
-      stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+      stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
     },
   )
+  return p
 }
 
 class Driver {
@@ -35,11 +36,19 @@ class Driver {
   appReady: Promise<unknown>
   windowLoaded: Promise<unknown>
 
+  constructor(readonly userDataPath: string) {
+    this.appProcess = spawnAppprocess(userDataPath)
+    this.appProcess.on('message', this.receive)
+    this.appReady = this.waitOn(AppMessageType.Ready)
+    this.windowLoaded = this.waitOn(AppMessageType.WindowLoaded)
+  }
+
   private receive = (message: TestIPCMessageResult | AppTestMessage) => {
     if ('type' in message) {
       if (message.type === AppMessageType.Log) {
         console.log(message)
       }
+
       this.awaitedOnMessages = this.awaitedOnMessages.filter(({ type, resolve }) => {
         if (type === message.type) {
           resolve()
@@ -48,6 +57,7 @@ class Driver {
         return true
       })
     }
+
     if ('id' in message) {
       const call = this.calls[message.id]!
       this.calls[message.id] = null
@@ -68,13 +78,6 @@ class Driver {
     })
   }
 
-  constructor(readonly userDataPath: string) {
-    this.appProcess = spawnAppprocess(this.userDataPath)
-    this.appProcess.on('message', this.receive)
-    this.appReady = this.waitOn(AppMessageType.Ready)
-    this.windowLoaded = this.waitOn(AppMessageType.WindowLoaded)
-  }
-
   private send = (type: MessageType, ...args: any): Promise<any> => {
     const id = this.calls.length
     const message: TestIPCMessage = {
@@ -82,7 +85,9 @@ class Driver {
       type,
       args,
     }
+
     this.appProcess.send(message)
+
     return new Promise((resolve, reject) => {
       this.calls.push({ resolve, reject })
     })

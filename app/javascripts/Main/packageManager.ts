@@ -1,5 +1,4 @@
 import compareVersions from 'compare-versions'
-import { IpcMain } from 'electron'
 import fs from 'fs'
 import path from 'path'
 import { MessageToWebApp } from '../shared/IpcMessages'
@@ -90,10 +89,7 @@ class MappingFileHandler {
   private writeToDisk = debouncedJSONDiskWriter(100, Paths.extensionsMappingJson, () => this.mapping)
 }
 
-export async function initializePackageManager(
-  ipcMain: IpcMain,
-  webContents: Electron.WebContents,
-): Promise<PackageManagerInterface> {
+export async function initializePackageManager(webContents: Electron.WebContents): Promise<PackageManagerInterface> {
   const syncTasks: SyncTask[] = []
   let isRunningTasks = false
 

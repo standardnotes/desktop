@@ -1,14 +1,14 @@
-import { serial as test } from 'ava'
+import test from 'ava'
 import { IpcMainEvent } from 'electron'
 import { promises as fs } from 'fs'
 import path from 'path'
 import proxyquire from 'proxyquire'
 import { ensureDirectoryExists, readJSONFile } from '../app/javascripts/main/fileUtils'
-import { SyncTask } from '../app/javascripts/main/packageManager'
 import { MessageToWebApp } from '../app/javascripts/shared/ipcMessages'
 import { createTmpDir } from './testUtils'
 import { AppName } from '../app/javascripts/main/strings'
 import makeFakePaths from './fakePaths'
+import { PackageManagerInterface, SyncTask } from '../app/javascripts/main/PackageManagerInterface'
 
 const tmpDir = createTmpDir(__filename)
 const FakePaths = makeFakePaths(tmpDir.path)
@@ -40,27 +40,6 @@ const fakeWebContents = {
   },
 }
 
-const fakeIpcMain = (() => {
-  let handler: (event: IpcMainEvent, data: any) => Promise<void>
-
-  return {
-    handler,
-    on(message: MessageToWebApp, messageHandler: any) {
-      if (handler) {
-        throw new Error('handler already defined.')
-      }
-      handler = messageHandler
-    },
-    async syncComponents(task: SyncTask) {
-      await handler(undefined, {
-        componentsData: task.components,
-      })
-      /** Give the package manager time to write to disk */
-      await new Promise((resolve) => setTimeout(resolve, 200))
-    },
-  }
-})()
-
 const name = 'Fake Component'
 const identifier = 'fake.component'
 const uuid = 'fake-component'
@@ -87,8 +66,11 @@ function fakeComponent({ deleted = false, modifier = '' } = {}) {
   }
 }
 
+let packageManager: PackageManagerInterface
+
 const log = console.log
 const error = console.error
+
 test.before(async function () {
   /** Silence the package manager's output. */
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -96,8 +78,9 @@ test.before(async function () {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   console.error = () => {}
   await ensureDirectoryExists(contentDir)
-  await initializePackageManager(fakeIpcMain, fakeWebContents)
+  packageManager = await initializePackageManager(fakeWebContents)
 })
+
 test.after.always(async function () {
   console.log = log
   console.error = error
@@ -109,9 +92,7 @@ test.beforeEach(function () {
 })
 
 test('installs multiple components', async (t) => {
-  await fakeIpcMain.syncComponents({
-    components: modifiers.map((modifier) => fakeComponent({ modifier })),
-  })
+  await packageManager.syncComponents(modifiers.map((modifier) => fakeComponent({ modifier })))
   await new Promise((resolve) => setTimeout(resolve, 200))
 
   const files = await fs.readdir(contentDir)
@@ -146,9 +127,7 @@ test('installs multiple components', async (t) => {
 })
 
 test('uninstalls multiple components', async (t) => {
-  await fakeIpcMain.syncComponents({
-    components: modifiers.map((modifier) => fakeComponent({ deleted: true, modifier })),
-  })
+  await packageManager.syncComponents(modifiers.map((modifier) => fakeComponent({ deleted: true, modifier })))
   await new Promise((resolve) => setTimeout(resolve, 200))
 
   const files = await fs.readdir(contentDir)
@@ -159,23 +138,15 @@ test('uninstalls multiple components', async (t) => {
 
 test("doesn't download anything when two install/uninstall tasks are queued", async (t) => {
   await Promise.all([
-    fakeIpcMain.syncComponents({
-      components: [fakeComponent({ deleted: false })],
-    }),
-    fakeIpcMain.syncComponents({
-      components: [fakeComponent({ deleted: false })],
-    }),
-    fakeIpcMain.syncComponents({
-      components: [fakeComponent({ deleted: true })],
-    }),
+    packageManager.syncComponents([fakeComponent({ deleted: false })]),
+    packageManager.syncComponents([fakeComponent({ deleted: false })]),
+    packageManager.syncComponents([fakeComponent({ deleted: true })]),
   ])
   t.is(downloadFileCallCount, 1)
 })
 
 test("Relies on download_url's version field to store the version number", async (t) => {
-  await fakeIpcMain.syncComponents({
-    components: [fakeComponent()],
-  })
+  await packageManager.syncComponents([fakeComponent()])
   await new Promise((resolve) => setTimeout(resolve, 200))
 
   const mappingFileVersion = JSON.parse(await fs.readFile(path.join(contentDir, 'mapping.json'), 'utf8'))[uuid].version

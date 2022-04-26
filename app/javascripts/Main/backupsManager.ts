@@ -90,9 +90,13 @@ export function createBackupsManager(webContents: WebContents, appState: AppStat
   }
 
   async function saveBackupData(data: any) {
-    if (backupsDisabled) return
+    if (backupsDisabled) {
+      return
+    }
+
     let success: boolean
     let name: string | undefined
+
     try {
       name = await writeDataToFile(data)
       log(`Data backup successfully saved: ${name}`)
@@ -102,15 +106,21 @@ export function createBackupsManager(webContents: WebContents, appState: AppStat
       success = false
       logError('An error occurred saving backup file', err)
     }
+
     webContents.send(MessageToWebApp.FinishedSavingBackup, { success })
+
     if (isTesting()) {
       send(AppMessageType.SavedBackup)
     }
+
     return name
   }
 
   function performBackup() {
-    if (backupsDisabled) return
+    if (backupsDisabled) {
+      return
+    }
+
     webContents.send(MessageToWebApp.PerformAutomatedBackup)
   }
 

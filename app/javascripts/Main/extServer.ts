@@ -91,11 +91,21 @@ export function createExtensionsServer(): string {
   const port = 45653
   const ip = '127.0.0.1'
   const host = `${Protocol}://${ip}:${port}`
+
   const initCallback = () => {
     log(`Server started at ${host}`)
   }
 
-  http.createServer(handleRequest).listen(port, ip, initCallback)
+  try {
+    http
+      .createServer(handleRequest)
+      .listen(port, ip, initCallback)
+      .on('error', (err) => {
+        console.error('Error listening on extServer', err)
+      })
+  } catch (error) {
+    console.error('Error creating ext server', error)
+  }
 
   return host
 }

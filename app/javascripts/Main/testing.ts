@@ -10,11 +10,13 @@ export function handleTestMessage(type: MessageType, handler: (...args: any) => 
   if (!isTesting()) {
     throw Error('Tried to invoke test handler in non-test build.')
   }
+
   messageHandlers[type] = handler
 }
 
 export function send(type: AppMessageType, data?: unknown): void {
   if (!isTesting()) return
+
   process.send!({ type, data })
 }
 

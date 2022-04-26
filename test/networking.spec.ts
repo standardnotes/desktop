@@ -1,11 +1,12 @@
-import { serial as anyTest, TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { promises as fs } from 'fs'
 import http from 'http'
 import { AddressInfo } from 'net'
 import path from 'path'
 import { createDriver, Driver } from './driver'
 import { createTmpDir } from './testUtils'
-const test = anyTest as TestInterface<Driver>
+
+const test = anyTest as TestFn<Driver>
 
 const tmpDir = createTmpDir(__filename)
 
