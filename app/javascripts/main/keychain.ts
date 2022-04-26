@@ -4,14 +4,15 @@ import { isLinux } from './platforms'
 import { AppName } from './strings'
 import { keychainAccessIsUserConfigurable } from './constants'
 import { isDev, isTesting } from './utils'
-import { IpcMessages } from '../shared/ipcMessages'
+import { MessageToMainProcess } from '../shared/IpcMessages'
 import { Urls, Paths } from './paths'
 import { Store, StoreKeys } from './store'
+import { KeychainInterface } from './KeychainInterface'
 
 const ServiceName = isTesting() ? AppName + ' (Testing)' : isDev() ? AppName + ' (Development)' : AppName
 const AccountName = 'Standard Notes Account'
 
-export async function ensureKeychainAccess(store: Store): Promise<BrowserWindow | undefined> {
+async function ensureKeychainAccess(store: Store): Promise<BrowserWindow | undefined> {
   if (!isLinux()) {
     /** Assume keychain is accessible */
     return
@@ -56,24 +57,24 @@ function askForKeychainAccess(store: Store): Promise<BrowserWindow> {
   const quit = () => {
     app.quit()
   }
-  ipcMain.once(IpcMessages.Quit, quit)
+  ipcMain.once(MessageToMainProcess.Quit, quit)
   window.once('close', quit)
 
-  ipcMain.on(IpcMessages.LearnMoreAboutKeychainAccess, () => {
+  ipcMain.on(MessageToMainProcess.LearnMoreAboutKeychainAccess, () => {
     window.setSize(window.getSize()[0], 600, true)
   })
 
   return new Promise((resolve) => {
-    ipcMain.once(IpcMessages.UseLocalstorageForKeychain, () => {
+    ipcMain.once(MessageToMainProcess.UseLocalstorageForKeychain, () => {
       store.set(StoreKeys.UseNativeKeychain, false)
-      ipcMain.removeListener(IpcMessages.Quit, quit)
+      ipcMain.removeListener(MessageToMainProcess.Quit, quit)
       window.removeListener('close', quit)
       resolve(window)
     })
   })
 }
 
-export async function getKeychainValue(): Promise<unknown> {
+async function getKeychainValue(): Promise<unknown> {
   try {
     const value = await keytar.getPassword(ServiceName, AccountName)
     if (value) {
@@ -85,10 +86,17 @@ export async function getKeychainValue(): Promise<unknown> {
   }
 }
 
-export function setKeychainValue(value: unknown): Promise<void> {
+function setKeychainValue(value: unknown): Promise<void> {
   return keytar.setPassword(ServiceName, AccountName, JSON.stringify(value))
 }
 
-export function clearKeychainValue(): Promise<boolean> {
+function clearKeychainValue(): Promise<boolean> {
   return keytar.deletePassword(ServiceName, AccountName)
+}
+
+export const Keychain: KeychainInterface = {
+  ensureKeychainAccess,
+  getKeychainValue,
+  setKeychainValue,
+  clearKeychainValue,
 }

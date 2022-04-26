@@ -1,7 +1,7 @@
+import { Component } from './../Main/PackageManagerInterface'
 import { DesktopDeviceInterface } from '@web/Device/DesktopDeviceInterface'
 import { WebOrDesktopDevice } from '@web/Device/WebOrDesktopDevice'
 import { RawKeychainValue, Environment } from '@web/Device/DesktopSnjsExports'
-import { IpcMessages } from '../shared/ipcMessages'
 import { CrossProcessBridge } from './CrossProcessBridge'
 
 const FallbackLocalStorageKey = 'keychain'
@@ -10,7 +10,7 @@ export class DesktopDevice extends WebOrDesktopDevice implements DesktopDeviceIn
   public environment: Environment.Desktop = Environment.Desktop
 
   constructor(
-    private mainThread: CrossProcessBridge,
+    private remoteBridge: CrossProcessBridge,
     private useNativeKeychain: boolean,
     public extensionsServerHost: string,
     appVersion: string,
@@ -20,7 +20,7 @@ export class DesktopDevice extends WebOrDesktopDevice implements DesktopDeviceIn
 
   async getKeychainValue() {
     if (this.useNativeKeychain) {
-      const keychainValue = await this.mainThread.getKeychainValue()
+      const keychainValue = await this.remoteBridge.getKeychainValue()
       return keychainValue
     } else {
       const value = window.localStorage.getItem(FallbackLocalStorageKey)
@@ -32,7 +32,7 @@ export class DesktopDevice extends WebOrDesktopDevice implements DesktopDeviceIn
 
   async setKeychainValue(value: RawKeychainValue) {
     if (this.useNativeKeychain) {
-      await this.mainThread.setKeychainValue(value)
+      await this.remoteBridge.setKeychainValue(value)
     } else {
       window.localStorage.setItem(FallbackLocalStorageKey, JSON.stringify(value))
     }
@@ -40,32 +40,30 @@ export class DesktopDevice extends WebOrDesktopDevice implements DesktopDeviceIn
 
   async clearRawKeychainValue() {
     if (this.useNativeKeychain) {
-      await this.mainThread.clearKeychainValue()
+      await this.remoteBridge.clearKeychainValue()
     } else {
       window.localStorage.removeItem(FallbackLocalStorageKey)
     }
   }
 
-  syncComponents(componentsData: unknown) {
-    this.mainThread.sendIpcMessage(IpcMessages.SyncComponents, {
-      componentsData,
-    })
+  syncComponents(components: Component[]) {
+    this.remoteBridge.syncComponents(components)
   }
 
   onMajorDataChange() {
-    this.mainThread.sendIpcMessage(IpcMessages.MajorDataChange, {})
+    this.remoteBridge.onMajorDataChange()
   }
 
   onSearch(text: string) {
-    this.mainThread.sendIpcMessage(IpcMessages.SearchText, { text })
+    this.remoteBridge.onSearch(text)
   }
 
   onInitialDataLoad() {
-    this.mainThread.sendIpcMessage(IpcMessages.InitialDataLoaded, {})
+    this.remoteBridge.onInitialDataLoad()
   }
 
   onSignOut(restart = true) {
-    this.mainThread.sendIpcMessage(IpcMessages.SigningOut, { restart })
+    this.remoteBridge.onSignOut(restart)
   }
 
   async downloadBackup() {
@@ -76,7 +74,7 @@ export class DesktopDevice extends WebOrDesktopDevice implements DesktopDeviceIn
     try {
       const data = await receiver.requestBackupFile()
       if (data) {
-        this.mainThread.sendIpcMessage(IpcMessages.DataArchive, data)
+        this.remoteBridge.saveDataBackup(data)
       } else {
         receiver.didFinishBackup(false)
       }
@@ -87,14 +85,14 @@ export class DesktopDevice extends WebOrDesktopDevice implements DesktopDeviceIn
   }
 
   async localBackupsCount() {
-    return this.mainThread.localBackupsCount()
+    return this.remoteBridge.localBackupsCount()
   }
 
   viewlocalBackups() {
-    this.mainThread.viewlocalBackups()
+    this.remoteBridge.viewlocalBackups()
   }
 
   async deleteLocalBackups() {
-    this.mainThread.deleteLocalBackups()
+    this.remoteBridge.deleteLocalBackups()
   }
 }

@@ -1,18 +1,18 @@
 const { ipcRenderer } = require('electron')
-import { IpcMessages } from '../shared/ipcMessages'
+import { MessageToMainProcess } from '../shared/IpcMessages'
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('use-storage-button').addEventListener('click', () => {
-    ipcRenderer.send(IpcMessages.UseLocalstorageForKeychain)
+    ipcRenderer.send(MessageToMainProcess.UseLocalstorageForKeychain)
   })
 
   document.getElementById('quit-button').addEventListener('click', () => {
-    ipcRenderer.send(IpcMessages.Quit)
+    ipcRenderer.send(MessageToMainProcess.Quit)
   })
 
   const learnMoreButton = document.getElementById('learn-more')
   learnMoreButton.addEventListener('click', (event) => {
-    ipcRenderer.send(IpcMessages.LearnMoreAboutKeychainAccess)
+    ipcRenderer.send(MessageToMainProcess.LearnMoreAboutKeychainAccess)
     event.preventDefault()
     const moreInfo = document.getElementById('more-info')
     moreInfo.style.display = 'block'

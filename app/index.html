@@ -14,7 +14,7 @@
         worker-src blob:;
         connect-src * data:;
         style-src 'unsafe-inline' 'self' http://127.0.0.1:45653;
-        frame-src *
+        frame-src * blob:;
       "
     />
 
@@ -26,7 +26,6 @@
     <meta content="Standard Notes" name="application-name" />
 
     <script src="standard-notes-web/javascripts/app.js"></script>
-    <script src="../node_modules/sn-electron-valence/Receiver.js"></script>
     <script src="javascripts/renderer/renderer.js"></script>
 
     <link rel="stylesheet" media="all" href="standard-notes-web/stylesheets/app.css" />

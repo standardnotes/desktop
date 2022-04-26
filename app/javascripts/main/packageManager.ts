@@ -2,7 +2,7 @@ import compareVersions from 'compare-versions'
 import { IpcMain } from 'electron'
 import fs from 'fs'
 import path from 'path'
-import { IpcMessages } from '../shared/ipcMessages'
+import { MessageToWebApp } from '../shared/IpcMessages'
 import {
   debouncedJSONDiskWriter,
   deleteDir,
@@ -17,6 +17,7 @@ import { Paths } from './paths'
 import { AppName } from './strings'
 import { timeout } from './utils'
 import log from 'electron-log'
+import { Component, MappingFile, PackageManagerInterface, SyncTask, PackageInfo } from './PackageManagerInterface'
 
 function logMessage(...message: any) {
   log.info('PackageManager:', ...message)
@@ -24,40 +25,6 @@ function logMessage(...message: any) {
 
 function logError(...message: any) {
   console.error('PackageManager:', ...message)
-}
-
-type PackageInfo = {
-  identifier: string
-  version: string
-  download_url: string
-  latest_url: string
-  url: string
-}
-
-/* eslint-disable camelcase */
-interface Component {
-  uuid: string
-  deleted: boolean
-  content?: {
-    name?: string
-    autoupdateDisabled: boolean
-    local_url?: string
-    package_info: PackageInfo
-  }
-}
-/* eslint-enable camelcase */
-
-export interface SyncTask {
-  components: Component[]
-}
-
-interface MappingFile {
-  [key: string]: Readonly<ComponentMapping> | undefined
-}
-
-interface ComponentMapping {
-  location: string
-  version?: string
 }
 
 /**
@@ -123,32 +90,35 @@ class MappingFileHandler {
   private writeToDisk = debouncedJSONDiskWriter(100, Paths.extensionsMappingJson, () => this.mapping)
 }
 
-export async function initializePackageManager(ipcMain: IpcMain, webContents: Electron.WebContents): Promise<void> {
+export async function initializePackageManager(
+  ipcMain: IpcMain,
+  webContents: Electron.WebContents,
+): Promise<PackageManagerInterface> {
   const syncTasks: SyncTask[] = []
   let isRunningTasks = false
 
   const mapping = await MappingFileHandler.create()
 
-  ipcMain.on(IpcMessages.SyncComponents, async (_event, data: { componentsData: Component[] }) => {
-    const components = data.componentsData
+  return {
+    syncComponents: async (components: Component[]) => {
+      logMessage(
+        'received sync event for:',
+        components
+          .map(
+            ({ content, deleted }) =>
+              // eslint-disable-next-line camelcase
+              `${content?.name} (${content?.package_info?.version}) ` + `(deleted: ${deleted})`,
+          )
+          .join(', '),
+      )
+      syncTasks.push({ components })
 
-    logMessage(
-      'received sync event for:',
-      components
-        .map(
-          ({ content, deleted }) =>
-            // eslint-disable-next-line camelcase
-            `${content?.name} (${content?.package_info?.version}) ` + `(deleted: ${deleted})`,
-        )
-        .join(', '),
-    )
-    syncTasks.push({ components })
-
-    if (isRunningTasks) return
-    isRunningTasks = true
-    await runTasks(webContents, mapping, syncTasks)
-    isRunningTasks = false
-  })
+      if (isRunningTasks) return
+      isRunningTasks = true
+      await runTasks(webContents, mapping, syncTasks)
+      isRunningTasks = false
+    },
+  }
 }
 
 async function runTasks(webContents: Electron.WebContents, mapping: MappingFileHandler, tasks: SyncTask[]) {
@@ -318,7 +288,7 @@ async function installComponent(
     } else {
       logMessage(`Installed component ${name} (${version})`)
     }
-    webContents.send(IpcMessages.InstallComponentComplete, {
+    webContents.send(MessageToWebApp.InstallComponentComplete, {
       component,
       error,
     })

@@ -1,37 +1,47 @@
+import { Component } from './../Main/PackageManagerInterface'
+
 export interface CrossProcessBridge {
-  get extServerHost(): Promise<string>
+  get extServerHost(): string
 
-  get useNativeKeychain(): Promise<boolean>
+  get useNativeKeychain(): boolean
 
-  get rendererPath(): Promise<string>
+  get rendererPath(): string
 
-  get isMacOS(): Promise<boolean>
+  get isMacOS(): boolean
 
-  get appVersion(): Promise<string>
+  get appVersion(): string
 
-  get useSystemMenuBar(): Promise<boolean>
+  get useSystemMenuBar(): boolean
 
-  sendIpcMessage(message: string, data: unknown): Promise<void>
+  closeWindow(): void
 
-  closeWindow(): Promise<void>
+  minimizeWindow(): void
 
-  minimizeWindow(): Promise<void>
+  maximizeWindow(): void
 
-  maximizeWindow(): Promise<void>
+  unmaximizeWindow(): void
 
-  unmaximizeWindow(): Promise<void>
-
-  isWindowMaximized(): Promise<boolean>
+  isWindowMaximized(): boolean
 
   getKeychainValue(): Promise<unknown>
 
   setKeychainValue: (value: unknown) => Promise<void>
 
-  clearKeychainValue(): Promise<void>
+  clearKeychainValue(): Promise<boolean>
 
   localBackupsCount(): Promise<number>
 
-  viewlocalBackups(): Promise<void>
+  viewlocalBackups(): void
 
   deleteLocalBackups(): Promise<void>
+
+  saveDataBackup(data: unknown): void
+
+  displayAppMenu(): void
+
+  syncComponents(components: Component[]): void
+  onMajorDataChange(): void
+  onSearch(text: string): void
+  onInitialDataLoad(): void
+  onSignOut(restart: boolean): void
 }

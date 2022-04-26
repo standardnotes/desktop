@@ -42,7 +42,6 @@
   },
   "plugins": ["@typescript-eslint"],
   "globals": {
-    "ElectronValence": true,
     "zip": true
   }
 }

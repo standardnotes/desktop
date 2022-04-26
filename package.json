@@ -92,8 +92,7 @@
       "dist/**/*",
       "stylesheets/**/*",
       "assets/**/*",
-      "icon/**/*",
-      "node_modules/sn-electron-valence/**/*"
+      "icon/**/*"
     ],
     "protocols": [
       {

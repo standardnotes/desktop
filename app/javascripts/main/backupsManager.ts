@@ -1,9 +1,10 @@
-import { dialog, IpcMain, WebContents } from 'electron'
+import { dialog, WebContents, shell } from 'electron'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { AppMessageType, MessageType } from '../../../test/TestIpcMessage'
 import { AppState } from '../../application'
-import { IpcMessages } from '../shared/ipcMessages'
+import { MessageToWebApp } from '../shared/IpcMessages'
+import { BackupsManagerInterface } from './BackupsManagerInterface'
 import { deleteDir, deleteDirContents, ensureDirectoryExists, FileDoesNotExist, moveFiles } from './fileUtils'
 import { Paths } from './paths'
 import { StoreKeys } from './store'
@@ -41,18 +42,6 @@ function dateToSafeFilename(date: Date) {
   return date.toISOString().replace(/:/g, '-')
 }
 
-export interface BackupsManager {
-  backupsAreEnabled: boolean
-  toggleBackupsStatus(): void
-  backupsLocation: string
-  backupsCount(): Promise<number>
-  applicationDidBlur(): void
-  changeBackupsLocation(): void
-  beginBackups(): void
-  performBackup(): void
-  deleteBackups(): Promise<void>
-}
-
 async function copyDecryptScript(location: string) {
   try {
     await ensureDirectoryExists(location)
@@ -62,7 +51,7 @@ async function copyDecryptScript(location: string) {
   }
 }
 
-export function createBackupsManager(webContents: WebContents, appState: AppState, ipcMain: IpcMain): BackupsManager {
+export function createBackupsManager(webContents: WebContents, appState: AppState): BackupsManagerInterface {
   let backupsLocation = appState.store.get(StoreKeys.BackupsLocation)
   let backupsDisabled = appState.store.get(StoreKeys.BackupsDisabled)
   let needsBackup = false
@@ -74,10 +63,6 @@ export function createBackupsManager(webContents: WebContents, appState: AppStat
   determineLastBackupDate(backupsLocation)
     .then((date) => appState.setBackupCreationDate(date))
     .catch(console.error)
-
-  ipcMain.on(IpcMessages.DataArchive, (_event, data) => {
-    archiveData(data)
-  })
 
   async function setBackupsLocation(location: string) {
     const previousLocation = backupsLocation
@@ -104,7 +89,7 @@ export function createBackupsManager(webContents: WebContents, appState: AppStat
     appState.store.set(StoreKeys.BackupsLocation, backupsLocation)
   }
 
-  async function archiveData(data: any) {
+  async function saveBackupData(data: any) {
     if (backupsDisabled) return
     let success: boolean
     let name: string | undefined
@@ -117,7 +102,7 @@ export function createBackupsManager(webContents: WebContents, appState: AppStat
       success = false
       logError('An error occurred saving backup file', err)
     }
-    webContents.send(IpcMessages.FinishedSavingBackup, { success })
+    webContents.send(MessageToWebApp.FinishedSavingBackup, { success })
     if (isTesting()) {
       send(AppMessageType.SavedBackup)
     }
@@ -126,7 +111,7 @@ export function createBackupsManager(webContents: WebContents, appState: AppStat
 
   function performBackup() {
     if (backupsDisabled) return
-    webContents.send(IpcMessages.DownloadBackup)
+    webContents.send(MessageToWebApp.PerformAutomatedBackup)
   }
 
   async function writeDataToFile(data: any): Promise<string> {
@@ -161,7 +146,7 @@ export function createBackupsManager(webContents: WebContents, appState: AppStat
   }
 
   if (isTesting()) {
-    handleTestMessage(MessageType.DataArchive, (data: any) => archiveData(data))
+    handleTestMessage(MessageType.DataArchive, (data: any) => saveBackupData(data))
     handleTestMessage(MessageType.BackupsAreEnabled, () => !backupsDisabled)
     handleTestMessage(MessageType.ToggleBackupsEnabled, toggleBackupsStatus)
     handleTestMessage(MessageType.BackupsLocation, () => backupsLocation)
@@ -177,6 +162,7 @@ export function createBackupsManager(webContents: WebContents, appState: AppStat
     get backupsLocation() {
       return backupsLocation
     },
+    saveBackupData,
     performBackup,
     beginBackups,
     toggleBackupsStatus,
@@ -190,6 +176,9 @@ export function createBackupsManager(webContents: WebContents, appState: AppStat
         needsBackup = false
         performBackup()
       }
+    },
+    viewBackups() {
+      shell.openPath(backupsLocation)
     },
     async deleteBackups() {
       await deleteDirContents(backupsLocation)

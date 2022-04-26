@@ -1,5 +1,5 @@
 import { DesktopDevice } from './DesktopDevice'
-import { IpcMessages } from '../shared/ipcMessages'
+import { MessageToWebApp } from '../shared/IpcMessages'
 import { DesktopCommunicationReceiver } from '@web/Device/DesktopWebCommunication'
 import { StartApplication } from '@web/Device/StartApplication'
 import { CrossProcessBridge } from './CrossProcessBridge'
@@ -14,10 +14,10 @@ declare const DASHBOARD_URL: string
 declare global {
   interface Window {
     device: DesktopDevice
+    electronRemoteBridge: CrossProcessBridge
     dashboardUrl: string
     desktopCommunicationReceiver: DesktopCommunicationReceiver
     electronAppVersion: string
-    ElectronValence: any
     enableUnfinishedFeatures: boolean
     plansUrl: string
     purchaseUrl: string
@@ -26,37 +26,36 @@ declare global {
   }
 }
 
-const messageBus = new window.ElectronValence.FrameMessageBus()
-const receiver = new window.ElectronValence.Receiver(messageBus)
-
-function loadWindowVarsRequiredByWebApp() {
+const loadWindowVarsRequiredByWebApp = () => {
   window.dashboardUrl = DASHBOARD_URL
   window.enableUnfinishedFeatures = ENABLE_UNFINISHED_FEATURES === 'true'
   window.plansUrl = PLANS_URL
   window.purchaseUrl = PURCHASE_URL
 }
 
-;(async () => {
-  loadWindowVarsRequiredByWebApp()
+const loadAndStartApplication = async () => {
+  const remoteBridge: CrossProcessBridge = window.electronRemoteBridge
 
-  await receiver.ready
+  await configureWindow(remoteBridge)
 
-  const mainThread: CrossProcessBridge = receiver.items[0]
-
-  await configureWindow(mainThread)
-
-  window.device = await createDesktopDevice(mainThread)
+  window.device = await createDesktopDevice(remoteBridge)
 
   window.startApplication(DEFAULT_SYNC_SERVER, window.device, window.enableUnfinishedFeatures, WEBSOCKET_URL)
 
-  registerIpcMessageListener(window.device)
-})()
+  listenForMessagesSentFromMainToPreloadToUs(window.device)
+}
 
-loadZipLibrary()
+window.onload = () => {
+  loadWindowVarsRequiredByWebApp()
+
+  loadAndStartApplication()
+
+  loadZipLibrary()
+}
 
 /** @returns whether the keychain structure is up to date or not */
-async function migrateKeychain(mainThread: CrossProcessBridge): Promise<boolean> {
-  if (!(await mainThread.useNativeKeychain)) {
+async function migrateKeychain(remoteBridge: CrossProcessBridge): Promise<boolean> {
+  if (!remoteBridge.useNativeKeychain) {
     /** User chose not to use keychain, do not migrate. */
     return false
   }
@@ -68,26 +67,24 @@ async function migrateKeychain(mainThread: CrossProcessBridge): Promise<boolean>
     /** Migrate to native keychain */
     console.warn('Migrating keychain from localStorage to native keychain.')
     window.localStorage.removeItem(key)
-    await mainThread.setKeychainValue(JSON.parse(localStorageValue))
+    await remoteBridge.setKeychainValue(JSON.parse(localStorageValue))
   }
 
   return true
 }
 
-async function createDesktopDevice(mainThread: CrossProcessBridge): Promise<DesktopDevice> {
-  const useNativeKeychain = await migrateKeychain(mainThread)
-  const extensionsServerHost = await mainThread.extServerHost
-  const appVersion = await mainThread.appVersion
+async function createDesktopDevice(remoteBridge: CrossProcessBridge): Promise<DesktopDevice> {
+  const useNativeKeychain = await migrateKeychain(remoteBridge)
+  const extensionsServerHost = remoteBridge.extServerHost
+  const appVersion = remoteBridge.appVersion
 
-  return new DesktopDevice(mainThread, useNativeKeychain, extensionsServerHost, appVersion)
+  return new DesktopDevice(remoteBridge, useNativeKeychain, extensionsServerHost, appVersion)
 }
 
-async function configureWindow(mainThread: CrossProcessBridge) {
-  const [isMacOS, useSystemMenuBar, appVersion] = await Promise.all([
-    mainThread.isMacOS,
-    mainThread.useSystemMenuBar,
-    mainThread.appVersion,
-  ])
+async function configureWindow(remoteBridge: CrossProcessBridge) {
+  const isMacOS = remoteBridge.isMacOS
+  const useSystemMenuBar = remoteBridge.useSystemMenuBar
+  const appVersion = remoteBridge.appVersion
 
   window.electronAppVersion = appVersion
 
@@ -95,30 +92,27 @@ async function configureWindow(mainThread: CrossProcessBridge) {
   Title bar events
   */
   document.getElementById('menu-btn')!.addEventListener('click', (e) => {
-    mainThread.sendIpcMessage(IpcMessages.DisplayAppMenu, {
-      x: e.x,
-      y: e.y,
-    })
+    remoteBridge.displayAppMenu()
   })
 
   document.getElementById('min-btn')!.addEventListener('click', () => {
-    mainThread.minimizeWindow()
+    remoteBridge.minimizeWindow()
   })
 
   document.getElementById('max-btn')!.addEventListener('click', async () => {
-    if (await mainThread.isWindowMaximized()) {
-      mainThread.unmaximizeWindow()
+    if (remoteBridge.isWindowMaximized()) {
+      remoteBridge.unmaximizeWindow()
     } else {
-      mainThread.maximizeWindow()
+      remoteBridge.maximizeWindow()
     }
   })
 
   document.getElementById('close-btn')!.addEventListener('click', () => {
-    mainThread.closeWindow()
+    remoteBridge.closeWindow()
   })
 
   // For Mac inset window
-  const sheet = window.document.styleSheets[0]
+  const sheet = document.styleSheets[0]
   if (isMacOS) {
     sheet.insertRule('#navigation { padding-top: 25px !important; }', sheet.cssRules.length)
   }
@@ -138,13 +132,12 @@ async function configureWindow(mainThread: CrossProcessBridge) {
   }
 }
 
-function registerIpcMessageListener(device: DesktopDevice) {
+function listenForMessagesSentFromMainToPreloadToUs(device: DesktopDevice) {
   window.addEventListener('message', async (event) => {
     // We don't have access to the full file path.
     if (event.origin !== 'file://') {
       return
     }
-
     let payload
     try {
       payload = JSON.parse(event.data)
@@ -152,22 +145,20 @@ function registerIpcMessageListener(device: DesktopDevice) {
       // message doesn't belong to us
       return
     }
-
     const receiver = window.desktopCommunicationReceiver
     const message = payload.message
     const data = payload.data
-
-    if (message === IpcMessages.WindowBlurred) {
+    if (message === MessageToWebApp.WindowBlurred) {
       receiver.windowLostFocus()
-    } else if (message === IpcMessages.WindowFocused) {
+    } else if (message === MessageToWebApp.WindowFocused) {
       receiver.windowGainedFocus()
-    } else if (message === IpcMessages.InstallComponentComplete) {
+    } else if (message === MessageToWebApp.InstallComponentComplete) {
       receiver.onComponentInstallationComplete(data.component, data.error)
-    } else if (message === IpcMessages.UpdateAvailable) {
+    } else if (message === MessageToWebApp.UpdateAvailable) {
       receiver.updateAvailable()
-    } else if (message === IpcMessages.DownloadBackup) {
+    } else if (message === MessageToWebApp.PerformAutomatedBackup) {
       device.downloadBackup()
-    } else if (message === IpcMessages.FinishedSavingBackup) {
+    } else if (message === MessageToWebApp.FinishedSavingBackup) {
       receiver.didFinishBackup(data.success)
     }
   })

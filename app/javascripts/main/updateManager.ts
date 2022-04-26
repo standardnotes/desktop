@@ -6,7 +6,7 @@ import { action, autorun, computed, makeObservable, observable } from 'mobx'
 import { autoUpdatingAvailable } from './constants'
 import { MessageType } from '../../../test/TestIpcMessage'
 import { AppState } from '../../application'
-import { BackupsManager } from './backupsManager'
+import { BackupsManagerInterface } from "./BackupsManagerInterface"
 import { StoreKeys } from './store'
 import { updates as str } from './strings'
 import { handleTestMessage } from './testing'
@@ -83,7 +83,7 @@ export class UpdateState {
 
 let updatesSetup = false
 
-export function setupUpdates(window: BrowserWindow, appState: AppState, backupsManager: BackupsManager): void {
+export function setupUpdates(window: BrowserWindow, appState: AppState, backupsManager: BackupsManagerInterface): void {
   if (!autoUpdatingAvailable) {
     return
   }

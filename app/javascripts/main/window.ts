@@ -4,9 +4,10 @@ import { debounce } from 'lodash'
 import path from 'path'
 import { AppMessageType, MessageType } from '../../../test/TestIpcMessage'
 import { AppState } from '../../application'
-import { IpcMessages } from '../shared/ipcMessages'
-import { BackupsManager, createBackupsManager } from './backupsManager'
-import { buildContextMenu, createMenuManager, MenuManager } from './menus'
+import { MessageToWebApp } from '../shared/IpcMessages'
+import { createBackupsManager } from './backupsManager'
+import { BackupsManagerInterface } from './BackupsManagerInterface'
+import { buildContextMenu, createMenuManager } from './menus'
 import { initializePackageManager } from './packageManager'
 import { isMac, isWindows } from './platforms'
 import { initializeSearchManager } from './searchManager'
@@ -19,6 +20,9 @@ import { isTesting, lowercaseDriveLetter } from './utils'
 import { initializeZoomManager } from './zoomManager'
 import { Paths } from './paths'
 import { clearSensitiveDirectories } from '@standardnotes/electron-clear-data'
+import { RemoteBridge } from './RemoteBridge'
+import { Keychain } from './keychain'
+import { MenuManagerInterface } from './MenuManagerInterface'
 
 const WINDOW_DEFAULT_WIDTH = 1100
 const WINDOW_DEFAULT_HEIGHT = 800
@@ -27,8 +31,8 @@ const WINDOW_MIN_HEIGHT = 400
 
 export interface WindowState {
   window: Electron.BrowserWindow
-  menuManager: MenuManager
-  backupsManager: BackupsManager
+  menuManager: MenuManagerInterface
+  backupsManager: BackupsManagerInterface
   trayManager: TrayManager
 }
 
@@ -50,8 +54,19 @@ export async function createWindowState({
   teardown: () => void
 }): Promise<WindowState> {
   const window = await createWindow(appState.store)
+
+  const services = await createWindowServices(window, appState, appLocale)
+
   require('@electron/remote/main').enable(window.webContents)
-  const services = createWindowServices(window, appState, appLocale)
+  ;(global as any).RemoteBridge = new RemoteBridge(
+    window,
+    Keychain,
+    services.backupsManager,
+    services.packageManager,
+    services.searchManager,
+    { handleSignout: clearSensitiveDirectories },
+    services.menuManager,
+  )
 
   const shouldOpenUrl = (url: string) => url.startsWith('http') || url.startsWith('mailto')
 
@@ -63,11 +78,11 @@ export async function createWindowState({
   })
 
   window.on('focus', () => {
-    window.webContents.send(IpcMessages.WindowFocused, null)
+    window.webContents.send(MessageToWebApp.WindowFocused, null)
   })
 
   window.on('blur', () => {
-    window.webContents.send(IpcMessages.WindowBlurred, null)
+    window.webContents.send(MessageToWebApp.WindowBlurred, null)
     services.backupsManager.applicationDidBlur()
   })
 
@@ -94,12 +109,6 @@ export async function createWindowState({
   })
 
   window.webContents.session.setSpellCheckerDictionaryDownloadURL('https://dictionaries.standardnotes.org/9.4.4/')
-
-  window.webContents.on('ipc-message', async (event, message, data) => {
-    if (message === IpcMessages.SigningOut) {
-      clearSensitiveDirectories(data?.restart)
-    }
-  })
 
   /** handle link clicks */
   window.webContents.on('new-window', (event, url) => {
@@ -176,17 +185,20 @@ async function createWindow(store: Store): Promise<Electron.BrowserWindow> {
   return window
 }
 
-function createWindowServices(window: Electron.BrowserWindow, appState: AppState, appLocale: string) {
-  initializePackageManager(ipcMain, window.webContents)
-  initializeSearchManager(window.webContents)
+async function createWindowServices(window: Electron.BrowserWindow, appState: AppState, appLocale: string) {
+  const packageManager = await initializePackageManager(ipcMain, window.webContents)
+  const searchManager = initializeSearchManager(window.webContents)
   initializeZoomManager(window, appState.store)
-  const backupsManager = createBackupsManager(window.webContents, appState, ipcMain)
+
+  const backupsManager = createBackupsManager(window.webContents, appState)
   const updateManager = setupUpdates(window, appState, backupsManager)
   const trayManager = createTrayManager(window, appState.store)
   const spellcheckerManager = createSpellcheckerManager(appState.store, window.webContents, appLocale)
+
   if (isTesting()) {
     handleTestMessage(MessageType.SpellCheckerManager, () => spellcheckerManager)
   }
+
   const menuManager = createMenuManager({
     appState,
     window,
@@ -195,12 +207,15 @@ function createWindowServices(window: Electron.BrowserWindow, appState: AppState
     store: appState.store,
     spellcheckerManager,
   })
+
   return {
     backupsManager,
     updateManager,
     trayManager,
     spellcheckerManager,
     menuManager,
+    packageManager,
+    searchManager,
   }
 }
 

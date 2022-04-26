@@ -12,7 +12,7 @@ import {
 import { autorun } from 'mobx'
 import { autoUpdatingAvailable } from './constants'
 import { MessageType } from '../../../test/TestIpcMessage'
-import { BackupsManager } from './backupsManager'
+import { BackupsManagerInterface } from './BackupsManagerInterface'
 import { isLinux, isMac } from './platforms'
 import { SpellcheckerManager } from './spellcheckerManager'
 import { Store, StoreKeys } from './store'
@@ -21,6 +21,7 @@ import { handleTestMessage } from './testing'
 import { TrayManager } from './trayManager'
 import { checkForUpdate, openChangelog, showUpdateInstallationDialog } from './updateManager'
 import { isDev, isTesting } from './utils'
+import { MenuManagerInterface } from './MenuManagerInterface'
 
 export const enum MenuId {
   SpellcheckerLanguages = 'SpellcheckerLanguages',
@@ -107,11 +108,6 @@ function suggestionsMenu(
   ]
 }
 
-export interface MenuManager {
-  reload(): void
-  popupMenu(): void
-}
-
 export function createMenuManager({
   window,
   appState,
@@ -122,11 +118,11 @@ export function createMenuManager({
 }: {
   window: Electron.BrowserWindow
   appState: AppState
-  backupsManager: BackupsManager
+  backupsManager: BackupsManagerInterface
   trayManager: TrayManager
   store: Store
   spellcheckerManager?: SpellcheckerManager
-}): MenuManager {
+}): MenuManagerInterface {
   let menu: Menu
 
   if (isTesting()) {
@@ -464,7 +460,7 @@ function minimizeToTrayItem(store: Store, trayManager: TrayManager, reload: () =
   }
 }
 
-function backupsMenu(archiveManager: BackupsManager, reload: () => any) {
+function backupsMenu(archiveManager: BackupsManagerInterface, reload: () => any) {
   return {
     label: str().backups,
     submenu: [

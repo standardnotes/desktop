@@ -17,5 +17,5 @@
   },
   "include": ["app/**/*"],
   "exclude": ["node_modules", "app/dist"],
-  "files": ["app/index.ts", "app/javascripts/renderer/renderer.ts"]
+  "files": ["app/index.ts", "app/javascripts/Renderer/Renderer.ts"]
 }

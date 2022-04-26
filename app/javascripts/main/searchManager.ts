@@ -1,13 +1,15 @@
-import { ipcMain, WebContents } from 'electron'
-import { IpcMessages } from '../shared/ipcMessages'
+import { WebContents } from 'electron'
+import { SearchManagerInterface } from './SearchManagerInterface'
 
-export function initializeSearchManager(webContents: WebContents): void {
-  ipcMain.on(IpcMessages.SearchText, (_event, { text }: { text: string }) => {
-    webContents.stopFindInPage('clearSelection')
-    if (text && text.length > 0) {
-      // This option arrangement is required to avoid an issue where clicking on a
-      // different note causes scroll to jump.
-      webContents.findInPage(text)
-    }
-  })
+export function initializeSearchManager(webContents: WebContents): SearchManagerInterface {
+  return {
+    findInPage(text: string) {
+      webContents.stopFindInPage('clearSelection')
+      if (text && text.length > 0) {
+        // This option arrangement is required to avoid an issue where clicking on a
+        // different note causes scroll to jump.
+        webContents.findInPage(text)
+      }
+    },
+  }
 }

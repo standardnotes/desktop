@@ -5,7 +5,7 @@ import path from 'path'
 import proxyquire from 'proxyquire'
 import { ensureDirectoryExists, readJSONFile } from '../app/javascripts/main/fileUtils'
 import { SyncTask } from '../app/javascripts/main/packageManager'
-import { IpcMessages } from '../app/javascripts/shared/ipcMessages'
+import { MessageToWebApp } from '../app/javascripts/shared/ipcMessages'
 import { createTmpDir } from './testUtils'
 import { AppName } from '../app/javascripts/main/strings'
 import makeFakePaths from './fakePaths'
@@ -45,10 +45,7 @@ const fakeIpcMain = (() => {
 
   return {
     handler,
-    on(message: IpcMessages, messageHandler: any) {
-      if (message !== IpcMessages.SyncComponents) {
-        throw new Error(`unknown message ${message}`)
-      }
+    on(message: MessageToWebApp, messageHandler: any) {
       if (handler) {
         throw new Error('handler already defined.')
       }
