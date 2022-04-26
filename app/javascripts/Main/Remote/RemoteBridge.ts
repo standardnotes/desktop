@@ -1,16 +1,16 @@
-import { CrossProcessBridge } from './../Renderer/CrossProcessBridge'
-import { Store, StoreKeys } from './Store'
+import { CrossProcessBridge } from '../../Renderer/CrossProcessBridge'
+import { Store, StoreKeys } from '../Store'
 
 const path = require('path')
 const rendererPath = path.join('file://', __dirname, '/renderer.js')
 
 import { app, BrowserWindow } from 'electron'
-import { KeychainInterface } from './Keychain/KeychainInterface'
-import { BackupsManagerInterface } from './Backups/BackupsManagerInterface'
-import { PackageManagerInterface, Component } from './Packages/PackageManagerInterface'
-import { SearchManagerInterface } from './Search/SearchManagerInterface'
-import { AuthEventHandlerInterface } from './AuthEventHandlerInterface'
-import { MenuManagerInterface } from './Menus/MenuManagerInterface'
+import { KeychainInterface } from '../Keychain/KeychainInterface'
+import { BackupsManagerInterface } from '../Backups/BackupsManagerInterface'
+import { PackageManagerInterface, Component } from '../Packages/PackageManagerInterface'
+import { SearchManagerInterface } from '../Search/SearchManagerInterface'
+import { RemoteDataInterface } from './DataInterface'
+import { MenuManagerInterface } from '../Menus/MenuManagerInterface'
 
 /**
  * Read https://github.com/electron/remote to understand how electron/remote works.
@@ -23,7 +23,7 @@ export class RemoteBridge implements CrossProcessBridge {
     private backups: BackupsManagerInterface,
     private packages: PackageManagerInterface,
     private search: SearchManagerInterface,
-    private authHandler: AuthEventHandlerInterface,
+    private data: RemoteDataInterface,
     private menus: MenuManagerInterface,
   ) {}
 
@@ -52,7 +52,7 @@ export class RemoteBridge implements CrossProcessBridge {
       onMajorDataChange: this.onMajorDataChange.bind(this),
       onSearch: this.onSearch.bind(this),
       onInitialDataLoad: this.onInitialDataLoad.bind(this),
-      onSignOut: this.onSignOut.bind(this),
+      destroyAllData: this.destroyAllData.bind(this),
     }
   }
 
@@ -140,8 +140,8 @@ export class RemoteBridge implements CrossProcessBridge {
     this.backups.beginBackups()
   }
 
-  onSignOut(restart = true) {
-    this.authHandler.handleSignout(restart)
+  destroyAllData() {
+    this.data.destroySensitiveDirectories()
   }
 
   saveDataBackup(data: unknown) {

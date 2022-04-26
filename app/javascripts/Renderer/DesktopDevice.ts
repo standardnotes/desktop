@@ -62,12 +62,12 @@ export class DesktopDevice extends WebOrDesktopDevice implements DesktopDeviceIn
     this.remoteBridge.onInitialDataLoad()
   }
 
-  onSignOut(restart = true) {
-    this.remoteBridge.onSignOut(restart)
+  destroyAllData(): void {
+    this.remoteBridge.destroyAllData()
   }
 
   async downloadBackup() {
-    const receiver = window.desktopCommunicationReceiver
+    const receiver = window.webClient
 
     receiver.didBeginBackup()
 
