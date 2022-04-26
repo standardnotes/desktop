@@ -1,7 +1,7 @@
 import compareVersions from 'compare-versions'
 import fs from 'fs'
 import path from 'path'
-import { MessageToWebApp } from '../shared/IpcMessages'
+import { MessageToWebApp } from '../../Shared/IpcMessages'
 import {
   debouncedJSONDiskWriter,
   deleteDir,
@@ -10,11 +10,11 @@ import {
   extractNestedZip,
   FileDoesNotExist,
   readJSONFile,
-} from './fileUtils'
-import { downloadFile, getJSON } from './networking'
-import { Paths } from './paths'
-import { AppName } from './strings'
-import { timeout } from './utils'
+} from '../Utils/FileUtils'
+import { downloadFile, getJSON } from './Networking'
+import { Paths } from '../Types/Paths'
+import { AppName } from '../Strings'
+import { timeout } from '../Utils/Utils'
 import log from 'electron-log'
 import { Component, MappingFile, PackageManagerInterface, SyncTask, PackageInfo } from './PackageManagerInterface'
 

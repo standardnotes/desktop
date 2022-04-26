@@ -1,4 +1,4 @@
-import { Component } from './../Main/PackageManagerInterface'
+import { Component } from '../Main/Packages/PackageManagerInterface'
 import { DesktopDeviceInterface } from '@web/Device/DesktopDeviceInterface'
 import { WebOrDesktopDevice } from '@web/Device/WebOrDesktopDevice'
 import { RawKeychainValue, Environment } from '@web/Device/DesktopSnjsExports'

@@ -1,5 +1,5 @@
 import { DesktopDevice } from './DesktopDevice'
-import { MessageToWebApp } from '../shared/IpcMessages'
+import { MessageToWebApp } from '../Shared/IpcMessages'
 import { DesktopCommunicationReceiver } from '@web/Device/DesktopWebCommunication'
 import { StartApplication } from '@web/Device/StartApplication'
 import { CrossProcessBridge } from './CrossProcessBridge'
@@ -91,7 +91,7 @@ async function configureWindow(remoteBridge: CrossProcessBridge) {
   /*
   Title bar events
   */
-  document.getElementById('menu-btn')!.addEventListener('click', (e) => {
+  document.getElementById('menu-btn')!.addEventListener('click', () => {
     remoteBridge.displayAppMenu()
   })
 

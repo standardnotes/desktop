@@ -1,7 +1,7 @@
 import { createEnglishStrings } from './english'
 import { createFrenchStrings } from './french'
 import { Strings } from './types'
-import { isDev } from '../utils'
+import { isDev } from '../Utils/Utils'
 
 let strings: Strings
 

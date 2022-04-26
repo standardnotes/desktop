@@ -3,10 +3,10 @@ import fs from 'fs'
 import path from 'path'
 import { pipeline as pipelineFn } from 'stream'
 import { promisify } from 'util'
-import { MessageType } from '../../../test/TestIpcMessage'
-import { ensureDirectoryExists } from './fileUtils'
-import { handleTestMessage } from './testing'
-import { isTesting } from './utils'
+import { MessageType } from '../../../../test/TestIpcMessage'
+import { ensureDirectoryExists } from '../Utils/FileUtils'
+import { handleTestMessage } from '../Utils/Testing'
+import { isTesting } from '../Utils/Utils'
 
 const pipeline = promisify(pipelineFn)
 

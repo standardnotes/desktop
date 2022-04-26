@@ -1,6 +1,6 @@
 import { app, BrowserWindow } from 'electron'
-import { AppMessageType, MessageType, TestIPCMessage } from '../../../test/TestIpcMessage'
-import { isTesting } from './utils'
+import { AppMessageType, MessageType, TestIPCMessage } from '../../../../test/TestIpcMessage'
+import { isTesting } from '../Utils/Utils'
 
 const messageHandlers: {
   [key in MessageType]?: (...args: any) => unknown

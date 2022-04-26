@@ -1,4 +1,4 @@
-import { MessageToWebApp } from '../shared/IpcMessages'
+import { MessageToWebApp } from '../Shared/IpcMessages'
 const { ipcRenderer } = require('electron')
 const path = require('path')
 const rendererPath = path.join('file://', __dirname, '/renderer.js')

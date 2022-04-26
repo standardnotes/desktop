@@ -1,4 +1,4 @@
-import { CommandLineArgs } from '../shared/CommandLineArgs'
+import { CommandLineArgs } from '../../Shared/CommandLineArgs'
 
 export function isDev(): boolean {
   return process.env.NODE_ENV === 'development'

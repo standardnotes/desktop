@@ -3,9 +3,9 @@ import http, { IncomingMessage, ServerResponse } from 'http'
 import mime from 'mime-types'
 import path from 'path'
 import { URL } from 'url'
-import { FileDoesNotExist } from './fileUtils'
-import { Paths } from './paths'
-import { extensions as str } from './strings'
+import { FileDoesNotExist } from './Utils/FileUtils'
+import { Paths } from './Types/Paths'
+import { extensions as str } from './Strings'
 
 const Protocol = 'http'
 

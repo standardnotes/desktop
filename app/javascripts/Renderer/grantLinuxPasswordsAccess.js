@@ -1,5 +1,5 @@
 const { ipcRenderer } = require('electron')
-import { MessageToMainProcess } from '../shared/IpcMessages'
+import { MessageToMainProcess } from '../Shared/IpcMessages'
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('use-storage-button').addEventListener('click', () => {

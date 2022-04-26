@@ -1,6 +1,6 @@
-import { isMac } from './platforms'
-import { Store, StoreKeys } from './store'
-import { isDev } from './utils'
+import { isMac } from './Types/Platforms'
+import { Store, StoreKeys } from './Store'
+import { isDev } from './Utils/Utils'
 
 export enum Language {
   AF = 'af',

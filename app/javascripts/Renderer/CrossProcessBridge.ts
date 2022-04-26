@@ -1,4 +1,4 @@
-import { Component } from './../Main/PackageManagerInterface'
+import { Component } from '../Main/Packages/PackageManagerInterface'
 
 export interface CrossProcessBridge {
   get extServerHost(): string

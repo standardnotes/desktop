@@ -2,7 +2,7 @@ import fs, { PathLike } from 'fs'
 import { debounce } from 'lodash'
 import path from 'path'
 import yauzl from 'yauzl'
-import { removeFromArray } from './utils'
+import { removeFromArray } from '../Utils/Utils'
 
 export const FileDoesNotExist = 'ENOENT'
 export const FileAlreadyExists = 'EEXIST'

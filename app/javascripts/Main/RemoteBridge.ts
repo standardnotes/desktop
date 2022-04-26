@@ -1,16 +1,16 @@
 import { CrossProcessBridge } from './../Renderer/CrossProcessBridge'
-import { Store, StoreKeys } from '../main/store'
+import { Store, StoreKeys } from './Store'
 
 const path = require('path')
 const rendererPath = path.join('file://', __dirname, '/renderer.js')
 
 import { app, BrowserWindow } from 'electron'
-import { KeychainInterface } from './KeychainInterface'
-import { BackupsManagerInterface } from './BackupsManagerInterface'
-import { PackageManagerInterface, Component } from './PackageManagerInterface'
-import { SearchManagerInterface } from './SearchManagerInterface'
+import { KeychainInterface } from './Keychain/KeychainInterface'
+import { BackupsManagerInterface } from './Backups/BackupsManagerInterface'
+import { PackageManagerInterface, Component } from './Packages/PackageManagerInterface'
+import { SearchManagerInterface } from './Search/SearchManagerInterface'
 import { AuthEventHandlerInterface } from './AuthEventHandlerInterface'
-import { MenuManagerInterface } from './MenuManagerInterface'
+import { MenuManagerInterface } from './Menus/MenuManagerInterface'
 
 /**
  * Read https://github.com/electron/remote to understand how electron/remote works.

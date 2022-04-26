@@ -1,5 +1,5 @@
 import { BrowserWindow } from 'electron'
-import { Store } from './store'
+import { Store } from '../Store'
 
 export interface KeychainInterface {
   ensureKeychainAccess(store: Store): Promise<BrowserWindow | undefined>
