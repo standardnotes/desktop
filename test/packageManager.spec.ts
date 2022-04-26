@@ -3,12 +3,12 @@ import { IpcMainEvent } from 'electron'
 import { promises as fs } from 'fs'
 import path from 'path'
 import proxyquire from 'proxyquire'
-import { ensureDirectoryExists, readJSONFile } from '../app/javascripts/main/fileUtils'
-import { MessageToWebApp } from '../app/javascripts/shared/ipcMessages'
+import { ensureDirectoryExists, readJSONFile } from '../app/javascripts/Main/Utils/FileUtils'
+import { MessageToWebApp } from '../app/javascripts/Shared/ipcMessages'
 import { createTmpDir } from './testUtils'
-import { AppName } from '../app/javascripts/main/strings'
+import { AppName } from '../app/javascripts/Main/strings'
 import makeFakePaths from './fakePaths'
-import { PackageManagerInterface, SyncTask } from '../app/javascripts/main/PackageManagerInterface'
+import { PackageManagerInterface } from '../app/javascripts/Main/Packages/PackageManagerInterface'
 
 const tmpDir = createTmpDir(__filename)
 const FakePaths = makeFakePaths(tmpDir.path)
@@ -16,7 +16,7 @@ const FakePaths = makeFakePaths(tmpDir.path)
 const contentDir = path.join(tmpDir.path, 'Extensions')
 let downloadFileCallCount = 0
 
-const { initializePackageManager } = proxyquire('../app/javascripts/main/packageManager', {
+const { initializePackageManager } = proxyquire('../app/javascripts/Main/packageManager', {
   './paths': {
     Paths: FakePaths,
     '@noCallThru': true,

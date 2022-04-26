@@ -1,5 +1,5 @@
 import path from 'path'
-import { deleteDir, ensureDirectoryExists } from '../app/javascripts/main/fileUtils'
+import { deleteDir, ensureDirectoryExists } from '../app/javascripts/Main/Utils/FileUtils'
 
 export function createTmpDir(name: string): {
   path: string

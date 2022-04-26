@@ -4,8 +4,8 @@ import http from 'http'
 import { AddressInfo } from 'net'
 import path from 'path'
 import proxyquire from 'proxyquire'
-import { ensureDirectoryExists } from '../app/javascripts/main/fileUtils'
-import { initializeStrings } from '../app/javascripts/main/strings'
+import { ensureDirectoryExists } from '../app/javascripts/Main/Utils/FileUtils'
+import { initializeStrings } from '../app/javascripts/Main/strings'
 import { createTmpDir } from './testUtils'
 import makeFakePaths from './fakePaths'
 
@@ -19,7 +19,7 @@ const FakePaths = makeFakePaths(tmpDir.path)
 
 let server: http.Server
 
-const { createExtensionsServer, normalizeFilePath } = proxyquire('../app/javascripts/main/extServer', {
+const { createExtensionsServer, normalizeFilePath } = proxyquire('../app/javascripts/Main/extServer', {
   './paths': {
     Paths: FakePaths,
     '@noCallThru': true,

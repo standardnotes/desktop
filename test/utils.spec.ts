@@ -1,5 +1,5 @@
 import test from 'ava'
-import { lowercaseDriveLetter } from '../app/javascripts/main/utils'
+import { lowercaseDriveLetter } from '../app/javascripts/Main/Utils/Utils'
 
 test("lowerCaseDriverLetter converts the drive letter of a given file's path to lower case", (t) => {
   t.is(lowercaseDriveLetter('/C:/Lansing'), '/c:/Lansing')

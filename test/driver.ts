@@ -2,11 +2,11 @@
 import { ChildProcess, spawn } from 'child_process'
 import electronPath, { MenuItem } from 'electron'
 import path from 'path'
-import { deleteDir, ensureDirectoryExists, readJSONFile } from '../app/javascripts/main/fileUtils'
-import { Language } from '../app/javascripts/main/spellcheckerManager'
-import { StoreKeys } from '../app/javascripts/main/store'
-import { UpdateState } from '../app/javascripts/main/updateManager'
-import { CommandLineArgs } from '../app/javascripts/shared/CommandLineArgs'
+import { deleteDir, ensureDirectoryExists, readJSONFile } from '../app/javascripts/Main/Utils/fileUtils'
+import { Language } from '../app/javascripts/Main/spellcheckerManager'
+import { StoreKeys } from '../app/javascripts/Main/store'
+import { UpdateState } from '../app/javascripts/Main/updateManager'
+import { CommandLineArgs } from '../app/javascripts/Shared/CommandLineArgs'
 import { AppMessageType, AppTestMessage, MessageType, TestIPCMessage, TestIPCMessageResult } from './TestIpcMessage'
 
 function spawnAppprocess(userDataPath: string) {

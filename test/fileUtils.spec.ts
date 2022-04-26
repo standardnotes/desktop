@@ -9,7 +9,7 @@ import {
   moveDirContents,
   readJSONFile,
   writeJSONFile,
-} from '../app/javascripts/main/fileUtils'
+} from '../app/javascripts/Main/Utils/FileUtils'
 
 const dataPath = path.join(__dirname, 'data')
 const tmpPath = path.join(dataPath, 'tmp', path.basename(__filename))

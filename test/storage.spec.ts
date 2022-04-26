@@ -2,10 +2,10 @@ import anyTest, { TestFn, ExecutionContext } from 'ava'
 import fs from 'fs'
 import path from 'path'
 import proxyquire from 'proxyquire'
-import { timeout } from '../app/javascripts/main/utils'
+import { timeout } from '../app/javascripts/Main/Utils/Utils'
 import { createDriver, Driver } from './driver'
 
-const { serializeStoreData } = proxyquire('../app/javascripts/main/store', {
+const { serializeStoreData } = proxyquire('../app/javascripts/Main/store', {
   './backupsManager': {
     '@noCallThru': true,
   },
