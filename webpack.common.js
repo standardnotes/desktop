@@ -118,7 +118,7 @@ module.exports = function ({
   const electronRendererConfig = {
     entry: {
       preload: './app/javascripts/renderer/Preload.ts',
-      renderer: './app/javascripts/renderer/renderer.ts',
+      renderer: './app/javascripts/renderer/Renderer.ts',
       grantLinuxPasswordsAccess: './app/javascripts/renderer/grantLinuxPasswordsAccess.js',
     },
     output: {
@@ -134,7 +134,6 @@ module.exports = function ({
     module: moduleConfig,
     externals: {
       electron: 'commonjs electron',
-      'sn-electron-valence/Transmitter': 'commonjs sn-electron-valence/Transmitter',
     },
     plugins: [
       new webpack.DefinePlugin({

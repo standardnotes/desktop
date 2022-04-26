@@ -1,9 +1,10 @@
 import { promises as fs } from 'fs'
 import path from 'path'
-import { serial as anyTest, TestInterface } from 'ava'
+
+import anyTest, { TestFn } from 'ava'
 import { Driver, createDriver } from './driver'
 
-const test = anyTest as TestInterface<Driver>
+const test = anyTest as TestFn<Driver>
 
 const BackupsDirectoryName = 'Standard Notes Backups'
 
@@ -13,6 +14,7 @@ test.beforeEach(async (t) => {
   await fs.rmdir(backupsLocation, { recursive: true })
   await t.context.backups.copyDecryptScript(backupsLocation)
 })
+
 test.afterEach.always(async (t) => {
   await t.context.stop()
 })
@@ -45,10 +47,12 @@ test('saves the decrypt script to the backups folder', async (t) => {
 
 test('performs a backup', async (t) => {
   t.timeout(timeoutDuration)
+
   await wait()
   await t.context.backups.perform()
   const backupsLocation = await t.context.backups.location()
   const files = await fs.readdir(backupsLocation)
+
   t.true(files.length >= 1)
 })
 
@@ -76,13 +80,17 @@ test('changes backups folder location', async (t) => {
 
 test('changes backups location to a child directory', async (t) => {
   t.timeout(timeoutDuration)
+
   await wait()
   await t.context.backups.perform()
   const currentLocation = await t.context.backups.location()
   const backups = await fs.readdir(currentLocation)
+
   t.is(backups.length, 2) /** 1 + decrypt script */
+
   const newLocation = path.join(currentLocation, 'child_dir')
   await t.context.backups.changeLocation(newLocation)
+
   t.deepEqual(await fs.readdir(path.join(newLocation, BackupsDirectoryName)), backups)
 })
 

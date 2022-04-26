@@ -4,17 +4,18 @@ import fs from 'fs-extra'
 import log from 'electron-log'
 import './@types/modules'
 import { initializeApplication } from './application'
-import { isSnap } from './javascripts/main/constants'
-import { isTesting } from './javascripts/main/utils'
-import { setupTesting } from './javascripts/main/testing'
-import { CommandLineArgs } from './javascripts/shared/CommandLineArgs'
-import { Store, StoreKeys } from './javascripts/main/store'
-import { Paths } from './javascripts/main/paths'
+import { isSnap } from './javascripts/Main/Types/Constants'
+import { isTesting } from './javascripts/Main/Utils/Utils'
+import { setupTesting } from './javascripts/Main/Utils/Testing'
+import { CommandLineArgs } from './javascripts/Shared/CommandLineArgs'
+import { Store, StoreKeys } from './javascripts/Main/Store'
+import { Paths } from './javascripts/Main/Types/Paths'
 
 require('@electron/remote/main').initialize()
 
 /** Allow a custom userData path to be used. */
 const userDataPathIndex = process.argv.indexOf(CommandLineArgs.UserDataPath)
+
 if (userDataPathIndex > 0) {
   let userDataPath = process.argv[userDataPathIndex + 1]
   if (typeof userDataPath === 'string') {

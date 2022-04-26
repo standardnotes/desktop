@@ -1,23 +1,15 @@
-import { App, IpcMain, shell, Shell } from 'electron'
-import { BackupsManager } from './javascripts/main/backupsManager'
-import { createExtensionsServer } from './javascripts/main/extServer'
-import { MenuManager } from './javascripts/main/menus'
-import { isLinux, isMac, isWindows } from './javascripts/main/platforms'
-import { Store, StoreKeys } from './javascripts/main/store'
-import { AppName, initializeStrings } from './javascripts/main/strings'
-import { createWindowState, WindowState } from './javascripts/main/window'
-import {
-  getKeychainValue,
-  setKeychainValue,
-  clearKeychainValue,
-  ensureKeychainAccess,
-} from './javascripts/main/keychain'
-import { IpcMessages } from './javascripts/shared/ipcMessages'
-import { isDev, isTesting } from './javascripts/main/utils'
-import { Urls, Paths } from './javascripts/main/paths'
+import { App, Shell } from 'electron'
+import { createExtensionsServer } from './javascripts/Main/ExtensionsServer'
+import { isLinux, isMac, isWindows } from './javascripts/Main/Types/Platforms'
+import { Store, StoreKeys } from './javascripts/Main/Store'
+import { AppName, initializeStrings } from './javascripts/Main/Strings'
+import { createWindowState, WindowState } from './javascripts/Main/Window'
+import { Keychain } from './javascripts/Main/Keychain/Keychain'
+import { isDev, isTesting } from './javascripts/Main/Utils/Utils'
+import { Urls, Paths } from './javascripts/Main/Types/Paths'
 import { action, makeObservable, observable } from 'mobx'
-import { UpdateState } from './javascripts/main/updateManager'
-import { handleTestMessage } from './javascripts/main/testing'
+import { UpdateState } from './javascripts/Main/UpdateManager'
+import { handleTestMessage } from './javascripts/Main/Utils/Testing'
 import { MessageType } from '../test/TestIpcMessage'
 
 const deepLinkScheme = 'standardnotes'
@@ -145,21 +137,12 @@ async function setupDeepLinking(app: Electron.App) {
   }
 }
 
-async function finishApplicationInitialization({
-  app,
-  ipcMain,
-  shell,
-  state,
-}: {
-  app: App
-  ipcMain: IpcMain
-  shell: Shell
-  state: AppState
-}) {
-  const keychainWindow = await ensureKeychainAccess(state.store)
+async function finishApplicationInitialization({ app, shell, state }: { app: App; shell: Shell; state: AppState }) {
+  const keychainWindow = await Keychain.ensureKeychainAccess(state.store)
 
   initializeStrings(app.getLocale())
   initializeExtensionsServer(state.store)
+
   const windowState = await createWindowState({
     shell,
     appState: state,
@@ -176,7 +159,6 @@ async function finishApplicationInitialization({
   keychainWindow?.close()
 
   state.windowState = windowState
-  registerIpcEventListeners(ipcMain, windowState.menuManager, windowState.backupsManager)
 
   if ((isWindows() || isLinux()) && state.windowState.trayManager.shouldMinimizeToTray()) {
     state.windowState.trayManager.createTrayIcon()
@@ -187,32 +169,6 @@ async function finishApplicationInitialization({
 
 function initializeExtensionsServer(store: Store) {
   const host = createExtensionsServer()
+
   store.set(StoreKeys.ExtServerHost, host)
-}
-
-function registerIpcEventListeners(
-  ipcMain: Electron.IpcMain,
-  menuManager: MenuManager,
-  backupsManager: BackupsManager,
-) {
-  ipcMain.on(IpcMessages.DisplayAppMenu, () => {
-    menuManager.popupMenu()
-  })
-
-  ipcMain.on(IpcMessages.InitialDataLoaded, () => {
-    backupsManager.beginBackups()
-  })
-
-  ipcMain.on(IpcMessages.MajorDataChange, () => {
-    backupsManager.performBackup()
-  })
-
-  ipcMain.handle(IpcMessages.GetKeychainValue, getKeychainValue)
-  ipcMain.handle(IpcMessages.SetKeychainValue, (_event, value) => setKeychainValue(value))
-  ipcMain.handle(IpcMessages.ClearKeychainValue, clearKeychainValue)
-  ipcMain.handle(IpcMessages.LocalBackupsCount, () => backupsManager.backupsCount())
-  ipcMain.on(IpcMessages.ViewLocalBackups, () => {
-    shell.openPath(backupsManager.backupsLocation)
-  })
-  ipcMain.handle(IpcMessages.DeleteLocalBackups, () => backupsManager.deleteBackups())
 }

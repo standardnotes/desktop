@@ -1,9 +1,9 @@
-import { serial as anyTest, TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { MenuItem } from 'electron'
 import { AppName } from '../app/javascripts/main/strings'
 import { createDriver, Driver } from './driver'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   driver: Driver
   menuItems: MenuItem[]
 }>

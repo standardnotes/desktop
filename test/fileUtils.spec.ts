@@ -1,4 +1,4 @@
-import { serial as test } from 'ava'
+import test, { TestFn } from 'ava'
 import { promises as fs } from 'fs'
 import path from 'path'
 import {

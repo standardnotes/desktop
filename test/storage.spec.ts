@@ -1,4 +1,4 @@
-import { serial as anyTest, TestInterface, ExecutionContext } from 'ava'
+import anyTest, { TestFn, ExecutionContext } from 'ava'
 import fs from 'fs'
 import path from 'path'
 import proxyquire from 'proxyquire'
@@ -61,7 +61,7 @@ async function validateData(t: ExecutionContext<Driver>) {
   }
 }
 
-const test = anyTest as TestInterface<Driver>
+const test = anyTest as TestFn<Driver>
 
 test.beforeEach(async (t) => {
   t.context = await createDriver()

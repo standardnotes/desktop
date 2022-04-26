@@ -92,8 +92,7 @@
       "dist/**/*",
       "stylesheets/**/*",
       "assets/**/*",
-      "icon/**/*",
-      "node_modules/sn-electron-valence/**/*"
+      "icon/**/*"
     ],
     "protocols": [
       {
@@ -144,7 +143,7 @@
     }
   },
   "ava": {
-    "concurrency": 3,
+    "concurrency": 0,
     "extensions": [
       "ts"
     ],
@@ -154,7 +153,8 @@
     "require": [
       "ts-node/register/transpile-only"
     ],
-    "verbose": true
+    "verbose": true,
+    "serial": true
   },
   "pre-push": [
     "lint"

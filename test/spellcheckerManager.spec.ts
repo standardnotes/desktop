@@ -1,15 +1,16 @@
-import { serial as anyTest, TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { Driver, createDriver } from './driver'
 
 const StoreKeys = {
   SelectedSpellCheckerLanguageCodes: 'selectedSpellCheckerLanguageCodes',
 }
 
-const test = anyTest as TestInterface<Driver>
+const test = anyTest as TestFn<Driver>
 
 test.before(async (t) => {
   t.context = await createDriver()
 })
+
 test.after.always(async (t) => {
   await t.context.stop()
 })
