@@ -1,6 +1,6 @@
 import { DesktopDevice } from './DesktopDevice'
 import { MessageToWebApp } from '../Shared/IpcMessages'
-import { DesktopCommunicationReceiver } from '@web/Device/DesktopWebCommunication'
+import { DesktopClientRequiresWebMethods } from '@web/Device/DesktopWebCommunication'
 import { StartApplication } from '@web/Device/StartApplication'
 import { CrossProcessBridge } from './CrossProcessBridge'
 
@@ -16,7 +16,7 @@ declare global {
     device: DesktopDevice
     electronRemoteBridge: CrossProcessBridge
     dashboardUrl: string
-    desktopCommunicationReceiver: DesktopCommunicationReceiver
+    webClient: DesktopClientRequiresWebMethods
     electronAppVersion: string
     enableUnfinishedFeatures: boolean
     plansUrl: string
@@ -145,7 +145,7 @@ function listenForMessagesSentFromMainToPreloadToUs(device: DesktopDevice) {
       // message doesn't belong to us
       return
     }
-    const receiver = window.desktopCommunicationReceiver
+    const receiver = window.webClient
     const message = payload.message
     const data = payload.data
 

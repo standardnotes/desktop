@@ -40,8 +40,12 @@ export interface CrossProcessBridge {
   displayAppMenu(): void
 
   syncComponents(components: Component[]): void
+
   onMajorDataChange(): void
+
   onSearch(text: string): void
+
   onInitialDataLoad(): void
-  onSignOut(restart: boolean): void
+
+  destroyAllData(): void
 }

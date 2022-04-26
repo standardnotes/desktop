@@ -20,7 +20,7 @@ import { isTesting, lowercaseDriveLetter } from './Utils/Utils'
 import { initializeZoomManager } from './ZoomManager'
 import { Paths } from './Types/Paths'
 import { clearSensitiveDirectories } from '@standardnotes/electron-clear-data'
-import { RemoteBridge } from './RemoteBridge'
+import { RemoteBridge } from './Remote/RemoteBridge'
 import { Keychain } from './Keychain/Keychain'
 import { MenuManagerInterface } from './Menus/MenuManagerInterface'
 
@@ -64,7 +64,12 @@ export async function createWindowState({
     services.backupsManager,
     services.packageManager,
     services.searchManager,
-    { handleSignout: clearSensitiveDirectories },
+    {
+      destroySensitiveDirectories: () => {
+        const restart = true
+        clearSensitiveDirectories(restart)
+      },
+    },
     services.menuManager,
   )
 
