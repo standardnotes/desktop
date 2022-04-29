@@ -10,6 +10,9 @@ import { setupTesting } from './javascripts/Main/Utils/Testing'
 import { CommandLineArgs } from './javascripts/Shared/CommandLineArgs'
 import { Store, StoreKeys } from './javascripts/Main/Store'
 import { Paths } from './javascripts/Main/Types/Paths'
+import { enableExperimentalFeaturesForFileAccessFix } from './enableExperimentalWebFeatures'
+
+enableExperimentalFeaturesForFileAccessFix()
 
 require('@electron/remote/main').initialize()
 
