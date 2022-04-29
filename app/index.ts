@@ -11,6 +11,8 @@ import { CommandLineArgs } from './javascripts/Shared/CommandLineArgs'
 import { Store, StoreKeys } from './javascripts/Main/Store'
 import { Paths } from './javascripts/Main/Types/Paths'
 
+app.commandLine.appendSwitch('enable-experimental-web-platform-features')
+
 require('@electron/remote/main').initialize()
 
 /** Allow a custom userData path to be used. */
