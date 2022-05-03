@@ -57,7 +57,7 @@
     "commitlint": "^16.2.4",
     "copy-webpack-plugin": "^10.2.4",
     "dotenv": "^16.0.0",
-    "electron": "19.0.0-beta.3",
+    "electron": "17.4.2",
     "electron-builder": "23.0.3",
     "electron-notarize": "^1.2.1",
     "eslint": "^8.14.0",
