@@ -3,6 +3,7 @@ import { debounce } from 'lodash'
 import path from 'path'
 import yauzl from 'yauzl'
 import { removeFromArray } from '../Utils/Utils'
+import { dialog } from 'electron'
 
 export const FileDoesNotExist = 'ENOENT'
 export const FileAlreadyExists = 'EEXIST'
@@ -25,9 +26,21 @@ export function debouncedJSONDiskWriter(durationMs: number, location: string, da
   }, durationMs)
 }
 
-export async function readJSONFile<T>(filepath: string): Promise<T> {
-  const data = await fs.promises.readFile(filepath, 'utf8')
-  return JSON.parse(data)
+export async function openDirectoryPicker(): Promise<string | undefined> {
+  const result = await dialog.showOpenDialog({
+    properties: ['openDirectory', 'showHiddenFiles', 'createDirectory'],
+  })
+
+  return result.filePaths[0]
+}
+
+export async function readJSONFile<T>(filepath: string): Promise<T | undefined> {
+  try {
+    const data = await fs.promises.readFile(filepath, 'utf8')
+    return JSON.parse(data)
+  } catch (error) {
+    return undefined
+  }
 }
 
 export function readJSONFileSync<T>(filepath: string): T {
@@ -38,6 +51,11 @@ export function readJSONFileSync<T>(filepath: string): T {
 export async function writeJSONFile(filepath: string, data: unknown): Promise<void> {
   await ensureDirectoryExists(path.dirname(filepath))
   await fs.promises.writeFile(filepath, JSON.stringify(data, null, 2), 'utf8')
+}
+
+export async function writeFile(filepath: string, data: string): Promise<void> {
+  await ensureDirectoryExists(path.dirname(filepath))
+  await fs.promises.writeFile(filepath, data, 'utf8')
 }
 
 export function writeJSONFileSync(filepath: string, data: unknown): void {

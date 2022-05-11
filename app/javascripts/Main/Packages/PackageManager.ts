@@ -34,7 +34,8 @@ class MappingFileHandler {
     let mapping: MappingFile
 
     try {
-      mapping = await readJSONFile<MappingFile>(Paths.extensionsMappingJson)
+      const result = await readJSONFile<MappingFile>(Paths.extensionsMappingJson)
+      mapping = result || {}
     } catch (error: any) {
       /**
        * Mapping file might be absent (first start, corrupted data)
@@ -82,6 +83,9 @@ class MappingFileHandler {
     const paths = pathsForComponent(component)
     const packagePath = path.join(paths.absolutePath, 'package.json')
     const response = await readJSONFile<{ version: string }>(packagePath)
+    if (!response) {
+      return ''
+    }
     this.set(component.uuid, paths.relativePath, response.version)
     return response.version
   }

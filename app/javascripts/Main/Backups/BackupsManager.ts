@@ -5,7 +5,14 @@ import { AppMessageType, MessageType } from '../../../../test/TestIpcMessage'
 import { AppState } from '../../../application'
 import { MessageToWebApp } from '../../Shared/IpcMessages'
 import { BackupsManagerInterface } from './BackupsManagerInterface'
-import { deleteDir, deleteDirContents, ensureDirectoryExists, FileDoesNotExist, moveFiles } from '../Utils/FileUtils'
+import {
+  deleteDir,
+  deleteDirContents,
+  ensureDirectoryExists,
+  FileDoesNotExist,
+  moveFiles,
+  openDirectoryPicker,
+} from '../Utils/FileUtils'
 import { Paths } from '../Types/Paths'
 import { StoreKeys } from '../Store'
 import { backups as str } from '../Strings'
@@ -194,12 +201,14 @@ export function createBackupsManager(webContents: WebContents, appState: AppStat
       await deleteDirContents(backupsLocation)
       return copyDecryptScript(backupsLocation)
     },
+
     async changeBackupsLocation() {
-      const result = await dialog.showOpenDialog({
-        properties: ['openDirectory', 'showHiddenFiles', 'createDirectory'],
-      })
-      if (result.filePaths.length === 0) return
-      const path = result.filePaths[0]
+      const path = await openDirectoryPicker()
+
+      if (!path) {
+        return
+      }
+
       try {
         await setBackupsLocation(path)
         performBackup()

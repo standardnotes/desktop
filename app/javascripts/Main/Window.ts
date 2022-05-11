@@ -23,6 +23,7 @@ import { clearSensitiveDirectories } from '@standardnotes/electron-clear-data'
 import { RemoteBridge } from './Remote/RemoteBridge'
 import { Keychain } from './Keychain/Keychain'
 import { MenuManagerInterface } from './Menus/MenuManagerInterface'
+import { FilesBackupManager } from './FileBackups/FileBackupsManager'
 
 const WINDOW_DEFAULT_WIDTH = 1100
 const WINDOW_DEFAULT_HEIGHT = 800
@@ -71,9 +72,12 @@ export async function createWindowState({
       },
     },
     services.menuManager,
+    services.fileBackupsManager,
   )
 
   const shouldOpenUrl = (url: string) => url.startsWith('http') || url.startsWith('mailto')
+
+  window.webContents.openDevTools()
 
   window.on('closed', teardown)
 
@@ -213,6 +217,8 @@ async function createWindowServices(window: Electron.BrowserWindow, appState: Ap
     spellcheckerManager,
   })
 
+  const fileBackupsManager = new FilesBackupManager(appState)
+
   return {
     backupsManager,
     updateManager,
@@ -221,6 +227,7 @@ async function createWindowServices(window: Electron.BrowserWindow, appState: Ap
     menuManager,
     packageManager,
     searchManager,
+    fileBackupsManager,
   }
 }
 

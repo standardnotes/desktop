@@ -24,6 +24,9 @@ export enum StoreKeys {
   ZoomFactor = 'zoomFactor',
   SelectedSpellCheckerLanguageCodes = 'selectedSpellCheckerLanguageCodes',
   UseNativeKeychain = 'useNativeKeychain',
+
+  FileBackupsEnabled = 'fileBackupsEnabled',
+  FileBackupsLocation = 'fileBackupsLocation',
 }
 
 interface StoreData {
@@ -37,6 +40,8 @@ interface StoreData {
   [StoreKeys.UseNativeKeychain]: boolean | null
   [StoreKeys.ZoomFactor]: number
   [StoreKeys.SelectedSpellCheckerLanguageCodes]: Set<Language> | null
+  [StoreKeys.FileBackupsEnabled]: boolean
+  [StoreKeys.FileBackupsLocation]: string
 }
 
 function createSanitizedStoreData(data: any = {}): StoreData {
@@ -55,6 +60,8 @@ function createSanitizedStoreData(data: any = {}): StoreData {
     [StoreKeys.SelectedSpellCheckerLanguageCodes]: sanitizeSpellCheckerLanguageCodes(
       data[StoreKeys.SelectedSpellCheckerLanguageCodes],
     ),
+    [StoreKeys.FileBackupsEnabled]: ensureIsBoolean(data[StoreKeys.FileBackupsEnabled], false),
+    [StoreKeys.FileBackupsLocation]: data[StoreKeys.FileBackupsLocation],
   }
 }
 
