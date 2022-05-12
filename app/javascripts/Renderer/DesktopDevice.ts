@@ -124,6 +124,10 @@ export class DesktopDevice extends WebOrDesktopDevice implements DesktopDeviceIn
     return this.remoteBridge.getFilesBackupsMappingFile()
   }
 
+  async openFilesBackupsLocation(): Promise<void> {
+    return this.remoteBridge.openFilesBackupsLocation()
+  }
+
   async saveFilesBackupsFile(
     uuid: string,
     metaFile: string,

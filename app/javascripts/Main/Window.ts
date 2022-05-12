@@ -77,8 +77,6 @@ export async function createWindowState({
 
   const shouldOpenUrl = (url: string) => url.startsWith('http') || url.startsWith('mailto')
 
-  window.webContents.openDevTools()
-
   window.on('closed', teardown)
 
   window.on('show', () => {

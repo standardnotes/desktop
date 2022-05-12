@@ -10,6 +10,7 @@ import {
   writeJSONFile,
 } from '../Utils/FileUtils'
 import { FileDownloader } from './FileDownloader'
+import { shell } from 'electron'
 
 export class FilesBackupManager implements FileBackupsDevice {
   constructor(private appState: AppState) {}
@@ -84,6 +85,12 @@ export class FilesBackupManager implements FileBackupsDevice {
     return data
   }
 
+  async openFilesBackupsLocation(): Promise<void> {
+    const location = await this.getFilesBackupsLocation()
+
+    shell.openPath(location)
+  }
+
   async saveFilesBackupsMappingFile(file: FileBackupsMapping): Promise<'success' | 'failed'> {
     await writeJSONFile(this.getMappingFileLocation(), file)
 
@@ -104,10 +111,10 @@ export class FilesBackupManager implements FileBackupsDevice {
     const fileDir = `${backupsDir}/${uuid}`
     await ensureDirectoryExists(fileDir)
 
-    const metaFilePath = `${fileDir}/${uuid}.json`
+    const metaFilePath = `${fileDir}/${'metadata.sn.json'}`
     await writeFile(metaFilePath, metaFile)
 
-    const binaryPath = `${fileDir}/${uuid}`
+    const binaryPath = `${fileDir}/file`
 
     const downloader = new FileDownloader(
       downloadRequest.chunkSizes,
