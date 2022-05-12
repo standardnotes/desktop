@@ -190,7 +190,7 @@ export class RemoteBridge implements CrossProcessBridge {
     return this.fileBackups.disableFilesBackups()
   }
 
-  public changeFilesBackupsLocation(): Promise<string> {
+  public changeFilesBackupsLocation(): Promise<string | undefined> {
     return this.fileBackups.changeFilesBackupsLocation()
   }
 

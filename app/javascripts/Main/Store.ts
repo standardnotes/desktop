@@ -124,9 +124,9 @@ function parseDataFile(filePath: string) {
   try {
     const fileData = fs.readFileSync(filePath)
     const userData = JSON.parse(fileData.toString())
-
     return createSanitizedStoreData(userData)
   } catch (error: any) {
+    console.log('Error reading store file', error)
     if (error.code !== FileDoesNotExist) {
       logError(error)
     }

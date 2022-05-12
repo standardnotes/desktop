@@ -20,13 +20,17 @@ export class FilesBackupManager implements FileBackupsDevice {
   }
 
   public async enableFilesBackups(): Promise<void> {
-    this.appState.store.set(StoreKeys.FileBackupsEnabled, true)
+    const currentLocation = await this.getFilesBackupsLocation()
 
-    const location = await this.getFilesBackupsLocation()
+    if (!currentLocation) {
+      const result = await this.changeFilesBackupsLocation()
 
-    if (!location) {
-      await this.changeFilesBackupsLocation()
+      if (!result) {
+        return
+      }
     }
+
+    this.appState.store.set(StoreKeys.FileBackupsEnabled, true)
 
     const mapping = this.getMappingFileFromDisk()
 
@@ -41,8 +45,13 @@ export class FilesBackupManager implements FileBackupsDevice {
     return Promise.resolve()
   }
 
-  public async changeFilesBackupsLocation(): Promise<string> {
+  public async changeFilesBackupsLocation(): Promise<string | undefined> {
     const newPath = await openDirectoryPicker()
+
+    if (!newPath) {
+      return undefined
+    }
+
     const oldPath = await this.getFilesBackupsLocation()
 
     if (!newPath) {

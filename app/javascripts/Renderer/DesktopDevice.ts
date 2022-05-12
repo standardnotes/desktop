@@ -112,7 +112,7 @@ export class DesktopDevice extends WebOrDesktopDevice implements DesktopDeviceIn
     return this.remoteBridge.disableFilesBackups()
   }
 
-  public changeFilesBackupsLocation(): Promise<string> {
+  public changeFilesBackupsLocation(): Promise<string | undefined> {
     return this.remoteBridge.changeFilesBackupsLocation()
   }
 
