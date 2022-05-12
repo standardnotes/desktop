@@ -54,10 +54,6 @@ export class FilesBackupManager implements FileBackupsDevice {
 
     const oldPath = await this.getFilesBackupsLocation()
 
-    if (!newPath) {
-      return oldPath
-    }
-
     if (oldPath) {
       await moveDirContents(oldPath, newPath)
     }
@@ -136,10 +132,12 @@ export class FilesBackupManager implements FileBackupsDevice {
 
     if (result === 'success') {
       const mapping = await this.getFilesBackupsMappingFile()
+
       mapping.files[uuid] = {
         path: fileDir,
         backedUpOn: new Date(),
       }
+
       await this.saveFilesBackupsMappingFile(mapping)
     }
 
