@@ -12,6 +12,12 @@ import {
 import { FileDownloader } from './FileDownloader'
 import { shell } from 'electron'
 
+export const FileBackupsConstantsV1 = {
+  Version: '1.0.0',
+  MetadataFileName: 'metadata.sn.json',
+  BinaryFileName: 'file.encrypted',
+}
+
 export class FilesBackupManager implements FileBackupsDevice {
   constructor(private appState: AppState) {}
 
@@ -69,7 +75,7 @@ export class FilesBackupManager implements FileBackupsDevice {
 
   private getMappingFileLocation(): string {
     const base = this.appState.store.get(StoreKeys.FileBackupsLocation)
-    return `${base}/mapping.json`
+    return `${base}/info.json`
   }
 
   private async getMappingFileFromDisk(): Promise<FileBackupsMapping | undefined> {
@@ -77,7 +83,7 @@ export class FilesBackupManager implements FileBackupsDevice {
   }
 
   private defaultMappingFileValue(): FileBackupsMapping {
-    return { files: {} }
+    return { version: FileBackupsConstantsV1.Version, files: {} }
   }
 
   async getFilesBackupsMappingFile(): Promise<FileBackupsMapping> {
@@ -114,12 +120,12 @@ export class FilesBackupManager implements FileBackupsDevice {
     const backupsDir = await this.getFilesBackupsLocation()
 
     const fileDir = `${backupsDir}/${uuid}`
+    const metaFilePath = `${fileDir}/${FileBackupsConstantsV1.MetadataFileName}`
+    const binaryPath = `${fileDir}/${FileBackupsConstantsV1.BinaryFileName}`
+
     await ensureDirectoryExists(fileDir)
 
-    const metaFilePath = `${fileDir}/${'metadata.sn.json'}`
     await writeFile(metaFilePath, metaFile)
-
-    const binaryPath = `${fileDir}/file`
 
     const downloader = new FileDownloader(
       downloadRequest.chunkSizes,
@@ -134,8 +140,12 @@ export class FilesBackupManager implements FileBackupsDevice {
       const mapping = await this.getFilesBackupsMappingFile()
 
       mapping.files[uuid] = {
-        path: fileDir,
         backedUpOn: new Date(),
+        absolutePath: fileDir,
+        relativePath: uuid,
+        metadataFileName: FileBackupsConstantsV1.MetadataFileName,
+        binaryFileName: FileBackupsConstantsV1.BinaryFileName,
+        version: FileBackupsConstantsV1.Version,
       }
 
       await this.saveFilesBackupsMappingFile(mapping)
