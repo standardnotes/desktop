@@ -1,6 +1,6 @@
 import { DesktopDevice } from './DesktopDevice'
 import { MessageToWebApp } from '../Shared/IpcMessages'
-import { DesktopClientRequiresWebMethods } from '@web/Device/DesktopWebCommunication'
+import { DesktopClientRequiresWebMethods } from '@web/Device/DesktopSnjsExports'
 import { StartApplication } from '@web/Device/StartApplication'
 import { CrossProcessBridge } from './CrossProcessBridge'
 

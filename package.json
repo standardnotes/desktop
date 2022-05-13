@@ -30,6 +30,7 @@
     "update-web": "cd web && git checkout main && git pull && cd .."
   },
   "dependencies": {
+    "axios": "^0.27.2",
     "compare-versions": "^4.1.3",
     "decrypt": "github:standardnotes/decrypt#master",
     "electron-log": "^4.4.6",

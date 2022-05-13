@@ -11,6 +11,7 @@ import { PackageManagerInterface, Component } from '../Packages/PackageManagerIn
 import { SearchManagerInterface } from '../Search/SearchManagerInterface'
 import { RemoteDataInterface } from './DataInterface'
 import { MenuManagerInterface } from '../Menus/MenuManagerInterface'
+import { FileBackupsDevice, FileBackupsMapping } from '@web/Device/DesktopSnjsExports'
 
 /**
  * Read https://github.com/electron/remote to understand how electron/remote works.
@@ -25,6 +26,7 @@ export class RemoteBridge implements CrossProcessBridge {
     private search: SearchManagerInterface,
     private data: RemoteDataInterface,
     private menus: MenuManagerInterface,
+    private fileBackups: FileBackupsDevice,
   ) {}
 
   get exposableValue(): CrossProcessBridge {
@@ -53,6 +55,14 @@ export class RemoteBridge implements CrossProcessBridge {
       onSearch: this.onSearch.bind(this),
       onInitialDataLoad: this.onInitialDataLoad.bind(this),
       destroyAllData: this.destroyAllData.bind(this),
+      getFilesBackupsMappingFile: this.getFilesBackupsMappingFile.bind(this),
+      saveFilesBackupsFile: this.saveFilesBackupsFile.bind(this),
+      isFilesBackupsEnabled: this.isFilesBackupsEnabled.bind(this),
+      enableFilesBackups: this.enableFilesBackups.bind(this),
+      disableFilesBackups: this.disableFilesBackups.bind(this),
+      changeFilesBackupsLocation: this.changeFilesBackupsLocation.bind(this),
+      getFilesBackupsLocation: this.getFilesBackupsLocation.bind(this),
+      openFilesBackupsLocation: this.openFilesBackupsLocation.bind(this),
     }
   }
 
@@ -150,5 +160,45 @@ export class RemoteBridge implements CrossProcessBridge {
 
   displayAppMenu() {
     this.menus.popupMenu()
+  }
+
+  getFilesBackupsMappingFile(): Promise<FileBackupsMapping> {
+    return this.fileBackups.getFilesBackupsMappingFile()
+  }
+
+  saveFilesBackupsFile(
+    uuid: string,
+    metaFile: string,
+    downloadRequest: {
+      chunkSizes: number[]
+      valetToken: string
+      url: string
+    },
+  ): Promise<'success' | 'failed'> {
+    return this.fileBackups.saveFilesBackupsFile(uuid, metaFile, downloadRequest)
+  }
+
+  public isFilesBackupsEnabled(): Promise<boolean> {
+    return this.fileBackups.isFilesBackupsEnabled()
+  }
+
+  public enableFilesBackups(): Promise<void> {
+    return this.fileBackups.enableFilesBackups()
+  }
+
+  public disableFilesBackups(): Promise<void> {
+    return this.fileBackups.disableFilesBackups()
+  }
+
+  public changeFilesBackupsLocation(): Promise<string | undefined> {
+    return this.fileBackups.changeFilesBackupsLocation()
+  }
+
+  public getFilesBackupsLocation(): Promise<string> {
+    return this.fileBackups.getFilesBackupsLocation()
+  }
+
+  public openFilesBackupsLocation(): Promise<void> {
+    return this.fileBackups.openFilesBackupsLocation()
   }
 }

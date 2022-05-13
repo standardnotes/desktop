@@ -1,7 +1,11 @@
-import { Component } from '../Main/Packages/PackageManagerInterface'
-import { DesktopDeviceInterface } from '@web/Device/DesktopDeviceInterface'
 import { WebOrDesktopDevice } from '@web/Device/WebOrDesktopDevice'
-import { RawKeychainValue, Environment } from '@web/Device/DesktopSnjsExports'
+import { Component } from '../Main/Packages/PackageManagerInterface'
+import {
+  RawKeychainValue,
+  Environment,
+  DesktopDeviceInterface,
+  FileBackupsMapping,
+} from '@web/Device/DesktopSnjsExports'
 import { CrossProcessBridge } from './CrossProcessBridge'
 
 const FallbackLocalStorageKey = 'keychain'
@@ -94,5 +98,45 @@ export class DesktopDevice extends WebOrDesktopDevice implements DesktopDeviceIn
 
   async deleteLocalBackups() {
     this.remoteBridge.deleteLocalBackups()
+  }
+
+  public isFilesBackupsEnabled(): Promise<boolean> {
+    return this.remoteBridge.isFilesBackupsEnabled()
+  }
+
+  public enableFilesBackups(): Promise<void> {
+    return this.remoteBridge.enableFilesBackups()
+  }
+
+  public disableFilesBackups(): Promise<void> {
+    return this.remoteBridge.disableFilesBackups()
+  }
+
+  public changeFilesBackupsLocation(): Promise<string | undefined> {
+    return this.remoteBridge.changeFilesBackupsLocation()
+  }
+
+  public getFilesBackupsLocation(): Promise<string> {
+    return this.remoteBridge.getFilesBackupsLocation()
+  }
+
+  async getFilesBackupsMappingFile(): Promise<FileBackupsMapping> {
+    return this.remoteBridge.getFilesBackupsMappingFile()
+  }
+
+  async openFilesBackupsLocation(): Promise<void> {
+    return this.remoteBridge.openFilesBackupsLocation()
+  }
+
+  async saveFilesBackupsFile(
+    uuid: string,
+    metaFile: string,
+    downloadRequest: {
+      chunkSizes: number[]
+      valetToken: string
+      url: string
+    },
+  ): Promise<'success' | 'failed'> {
+    return this.remoteBridge.saveFilesBackupsFile(uuid, metaFile, downloadRequest)
   }
 }
