@@ -73,5 +73,3 @@ export function get(url: string): Promise<IncomingMessage> {
     request.end()
   })
 }
-
-
