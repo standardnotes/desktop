@@ -139,4 +139,12 @@ export class DesktopDevice extends WebOrDesktopDevice implements DesktopDeviceIn
   ): Promise<'success' | 'failed'> {
     return this.remoteBridge.saveFilesBackupsFile(uuid, metaFile, downloadRequest)
   }
+
+  async performHardReset(): Promise<void> {
+    console.error('performHardReset is not yet implemented')
+  }
+
+  isDeviceDestroyed(): boolean {
+    return false
+  }
 }
