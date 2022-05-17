@@ -66,7 +66,9 @@ export class DesktopDevice extends WebOrDesktopDevice implements DesktopDeviceIn
     this.remoteBridge.onInitialDataLoad()
   }
 
-  destroyAllData(): void {
+  async clearAllDataFromDevice(): Promise<void> {
+    await super.clearAllDataFromDevice()
+
     this.remoteBridge.destroyAllData()
   }
 
