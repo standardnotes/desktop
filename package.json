@@ -27,7 +27,8 @@
     "setup": "yarn --ignore-engines && yarn --ignore-engines --cwd ./app && git submodule update --init && yarn --ignore-engines --cwd ./web",
     "start": "electron ./app --enable-logging --icon _icon/icon.png",
     "test": "rimraf test/data/tmp && ava",
-    "update-web": "cd web && git checkout main && git pull && cd .."
+    "update:web": "cd web && git checkout main && git pull && cd ..",
+    "restore:web": "rm -rf web && git submodule add --force https://github.com/standardnotes/web.git"
   },
   "dependencies": {
     "axios": "^0.27.2",

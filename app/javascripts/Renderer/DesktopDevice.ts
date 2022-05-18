@@ -66,10 +66,12 @@ export class DesktopDevice extends WebOrDesktopDevice implements DesktopDeviceIn
     this.remoteBridge.onInitialDataLoad()
   }
 
-  async clearAllDataFromDevice(): Promise<void> {
-    await super.clearAllDataFromDevice()
+  async clearAllDataFromDevice(workspaceIdentifiers: string[]): Promise<{ killsApplication: boolean }> {
+    await super.clearAllDataFromDevice(workspaceIdentifiers)
 
     this.remoteBridge.destroyAllData()
+
+    return { killsApplication: true }
   }
 
   async downloadBackup() {
