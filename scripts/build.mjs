@@ -1,23 +1,23 @@
-import { spawn } from 'child_process';
-import fs from 'fs';
+import { spawn } from 'child_process'
+import fs from 'fs'
 
 async function buildTargets(targets) {
-  console.log('Building targets: ', targets);
-  await runCommand(Command('yarn run lint'));
-  await runCommand(Command('yarn clean:build'));
-  await runCommand(Command('yarn run build:web'));
+  console.log('Building targets: ', targets)
+  await runCommand(Command('yarn run lint'))
+  await runCommand(Command('yarn clean:build'))
+  await runCommand(Command('yarn run build:web'))
 
   for (const group of CompileGroups) {
-    let didCompileGroup = false;
+    let didCompileGroup = false
     for (const target of targets) {
       if (group.targets.includes(target)) {
         if (!didCompileGroup) {
-          await runCommand(group.compileCommand);
-          didCompileGroup = true;
+          await runCommand(group.compileCommand)
+          didCompileGroup = true
         }
-        const buildCommands = BuildCommands[target];
+        const buildCommands = BuildCommands[target]
         for (const buildCommand of buildCommands) {
-          await runCommand(buildCommand);
+          await runCommand(buildCommand)
         }
       }
     }
@@ -26,22 +26,22 @@ async function buildTargets(targets) {
 
 function runCommand(commandObj) {
   return new Promise((resolve, reject) => {
-    const { prompt, extraEnv } = commandObj;
-    console.log(prompt, Object.keys(extraEnv).length > 0 ? extraEnv : '');
-    const [command, ...args] = prompt.split(' ');
-    const options = { env: Object.assign({}, process.env, extraEnv) };
-    const child = spawn(command, args, options);
-    child.stdout.pipe(process.stdout);
-    child.stderr.pipe(process.stderr);
-    child.on('error', reject);
+    const { prompt, extraEnv } = commandObj
+    console.log(prompt, Object.keys(extraEnv).length > 0 ? extraEnv : '')
+    const [command, ...args] = prompt.split(' ')
+    const options = { env: Object.assign({}, process.env, extraEnv) }
+    const child = spawn(command, args, options)
+    child.stdout.pipe(process.stdout)
+    child.stderr.pipe(process.stderr)
+    child.on('error', reject)
     child.on('close', (code) => {
       if (code > 0) {
-        reject(code);
+        reject(code)
       } else {
-        resolve(code);
+        resolve(code)
       }
-    });
-  });
+    })
+  })
 }
 
 const Targets = {
@@ -59,9 +59,9 @@ const Targets = {
   Snap: 'snap',
   SnapArm64: 'snap-arm64',
   Windows: 'windows',
-};
+}
 
-const MainstreamTargetGroup = 'mainstream';
+const MainstreamTargetGroup = 'mainstream'
 
 const TargetGroups = {
   all: [
@@ -83,16 +83,17 @@ const TargetGroups = {
     Targets.DebArm64,
     Targets.MacAll,
   ],
-};
+  mac: [Targets.MacArm64],
+}
 
-const arm64Env = { npm_config_target_arch: 'arm64' };
+const arm64Env = { npm_config_target_arch: 'arm64' }
 
 const Command = function (prompt, extraEnv = {}) {
   return {
     prompt,
     extraEnv,
-  };
-};
+  }
+}
 
 const CompileGroups = [
   {
@@ -129,28 +130,20 @@ const CompileGroups = [
     compileCommand: Command('yarn run webpack --config webpack.prod.js --env snap', arm64Env),
     targets: [Targets.SnapArm64],
   },
-];
+]
 
 const BuildCommands = {
   [Targets.Appimage]: [
-    Command(
-      'yarn run electron-builder --linux --x64 --ia32 -c.linux.target=AppImage --publish=never'
-    ),
+    Command('yarn run electron-builder --linux --x64 --ia32 -c.linux.target=AppImage --publish=never'),
   ],
-  [Targets.AppimageX64]: [
-    Command('yarn run electron-builder --linux --x64 -c.linux.target=AppImage --publish=never'),
-  ],
+  [Targets.AppimageX64]: [Command('yarn run electron-builder --linux --x64 -c.linux.target=AppImage --publish=never')],
   [Targets.AppimageArm64]: [
     Command('yarn run electron-builder --linux --arm64 -c.linux.target=AppImage --publish=never'),
   ],
   [Targets.AppimageAll]: [
-    Command(
-      'yarn run electron-builder --linux --arm64 --x64 --ia32 -c.linux.target=AppImage --publish=never'
-    ),
+    Command('yarn run electron-builder --linux --arm64 --x64 --ia32 -c.linux.target=AppImage --publish=never'),
   ],
-  [Targets.Deb]: [
-    Command('yarn run electron-builder --linux --x64 --ia32 -c.linux.target=deb --publish=never'),
-  ],
+  [Targets.Deb]: [Command('yarn run electron-builder --linux --x64 --ia32 -c.linux.target=deb --publish=never')],
   [Targets.DebArm64]: [
     Command('yarn run electron-builder --linux --arm64 -c.linux.target=deb --publish=never', {
       npm_config_target_arch: 'arm64',
@@ -163,18 +156,11 @@ const BuildCommands = {
   ],
   [Targets.MacArm64]: [Command('yarn run electron-builder --mac --arm64 --publish=never')],
   [Targets.MacAll]: [Command('yarn run electron-builder --macos --arm64 --x64 --publish=never')],
-  [Targets.Dir]: [
-    Command('yarn run electron-builder --linux --x64 -c.linux.target=dir --publish=never'),
-  ],
+  [Targets.Dir]: [Command('yarn run electron-builder --linux --x64 -c.linux.target=dir --publish=never')],
   [Targets.DirArm64]: [
-    Command(
-      'yarn run electron-builder --linux --arm64 -c.linux.target=dir --publish=never',
-      arm64Env
-    ),
+    Command('yarn run electron-builder --linux --arm64 -c.linux.target=dir --publish=never', arm64Env),
   ],
-  [Targets.Snap]: [
-    Command('yarn run electron-builder --linux --x64 -c.linux.target=snap --publish=never'),
-  ],
+  [Targets.Snap]: [Command('yarn run electron-builder --linux --x64 -c.linux.target=snap --publish=never')],
   [Targets.SnapArm64]: [
     Command('yarn run electron-builder --linux --arm64 -c.linux.target=snap --publish=never', {
       npm_config_target_arch: 'arm64',
@@ -182,32 +168,35 @@ const BuildCommands = {
     }),
   ],
   [Targets.Windows]: [Command('yarn run electron-builder --windows --x64 --ia32 --publish=never')],
-};
-
-async function publishSnap() {
-  const packageJson = await fs.promises.readFile('./package.json');
-  const version = JSON.parse(packageJson).version;
-  await runCommand(Command(`snapcraft upload dist/standard-notes-${version}-linux-amd64.snap`));
 }
 
-(async () => {
+async function publishSnap() {
+  const packageJson = await fs.promises.readFile('./package.json')
+  const version = JSON.parse(packageJson).version
+  await runCommand(Command(`snapcraft upload dist/standard-notes-${version}-linux-amd64.snap`))
+}
+
+;(async () => {
   try {
-    const input = process.argv[2];
-    let targets = input.split(',');
+    const input = process.argv[2]
+    let targets = input.split(',')
+
+    console.log('Input targets:', targets)
+
     if (targets.length === 1) {
       if (TargetGroups[targets[0]]) {
-        targets = TargetGroups[targets[0]];
+        targets = TargetGroups[targets[0]]
       }
     }
-    await buildTargets(targets);
+    await buildTargets(targets)
 
     if (input === MainstreamTargetGroup) {
-      await runCommand(Command('node scripts/sums.mjs'));
-      await runCommand(Command('node scripts/create-draft-release.mjs'));
-      await publishSnap();
+      await runCommand(Command('node scripts/sums.mjs'))
+      await runCommand(Command('node scripts/create-draft-release.mjs'))
+      await publishSnap()
     }
   } catch (e) {
-    console.error(e);
-    process.exitCode = 1;
+    console.error(e)
+    process.exitCode = 1
   }
-})();
+})()

@@ -7,4 +7,3 @@ web/
 .github
 codeqldb
 *.js
-scripts/

@@ -1,8 +1,8 @@
-import fs from 'fs';
+import fs from 'fs'
 
 export async function getLatestBuiltFilesList() {
-  const packageJson = await fs.promises.readFile('./package.json');
-  const version = JSON.parse(packageJson).version;
+  const packageJson = await fs.promises.readFile('./package.json')
+  const version = JSON.parse(packageJson).version
   return [
     `standard-notes-${version}-mac-x64.zip`,
     `standard-notes-${version}-mac-x64.dmg`,
@@ -34,11 +34,11 @@ export async function getLatestBuiltFilesList() {
     'latest-mac.yml',
     'latest.yml',
     'builder-effective-config.yaml',
-  ];
+  ]
 }
 
 export async function getBuiltx64SnapFilename() {
-  const packageJson = await fs.promises.readFile('./package.json');
-  const version = JSON.parse(packageJson).version;
-  return `standard-notes-${version}-linux-amd64.snap`;
+  const packageJson = await fs.promises.readFile('./package.json')
+  const version = JSON.parse(packageJson).version
+  return `standard-notes-${version}-linux-amd64.snap`
 }

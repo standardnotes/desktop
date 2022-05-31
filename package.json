@@ -1,7 +1,7 @@
 {
   "name": "standard-notes",
   "main": "./app/dist/index.js",
-  "version": "3.20.0",
+  "version": "3.20.1",
   "repository": {
     "type": "git",
     "url": "git://github.com/standardnotes/desktop"
@@ -24,6 +24,7 @@
     "lint": "npm-run-all --parallel lint:*",
     "postinstall": "electron-builder install-app-deps",
     "release": "node scripts/build.mjs mainstream",
+    "release:mac": "node scripts/build.mjs mac",
     "setup": "yarn --ignore-engines && yarn --ignore-engines --cwd ./app && git submodule update --init && yarn --ignore-engines --cwd ./web",
     "start": "electron ./app --enable-logging --icon _icon/icon.png",
     "test": "rimraf test/data/tmp && ava",
