@@ -1,5 +1,5 @@
 import { Component } from '../Main/Packages/PackageManagerInterface'
-import { FileBackupsDevice } from '@web/Device/DesktopSnjsExports'
+import { FileBackupsDevice } from '@web/Application/Device/DesktopSnjsExports'
 
 export interface CrossProcessBridge extends FileBackupsDevice {
   get extServerHost(): string

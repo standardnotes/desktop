@@ -1,7 +1,7 @@
 import { DesktopDevice } from './DesktopDevice'
 import { MessageToWebApp } from '../Shared/IpcMessages'
-import { DesktopClientRequiresWebMethods } from '@web/Device/DesktopSnjsExports'
-import { StartApplication } from '@web/Device/StartApplication'
+import { DesktopClientRequiresWebMethods } from '@web/Application/Device/DesktopSnjsExports'
+import { StartApplication } from '@web/Application/Device/StartApplication'
 import { CrossProcessBridge } from './CrossProcessBridge'
 
 declare const DEFAULT_SYNC_SERVER: string
