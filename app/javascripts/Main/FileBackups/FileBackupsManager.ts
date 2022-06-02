@@ -1,4 +1,4 @@
-import { FileBackupsDevice, FileBackupsMapping } from '@web/Device/DesktopSnjsExports'
+import { FileBackupsDevice, FileBackupsMapping } from '@web/Application/Device/DesktopSnjsExports'
 import { AppState } from 'app/application'
 import { StoreKeys } from '../Store'
 import {

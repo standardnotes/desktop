@@ -1,11 +1,11 @@
-import { WebOrDesktopDevice } from '@web/Device/WebOrDesktopDevice'
+import { WebOrDesktopDevice } from '@web/Application/Device/WebOrDesktopDevice'
 import { Component } from '../Main/Packages/PackageManagerInterface'
 import {
   RawKeychainValue,
   Environment,
   DesktopDeviceInterface,
   FileBackupsMapping,
-} from '@web/Device/DesktopSnjsExports'
+} from '@web/Application/Device/DesktopSnjsExports'
 import { CrossProcessBridge } from './CrossProcessBridge'
 
 const FallbackLocalStorageKey = 'keychain'

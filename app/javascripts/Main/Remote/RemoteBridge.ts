@@ -11,7 +11,7 @@ import { PackageManagerInterface, Component } from '../Packages/PackageManagerIn
 import { SearchManagerInterface } from '../Search/SearchManagerInterface'
 import { RemoteDataInterface } from './DataInterface'
 import { MenuManagerInterface } from '../Menus/MenuManagerInterface'
-import { FileBackupsDevice, FileBackupsMapping } from '@web/Device/DesktopSnjsExports'
+import { FileBackupsDevice, FileBackupsMapping } from '@web/Application/Device/DesktopSnjsExports'
 
 /**
  * Read https://github.com/electron/remote to understand how electron/remote works.
